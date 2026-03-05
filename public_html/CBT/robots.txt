@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /CBT/
+
+Sitemap: https://xeo.com/CBT/sitemap.xml
