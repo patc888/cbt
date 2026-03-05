@@ -2,8 +2,6 @@ import SwiftUI
 import SwiftData
 
 struct AboutSettingsView: View {
-    @Binding var showingResetAlert: Bool
-
     #if DEBUG
     @State private var showingDebugPlaceholder = false
     #endif
@@ -12,18 +10,9 @@ struct AboutSettingsView: View {
         SettingsSection(title: "About") {
             versionRow
             
-            NavigationLink(destination: CBTLearnPagerView()) {
-                SettingsRow(icon: "brain.head.profile", iconColor: Theme.primaryColor, title: "Learn About CBT") {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.secondaryText)
-                }
-            }
-            .buttonStyle(PlainButtonStyle())
-            
             Button(action: {
                 HapticManager.shared.lightImpact()
-                openURL("https://xeo.com/Chores/support.html")
+                openURL("https://xeo.com/CBT/support.html")
             }) {
                 SettingsRow(icon: "questionmark.circle", iconColor: Theme.primaryColor, title: "Help Center") {
                     Image(systemName: "chevron.right")
@@ -33,7 +22,7 @@ struct AboutSettingsView: View {
             }
             .buttonStyle(PlainButtonStyle())
 
-            Button(action: { HapticManager.shared.lightImpact(); openURL("https://xeo.com/Chores/privacy-policy.html") }) {
+            Button(action: { HapticManager.shared.lightImpact(); openURL("https://xeo.com/CBT/privacy-policy.html") }) {
                 SettingsRow(icon: "lock.shield", iconColor: Theme.primaryColor, title: "Privacy Policy") {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
@@ -42,7 +31,7 @@ struct AboutSettingsView: View {
             }
             .buttonStyle(PlainButtonStyle())
 
-            Button(action: { HapticManager.shared.lightImpact(); openURL("https://xeo.com/Chores/terms.html") }) {
+            Button(action: { HapticManager.shared.lightImpact(); openURL("https://xeo.com/CBT/terms.html") }) {
                 SettingsRow(icon: "doc.text", iconColor: Theme.primaryColor, title: "Terms of Use") {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))

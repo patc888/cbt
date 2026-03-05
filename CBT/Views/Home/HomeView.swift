@@ -14,7 +14,6 @@ struct HomeView: View {
     @State private var showingNewThoughtRecord = false
     @State private var showingTipModal = false
     @State private var showingQuickAdd = false
-    @State private var isMoodPickerExpanded = false
     @State private var selectedMoodForFlow: MoodColor? = nil
 
     var body: some View {
@@ -62,7 +61,7 @@ struct HomeView: View {
         .sheet(isPresented: $showingTipModal) {
             FeatureModalPresenter {
                 DSFeatureModal(
-                    title: "CBT Tip",
+                    title: "Tip for Today",
                     subtitle: "Try naming one thought before reacting. Even a short pause can make the next step clearer.",
                     bullets: [
                         DSBullet(icon: "brain", text: "Notice the thought"),
@@ -101,23 +100,16 @@ struct HomeView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
-        .overlay(alignment: .bottomTrailing) {
-            MoodFABPicker(isExpanded: $isMoodPickerExpanded) { mood in
-                selectedMoodForFlow = mood
-                showingNewMoodEntry = true
-            }
-            .ignoresSafeArea()
-        }
     }
 
     private var header: some View {
         HStack {
             Spacer()
-
-            Text("CBT")
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+ 
+            Text("Home")
+                .font(.system(.largeTitle, design: .rounded).weight(.bold))
                 .foregroundStyle(Theme.primaryText)
-
+ 
             Spacer()
         }
     }
@@ -125,8 +117,8 @@ struct HomeView: View {
     private var planContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Today's Plan")
-                    .font(.system(size: 25, weight: .bold, design: .rounded))
+                Text("Daily Plan")
+                    .font(.system(.title, design: .rounded).weight(.bold))
                     .foregroundStyle(Theme.primaryText)
                     .padding(.bottom, 4)
 
@@ -140,10 +132,10 @@ struct HomeView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Start quick check-in")
-                                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                                    .font(.system(.subheadline, design: .rounded).weight(.bold))
                                     .foregroundStyle(Theme.primaryText)
                                 Text("Takes about 1 minute")
-                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                    .font(.system(.caption, design: .rounded).weight(.medium))
                                     .foregroundStyle(Theme.secondaryText)
                             }
 

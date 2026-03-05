@@ -17,9 +17,11 @@ struct MoodIntensitySelector: View {
             VStack(spacing: 24) {
                 Text("\(Int(intensity))")
                     .font(.system(size: 64, weight: .bold, design: .rounded))
+                    .minimumScaleFactor(0.5)
                     .foregroundStyle(selectedColor?.color ?? Theme.primaryColor)
                     .contentTransition(.numericText())
                     .animation(.spring(), value: intensity)
+                    .accessibilityHidden(true)
                 
                 Slider(value: $intensity, in: 1...10, step: 1) {
                     Text("Intensity")
@@ -30,6 +32,7 @@ struct MoodIntensitySelector: View {
                 }
                 .tint(selectedColor?.color ?? Theme.primaryColor)
                 .padding(.horizontal, 32)
+                .accessibilityValue("\(Int(intensity)) out of 10")
             }
             
             Spacer()

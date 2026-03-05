@@ -30,7 +30,7 @@ struct RemindersSettingsSection: View {
     private let reflectionReminderIdentifier = "daily_reflection_reminder"
 
     var body: some View {
-        VStack(spacing: 24) {
+        Group {
             SettingsSection(title: "Reminders") {
                 // Mood Reminder Row
                 ToggleRow(
@@ -80,7 +80,7 @@ struct RemindersSettingsSection: View {
                 // Reflection Reminder Row
                 ToggleRow(
                     icon: "moon.stars.fill",
-                    iconColor: themeManager.secondaryColor,
+                    iconColor: themeManager.primaryColor,
                     title: "Evening Reflection",
                     subtitle: "Evening prompt for exercises",
                     isOn: Binding(
@@ -146,7 +146,7 @@ struct RemindersSettingsSection: View {
             SettingsSection(title: "Quiet Hours") {
                 ToggleRow(
                     icon: "moon.zzz.fill",
-                    iconColor: .indigo,
+                    iconColor: themeManager.primaryColor,
                     title: "Enable Quiet Hours",
                     subtitle: "Mutes reminders during these times",
                     isOn: $quietHoursEnabled

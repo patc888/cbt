@@ -63,6 +63,9 @@ struct MoodTriggerSelector: View {
                                 .scaleEffect(isSelected ? 1.05 : 1.0)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(trigger)
+                        .accessibilityAddTraits(isSelected ? .isSelected : [])
+                        .accessibilityHint(isSelected ? "Removes \(trigger)" : "Adds \(trigger)")
                     }
                 }
                 .padding(.horizontal, DSSpacing.large)

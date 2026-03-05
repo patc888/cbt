@@ -20,6 +20,7 @@ struct BreathingControlsBar: View {
                 HStack(spacing: 0) {
                     ForEach([30, 60, 120], id: \.self) { duration in
                         Button {
+                            HapticManager.shared.lightImpact()
                             selectedDuration = duration
                         } label: {
                             Text(formatDuration(duration))
@@ -30,6 +31,8 @@ struct BreathingControlsBar: View {
                                 .foregroundStyle(selectedDuration == duration ? .white : .primary)
                         }
                         .disabled(isRunning)
+                        .accessibilityLabel("\(formatDuration(duration)) duration")
+                        .accessibilityAddTraits(selectedDuration == duration ? .isSelected : [])
                     }
                 }
                 .background(Color(.secondarySystemFill))
@@ -39,6 +42,7 @@ struct BreathingControlsBar: View {
                 
                 // Sound Toggle
                 Button {
+                    HapticManager.shared.lightImpact()
                     soundEnabled.toggle()
                 } label: {
                     Image(systemName: soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
@@ -48,6 +52,8 @@ struct BreathingControlsBar: View {
                         .foregroundStyle(soundEnabled ? accent : .secondary)
                         .clipShape(Circle())
                 }
+                .accessibilityLabel(soundEnabled ? "Mute sounds" : "Unmute sounds")
+                .accessibilityHint("Toggles breathing guiding sounds")
             }
             .padding(.horizontal, 4)
             
@@ -59,6 +65,7 @@ struct BreathingControlsBar: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(DSSecondaryButtonStyle())
+                    .accessibilityLabel("Pause breathing session")
                 } else {
                     Button(action: onStart) {
                         Label(isComplete ? "Restart" : (canResume ? "Resume" : "Start"), 
@@ -66,6 +73,7 @@ struct BreathingControlsBar: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(DSPrimaryButtonStyle())
+                    .accessibilityLabel(isComplete ? "Restart session" : (canResume ? "Resume session" : "Start session"))
                 }
                 
                 if isRunning || canResume {
@@ -77,6 +85,8 @@ struct BreathingControlsBar: View {
                             .foregroundStyle(.red)
                             .clipShape(Circle())
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Stop and reset")
                 }
             }
         }

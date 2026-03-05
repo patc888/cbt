@@ -63,16 +63,20 @@ struct Theme {
     }
 
     static var tertiaryBackground: Color {
+        #if canImport(UIKit)
         if isImmersive {
-            return Color(.secondarySystemBackground)
+            return Color(uiColor: .secondarySystemBackground)
         }
-        return Color(.tertiarySystemBackground)
+        return Color(uiColor: .tertiarySystemBackground)
+        #else
+        return Color.secondary.opacity(0.1)
+        #endif
     }
 
     // Text Colors
     static let primaryText = Color.primary
     static let secondaryText = Color.secondary
-    static let tertiaryText = Color(UIColor.tertiaryLabel)
+    static let tertiaryText = Color.secondary.opacity(0.7)
 
     static func unselectedOptionColor(for scheme: ColorScheme) -> Color {
         if scheme == .dark && !isImmersive {

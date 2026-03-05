@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct SettingsView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
@@ -11,7 +12,6 @@ struct SettingsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private var metrics: LayoutMetrics { LayoutMetrics.metrics(for: horizontalSizeClass) }
     
-    @State private var showingResetAlert = false
     @State private var showingSubscription = false
     @State private var showingDebug = false
     @State private var showingExportInfo = false
@@ -31,11 +31,11 @@ struct SettingsView: View {
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    Spacer(minLength: 0)
                     mainContent
-                        .dsSettingsContentWidth()
                 }
+                .frame(maxWidth: 600)
             }
+            .frame(maxWidth: 600)
 
             if showsDismissControl {
                 navigationArrow
@@ -49,17 +49,6 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
 #endif
-        .alert("Reset All Data", isPresented: $showingResetAlert) {
-            Button("Cancel", role: .cancel) {
-                HapticManager.shared.lightImpact()
-            }
-            Button("Reset", role: .destructive) {
-                HapticManager.shared.destructiveAction()
-                resetAllData()
-            }
-        } message: {
-            Text("This will delete all your CBT data. This action cannot be undone.")
-        }
         .sheet(isPresented: $showingDebug) {
             NavigationStack {
                 Text("Debug Placeholder (Chores debug views were stripped)")
@@ -73,7 +62,7 @@ struct SettingsView: View {
             FeatureModalPresenter {
                 DSFeatureModal(
                     title: "Export Your Data",
-                    subtitle: "Create a JSON file from your local CBT entries that you can save or share.",
+                    subtitle: "Create a JSON file from your local entries that you can save or share.",
                     bullets: [
                         DSBullet(icon: "checkmark.circle", text: "Includes moods, thought records, and exercises"),
                         DSBullet(icon: "lock.fill", text: "Generated locally on your device"),
@@ -131,8 +120,16 @@ struct SettingsView: View {
     }
 
     private var mainContent: some View {
-        VStack(spacing: 32) {
-            TopHeadlineView(title: "Settings")
+        VStack(spacing: 16) {
+            HStack {
+                Spacer()
+                Text("Settings")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.primaryText)
+                Spacer()
+            }
+            .padding(.top, 12)
+            .padding(.bottom, 4)
             
             SettingsSection(title: "Education") {
                 NavigationLink(destination: CBTEducationMenuView()) {
@@ -182,7 +179,7 @@ struct SettingsView: View {
                 NavigationLink(destination: BreathingResetView()) {
                     SettingsRow(
                         icon: "wind",
-                        iconColor: themeManager.selectedColor,
+                        iconColor: themeManager.primaryColor,
                         title: "Breathing Reset",
                         subtitle: "Guided box breathing session"
                     ) {
@@ -196,7 +193,7 @@ struct SettingsView: View {
 
             RemindersSettingsSection()
             
-            AboutSettingsView(showingResetAlert: $showingResetAlert)
+            AboutSettingsView()
             
             VStack(alignment: .leading, spacing: 12) {
                 SettingsSection(title: "Advanced") {
@@ -218,7 +215,7 @@ struct SettingsView: View {
                         HapticManager.shared.lightImpact()
                         showingExportInfo = true
                     } label: {
-                        SettingsRow(icon: "square.and.arrow.up", iconColor: themeManager.secondaryColor, title: "Export Data") {
+                        SettingsRow(icon: "square.and.arrow.up", iconColor: themeManager.primaryColor, title: "Export Data") {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(Theme.secondaryText)
@@ -226,24 +223,24 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.plain)
                     
-                    Button(role: .destructive) {
-                        HapticManager.shared.mediumImpact()
-                        showingResetAlert = true
-                    } label: {
-                        SettingsRow(icon: "trash", iconColor: Theme.errorRed, title: "Reset All Data")
+                    NavigationLink(destination: DataResetOptionsView()) {
+                        SettingsRow(icon: "trash", iconColor: Theme.errorRed, title: "Reset All Data") {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Theme.secondaryText)
+                        }
                     }
                     .buttonStyle(.plain)
                 }
                 
-                Text("This section contains developer and data tools.")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                Text("This section contains data tools.")
+                    .font(.system(.caption, design: .rounded).weight(.medium))
                     .foregroundStyle(Theme.secondaryText)
                     .padding(.horizontal, 20)
             }
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 32)
-        .contentShape(Rectangle()) // Ensure full card/row area tappability
     }
 
     private func exportData() {
@@ -258,23 +255,17 @@ struct SettingsView: View {
         }
     }
 
-    private func resetAllData() {
-        HapticManager.shared.lightImpact()
-        do {
-            try modelContext.delete(model: Item.self)
-            
-            if let settings = userSettings {
-                settings.appLockEnabled = false
-            }
-            
-            try modelContext.save()
-        } catch {
-            print("Error resetting data: \(error)")
-        }
-    }
-
     private var navigationArrow: some View {
-        DismissButton(style: .chevron)
+        Button(action: {
+            HapticManager.shared.lightImpact()
+            dismiss()
+        }) {
+            Image(systemName: "chevron.right")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(themeManager.primaryColor)
+                .padding(8)
+                .contentShape(Rectangle())
+        }
         .padding(.trailing, 20)
         .padding(.top, 12)
     }

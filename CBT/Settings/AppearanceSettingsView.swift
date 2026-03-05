@@ -20,26 +20,21 @@ struct AppearanceSettingsView: View {
     
     var body: some View {
         SettingsSection(title: "Appearance") {
-            SettingsRow(title: "App Theme") {
-                SegmentedToggle(
-                    selection: $userTheme,
-                    options: AppTheme.allCases,
-                    titleKey: \.rawValue,
-                    namespace: appearanceNamespace
-                )
-                .frame(width: 180)
-            }
+            SegmentedToggle(
+                selection: $userTheme,
+                options: AppTheme.allCases,
+                titleKey: \.rawValue,
+                namespace: appearanceNamespace
+            )
             
             accentColorPicker
             
             SettingsRow(title: "Full Color Theme") {
                 SegmentedToggle(isOn: $isImmersive, namespace: fullColorNamespace)
-                    .frame(width: 110)
             }
             
-            SettingsRow(title: "Haptics") {
+            SettingsRow(title: "Haptic Feedback") {
                 SegmentedToggle(isOn: $hapticsEnabled, namespace: hapticNamespace)
-                    .frame(width: 110)
             }
             
             appIconDisclosure
@@ -54,23 +49,21 @@ struct AppearanceSettingsView: View {
     }
     
     private var accentColorPicker: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Accent Color")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundStyle(Theme.primaryText)
-                .padding(.horizontal, 16)
             
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+                HStack(spacing: 8) {
                     ForEach(AppColorTheme.allCases) { theme in
                         colorThemeButton(for: theme)
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 4)
+                .padding(.vertical, 4)
+                .padding(.horizontal, 4)
             }
         }
-        .padding(.vertical, 12)
     }
     
     private func colorThemeButton(for theme: AppColorTheme) -> some View {
@@ -79,34 +72,31 @@ struct AppearanceSettingsView: View {
         return ZStack {
             if isSelected {
                 Circle()
-                    .stroke(Theme.primaryColor.opacity(0.35), lineWidth: 3)
-                    .frame(width: 42, height: 42)
+                    .stroke(Theme.primaryText.opacity(0.8), lineWidth: 2.5)
+                    .frame(width: 38, height: 38)
             }
             
             Circle()
                 .fill(Color(hex: theme.primaryHex))
-                .frame(width: 30, height: 30)
-                .shadow(color: Color(hex: theme.primaryHex).opacity(colorScheme == .dark ? 0.3 : 0.1), radius: isSelected ? 6 : 2, x: 0, y: 2)
+                .frame(width: 28, height: 28)
+                .shadow(color: Color(hex: theme.primaryHex).opacity(0.4), radius: 3, x: 0, y: 2)
         }
-        .frame(width: 42, height: 42)
+        .frame(width: 38, height: 38)
         .onTapGesture {
             HapticManager.shared.lightImpact()
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            withAnimation(.spring(response: 0.3)) {
                 selectedTheme = theme
             }
         }
-        .scaleEffect(isSelected ? 1.1 : 1.0)
+        .scaleEffect(isSelected ? 1.05 : 1.0)
     }
 
     private var appIconDisclosure: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 12) {
             disclosureHeader
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
             
             if isIconExpanded {
                 iconSelectionList
-                    .padding(.bottom, 12)
             }
         }
         .onAppear {
@@ -125,7 +115,7 @@ struct AppearanceSettingsView: View {
         }) {
             HStack {
                 Text("App Icon")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
                 
@@ -193,10 +183,6 @@ struct AppearanceSettingsView: View {
         }) {
             VStack(spacing: 8) {
                 ZStack {
-                    Theme.cardBackground
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .frame(width: 60, height: 60)
-                    
                     #if canImport(UIKit)
                     Image(uiImage: UIImage(named: icon.previewImage) ?? UIImage())
                         .resizable()
@@ -215,9 +201,9 @@ struct AppearanceSettingsView: View {
                 }
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Theme.primaryColor, lineWidth: isSelected ? 3 : 0)
+                        .stroke(Theme.primaryText, lineWidth: isSelected ? 3 : 0)
                 )
-                .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.1 : 0), radius: colorScheme == .dark ? 4 : 0, x: 0, y: colorScheme == .dark ? 2 : 0)
+                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                 
                 Text(icon.displayName)
                     .font(.system(size: 12, design: .rounded))

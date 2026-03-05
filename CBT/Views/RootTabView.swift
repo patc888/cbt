@@ -5,7 +5,6 @@ struct RootTabView: View {
 
     @State private var selectedTab: FloatingTab = .home
     @StateObject private var breathing = BreathingPresenter.shared
-
     var body: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $selectedTab) {

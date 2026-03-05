@@ -15,18 +15,20 @@ struct DismissButton: View {
             switch style {
             case .chevron:
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.system(.body, weight: .bold))
                     .foregroundStyle(Theme.primaryColor)
                     .padding(8)
+                    .accessibilityLabel("Go back")
             case let .xmarkCircle(background, foreground):
                 ZStack {
                     Circle()
                         .fill(background)
                     Image(systemName: "xmark")
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.system(.body, weight: .bold))
                         .foregroundStyle(foreground)
                 }
                 .frame(width: 44, height: 44)
+                .accessibilityLabel("Dismiss")
             }
         }
         .buttonStyle(.plain)

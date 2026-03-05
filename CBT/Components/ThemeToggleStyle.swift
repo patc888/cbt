@@ -34,8 +34,8 @@ struct ThemeToggleStyle: ToggleStyle {
             return Theme.primaryColor
         }
         if colorScheme == .dark && !isImmersive {
-            return Color(uiColor: .lightGray)
+            return Color.gray
         }
-        return Color(uiColor: .tertiarySystemFill)
+        return Color.secondary.opacity(0.2)
     }
 }

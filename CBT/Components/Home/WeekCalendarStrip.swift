@@ -35,8 +35,7 @@ struct WeekStripView: View {
                     }
                 }
                 .padding(.horizontal, 12)
-                .padding(.top, 4)
-                .padding(.bottom, 0)
+                .padding(.vertical, 8)
                 .onAppear {
                     proxy.scrollTo(Calendar.current.startOfDay(for: selectedDate), anchor: .center)
                 }
@@ -51,7 +50,6 @@ struct WeekStripView: View {
 }
 
 struct WeekStripDayView: View {
-    @Environment(\.colorScheme) private var colorScheme
     let date: Date
     let isSelected: Bool
     let isToday: Bool
@@ -59,36 +57,24 @@ struct WeekStripDayView: View {
     let namespace: Namespace.ID
     
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 10) {
             Text(date.formatted(.dateTime.weekday(.abbreviated)))
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
             
             ZStack {
+                if isToday {
+                    // Today ring (subtle pulse-like ring)
+                    Circle()
+                        .stroke(isSelected ? .white.opacity(0.4) : Theme.primaryColor.opacity(0.3), lineWidth: 1.5)
+                        .frame(width: 36, height: 36)
+                }
+
                 if isSelected {
-                    // Outer Ring / Halo
-                    Circle()
-                        .fill(Color.white.opacity(0.2))
-                        .frame(width: 40, height: 40)
-                        .transition(.scale.combined(with: .opacity))
-                    
-                    // Inner Circle
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 32, height: 32)
-                        .shadow(color: .black.opacity(colorScheme == .dark ? 0.05 : 0), radius: colorScheme == .dark ? 2 : 0, x: 0, y: colorScheme == .dark ? 1 : 0)
-                    
                     Text(date.formatted(.dateTime.day()))
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundColor(Theme.primaryColor)
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
                 } else {
-                    if isToday {
-                        // Today ring (subtle pulse-like ring)
-                        Circle()
-                            .stroke(Theme.primaryColor.opacity(0.3), lineWidth: 1.5)
-                            .frame(width: 36, height: 36)
-                    }
-                    
                     Text(date.formatted(.dateTime.day()))
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundColor(.primary)
@@ -102,12 +88,11 @@ struct WeekStripDayView: View {
                 .frame(width: 5, height: 5)
         }
         .frame(width: 54)
-        .padding(.top, 6)
-        .padding(.bottom, 2)
+        .padding(.vertical, 14)
         .background {
             if isSelected {
                 RoundedRectangle(cornerRadius: 32, style: .continuous)
-                    .fill(Theme.primaryGradient)
+                    .fill(Theme.primaryColor)
                     .matchedGeometryEffect(id: "selectionPill", in: namespace)
             }
         }
@@ -117,9 +102,9 @@ struct WeekStripDayView: View {
 #Preview {
     @Previewable @State var selectedDate = Date()
     let week = (-3...3).compactMap { Calendar.current.date(byAdding: .day, value: $0, to: Date()) }
-    return WeekStripView(selectedDate: $selectedDate, weekDates: week) { date in
+    WeekStripView(selectedDate: $selectedDate, weekDates: week) { date in
         Calendar.current.component(.day, from: date) % 2 == 0
     }
     .padding()
-    .background(Color(.systemGroupedBackground))
+    .background(Color.secondary.opacity(0.1))
 }

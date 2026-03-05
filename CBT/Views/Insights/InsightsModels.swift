@@ -17,3 +17,15 @@ struct DailyMoodAverage: Identifiable {
     let date: Date
     let averageScore: Double
 }
+
+struct WeeklyMoodAverage: Identifiable {
+    let id = UUID()
+    let weekStart: Date
+    let averageScore: Double
+}
+
+struct TriggerCount: Identifiable {
+    let id = UUID()
+    let name: String
+    let count: Int
+}

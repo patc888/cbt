@@ -22,64 +22,140 @@ struct FloatingBottomToolbar: View {
     @Binding var selectedTab: FloatingTab
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var isExpanded: Bool = false
+    @State private var showingMoodEntry: Bool = false
+    @State private var selectedMood: MoodColor? = nil
 
     private var visibleTabs: [FloatingTab] {
         FloatingTab.allCases
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 0) {
-                ForEach(visibleTabs, id: \.self) { tab in
+        ZStack(alignment: .bottom) {
+            if isExpanded {
+                Color.black.opacity(0.2)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        if reduceMotion {
+                            isExpanded = false
+                        } else {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                isExpanded = false
+                            }
+                        }
+                    }
+                    .transition(.opacity)
+            }
+
+            HStack(alignment: .bottom, spacing: 12) {
+                HStack(spacing: 0) {
+                    ForEach(visibleTabs, id: \.self) { tab in
+                        Button {
+                            guard selectedTab != tab else { return }
+                            HapticManager.shared.selection()
+                            if reduceMotion {
+                                selectedTab = tab
+                            } else {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    selectedTab = tab
+                                }
+                            }
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: tab.icon)
+                                    .font(.system(size: 16, weight: selectedTab == tab ? .bold : .semibold))
+                                    .environment(\.symbolVariants, selectedTab == tab ? .fill : .none)
+
+                                Text(tab.rawValue)
+                                    .font(.system(size: 10, weight: selectedTab == tab ? .bold : .medium, design: .rounded))
+                                    .lineLimit(1)
+                            }
+                            .foregroundStyle(selectedTab == tab ? Theme.primaryColor : Theme.secondaryText)
+                            .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(tab.rawValue)
+                        .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
+                    }
+                }
+                .frame(height: 64)
+                .background(Theme.cardBackground)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(Theme.isImmersive ? Color.clear : Color.primary.opacity(0.06), lineWidth: 0.5)
+                )
+                .cardShadow(colorScheme: colorScheme)
+
+                VStack(spacing: 12) {
+                    if isExpanded {
+                        ForEach(MoodColor.allCases.reversed(), id: \.self) { mood in
+                            Button {
+                                HapticManager.shared.selection()
+                                selectedMood = mood
+                                showingMoodEntry = true
+                                if reduceMotion {
+                                    isExpanded = false
+                                } else {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        isExpanded = false
+                                    }
+                                }
+                            } label: {
+                                Circle()
+                                    .fill(mood.color)
+                                    .frame(width: 48, height: 48)
+                                    .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
+                            }
+                            .buttonStyle(.plain)
+                            .transition(
+                                reduceMotion ? .opacity :
+                                .asymmetric(
+                                    insertion: .scale.combined(with: .opacity)
+                                        .combined(with: .offset(y: 20)),
+                                    removal: .scale.combined(with: .opacity)
+                                        .combined(with: .offset(y: 20))
+                                )
+                            )
+                            .accessibilityLabel("\(mood.label) mood")
+                        }
+                    }
+
                     Button {
-                        guard selectedTab != tab else { return }
-                        HapticManager.shared.selection()
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            selectedTab = tab
+                        HapticManager.shared.mediumImpact()
+                        if reduceMotion {
+                            isExpanded.toggle()
+                        } else {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                isExpanded.toggle()
+                            }
                         }
                     } label: {
-                        VStack(spacing: 4) {
-                            Image(systemName: tab.icon)
-                                .font(.system(size: 16, weight: selectedTab == tab ? .bold : .semibold))
-                                .environment(\.symbolVariants, selectedTab == tab ? .fill : .none)
+                        ZStack {
+                            Circle()
+                                .fill(Theme.primaryColor)
+                                .frame(width: 56, height: 56)
+                                .shadow(color: Theme.primaryColor.opacity(colorScheme == .dark ? 0.4 : 0), radius: colorScheme == .dark ? 10 : 0, x: 0, y: colorScheme == .dark ? 5 : 0)
 
-                            Text(tab.rawValue)
-                                .font(.system(size: 10, weight: selectedTab == tab ? .bold : .medium, design: .rounded))
-                                .lineLimit(1)
+                            Image(systemName: isExpanded ? "xmark" : "plus")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundStyle(.white)
+                                .rotationEffect(.degrees(isExpanded ? 90 : 0))
                         }
-                        .foregroundStyle(selectedTab == tab ? Theme.primaryColor : Theme.secondaryText)
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(isExpanded ? "Close mood options" : "Quick Add Mood")
+                    .accessibilityHint(isExpanded ? "Collapses the mood selection" : "Expands a list of moods to choose from")
                 }
             }
-            .frame(height: 64)
-            .background(Theme.cardBackground)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(Theme.isImmersive ? Color.clear : Color.primary.opacity(0.06), lineWidth: 0.5)
-            )
-            .cardShadow(colorScheme: colorScheme)
-
-            Button {
-                HapticManager.shared.mediumImpact()
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(Theme.primaryColor)
-                        .frame(width: 56, height: 56)
-                        .shadow(color: Theme.primaryColor.opacity(colorScheme == .dark ? 0.4 : 0), radius: colorScheme == .dark ? 10 : 0, x: 0, y: colorScheme == .dark ? 5 : 0)
-
-                    Image(systemName: "plus")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-            }
-            .buttonStyle(.plain)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
         }
-        .padding(.horizontal, 16)
-        .padding(.bottom, 8)
+        .sheet(isPresented: $showingMoodEntry, onDismiss: { selectedMood = nil }) {
+            MoodCheckinView(initialMood: selectedMood)
+        }
     }
 }

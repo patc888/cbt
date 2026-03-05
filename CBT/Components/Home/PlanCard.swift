@@ -30,21 +30,23 @@ struct PlanCard<CTAContent: View>: View {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(title)
-                            .font(.system(size: 19, weight: .bold, design: .rounded))
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                         Text(subtitle)
-                            .font(.system(size: 14, design: .rounded))
+                            .font(.system(.subheadline, design: .rounded))
                             .foregroundStyle(Theme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     Spacer(minLength: 8)
 
                     if let trailingSymbol {
                         Image(systemName: trailingSymbol)
-                            .font(.system(size: 18, weight: .bold))
+                            .font(.system(.body, weight: .bold))
                             .foregroundStyle(Theme.primaryColor)
                             .frame(width: 36, height: 36)
                             .background(Theme.primaryColor.opacity(0.12), in: Circle())
+                            .accessibilityHidden(true)
                     }
                 }
 
@@ -53,8 +55,11 @@ struct PlanCard<CTAContent: View>: View {
             .padding(Theme.paddingMedium)
             .frame(maxWidth: .infinity, alignment: .leading)
             .cardStyle()
+            .contentShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusMedium))
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Tap to open")
     }
 }
 

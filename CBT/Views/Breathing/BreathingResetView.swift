@@ -65,7 +65,7 @@ struct BreathingResetView: View {
                         prepareSaveSession()
                     } label: {
                         Label("Save to Journal", systemImage: "square.and.pencil")
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .font(.system(.subheadline, design: .rounded).weight(.bold))
                             .foregroundStyle(accent)
                             .padding(.horizontal, DSSpacing.xLarge)
                             .padding(.vertical, DSSpacing.medium)
@@ -73,6 +73,7 @@ struct BreathingResetView: View {
                             .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Save this session to your journal")
                     .padding(.bottom, DSSpacing.medium)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
@@ -151,10 +152,13 @@ struct BreathingResetView: View {
                         .background(Color(.secondarySystemFill))
                         .clipShape(Circle())
                 }
+                .accessibilityLabel("Close")
             }
         }
         .padding(.horizontal, 24)
         .padding(.top, 16)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Breathing Reset. Box breathing session. \(formattedTime(engine.state.totalSecondsRemaining)) remaining.")
     }
 
     // MARK: - Sub-logic

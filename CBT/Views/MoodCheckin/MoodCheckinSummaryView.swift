@@ -26,8 +26,9 @@ struct MoodCheckinSummaryView: View {
                                         .fill(mood.color.opacity(0.15))
                                         .frame(width: 80, height: 80)
                                     
-                                    Text(mood.emoji)
-                                        .font(.system(size: 40))
+                                    Image(systemName: mood.symbol)
+                                        .font(.system(size: 32))
+                                        .foregroundStyle(mood.color)
                                 }
                                 
                                 VStack(alignment: .leading, spacing: 4) {

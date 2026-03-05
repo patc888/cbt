@@ -106,11 +106,11 @@ struct TimelineView: View {
                         .foregroundStyle(Theme.secondaryText)
 
                     Text("No Activity Yet")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .font(.system(.title2, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
 
                     Text("Your timeline will show your mood check-ins, thought records, and completed exercises.")
-                        .font(.system(size: 14, design: .rounded))
+                        .font(.system(.subheadline, design: .rounded))
                         .multilineTextAlignment(.center)
                         .foregroundStyle(Theme.secondaryText)
                         .padding(.horizontal)
@@ -121,7 +121,7 @@ struct TimelineView: View {
                             showingAddMood = true
                         } label: {
                             Label("Log Mood", systemImage: "face.smiling")
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .font(.system(.subheadline, design: .rounded).weight(.bold))
                                 .frame(maxWidth: 220)
                                 .padding(.vertical, 10)
                                 .foregroundStyle(.white)
@@ -135,7 +135,7 @@ struct TimelineView: View {
                             showingAddThought = true
                         } label: {
                             Label("New Thought Record", systemImage: "brain")
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .font(.system(.subheadline, design: .rounded).weight(.bold))
                                 .frame(maxWidth: 220)
                                 .padding(.vertical, 10)
                                 .foregroundStyle(.white)
@@ -169,7 +169,7 @@ struct TimelineView: View {
                             } header: {
                                 HStack {
                                     Text(formatHeaderDate(date))
-                                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                                        .font(.system(.caption, design: .rounded).weight(.bold))
                                         .foregroundColor(Theme.secondaryText)
                                     Spacer()
                                 }
@@ -237,7 +237,7 @@ struct TimelineView: View {
             action()
         } label: {
             Text(title)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(.caption, design: .rounded).weight(.bold))
                 .foregroundColor(color)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)

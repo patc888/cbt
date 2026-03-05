@@ -64,10 +64,13 @@ private struct MoodCircleButton: View {
                     .frame(width: isSelected ? 72 : 56, height: isSelected ? 72 : 56)
                     .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isSelected)
                 
-                Text(mood.emoji)
-                    .font(.system(size: isSelected ? 40 : 28))
+                Image(systemName: mood.symbol)
+                    .font(.system(size: isSelected ? 32 : 24))
+                    .foregroundStyle(mood.color)
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(mood.label)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

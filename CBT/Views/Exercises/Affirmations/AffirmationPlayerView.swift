@@ -9,6 +9,7 @@ struct AffirmationPlayerView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     @State private var allAffirmations: [Affirmation] = AffirmationsLoader.shared.affirmations
     
@@ -48,7 +49,7 @@ struct AffirmationPlayerView: View {
                 // Timer bar (if running)
                 if timerManager.isRunning || timerManager.isPaused {
                     timerBar
-                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                 }
                 
                 // Pager (Interactive Stack)
@@ -70,7 +71,7 @@ struct AffirmationPlayerView: View {
                                     .gesture(
                                         isTop ? DragGesture()
                                             .onChanged { value in
-                                                withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.8)) {
+                                                withAnimation(reduceMotion ? .none : .interactiveSpring(response: 0.3, dampingFraction: 0.8)) {
                                                     dragOffset = value.translation
                                                 }
                                             }
@@ -81,25 +82,28 @@ struct AffirmationPlayerView: View {
                                                     let isRight = value.translation.width > 0
                                                     let isDown = value.translation.height > 0
                                                     
-                                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                                    withAnimation(reduceMotion ? .none : .spring(response: 0.3, dampingFraction: 0.8)) {
                                                         dragOffset.width = isRight ? 500 : (abs(value.translation.width) > threshold ? -500 : 0)
                                                         dragOffset.height = isDown ? 500 : (abs(value.translation.height) > threshold ? -500 : 0)
                                                     }
                                                     
-                                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                                    DispatchQueue.main.asyncAfter(deadline: .now() + (reduceMotion ? 0.05 : 0.2)) {
                                                         dragOffset = .zero
-                                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                                        withAnimation(reduceMotion ? .none : .spring(response: 0.4, dampingFraction: 0.7)) {
                                                             advanceNext()
                                                         }
                                                     }
                                                 } else {
                                                     // Snap back
-                                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                                    withAnimation(reduceMotion ? .none : .spring(response: 0.4, dampingFraction: 0.7)) {
                                                         dragOffset = .zero
                                                     }
                                                 }
                                             } : nil
                                     )
+                                    .accessibilityElement(children: .combine)
+                                    .accessibilityLabel("Affirmation \(currentIndex + 1) of \(currentList.count). \(affirmation.text)")
+                                    .accessibilityHint("Swipe left or right to see next affirmation")
                             }
                         }
                     }
@@ -177,6 +181,7 @@ struct AffirmationPlayerView: View {
                         .foregroundStyle(themeManager?.selectedColor ?? .accentColor)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Resume timer")
             } else {
                 Button {
                     HapticManager.shared.lightImpact()
@@ -187,6 +192,7 @@ struct AffirmationPlayerView: View {
                         .foregroundStyle(themeManager?.selectedColor ?? .accentColor)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Pause timer")
             }
 
             Button {
@@ -198,6 +204,7 @@ struct AffirmationPlayerView: View {
                     .foregroundStyle(DSTheme.destructive)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Stop timer")
         }
         .padding(.horizontal, DSSpacing.large)
         .padding(.vertical, DSSpacing.medium)
@@ -233,6 +240,8 @@ struct AffirmationPlayerView: View {
                         .background(DSTheme.elevatedFill)
                         .clipShape(Circle())
                 }
+                .accessibilityLabel("Session timer")
+                .accessibilityHint("Select a duration to start a timed session")
             }
             
             Text("\(currentIndex + 1) / \(currentList.count)")
@@ -258,6 +267,7 @@ struct AffirmationPlayerView: View {
                     .foregroundStyle(store.isFavorite(id: affirmation.id) ? DSTheme.destructive : DSTheme.secondaryText)
                     .contentTransition(.symbolEffect(.replace))
             }
+            .accessibilityLabel(store.isFavorite(id: affirmation.id) ? "Remove from favorites" : "Add to favorites")
             
             // Copy Button
             Button {
@@ -284,7 +294,7 @@ struct AffirmationPlayerView: View {
     private var primaryControls: some View {
         HStack(spacing: DSSpacing.large) {
             Button {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                withAnimation(reduceMotion ? .none : .spring(response: 0.4, dampingFraction: 0.7)) {
                     advancePrev()
                 }
             } label: {
@@ -292,6 +302,7 @@ struct AffirmationPlayerView: View {
                     .font(.system(size: 44))
                     .foregroundStyle(DSTheme.elevatedFill, themeManager?.selectedColor ?? .accentColor)
             }
+            .accessibilityLabel("Previous affirmation")
             
             Button {
                 if currentList.count > 1 {
@@ -299,7 +310,7 @@ struct AffirmationPlayerView: View {
                     while newIndex == currentIndex {
                         newIndex = Int.random(in: 0..<currentList.count)
                     }
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                    withAnimation(reduceMotion ? .none : .spring(response: 0.4, dampingFraction: 0.7)) {
                         currentIndex = newIndex
                     }
                     triggerSelectionHaptic()
@@ -309,15 +320,16 @@ struct AffirmationPlayerView: View {
                     .font(.system(size: 44))
                     .foregroundStyle(DSTheme.elevatedFill, themeManager?.selectedColor ?? .accentColor)
             }
+            .accessibilityLabel("Shuffle affirmations")
             
             Button {
                 // Simulate swipe off animation
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                withAnimation(reduceMotion ? .none : .spring(response: 0.3, dampingFraction: 0.8)) {
                     dragOffset.width = -500
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + (reduceMotion ? 0.05 : 0.2)) {
                     dragOffset = .zero
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                    withAnimation(reduceMotion ? .none : .spring(response: 0.4, dampingFraction: 0.7)) {
                         advanceNext()
                     }
                 }
@@ -326,6 +338,7 @@ struct AffirmationPlayerView: View {
                     .font(.system(size: 44))
                     .foregroundStyle(DSTheme.elevatedFill, themeManager?.selectedColor ?? .accentColor)
             }
+            .accessibilityLabel("Next affirmation")
         }
     }
     

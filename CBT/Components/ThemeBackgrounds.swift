@@ -6,12 +6,12 @@ struct ThemeCardBackground: View {
     var body: some View {
         if Theme.isImmersive {
             if colorScheme == .light {
-                Color(.systemBackground)
+                Color.white
             } else {
                 Rectangle().fill(.ultraThinMaterial)
             }
         } else {
-            Color(.systemBackground)
+            Color.white.opacity(0.001)
         }
     }
 }

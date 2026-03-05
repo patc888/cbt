@@ -58,7 +58,7 @@ struct MetricCard: View {
         }
         .frame(maxWidth: .infinity, minHeight: 132, alignment: .leading)
         .padding(14)
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Color.primary.opacity(0.05))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }

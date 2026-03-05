@@ -29,6 +29,8 @@ struct MoodCheckinView: View {
                     ProgressBar(value: Double(currentStep + 1) / Double(totalSteps))
                         .padding(.horizontal)
                         .padding(.top, 8)
+                        .accessibilityLabel("Step \(currentStep + 1) of \(totalSteps)")
+                        .accessibilityValue(titleForStep)
                     
                     TabView(selection: $currentStep) {
                         MoodColorSelector(selectedColor: $selectedColor, onNext: nextStep)
@@ -83,6 +85,7 @@ struct MoodCheckinView: View {
                         } label: {
                             Image(systemName: "chevron.left")
                         }
+                        .accessibilityLabel("Previous step")
                     }
                 }
             }
@@ -157,11 +160,12 @@ private struct ProgressBar: View {
                 
                 Capsule()
                     .fill(Theme.primaryColor)
-                    .frame(width: max(0, geometry.size.width * value), height: 6)
+                    .frame(width: max(0, geometry.size.width * CGFloat(value)), height: 6)
                     .animation(.spring(), value: value)
             }
         }
         .frame(height: 6)
+        .accessibilityHidden(true)
     }
 }
 
@@ -182,13 +186,13 @@ enum MoodColor: Int, CaseIterable {
         }
     }
     
-    var emoji: String {
+    var symbol: String {
         switch self {
-        case .veryLow: return "😞"
-        case .low: return "😕"
-        case .neutral: return "😐"
-        case .good: return "🙂"
-        case .great: return "😄"
+        case .veryLow: return "face.frowning.fill"
+        case .low: return "face.dashed"
+        case .neutral: return "face.smiling"
+        case .good: return "face.smiling.fill"
+        case .great: return "star.fill"
         }
     }
     

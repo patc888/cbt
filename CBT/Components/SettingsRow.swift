@@ -29,6 +29,7 @@ struct SettingsRow<Content: View>: View {
                         .foregroundStyle(iconColor)
                         .font(.system(size: 18))
                         .frame(width: 24)
+                        .accessibilityHidden(true)
                 }
             }
             
@@ -49,6 +50,8 @@ struct SettingsRow<Content: View>: View {
             content()
                 .layoutPriority(1)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title)\(subtitle != nil ? ", \(subtitle!)" : "")")
     }
 }
 

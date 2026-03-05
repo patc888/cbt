@@ -13,36 +13,39 @@ struct SecuritySettingsView: View {
     
     var body: some View {
         SettingsSection(title: "Security") {
-            SettingsRow(icon: "faceid", iconColor: themeManager.selectedColor, title: "Lock app with Face ID or passcode") {
-                SegmentedToggle(
-                    isOn: Binding(
-                        get: { settings.appLockEnabled ?? false },
-                        set: { newValue in
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                settings.appLockEnabled = newValue
-                                try? modelContext.save()
+            VStack(spacing: 0) {
+                SettingsRow(icon: "faceid", iconColor: themeManager.primaryColor, title: "Lock app with Face ID or passcode") {
+                    SegmentedToggle(
+                        isOn: Binding(
+                            get: { settings.appLockEnabled ?? false },
+                            set: { newValue in
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    settings.appLockEnabled = newValue
+                                    try? modelContext.save()
+                                }
                             }
-                        }
-                    ),
-                    namespace: appLockNamespace
-                )
-                .frame(width: 110)
-            }
-            
-            Button(action: {
-                HapticManager.shared.lightImpact()
-                showingPrivacyInfo = true
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "info.circle.fill")
-                        .font(.system(size: 14))
-                    Text("Why your data is private")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    Spacer()
+                        ),
+                        namespace: appLockNamespace
+                    )
                 }
-                .foregroundStyle(themeManager.selectedColor)
+                
+                Button(action: {
+                    HapticManager.shared.lightImpact()
+                    showingPrivacyInfo = true
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 14))
+                        Text("Why your data is private")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                        Spacer()
+                    }
+                    .foregroundStyle(themeManager.primaryColor)
+                    .padding(.top, 12)
+                    .padding(.leading, 32)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
-            .buttonStyle(PlainButtonStyle())
         }
         .sheet(isPresented: $showingPrivacyInfo) {
             PrivacyInfoPopup()
@@ -68,7 +71,7 @@ struct PrivacyInfoPopup: View {
             VStack(spacing: 16) {
                 Image(systemName: "hand.raised.shield.fill")
                     .font(.system(size: 44))
-                    .foregroundStyle(themeManager.selectedColor)
+                    .foregroundStyle(themeManager.primaryColor)
                     .padding(.bottom, 8)
                 
                 TopHeadlineView(title: "Your Data is Private")
@@ -100,7 +103,7 @@ struct PrivacyInfoPopup: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(themeManager.selectedColor)
+                    .background(themeManager.primaryColor)
                     .clipShape(Capsule())
             }
             .padding(.horizontal, 24)
@@ -118,7 +121,7 @@ struct PrivacyPoint: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 18))
-                .foregroundStyle(themeManager.selectedColor)
+                .foregroundStyle(themeManager.primaryColor)
                 .frame(width: 24)
             
             Text(text)

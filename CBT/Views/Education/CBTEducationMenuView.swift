@@ -14,15 +14,27 @@ struct CBTEducationMenuView: View {
                         .padding(.top)
                     
                     VStack(spacing: DSSpacing.medium) {
+                        DSSectionHeader(title: "Foundations")
+                            .padding(.horizontal)
+                        
                         EducationMenuRow(title: "What is CBT?", icon: "questionmark.circle", destination: CBTEducationIntroView())
                         EducationMenuRow(title: "The CBT Triangle", icon: "triangle", destination: CBTTriangleView())
-                        EducationMenuRow(title: "Cognitive Distortions", icon: "brain.head.profile", destination: CBTCognitiveDistortionsView())
                         EducationMenuRow(title: "How CBT Works", icon: "gearshape", destination: CBTHowItWorksView())
-                        EducationMenuRow(title: "What Research Shows", icon: "chart.bar", destination: CBTResearchView())
-                        EducationMenuRow(title: "CBT Skills", icon: "hand.raised", destination: CBTSkillsView())
-                        EducationMenuRow(title: "Seeing Patterns", icon: "eye", destination: CBTPatternsView())
+                        
+                        DSSectionHeader(title: "Core Skills")
+                            .padding(.horizontal)
+                        
+                        EducationMenuRow(title: "Mood Check-In", icon: "face.smiling", destination: MoodCheckInEducationView())
+                        EducationMenuRow(title: "Thought Records", icon: "pencil.and.outline", destination: ThoughtRecordEducationView())
+                        EducationMenuRow(title: "Cognitive Distortions", icon: "brain.head.profile", destination: CBTCognitiveDistortionsView())
+                        EducationMenuRow(title: "Evidence for & Against", icon: "magnifyingglass", destination: EvidenceEducationView())
+                        EducationMenuRow(title: "Balanced Perspectives", icon: "scale.3d", destination: BalancedThoughtEducationView())
+                        
+                        DSSectionHeader(title: "Next Steps")
+                            .padding(.horizontal)
+                        
+                        EducationMenuRow(title: "Professional Support", icon: "person.2.fill", destination: ProfessionalHelpEducationView())
                         EducationMenuRow(title: "Flexible Thinking", icon: "arrow.triangle.2.circlepath", destination: CBTFlexibleThinkingView())
-                        EducationMenuRow(title: "Using This App", icon: "iphone", destination: CBTUsingAppView())
                         EducationMenuRow(title: "Further Reading", icon: "book", destination: CBTFurtherReadingView())
                     }
                     .padding(.horizontal)
@@ -31,7 +43,9 @@ struct CBTEducationMenuView: View {
             }
         }
         .navigationTitle("")
+#if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+#endif
     }
 }
 
@@ -65,6 +79,8 @@ struct EducationMenuRow<Destination: View>: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityHint("Opens educational article")
     }
 }
 
@@ -84,7 +100,9 @@ struct CBTEducationLayout<Content: View>: View {
                 mainContent
             }
             .navigationTitle("")
+#if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+#endif
         }
     }
     
@@ -119,6 +137,8 @@ struct BulletPoint: View {
                 .foregroundStyle(DSTheme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(text)
     }
 }
 
@@ -140,5 +160,7 @@ struct EducationChartPlaceholder: View {
                 }
             )
             .padding(.vertical, DSSpacing.small)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Chart: \(title)")
     }
 }

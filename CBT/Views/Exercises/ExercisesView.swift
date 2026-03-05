@@ -7,6 +7,7 @@ struct ExercisesView: View {
 
     @State private var exercises: [Exercise] = []
     @State private var selectedCategory: String = "All"
+    @State private var selectedExercise: Exercise?
 
     var categories: [String] {
         let allCategories = exercises.map { $0.category }
@@ -109,7 +110,7 @@ struct ExercisesView: View {
                             ForEach(groupedExercises, id: \.category) { group in
                                 if !group.exercises.isEmpty {
                                     Text(group.category)
-                                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                                        .font(.system(.headline, design: .rounded).weight(.bold))
                                         .foregroundStyle(Theme.primaryText)
                                         .padding(.top, 2)
 
@@ -144,6 +145,9 @@ struct ExercisesView: View {
         .onAppear {
             exercises = ExerciseLibrary.shared.exercises
         }
+        .sheet(item: $selectedExercise) { exercise in
+            ExerciseDetailView(exercise: exercise)
+        }
     }
 
     private func sectionTitle(_ title: String) -> some View {
@@ -167,10 +171,10 @@ struct ExercisesView: View {
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Affirmations")
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .font(.system(.headline, design: .rounded).weight(.semibold))
                                 .foregroundStyle(Theme.primaryText)
                             Text("A quick mindset reset")
-                                .font(.system(size: 12, weight: .regular, design: .rounded))
+                                .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(Theme.secondaryText)
                         }
                         
@@ -194,10 +198,10 @@ struct ExercisesView: View {
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Distortion Examples")
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .font(.system(.headline, design: .rounded).weight(.semibold))
                                 .foregroundStyle(Theme.primaryText)
                             Text("See examples and balanced reframes")
-                                .font(.system(size: 12, weight: .regular, design: .rounded))
+                                .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(Theme.secondaryText)
                         }
                         
@@ -250,32 +254,35 @@ struct ExercisesView: View {
             selectedCategory = category
             HapticManager.shared.lightImpact()
         } label: {
-            Text(category)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundStyle(selectedCategory == category ? Theme.backgroundColor : Theme.primaryText)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(selectedCategory == category ? Theme.primaryColor : Theme.tertiaryBackground)
-                .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
+                Text(category)
+                    .font(.system(.caption, design: .rounded).weight(.bold))
+                    .foregroundStyle(selectedCategory == category ? Theme.backgroundColor : Theme.primaryText)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(selectedCategory == category ? Theme.primaryColor : Theme.tertiaryBackground)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(selectedCategory == category ? .isSelected : [])
+            .accessibilityLabel("\(category) category filter")
     }
 
     private func exerciseCard(_ exercise: Exercise, showCategory: Bool, isComplete: Bool) -> some View {
-        NavigationLink {
-            ExerciseDetailView(exercise: exercise)
+        Button {
+            selectedExercise = exercise
+            HapticManager.shared.selection()
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(exercise.title)
-                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                             .multilineTextAlignment(.leading)
 
                         if showCategory {
                             Text(exercise.category)
-                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .font(.system(.caption2, design: .rounded).weight(.bold))
                                 .textCase(.uppercase)
                                 .foregroundStyle(Theme.secondaryText)
                         }
@@ -288,19 +295,24 @@ struct ExercisesView: View {
                 }
 
                 Text(exercise.description)
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded).weight(.medium))
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.leading)
-                    .lineLimit(2)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 6) {
                     Image(systemName: "list.bullet")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.system(.caption, weight: .bold))
                     Text("\(exercise.steps.count) steps")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(.system(.caption, design: .rounded).weight(.bold))
                     Spacer()
+                    Image(systemName: "timer")
+                        .font(.system(.caption))
+                    Text("\(exercise.duration)m")
+                        .font(.system(.caption, design: .rounded).weight(.bold))
                     Image(systemName: "arrow.right.circle.fill")
-                        .font(.system(size: 18))
+                        .font(.system(.title3))
                         .foregroundStyle(Theme.primaryColor)
                 }
                 .foregroundStyle(Theme.secondaryText)
@@ -309,5 +321,8 @@ struct ExercisesView: View {
             .cardStyle()
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(exercise.title). \(exercise.description). \(exercise.steps.count) steps, \(exercise.duration) minutes.")
+        .accessibilityHint("Tap to start exercise")
     }
 }

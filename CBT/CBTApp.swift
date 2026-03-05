@@ -3,7 +3,13 @@ import SwiftData
 
 @main
 struct CBTApp: App {
-    var sharedModelContainer: ModelContainer = {
+    // Make the container dynamic so it can be recreated on wipe
+    @State private var sharedModelContainer: ModelContainer = CBTApp.createModelContainer()
+
+    // Key to rebuild the main UI stack
+    @State private var resetID = UUID()
+
+    static func createModelContainer() -> ModelContainer {
         let schema = Schema([
             Item.self,
             UserSettings.self,
@@ -17,9 +23,10 @@ struct CBTApp: App {
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
+            // Re-throw or ignore? A real failure here is critical.
             fatalError("Could not create ModelContainer: \(error)")
         }
-    }()
+    }
 
     @State private var themeManager = ThemeManager()
 
@@ -28,6 +35,12 @@ struct CBTApp: App {
             ContentView()
                 .environment(themeManager)
                 .preferredColorScheme(themeManager.appTheme.colorScheme)
+                .id(resetID)
+                .onReceive(NotificationCenter.default.publisher(for: .didResetData)) { _ in
+                    // In-place recreate the container + views
+                    sharedModelContainer = Self.createModelContainer()
+                    resetID = UUID()
+                }
         }
         .modelContainer(sharedModelContainer)
     }

@@ -66,10 +66,10 @@ struct SubscriptionSettingsView: View {
     private func statusChip(title: String) -> some View {
         Text(title)
             .font(.system(size: 14, weight: .bold, design: .rounded))
-            .foregroundStyle(themeManager.selectedColor)
+            .foregroundStyle(themeManager.primaryColor)
             .padding(.horizontal, 16)
             .padding(.vertical, 6)
-            .background(themeManager.selectedColor.opacity(0.1))
+            .background(themeManager.primaryColor.opacity(0.1))
             .clipShape(Capsule())
     }
 }

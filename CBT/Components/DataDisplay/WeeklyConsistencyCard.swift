@@ -124,11 +124,11 @@ struct WeeklyConsistencyCard: View {
             }
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(Color.secondary.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color(.separator).opacity(0.2), lineWidth: 1)
+                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
         )
         .padding(.horizontal)
         .tint(tintColor)

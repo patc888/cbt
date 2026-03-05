@@ -3,12 +3,11 @@ import SwiftUI
 struct DSTheme {
     static let primaryText = Color.primary
     static let secondaryText = Color.secondary
-    static let tertiaryText = Color(.tertiaryLabel)
-
-    static let background = Color(.systemGroupedBackground)
-    static let cardBackground = Color(.systemBackground)
-    static let elevatedFill = Color(.secondarySystemFill)
-    static let separator = Color(.separator)
+    static let tertiaryText = Color.secondary
+    static let background = Color.secondary.opacity(0.1)
+    static let cardBackground = Color.primary.opacity(0.05)
+    static let elevatedFill = Color.primary.opacity(0.1)
+    static let separator = Color.secondary.opacity(0.2)
 
     static let success = Color.green
     static let warning = Color.orange

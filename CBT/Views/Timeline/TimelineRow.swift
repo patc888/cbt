@@ -6,24 +6,26 @@ struct TimelineRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
             iconView
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .top) {
                     Text(item.title)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundColor(Theme.primaryText)
                         .lineLimit(2)
                     Spacer()
                     Text(item.date.formatted(date: .omitted, time: .shortened))
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(.system(.caption, design: .rounded).weight(.bold))
                         .foregroundColor(Theme.secondaryText)
                 }
 
                 if let subtitle = item.subtitle, !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(.system(size: 14, design: .rounded))
+                        .font(.system(.subheadline, design: .rounded))
                         .foregroundColor(Theme.secondaryText)
-                        .lineLimit(2)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 if !item.chips.isEmpty {
@@ -39,6 +41,8 @@ struct TimelineRow: View {
         }
         .padding(Theme.paddingMedium)
         .cardStyle()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(String(describing: item.kind).capitalized) entry: \(item.title). \(item.subtitle ?? "")")
     }
 
     private var iconName: String {

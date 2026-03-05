@@ -69,10 +69,11 @@ struct DSFeatureModal: View {
                             closeAction?()
                         } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 22, weight: .semibold))
+                                .font(.system(.title3, weight: .semibold))
                                 .foregroundStyle(DSTheme.tertiaryText.opacity(0.7))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Close")
                     }
                 }
 
@@ -81,14 +82,17 @@ struct DSFeatureModal: View {
                         ForEach(bullets) { bullet in
                             HStack(alignment: .top, spacing: DSSpacing.small) {
                                 Image(systemName: bullet.icon)
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(.system(.caption, weight: .bold))
                                     .foregroundStyle(accent)
                                     .frame(width: 18)
+                                    .accessibilityHidden(true)
                                 Text(bullet.text)
                                     .font(DSTypography.body)
                                     .foregroundStyle(DSTheme.primaryText)
+                                    .fixedSize(horizontal: false, vertical: true)
                                 Spacer(minLength: 0)
                             }
+                            .accessibilityElement(children: .combine)
                         }
                     }
                 }

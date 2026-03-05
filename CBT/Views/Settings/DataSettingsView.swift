@@ -41,22 +41,26 @@ struct DataSettingsSection: View {
 
     var body: some View {
         SettingsSection(title: "Data") {
-            Button {
-                HapticManager.shared.lightImpact()
-                showingExportInfo = true
-            } label: {
-                SettingsRow(
-                    icon: "square.and.arrow.up",
-                    iconColor: themeManager.selectedColor,
-                    title: "Export Data",
-                    subtitle: "Create a JSON export"
-                ) {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.secondaryText)
-                }
+            SettingsRow(icon: "icloud.fill", iconColor: themeManager.primaryColor, title: "iCloud Sync", subtitle: "Sync between iPhone, iPad, and Mac") {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(Theme.successGreen)
             }
-            .buttonStyle(.plain)
+            
+            Divider()
+                .padding(.vertical, 8)
+                
+            SettingsRow(
+                icon: "square.and.arrow.up",
+                iconColor: themeManager.primaryColor,
+                title: "Export Data"
+            ) {
+                Button("Export JSON") {
+                    HapticManager.shared.lightImpact()
+                    showingExportInfo = true
+                }
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundColor(themeManager.primaryColor)
+            }
 
             Button(role: .destructive) {
                 HapticManager.shared.mediumImpact()
@@ -90,7 +94,7 @@ struct DataSettingsSection: View {
 
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This permanently removes your CBT records from this device.")
+            Text("This permanently removes your records from this device.")
         }
         .alert("Final Confirmation", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) {
@@ -119,7 +123,7 @@ struct DataSettingsSection: View {
             FeatureModalPresenter {
                 DSFeatureModal(
                     title: "Export Your Data",
-                    subtitle: "Create a JSON file from your local CBT entries that you can save or share.",
+                    subtitle: "Create a JSON file from your local entries that you can save or share.",
                     bullets: [
                         DSBullet(icon: "checkmark.circle", text: "Includes moods, thought records, and exercises"),
                         DSBullet(icon: "lock.fill", text: "Generated locally on your device"),

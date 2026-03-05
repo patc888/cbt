@@ -45,6 +45,7 @@ struct NewThoughtRecordFlowView: View {
                     ProgressView(value: Double(currentStep + 1), total: Double(totalSteps))
                         .tint(Theme.primaryColor)
                         .padding()
+                        .accessibilityLabel("Step \(currentStep + 1) of \(totalSteps)")
                     
                     TabView(selection: $currentStep) {
                         step0View.tag(0)
@@ -66,6 +67,7 @@ struct NewThoughtRecordFlowView: View {
                             }
                             .foregroundColor(Theme.primaryColor)
                             .padding()
+                            .accessibilityLabel("Go back to previous step")
                         } else {
                             Spacer().frame(width: 60)
                         }
@@ -85,6 +87,7 @@ struct NewThoughtRecordFlowView: View {
                             .background(Theme.primaryColor)
                             .clipShape(Capsule())
                             .padding()
+                            .accessibilityLabel("Go to next step")
                         } else {
                             Button("Save") {
                                 saveRecord()
@@ -132,9 +135,15 @@ struct NewThoughtRecordFlowView: View {
                 .padding(.vertical, 4)
                 
                 VStack(alignment: .leading) {
-                    Text("Automatic Thought")
-                        .font(.headline)
-                        .foregroundStyle(Theme.primaryText)
+                    HStack {
+                        Text("Automatic Thought")
+                            .font(.headline)
+                            .foregroundStyle(Theme.primaryText)
+                        ContextualHelpButton(
+                            title: "Automatic Thoughts",
+                            message: "These are quick, reflexive thoughts that pop into your mind in response to a situation. They often feel like facts, but they can be biased or unhelpful."
+                        )
+                    }
                     Text("What went through your mind right before you felt this way?")
                         .font(.caption)
                         .foregroundStyle(Theme.secondaryText)
@@ -158,10 +167,12 @@ struct NewThoughtRecordFlowView: View {
                     HStack {
                         TextField("e.g. Anxious, Sad...", text: $currentEmotion)
                             .onSubmit { addEmotion() }
+                            .accessibilityLabel("New emotion")
                         Button(action: addEmotion) {
                             Image(systemName: "plus.circle.fill")
                                 .foregroundColor(Theme.primaryColor)
                         }
+                        .accessibilityLabel("Add emotion")
                     }
                     
                     if !emotions.isEmpty {
@@ -193,6 +204,8 @@ struct NewThoughtRecordFlowView: View {
                         .font(.headline)
                         .foregroundStyle(Theme.primaryText)
                     Slider(value: $intensityBefore, in: 0...100, step: 1)
+                        .accessibilityLabel("Intensity before")
+                        .accessibilityValue("\(Int(intensityBefore)) percent")
                     Text("Intensity: \(Int(intensityBefore))")
                         .font(.caption)
                         .foregroundStyle(Theme.secondaryText)
@@ -223,9 +236,15 @@ struct NewThoughtRecordFlowView: View {
         Form {
             Section(header: Text("Cognitive Distortions")) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Any thinking traps?")
-                        .font(.headline)
-                        .foregroundStyle(Theme.primaryText)
+                    HStack {
+                        Text("Any thinking traps?")
+                            .font(.headline)
+                            .foregroundStyle(Theme.primaryText)
+                        ContextualHelpButton(
+                            title: "Cognitive Distortions",
+                            message: "Thinking traps are biased ways of looking at situations. Common ones include 'Catastrophizing' (expecting the worst) or 'Mind Reading' (assuming you know what others think)."
+                        )
+                    }
                     Text("e.g. All-or-nothing, Mind Reading, Catastrophizing")
                         .font(.caption)
                         .foregroundStyle(Theme.secondaryText)
@@ -233,10 +252,12 @@ struct NewThoughtRecordFlowView: View {
                     HStack {
                         TextField("Add distortion...", text: $currentDistortion)
                             .onSubmit { addDistortion() }
+                            .accessibilityLabel("New distortion")
                         Button(action: addDistortion) {
                             Image(systemName: "plus.circle.fill")
                                 .foregroundColor(Theme.primaryColor)
                         }
+                        .accessibilityLabel("Add distortion")
                     }
                     
                     if !distortions.isEmpty {
@@ -271,9 +292,15 @@ struct NewThoughtRecordFlowView: View {
         Form {
             Section(header: Text("Evidence")) {
                 VStack(alignment: .leading) {
-                    Text("Evidence For")
-                        .font(.headline)
-                        .foregroundStyle(Theme.primaryText)
+                    HStack {
+                        Text("Evidence For")
+                            .font(.headline)
+                            .foregroundStyle(Theme.primaryText)
+                        ContextualHelpButton(
+                            title: "Evidence For",
+                            message: "List objective facts that support your automatic thought. Avoid including interpretations or feelings; stick to what a video camera would record."
+                        )
+                    }
                     Text("What facts support your automatic thought?")
                         .font(.caption)
                         .foregroundStyle(Theme.secondaryText)
@@ -283,9 +310,15 @@ struct NewThoughtRecordFlowView: View {
                 .padding(.vertical, 4)
                 
                 VStack(alignment: .leading) {
-                    Text("Evidence Against")
-                        .font(.headline)
-                        .foregroundStyle(Theme.primaryText)
+                    HStack {
+                        Text("Evidence Against")
+                            .font(.headline)
+                            .foregroundStyle(Theme.primaryText)
+                        ContextualHelpButton(
+                            title: "Evidence Against",
+                            message: "List facts that contradict or weaken your automatic thought. Look for exceptions or other pieces of information you might be overlooking."
+                        )
+                    }
                     Text("What facts do not support your automatic thought?")
                         .font(.caption)
                         .foregroundStyle(Theme.secondaryText)
@@ -302,9 +335,15 @@ struct NewThoughtRecordFlowView: View {
         Form {
             Section(header: Text("Balanced Thought")) {
                 VStack(alignment: .leading) {
-                    Text("New Perspective")
-                        .font(.headline)
-                        .foregroundStyle(Theme.primaryText)
+                    HStack {
+                        Text("New Perspective")
+                            .font(.headline)
+                            .foregroundStyle(Theme.primaryText)
+                        ContextualHelpButton(
+                            title: "Balanced Thoughts",
+                            message: "A balanced thought takes both sides of the evidence into account. It's not just 'positive thinking'—it's more realistic and grounded in facts."
+                        )
+                    }
                     Text("Based on the evidence, what is a more balanced way to look at this?")
                         .font(.caption)
                         .foregroundStyle(Theme.secondaryText)
@@ -318,6 +357,8 @@ struct NewThoughtRecordFlowView: View {
                         .font(.headline)
                         .foregroundStyle(Theme.primaryText)
                     Slider(value: $intensityAfter, in: 0...100, step: 1)
+                        .accessibilityLabel("Intensity after")
+                        .accessibilityValue("\(Int(intensityAfter)) percent")
                     Text("Intensity: \(Int(intensityAfter))")
                         .font(.caption)
                         .foregroundStyle(Theme.secondaryText)

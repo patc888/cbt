@@ -53,6 +53,9 @@ struct EmotionSelectorView: View {
                                 .scaleEffect(isSelected ? 1.05 : 1.0)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(emotion)
+                        .accessibilityAddTraits(isSelected ? .isSelected : [])
+                        .accessibilityHint(isSelected ? "Removes \(emotion)" : "Adds \(emotion)")
                     }
                 }
                 .padding(.horizontal, DSSpacing.large)

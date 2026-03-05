@@ -1,0 +1,7 @@
+build/
+build-sim/
+*.log
+build_output.txt
+*.icns
+icon.iconset/
+.DS_Store

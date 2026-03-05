@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DSPrimaryButtonStyle: ButtonStyle {
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -12,12 +13,13 @@ struct DSPrimaryButtonStyle: ButtonStyle {
             .background(themeManager?.selectedColor ?? .accentColor)
             .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous))
             .opacity(configuration.isPressed ? 0.85 : 1)
-            .scaleEffect(configuration.isPressed ? 0.99 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.99 : 1)
     }
 }
 
 struct DSSecondaryButtonStyle: ButtonStyle {
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
         let accent = themeManager?.selectedColor ?? .accentColor
@@ -29,7 +31,7 @@ struct DSSecondaryButtonStyle: ButtonStyle {
             .background(accent.opacity(0.12))
             .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous))
             .opacity(configuration.isPressed ? 0.85 : 1)
-            .scaleEffect(configuration.isPressed ? 0.99 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.99 : 1)
     }
 }
 

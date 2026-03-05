@@ -1,11 +1,11 @@
 import SwiftUI
 
 enum DSTypography {
-    static let pageTitle = Font.system(size: 34, weight: .bold, design: .rounded)
-    static let sectionTitle = Font.system(size: 26, weight: .bold, design: .rounded)
-    static let cardTitle = Font.system(size: 11, weight: .heavy, design: .rounded)
-    static let metricValue = Font.system(size: 24, weight: .bold, design: .rounded)
-    static let body = Font.system(size: 16, weight: .regular, design: .rounded)
-    static let caption = Font.system(size: 12, weight: .semibold, design: .rounded)
-    static let button = Font.system(size: 17, weight: .semibold, design: .rounded)
+    static let pageTitle = Font.system(.largeTitle, design: .rounded).weight(.bold)
+    static let sectionTitle = Font.system(.title, design: .rounded).weight(.bold)
+    static let cardTitle = Font.system(.caption, design: .rounded).weight(.heavy)
+    static let metricValue = Font.system(.title2, design: .rounded).weight(.bold)
+    static let body = Font.system(.body, design: .rounded)
+    static let caption = Font.system(.caption, design: .rounded).weight(.semibold)
+    static let button = Font.system(.headline, design: .rounded)
 }
