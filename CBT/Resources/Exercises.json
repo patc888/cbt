@@ -1,0 +1,2518 @@
+[
+  {
+    "id": "exercise_001",
+    "title": "Identify the Stressor",
+    "category": "Thought Reframing",
+    "duration": 5,
+    "description": "Notice what situation triggers your stressful thought.",
+    "steps": [
+      "Write down the specific situation.",
+      "Notice how your body feels.",
+      "Write the literal thought as if it was a quote."
+    ]
+  },
+  {
+    "id": "exercise_002",
+    "title": "Spotting All-or-Nothing",
+    "category": "Cognitive Distortions",
+    "duration": 6,
+    "description": "Find shades of grey in your thinking.",
+    "steps": [
+      "Write your absolute thought (e.g. ruined, always, never).",
+      "List one exception to this rule.",
+      "Rewrite the thought to include 'sometimes' or 'partially'."
+    ]
+  },
+  {
+    "id": "exercise_003",
+    "title": "5-4-3-2-1 Technique",
+    "category": "Grounding",
+    "duration": 7,
+    "description": "Use your senses to anchor yourself in the present.",
+    "steps": [
+      "Acknowledge 5 things you see.",
+      "Acknowledge 4 things you can touch.",
+      "Acknowledge 3 things you hear.",
+      "Acknowledge 2 things you smell.",
+      "Acknowledge 1 thing you can taste."
+    ]
+  },
+  {
+    "id": "exercise_004",
+    "title": "Box Breathing",
+    "category": "Anxiety Reset",
+    "duration": 8,
+    "description": "Calm your nervous system with measured breaths.",
+    "steps": [
+      "Breathe in for 4 seconds.",
+      "Hold for 4 seconds.",
+      "Exhale for 4 seconds.",
+      "Hold empty for 4 seconds.",
+      "Repeat 5 times."
+    ]
+  },
+  {
+    "id": "exercise_005",
+    "title": "Three Good Things",
+    "category": "Gratitude",
+    "duration": 9,
+    "description": "Shift focus to positives from today.",
+    "steps": [
+      "Write down one good thing.",
+      "Write down a second good thing.",
+      "Write down a third good thing.",
+      "Reflect on how these make you feel."
+    ]
+  },
+  {
+    "id": "exercise_006",
+    "title": "Inner Friend",
+    "category": "Self Compassion",
+    "duration": 10,
+    "description": "Talk to yourself as you would a friend.",
+    "steps": [
+      "Write down your self-critical thought.",
+      "Imagine a dear friend having this thought.",
+      "Write down what you would tell them.",
+      "Read those words back to yourself."
+    ]
+  },
+  {
+    "id": "exercise_007",
+    "title": "Do One Small Thing",
+    "category": "Behavioral Activation",
+    "duration": 11,
+    "description": "Break the cycle of avoidance.",
+    "steps": [
+      "Pick a task that takes under 5 minutes.",
+      "Set a timer for 5 minutes.",
+      "Do the task immediately.",
+      "Check in on your mood afterwards."
+    ]
+  },
+  {
+    "id": "exercise_008",
+    "title": "Imaginal Exposure",
+    "category": "Exposure Practice",
+    "duration": 12,
+    "description": "Visualize a mildly anxiety-provoking scenario.",
+    "steps": [
+      "Sit somewhere safe.",
+      "Close your eyes and imagine the scenario.",
+      "Rate your anxiety 1-10.",
+      "Breathe until it drops by 2 points."
+    ]
+  },
+  {
+    "id": "exercise_009",
+    "title": "Challenge the Thought",
+    "category": "Thought Reframing",
+    "duration": 13,
+    "description": "Examine a recurring negative belief.",
+    "steps": [
+      "Identify the negative belief.",
+      "Ask: Is it 100% true?",
+      "Ask: What would I tell a friend?",
+      "Reframe the thought."
+    ]
+  },
+  {
+    "id": "exercise_010",
+    "title": "Mind Reading Check",
+    "category": "Cognitive Distortions",
+    "duration": 14,
+    "description": "Stop assuming you know what others think.",
+    "steps": [
+      "Notice who you are mind-reading.",
+      "List alternative reasons for their behavior.",
+      "Remind yourself you cannot read minds."
+    ]
+  },
+  {
+    "id": "exercise_011",
+    "title": "Color Focus",
+    "category": "Grounding",
+    "duration": 5,
+    "description": "Ground yourself visually by finding colors.",
+    "steps": [
+      "Pick a color.",
+      "Find 5 objects of that color in the room.",
+      "Describe each object out loud.",
+      "Pick another color and repeat."
+    ]
+  },
+  {
+    "id": "exercise_012",
+    "title": "Progressive Relaxation",
+    "category": "Anxiety Reset",
+    "duration": 6,
+    "description": "Release tension from your muscles.",
+    "steps": [
+      "Tense your toes for 5 seconds.",
+      "Release and notice the relaxation.",
+      "Move up to your calves, tense and release.",
+      "Continue moving up your body to your face."
+    ]
+  },
+  {
+    "id": "exercise_013",
+    "title": "Appreciation Letter",
+    "category": "Gratitude",
+    "duration": 7,
+    "description": "Express gratitude mentally or in writing.",
+    "steps": [
+      "Think of someone who helped you.",
+      "Write a short paragraph of what they did.",
+      "Notice any warm feelings in your chest."
+    ]
+  },
+  {
+    "id": "exercise_014",
+    "title": "Forgiveness Practice",
+    "category": "Self Compassion",
+    "duration": 8,
+    "description": "Let go of a small mistake.",
+    "steps": [
+      "Acknowledge the mistake without judgment.",
+      "Remind yourself everyone makes mistakes.",
+      "Take a deep breath and visualize letting it go."
+    ]
+  },
+  {
+    "id": "exercise_015",
+    "title": "Pleasant Activity Scheduling",
+    "category": "Behavioral Activation",
+    "duration": 9,
+    "description": "Plan a small enjoyment.",
+    "steps": [
+      "Brainstorm 3 simple things you enjoy.",
+      "Pick one to do today.",
+      "Schedule an exact time.",
+      "Do it."
+    ]
+  },
+  {
+    "id": "exercise_016",
+    "title": "Worry Time",
+    "category": "Exposure Practice",
+    "duration": 10,
+    "description": "Confine worry to a specific block of time.",
+    "steps": [
+      "Schedule 15 minutes of 'worry time'.",
+      "During the day, jot down worries and postpone them.",
+      "When the time comes, review the list.",
+      "When time is up, stop and do another activity."
+    ]
+  },
+  {
+    "id": "exercise_017",
+    "title": "Examine the Evidence",
+    "category": "Thought Reframing",
+    "duration": 11,
+    "description": "Look at facts objectively.",
+    "steps": [
+      "Write down the belief.",
+      "List evidence that supports it.",
+      "List evidence against it.",
+      "Incorporate both into a balanced thought."
+    ]
+  },
+  {
+    "id": "exercise_018",
+    "title": "Label Reducer",
+    "category": "Cognitive Distortions",
+    "duration": 12,
+    "description": "Change global labels to specific behaviors.",
+    "steps": [
+      "Catch yourself calling yourself a name.",
+      "Identify the specific behavior you regret.",
+      "Acknowledge that one behavior doesn't define you."
+    ]
+  },
+  {
+    "id": "exercise_019",
+    "title": "Texture Walk",
+    "category": "Grounding",
+    "duration": 13,
+    "description": "Focus on the physical sensation of touch.",
+    "steps": [
+      "Find an object near you.",
+      "Feel its texture with your fingertips.",
+      "Describe the texture (smooth, rough, cold).",
+      "Find a second object and compare."
+    ]
+  },
+  {
+    "id": "exercise_020",
+    "title": "Shoulder Drop",
+    "category": "Anxiety Reset",
+    "duration": 14,
+    "description": "Release physical tension held in your shoulders.",
+    "steps": [
+      "Notice if your shoulders are raised.",
+      "Take a deep breath in.",
+      "Exhale forcibly while dropping shoulders.",
+      "Roll them back twice."
+    ]
+  },
+  {
+    "id": "exercise_021",
+    "title": "Silver Linings",
+    "category": "Gratitude",
+    "duration": 5,
+    "description": "Find one positive in a neutral or negative situation.",
+    "steps": [
+      "Pick a minor annoyance from today.",
+      "Find one small silver lining in it.",
+      "Focus on that silver lining for 30 seconds."
+    ]
+  },
+  {
+    "id": "exercise_022",
+    "title": "Soothing Touch",
+    "category": "Self Compassion",
+    "duration": 6,
+    "description": "Provide yourself with physical comfort.",
+    "steps": [
+      "Place a hand over your heart or on your arm.",
+      "Feel the warmth of your hand.",
+      "Take three deep, slow breaths."
+    ]
+  },
+  {
+    "id": "exercise_023",
+    "title": "Routine Anchor",
+    "category": "Behavioral Activation",
+    "duration": 7,
+    "description": "Attach a new habit to an existing one.",
+    "steps": [
+      "Identify something you do every day (like brushing teeth).",
+      "Choose a 2-minute positive action.",
+      "Do them together."
+    ]
+  },
+  {
+    "id": "exercise_024",
+    "title": "Decatastrophize a Fear",
+    "category": "Exposure Practice",
+    "duration": 8,
+    "description": "Examine the feared outcome.",
+    "steps": [
+      "Write down what you fear will happen.",
+      "Write down how you would survive it.",
+      "Write down a more realistic outcome."
+    ]
+  },
+  {
+    "id": "exercise_025",
+    "title": "De-catastrophizing",
+    "category": "Thought Reframing",
+    "duration": 9,
+    "description": "Manage worst-case scenario thinking.",
+    "steps": [
+      "Identify the worst-case scenario.",
+      "Estimate how likely it really is.",
+      "Imagine how you would cope if it happened.",
+      "Identify the best-case scenario."
+    ]
+  },
+  {
+    "id": "exercise_026",
+    "title": "Should Statements",
+    "category": "Cognitive Distortions",
+    "duration": 10,
+    "description": "Replace 'should' with 'would like'.",
+    "steps": [
+      "Write down a 'should' statement.",
+      "Change it to 'I would prefer' or 'It would be nice if'.",
+      "Notice how the pressure changes."
+    ]
+  },
+  {
+    "id": "exercise_027",
+    "title": "Temperature Notice",
+    "category": "Grounding",
+    "duration": 11,
+    "description": "Use temperature to ground your body.",
+    "steps": [
+      "Hold an ice cube or something cold.",
+      "Focus entirely on the cold sensation.",
+      "Notice how your hand feels as it warns up."
+    ]
+  },
+  {
+    "id": "exercise_028",
+    "title": "4-7-8 Breathing",
+    "category": "Anxiety Reset",
+    "duration": 12,
+    "description": "A relaxing breath pattern.",
+    "steps": [
+      "Inhale quietly through your nose for 4 seconds.",
+      "Hold the breath for 7 seconds.",
+      "Exhale completely through your mouth for 8 seconds.",
+      "Repeat 4 times."
+    ]
+  },
+  {
+    "id": "exercise_029",
+    "title": "Future Gratitude",
+    "category": "Gratitude",
+    "duration": 13,
+    "description": "Look forward to something positive.",
+    "steps": [
+      "Think of one thing happening tomorrow to enjoy.",
+      "Visualize it.",
+      "Write down why you are looking forward to it."
+    ]
+  },
+  {
+    "id": "exercise_030",
+    "title": "Shared Humanity",
+    "category": "Self Compassion",
+    "duration": 14,
+    "description": "Remember you are not alone.",
+    "steps": [
+      "Notice a feeling of inadequacy.",
+      "Remind yourself that thousands feel this right now.",
+      "Acknowledge that struggling is part of being human."
+    ]
+  },
+  {
+    "id": "exercise_031",
+    "title": "Mastery Task",
+    "category": "Behavioral Activation",
+    "duration": 5,
+    "description": "Do something that gives a sense of accomplishment.",
+    "steps": [
+      "Pick a task you've been putting off.",
+      "Break it into an incredibly small first step.",
+      "Complete just that first step."
+    ]
+  },
+  {
+    "id": "exercise_032",
+    "title": "Safety Behavior Drop",
+    "category": "Exposure Practice",
+    "duration": 6,
+    "description": "Gradually remove crutches.",
+    "steps": [
+      "Identify something you do just to feel 'safe'.",
+      "Try doing the activity without it once.",
+      "Notice that you survived without the safety behavior."
+    ]
+  },
+  {
+    "id": "exercise_033",
+    "title": "Identify the Stressor 2",
+    "category": "Thought Reframing",
+    "duration": 7,
+    "description": "Notice what situation triggers your stressful thought.",
+    "steps": [
+      "Write down the specific situation.",
+      "Notice how your body feels.",
+      "Write the literal thought as if it was a quote."
+    ]
+  },
+  {
+    "id": "exercise_034",
+    "title": "Spotting All-or-Nothing 2",
+    "category": "Cognitive Distortions",
+    "duration": 8,
+    "description": "Find shades of grey in your thinking.",
+    "steps": [
+      "Write your absolute thought (e.g. ruined, always, never).",
+      "List one exception to this rule.",
+      "Rewrite the thought to include 'sometimes' or 'partially'."
+    ]
+  },
+  {
+    "id": "exercise_035",
+    "title": "5-4-3-2-1 Technique 2",
+    "category": "Grounding",
+    "duration": 9,
+    "description": "Use your senses to anchor yourself in the present.",
+    "steps": [
+      "Acknowledge 5 things you see.",
+      "Acknowledge 4 things you can touch.",
+      "Acknowledge 3 things you hear.",
+      "Acknowledge 2 things you smell.",
+      "Acknowledge 1 thing you can taste."
+    ]
+  },
+  {
+    "id": "exercise_036",
+    "title": "Box Breathing 2",
+    "category": "Anxiety Reset",
+    "duration": 10,
+    "description": "Calm your nervous system with measured breaths.",
+    "steps": [
+      "Breathe in for 4 seconds.",
+      "Hold for 4 seconds.",
+      "Exhale for 4 seconds.",
+      "Hold empty for 4 seconds.",
+      "Repeat 5 times."
+    ]
+  },
+  {
+    "id": "exercise_037",
+    "title": "Three Good Things 2",
+    "category": "Gratitude",
+    "duration": 11,
+    "description": "Shift focus to positives from today.",
+    "steps": [
+      "Write down one good thing.",
+      "Write down a second good thing.",
+      "Write down a third good thing.",
+      "Reflect on how these make you feel."
+    ]
+  },
+  {
+    "id": "exercise_038",
+    "title": "Inner Friend 2",
+    "category": "Self Compassion",
+    "duration": 12,
+    "description": "Talk to yourself as you would a friend.",
+    "steps": [
+      "Write down your self-critical thought.",
+      "Imagine a dear friend having this thought.",
+      "Write down what you would tell them.",
+      "Read those words back to yourself."
+    ]
+  },
+  {
+    "id": "exercise_039",
+    "title": "Do One Small Thing 2",
+    "category": "Behavioral Activation",
+    "duration": 13,
+    "description": "Break the cycle of avoidance.",
+    "steps": [
+      "Pick a task that takes under 5 minutes.",
+      "Set a timer for 5 minutes.",
+      "Do the task immediately.",
+      "Check in on your mood afterwards."
+    ]
+  },
+  {
+    "id": "exercise_040",
+    "title": "Imaginal Exposure 2",
+    "category": "Exposure Practice",
+    "duration": 14,
+    "description": "Visualize a mildly anxiety-provoking scenario.",
+    "steps": [
+      "Sit somewhere safe.",
+      "Close your eyes and imagine the scenario.",
+      "Rate your anxiety 1-10.",
+      "Breathe until it drops by 2 points."
+    ]
+  },
+  {
+    "id": "exercise_041",
+    "title": "Challenge the Thought 2",
+    "category": "Thought Reframing",
+    "duration": 5,
+    "description": "Examine a recurring negative belief.",
+    "steps": [
+      "Identify the negative belief.",
+      "Ask: Is it 100% true?",
+      "Ask: What would I tell a friend?",
+      "Reframe the thought."
+    ]
+  },
+  {
+    "id": "exercise_042",
+    "title": "Mind Reading Check 2",
+    "category": "Cognitive Distortions",
+    "duration": 6,
+    "description": "Stop assuming you know what others think.",
+    "steps": [
+      "Notice who you are mind-reading.",
+      "List alternative reasons for their behavior.",
+      "Remind yourself you cannot read minds."
+    ]
+  },
+  {
+    "id": "exercise_043",
+    "title": "Color Focus 2",
+    "category": "Grounding",
+    "duration": 7,
+    "description": "Ground yourself visually by finding colors.",
+    "steps": [
+      "Pick a color.",
+      "Find 5 objects of that color in the room.",
+      "Describe each object out loud.",
+      "Pick another color and repeat."
+    ]
+  },
+  {
+    "id": "exercise_044",
+    "title": "Progressive Relaxation 2",
+    "category": "Anxiety Reset",
+    "duration": 8,
+    "description": "Release tension from your muscles.",
+    "steps": [
+      "Tense your toes for 5 seconds.",
+      "Release and notice the relaxation.",
+      "Move up to your calves, tense and release.",
+      "Continue moving up your body to your face."
+    ]
+  },
+  {
+    "id": "exercise_045",
+    "title": "Appreciation Letter 2",
+    "category": "Gratitude",
+    "duration": 9,
+    "description": "Express gratitude mentally or in writing.",
+    "steps": [
+      "Think of someone who helped you.",
+      "Write a short paragraph of what they did.",
+      "Notice any warm feelings in your chest."
+    ]
+  },
+  {
+    "id": "exercise_046",
+    "title": "Forgiveness Practice 2",
+    "category": "Self Compassion",
+    "duration": 10,
+    "description": "Let go of a small mistake.",
+    "steps": [
+      "Acknowledge the mistake without judgment.",
+      "Remind yourself everyone makes mistakes.",
+      "Take a deep breath and visualize letting it go."
+    ]
+  },
+  {
+    "id": "exercise_047",
+    "title": "Pleasant Activity Scheduling 2",
+    "category": "Behavioral Activation",
+    "duration": 11,
+    "description": "Plan a small enjoyment.",
+    "steps": [
+      "Brainstorm 3 simple things you enjoy.",
+      "Pick one to do today.",
+      "Schedule an exact time.",
+      "Do it."
+    ]
+  },
+  {
+    "id": "exercise_048",
+    "title": "Worry Time 2",
+    "category": "Exposure Practice",
+    "duration": 12,
+    "description": "Confine worry to a specific block of time.",
+    "steps": [
+      "Schedule 15 minutes of 'worry time'.",
+      "During the day, jot down worries and postpone them.",
+      "When the time comes, review the list.",
+      "When time is up, stop and do another activity."
+    ]
+  },
+  {
+    "id": "exercise_049",
+    "title": "Examine the Evidence 2",
+    "category": "Thought Reframing",
+    "duration": 13,
+    "description": "Look at facts objectively.",
+    "steps": [
+      "Write down the belief.",
+      "List evidence that supports it.",
+      "List evidence against it.",
+      "Incorporate both into a balanced thought."
+    ]
+  },
+  {
+    "id": "exercise_050",
+    "title": "Label Reducer 2",
+    "category": "Cognitive Distortions",
+    "duration": 14,
+    "description": "Change global labels to specific behaviors.",
+    "steps": [
+      "Catch yourself calling yourself a name.",
+      "Identify the specific behavior you regret.",
+      "Acknowledge that one behavior doesn't define you."
+    ]
+  },
+  {
+    "id": "exercise_051",
+    "title": "Texture Walk 2",
+    "category": "Grounding",
+    "duration": 5,
+    "description": "Focus on the physical sensation of touch.",
+    "steps": [
+      "Find an object near you.",
+      "Feel its texture with your fingertips.",
+      "Describe the texture (smooth, rough, cold).",
+      "Find a second object and compare."
+    ]
+  },
+  {
+    "id": "exercise_052",
+    "title": "Shoulder Drop 2",
+    "category": "Anxiety Reset",
+    "duration": 6,
+    "description": "Release physical tension held in your shoulders.",
+    "steps": [
+      "Notice if your shoulders are raised.",
+      "Take a deep breath in.",
+      "Exhale forcibly while dropping shoulders.",
+      "Roll them back twice."
+    ]
+  },
+  {
+    "id": "exercise_053",
+    "title": "Silver Linings 2",
+    "category": "Gratitude",
+    "duration": 7,
+    "description": "Find one positive in a neutral or negative situation.",
+    "steps": [
+      "Pick a minor annoyance from today.",
+      "Find one small silver lining in it.",
+      "Focus on that silver lining for 30 seconds."
+    ]
+  },
+  {
+    "id": "exercise_054",
+    "title": "Soothing Touch 2",
+    "category": "Self Compassion",
+    "duration": 8,
+    "description": "Provide yourself with physical comfort.",
+    "steps": [
+      "Place a hand over your heart or on your arm.",
+      "Feel the warmth of your hand.",
+      "Take three deep, slow breaths."
+    ]
+  },
+  {
+    "id": "exercise_055",
+    "title": "Routine Anchor 2",
+    "category": "Behavioral Activation",
+    "duration": 9,
+    "description": "Attach a new habit to an existing one.",
+    "steps": [
+      "Identify something you do every day (like brushing teeth).",
+      "Choose a 2-minute positive action.",
+      "Do them together."
+    ]
+  },
+  {
+    "id": "exercise_056",
+    "title": "Decatastrophize a Fear 2",
+    "category": "Exposure Practice",
+    "duration": 10,
+    "description": "Examine the feared outcome.",
+    "steps": [
+      "Write down what you fear will happen.",
+      "Write down how you would survive it.",
+      "Write down a more realistic outcome."
+    ]
+  },
+  {
+    "id": "exercise_057",
+    "title": "De-catastrophizing 2",
+    "category": "Thought Reframing",
+    "duration": 11,
+    "description": "Manage worst-case scenario thinking.",
+    "steps": [
+      "Identify the worst-case scenario.",
+      "Estimate how likely it really is.",
+      "Imagine how you would cope if it happened.",
+      "Identify the best-case scenario."
+    ]
+  },
+  {
+    "id": "exercise_058",
+    "title": "Should Statements 2",
+    "category": "Cognitive Distortions",
+    "duration": 12,
+    "description": "Replace 'should' with 'would like'.",
+    "steps": [
+      "Write down a 'should' statement.",
+      "Change it to 'I would prefer' or 'It would be nice if'.",
+      "Notice how the pressure changes."
+    ]
+  },
+  {
+    "id": "exercise_059",
+    "title": "Temperature Notice 2",
+    "category": "Grounding",
+    "duration": 13,
+    "description": "Use temperature to ground your body.",
+    "steps": [
+      "Hold an ice cube or something cold.",
+      "Focus entirely on the cold sensation.",
+      "Notice how your hand feels as it warns up."
+    ]
+  },
+  {
+    "id": "exercise_060",
+    "title": "4-7-8 Breathing 2",
+    "category": "Anxiety Reset",
+    "duration": 14,
+    "description": "A relaxing breath pattern.",
+    "steps": [
+      "Inhale quietly through your nose for 4 seconds.",
+      "Hold the breath for 7 seconds.",
+      "Exhale completely through your mouth for 8 seconds.",
+      "Repeat 4 times."
+    ]
+  },
+  {
+    "id": "exercise_061",
+    "title": "Future Gratitude 2",
+    "category": "Gratitude",
+    "duration": 5,
+    "description": "Look forward to something positive.",
+    "steps": [
+      "Think of one thing happening tomorrow to enjoy.",
+      "Visualize it.",
+      "Write down why you are looking forward to it."
+    ]
+  },
+  {
+    "id": "exercise_062",
+    "title": "Shared Humanity 2",
+    "category": "Self Compassion",
+    "duration": 6,
+    "description": "Remember you are not alone.",
+    "steps": [
+      "Notice a feeling of inadequacy.",
+      "Remind yourself that thousands feel this right now.",
+      "Acknowledge that struggling is part of being human."
+    ]
+  },
+  {
+    "id": "exercise_063",
+    "title": "Mastery Task 2",
+    "category": "Behavioral Activation",
+    "duration": 7,
+    "description": "Do something that gives a sense of accomplishment.",
+    "steps": [
+      "Pick a task you've been putting off.",
+      "Break it into an incredibly small first step.",
+      "Complete just that first step."
+    ]
+  },
+  {
+    "id": "exercise_064",
+    "title": "Safety Behavior Drop 2",
+    "category": "Exposure Practice",
+    "duration": 8,
+    "description": "Gradually remove crutches.",
+    "steps": [
+      "Identify something you do just to feel 'safe'.",
+      "Try doing the activity without it once.",
+      "Notice that you survived without the safety behavior."
+    ]
+  },
+  {
+    "id": "exercise_065",
+    "title": "Identify the Stressor 3",
+    "category": "Thought Reframing",
+    "duration": 9,
+    "description": "Notice what situation triggers your stressful thought.",
+    "steps": [
+      "Write down the specific situation.",
+      "Notice how your body feels.",
+      "Write the literal thought as if it was a quote."
+    ]
+  },
+  {
+    "id": "exercise_066",
+    "title": "Spotting All-or-Nothing 3",
+    "category": "Cognitive Distortions",
+    "duration": 10,
+    "description": "Find shades of grey in your thinking.",
+    "steps": [
+      "Write your absolute thought (e.g. ruined, always, never).",
+      "List one exception to this rule.",
+      "Rewrite the thought to include 'sometimes' or 'partially'."
+    ]
+  },
+  {
+    "id": "exercise_067",
+    "title": "5-4-3-2-1 Technique 3",
+    "category": "Grounding",
+    "duration": 11,
+    "description": "Use your senses to anchor yourself in the present.",
+    "steps": [
+      "Acknowledge 5 things you see.",
+      "Acknowledge 4 things you can touch.",
+      "Acknowledge 3 things you hear.",
+      "Acknowledge 2 things you smell.",
+      "Acknowledge 1 thing you can taste."
+    ]
+  },
+  {
+    "id": "exercise_068",
+    "title": "Box Breathing 3",
+    "category": "Anxiety Reset",
+    "duration": 12,
+    "description": "Calm your nervous system with measured breaths.",
+    "steps": [
+      "Breathe in for 4 seconds.",
+      "Hold for 4 seconds.",
+      "Exhale for 4 seconds.",
+      "Hold empty for 4 seconds.",
+      "Repeat 5 times."
+    ]
+  },
+  {
+    "id": "exercise_069",
+    "title": "Three Good Things 3",
+    "category": "Gratitude",
+    "duration": 13,
+    "description": "Shift focus to positives from today.",
+    "steps": [
+      "Write down one good thing.",
+      "Write down a second good thing.",
+      "Write down a third good thing.",
+      "Reflect on how these make you feel."
+    ]
+  },
+  {
+    "id": "exercise_070",
+    "title": "Inner Friend 3",
+    "category": "Self Compassion",
+    "duration": 14,
+    "description": "Talk to yourself as you would a friend.",
+    "steps": [
+      "Write down your self-critical thought.",
+      "Imagine a dear friend having this thought.",
+      "Write down what you would tell them.",
+      "Read those words back to yourself."
+    ]
+  },
+  {
+    "id": "exercise_071",
+    "title": "Do One Small Thing 3",
+    "category": "Behavioral Activation",
+    "duration": 5,
+    "description": "Break the cycle of avoidance.",
+    "steps": [
+      "Pick a task that takes under 5 minutes.",
+      "Set a timer for 5 minutes.",
+      "Do the task immediately.",
+      "Check in on your mood afterwards."
+    ]
+  },
+  {
+    "id": "exercise_072",
+    "title": "Imaginal Exposure 3",
+    "category": "Exposure Practice",
+    "duration": 6,
+    "description": "Visualize a mildly anxiety-provoking scenario.",
+    "steps": [
+      "Sit somewhere safe.",
+      "Close your eyes and imagine the scenario.",
+      "Rate your anxiety 1-10.",
+      "Breathe until it drops by 2 points."
+    ]
+  },
+  {
+    "id": "exercise_073",
+    "title": "Challenge the Thought 3",
+    "category": "Thought Reframing",
+    "duration": 7,
+    "description": "Examine a recurring negative belief.",
+    "steps": [
+      "Identify the negative belief.",
+      "Ask: Is it 100% true?",
+      "Ask: What would I tell a friend?",
+      "Reframe the thought."
+    ]
+  },
+  {
+    "id": "exercise_074",
+    "title": "Mind Reading Check 3",
+    "category": "Cognitive Distortions",
+    "duration": 8,
+    "description": "Stop assuming you know what others think.",
+    "steps": [
+      "Notice who you are mind-reading.",
+      "List alternative reasons for their behavior.",
+      "Remind yourself you cannot read minds."
+    ]
+  },
+  {
+    "id": "exercise_075",
+    "title": "Color Focus 3",
+    "category": "Grounding",
+    "duration": 9,
+    "description": "Ground yourself visually by finding colors.",
+    "steps": [
+      "Pick a color.",
+      "Find 5 objects of that color in the room.",
+      "Describe each object out loud.",
+      "Pick another color and repeat."
+    ]
+  },
+  {
+    "id": "exercise_076",
+    "title": "Progressive Relaxation 3",
+    "category": "Anxiety Reset",
+    "duration": 10,
+    "description": "Release tension from your muscles.",
+    "steps": [
+      "Tense your toes for 5 seconds.",
+      "Release and notice the relaxation.",
+      "Move up to your calves, tense and release.",
+      "Continue moving up your body to your face."
+    ]
+  },
+  {
+    "id": "exercise_077",
+    "title": "Appreciation Letter 3",
+    "category": "Gratitude",
+    "duration": 11,
+    "description": "Express gratitude mentally or in writing.",
+    "steps": [
+      "Think of someone who helped you.",
+      "Write a short paragraph of what they did.",
+      "Notice any warm feelings in your chest."
+    ]
+  },
+  {
+    "id": "exercise_078",
+    "title": "Forgiveness Practice 3",
+    "category": "Self Compassion",
+    "duration": 12,
+    "description": "Let go of a small mistake.",
+    "steps": [
+      "Acknowledge the mistake without judgment.",
+      "Remind yourself everyone makes mistakes.",
+      "Take a deep breath and visualize letting it go."
+    ]
+  },
+  {
+    "id": "exercise_079",
+    "title": "Pleasant Activity Scheduling 3",
+    "category": "Behavioral Activation",
+    "duration": 13,
+    "description": "Plan a small enjoyment.",
+    "steps": [
+      "Brainstorm 3 simple things you enjoy.",
+      "Pick one to do today.",
+      "Schedule an exact time.",
+      "Do it."
+    ]
+  },
+  {
+    "id": "exercise_080",
+    "title": "Worry Time 3",
+    "category": "Exposure Practice",
+    "duration": 14,
+    "description": "Confine worry to a specific block of time.",
+    "steps": [
+      "Schedule 15 minutes of 'worry time'.",
+      "During the day, jot down worries and postpone them.",
+      "When the time comes, review the list.",
+      "When time is up, stop and do another activity."
+    ]
+  },
+  {
+    "id": "exercise_081",
+    "title": "Examine the Evidence 3",
+    "category": "Thought Reframing",
+    "duration": 5,
+    "description": "Look at facts objectively.",
+    "steps": [
+      "Write down the belief.",
+      "List evidence that supports it.",
+      "List evidence against it.",
+      "Incorporate both into a balanced thought."
+    ]
+  },
+  {
+    "id": "exercise_082",
+    "title": "Label Reducer 3",
+    "category": "Cognitive Distortions",
+    "duration": 6,
+    "description": "Change global labels to specific behaviors.",
+    "steps": [
+      "Catch yourself calling yourself a name.",
+      "Identify the specific behavior you regret.",
+      "Acknowledge that one behavior doesn't define you."
+    ]
+  },
+  {
+    "id": "exercise_083",
+    "title": "Texture Walk 3",
+    "category": "Grounding",
+    "duration": 7,
+    "description": "Focus on the physical sensation of touch.",
+    "steps": [
+      "Find an object near you.",
+      "Feel its texture with your fingertips.",
+      "Describe the texture (smooth, rough, cold).",
+      "Find a second object and compare."
+    ]
+  },
+  {
+    "id": "exercise_084",
+    "title": "Shoulder Drop 3",
+    "category": "Anxiety Reset",
+    "duration": 8,
+    "description": "Release physical tension held in your shoulders.",
+    "steps": [
+      "Notice if your shoulders are raised.",
+      "Take a deep breath in.",
+      "Exhale forcibly while dropping shoulders.",
+      "Roll them back twice."
+    ]
+  },
+  {
+    "id": "exercise_085",
+    "title": "Silver Linings 3",
+    "category": "Gratitude",
+    "duration": 9,
+    "description": "Find one positive in a neutral or negative situation.",
+    "steps": [
+      "Pick a minor annoyance from today.",
+      "Find one small silver lining in it.",
+      "Focus on that silver lining for 30 seconds."
+    ]
+  },
+  {
+    "id": "exercise_086",
+    "title": "Soothing Touch 3",
+    "category": "Self Compassion",
+    "duration": 10,
+    "description": "Provide yourself with physical comfort.",
+    "steps": [
+      "Place a hand over your heart or on your arm.",
+      "Feel the warmth of your hand.",
+      "Take three deep, slow breaths."
+    ]
+  },
+  {
+    "id": "exercise_087",
+    "title": "Routine Anchor 3",
+    "category": "Behavioral Activation",
+    "duration": 11,
+    "description": "Attach a new habit to an existing one.",
+    "steps": [
+      "Identify something you do every day (like brushing teeth).",
+      "Choose a 2-minute positive action.",
+      "Do them together."
+    ]
+  },
+  {
+    "id": "exercise_088",
+    "title": "Decatastrophize a Fear 3",
+    "category": "Exposure Practice",
+    "duration": 12,
+    "description": "Examine the feared outcome.",
+    "steps": [
+      "Write down what you fear will happen.",
+      "Write down how you would survive it.",
+      "Write down a more realistic outcome."
+    ]
+  },
+  {
+    "id": "exercise_089",
+    "title": "De-catastrophizing 3",
+    "category": "Thought Reframing",
+    "duration": 13,
+    "description": "Manage worst-case scenario thinking.",
+    "steps": [
+      "Identify the worst-case scenario.",
+      "Estimate how likely it really is.",
+      "Imagine how you would cope if it happened.",
+      "Identify the best-case scenario."
+    ]
+  },
+  {
+    "id": "exercise_090",
+    "title": "Should Statements 3",
+    "category": "Cognitive Distortions",
+    "duration": 14,
+    "description": "Replace 'should' with 'would like'.",
+    "steps": [
+      "Write down a 'should' statement.",
+      "Change it to 'I would prefer' or 'It would be nice if'.",
+      "Notice how the pressure changes."
+    ]
+  },
+  {
+    "id": "exercise_091",
+    "title": "Temperature Notice 3",
+    "category": "Grounding",
+    "duration": 5,
+    "description": "Use temperature to ground your body.",
+    "steps": [
+      "Hold an ice cube or something cold.",
+      "Focus entirely on the cold sensation.",
+      "Notice how your hand feels as it warns up."
+    ]
+  },
+  {
+    "id": "exercise_092",
+    "title": "4-7-8 Breathing 3",
+    "category": "Anxiety Reset",
+    "duration": 6,
+    "description": "A relaxing breath pattern.",
+    "steps": [
+      "Inhale quietly through your nose for 4 seconds.",
+      "Hold the breath for 7 seconds.",
+      "Exhale completely through your mouth for 8 seconds.",
+      "Repeat 4 times."
+    ]
+  },
+  {
+    "id": "exercise_093",
+    "title": "Future Gratitude 3",
+    "category": "Gratitude",
+    "duration": 7,
+    "description": "Look forward to something positive.",
+    "steps": [
+      "Think of one thing happening tomorrow to enjoy.",
+      "Visualize it.",
+      "Write down why you are looking forward to it."
+    ]
+  },
+  {
+    "id": "exercise_094",
+    "title": "Shared Humanity 3",
+    "category": "Self Compassion",
+    "duration": 8,
+    "description": "Remember you are not alone.",
+    "steps": [
+      "Notice a feeling of inadequacy.",
+      "Remind yourself that thousands feel this right now.",
+      "Acknowledge that struggling is part of being human."
+    ]
+  },
+  {
+    "id": "exercise_095",
+    "title": "Mastery Task 3",
+    "category": "Behavioral Activation",
+    "duration": 9,
+    "description": "Do something that gives a sense of accomplishment.",
+    "steps": [
+      "Pick a task you've been putting off.",
+      "Break it into an incredibly small first step.",
+      "Complete just that first step."
+    ]
+  },
+  {
+    "id": "exercise_096",
+    "title": "Safety Behavior Drop 3",
+    "category": "Exposure Practice",
+    "duration": 10,
+    "description": "Gradually remove crutches.",
+    "steps": [
+      "Identify something you do just to feel 'safe'.",
+      "Try doing the activity without it once.",
+      "Notice that you survived without the safety behavior."
+    ]
+  },
+  {
+    "id": "exercise_097",
+    "title": "Identify the Stressor 4",
+    "category": "Thought Reframing",
+    "duration": 11,
+    "description": "Notice what situation triggers your stressful thought.",
+    "steps": [
+      "Write down the specific situation.",
+      "Notice how your body feels.",
+      "Write the literal thought as if it was a quote."
+    ]
+  },
+  {
+    "id": "exercise_098",
+    "title": "Spotting All-or-Nothing 4",
+    "category": "Cognitive Distortions",
+    "duration": 12,
+    "description": "Find shades of grey in your thinking.",
+    "steps": [
+      "Write your absolute thought (e.g. ruined, always, never).",
+      "List one exception to this rule.",
+      "Rewrite the thought to include 'sometimes' or 'partially'."
+    ]
+  },
+  {
+    "id": "exercise_099",
+    "title": "5-4-3-2-1 Technique 4",
+    "category": "Grounding",
+    "duration": 13,
+    "description": "Use your senses to anchor yourself in the present.",
+    "steps": [
+      "Acknowledge 5 things you see.",
+      "Acknowledge 4 things you can touch.",
+      "Acknowledge 3 things you hear.",
+      "Acknowledge 2 things you smell.",
+      "Acknowledge 1 thing you can taste."
+    ]
+  },
+  {
+    "id": "exercise_100",
+    "title": "Box Breathing 4",
+    "category": "Anxiety Reset",
+    "duration": 14,
+    "description": "Calm your nervous system with measured breaths.",
+    "steps": [
+      "Breathe in for 4 seconds.",
+      "Hold for 4 seconds.",
+      "Exhale for 4 seconds.",
+      "Hold empty for 4 seconds.",
+      "Repeat 5 times."
+    ]
+  },
+  {
+    "id": "exercise_101",
+    "title": "Three Good Things 4",
+    "category": "Gratitude",
+    "duration": 5,
+    "description": "Shift focus to positives from today.",
+    "steps": [
+      "Write down one good thing.",
+      "Write down a second good thing.",
+      "Write down a third good thing.",
+      "Reflect on how these make you feel."
+    ]
+  },
+  {
+    "id": "exercise_102",
+    "title": "Inner Friend 4",
+    "category": "Self Compassion",
+    "duration": 6,
+    "description": "Talk to yourself as you would a friend.",
+    "steps": [
+      "Write down your self-critical thought.",
+      "Imagine a dear friend having this thought.",
+      "Write down what you would tell them.",
+      "Read those words back to yourself."
+    ]
+  },
+  {
+    "id": "exercise_103",
+    "title": "Do One Small Thing 4",
+    "category": "Behavioral Activation",
+    "duration": 7,
+    "description": "Break the cycle of avoidance.",
+    "steps": [
+      "Pick a task that takes under 5 minutes.",
+      "Set a timer for 5 minutes.",
+      "Do the task immediately.",
+      "Check in on your mood afterwards."
+    ]
+  },
+  {
+    "id": "exercise_104",
+    "title": "Imaginal Exposure 4",
+    "category": "Exposure Practice",
+    "duration": 8,
+    "description": "Visualize a mildly anxiety-provoking scenario.",
+    "steps": [
+      "Sit somewhere safe.",
+      "Close your eyes and imagine the scenario.",
+      "Rate your anxiety 1-10.",
+      "Breathe until it drops by 2 points."
+    ]
+  },
+  {
+    "id": "exercise_105",
+    "title": "Challenge the Thought 4",
+    "category": "Thought Reframing",
+    "duration": 9,
+    "description": "Examine a recurring negative belief.",
+    "steps": [
+      "Identify the negative belief.",
+      "Ask: Is it 100% true?",
+      "Ask: What would I tell a friend?",
+      "Reframe the thought."
+    ]
+  },
+  {
+    "id": "exercise_106",
+    "title": "Mind Reading Check 4",
+    "category": "Cognitive Distortions",
+    "duration": 10,
+    "description": "Stop assuming you know what others think.",
+    "steps": [
+      "Notice who you are mind-reading.",
+      "List alternative reasons for their behavior.",
+      "Remind yourself you cannot read minds."
+    ]
+  },
+  {
+    "id": "exercise_107",
+    "title": "Color Focus 4",
+    "category": "Grounding",
+    "duration": 11,
+    "description": "Ground yourself visually by finding colors.",
+    "steps": [
+      "Pick a color.",
+      "Find 5 objects of that color in the room.",
+      "Describe each object out loud.",
+      "Pick another color and repeat."
+    ]
+  },
+  {
+    "id": "exercise_108",
+    "title": "Progressive Relaxation 4",
+    "category": "Anxiety Reset",
+    "duration": 12,
+    "description": "Release tension from your muscles.",
+    "steps": [
+      "Tense your toes for 5 seconds.",
+      "Release and notice the relaxation.",
+      "Move up to your calves, tense and release.",
+      "Continue moving up your body to your face."
+    ]
+  },
+  {
+    "id": "exercise_109",
+    "title": "Appreciation Letter 4",
+    "category": "Gratitude",
+    "duration": 13,
+    "description": "Express gratitude mentally or in writing.",
+    "steps": [
+      "Think of someone who helped you.",
+      "Write a short paragraph of what they did.",
+      "Notice any warm feelings in your chest."
+    ]
+  },
+  {
+    "id": "exercise_110",
+    "title": "Forgiveness Practice 4",
+    "category": "Self Compassion",
+    "duration": 14,
+    "description": "Let go of a small mistake.",
+    "steps": [
+      "Acknowledge the mistake without judgment.",
+      "Remind yourself everyone makes mistakes.",
+      "Take a deep breath and visualize letting it go."
+    ]
+  },
+  {
+    "id": "exercise_111",
+    "title": "Pleasant Activity Scheduling 4",
+    "category": "Behavioral Activation",
+    "duration": 5,
+    "description": "Plan a small enjoyment.",
+    "steps": [
+      "Brainstorm 3 simple things you enjoy.",
+      "Pick one to do today.",
+      "Schedule an exact time.",
+      "Do it."
+    ]
+  },
+  {
+    "id": "exercise_112",
+    "title": "Worry Time 4",
+    "category": "Exposure Practice",
+    "duration": 6,
+    "description": "Confine worry to a specific block of time.",
+    "steps": [
+      "Schedule 15 minutes of 'worry time'.",
+      "During the day, jot down worries and postpone them.",
+      "When the time comes, review the list.",
+      "When time is up, stop and do another activity."
+    ]
+  },
+  {
+    "id": "exercise_113",
+    "title": "Examine the Evidence 4",
+    "category": "Thought Reframing",
+    "duration": 7,
+    "description": "Look at facts objectively.",
+    "steps": [
+      "Write down the belief.",
+      "List evidence that supports it.",
+      "List evidence against it.",
+      "Incorporate both into a balanced thought."
+    ]
+  },
+  {
+    "id": "exercise_114",
+    "title": "Label Reducer 4",
+    "category": "Cognitive Distortions",
+    "duration": 8,
+    "description": "Change global labels to specific behaviors.",
+    "steps": [
+      "Catch yourself calling yourself a name.",
+      "Identify the specific behavior you regret.",
+      "Acknowledge that one behavior doesn't define you."
+    ]
+  },
+  {
+    "id": "exercise_115",
+    "title": "Texture Walk 4",
+    "category": "Grounding",
+    "duration": 9,
+    "description": "Focus on the physical sensation of touch.",
+    "steps": [
+      "Find an object near you.",
+      "Feel its texture with your fingertips.",
+      "Describe the texture (smooth, rough, cold).",
+      "Find a second object and compare."
+    ]
+  },
+  {
+    "id": "exercise_116",
+    "title": "Shoulder Drop 4",
+    "category": "Anxiety Reset",
+    "duration": 10,
+    "description": "Release physical tension held in your shoulders.",
+    "steps": [
+      "Notice if your shoulders are raised.",
+      "Take a deep breath in.",
+      "Exhale forcibly while dropping shoulders.",
+      "Roll them back twice."
+    ]
+  },
+  {
+    "id": "exercise_117",
+    "title": "Silver Linings 4",
+    "category": "Gratitude",
+    "duration": 11,
+    "description": "Find one positive in a neutral or negative situation.",
+    "steps": [
+      "Pick a minor annoyance from today.",
+      "Find one small silver lining in it.",
+      "Focus on that silver lining for 30 seconds."
+    ]
+  },
+  {
+    "id": "exercise_118",
+    "title": "Soothing Touch 4",
+    "category": "Self Compassion",
+    "duration": 12,
+    "description": "Provide yourself with physical comfort.",
+    "steps": [
+      "Place a hand over your heart or on your arm.",
+      "Feel the warmth of your hand.",
+      "Take three deep, slow breaths."
+    ]
+  },
+  {
+    "id": "exercise_119",
+    "title": "Routine Anchor 4",
+    "category": "Behavioral Activation",
+    "duration": 13,
+    "description": "Attach a new habit to an existing one.",
+    "steps": [
+      "Identify something you do every day (like brushing teeth).",
+      "Choose a 2-minute positive action.",
+      "Do them together."
+    ]
+  },
+  {
+    "id": "exercise_120",
+    "title": "Decatastrophize a Fear 4",
+    "category": "Exposure Practice",
+    "duration": 14,
+    "description": "Examine the feared outcome.",
+    "steps": [
+      "Write down what you fear will happen.",
+      "Write down how you would survive it.",
+      "Write down a more realistic outcome."
+    ]
+  },
+  {
+    "id": "exercise_121",
+    "title": "De-catastrophizing 4",
+    "category": "Thought Reframing",
+    "duration": 5,
+    "description": "Manage worst-case scenario thinking.",
+    "steps": [
+      "Identify the worst-case scenario.",
+      "Estimate how likely it really is.",
+      "Imagine how you would cope if it happened.",
+      "Identify the best-case scenario."
+    ]
+  },
+  {
+    "id": "exercise_122",
+    "title": "Should Statements 4",
+    "category": "Cognitive Distortions",
+    "duration": 6,
+    "description": "Replace 'should' with 'would like'.",
+    "steps": [
+      "Write down a 'should' statement.",
+      "Change it to 'I would prefer' or 'It would be nice if'.",
+      "Notice how the pressure changes."
+    ]
+  },
+  {
+    "id": "exercise_123",
+    "title": "Temperature Notice 4",
+    "category": "Grounding",
+    "duration": 7,
+    "description": "Use temperature to ground your body.",
+    "steps": [
+      "Hold an ice cube or something cold.",
+      "Focus entirely on the cold sensation.",
+      "Notice how your hand feels as it warns up."
+    ]
+  },
+  {
+    "id": "exercise_124",
+    "title": "4-7-8 Breathing 4",
+    "category": "Anxiety Reset",
+    "duration": 8,
+    "description": "A relaxing breath pattern.",
+    "steps": [
+      "Inhale quietly through your nose for 4 seconds.",
+      "Hold the breath for 7 seconds.",
+      "Exhale completely through your mouth for 8 seconds.",
+      "Repeat 4 times."
+    ]
+  },
+  {
+    "id": "exercise_125",
+    "title": "Future Gratitude 4",
+    "category": "Gratitude",
+    "duration": 9,
+    "description": "Look forward to something positive.",
+    "steps": [
+      "Think of one thing happening tomorrow to enjoy.",
+      "Visualize it.",
+      "Write down why you are looking forward to it."
+    ]
+  },
+  {
+    "id": "exercise_126",
+    "title": "Shared Humanity 4",
+    "category": "Self Compassion",
+    "duration": 10,
+    "description": "Remember you are not alone.",
+    "steps": [
+      "Notice a feeling of inadequacy.",
+      "Remind yourself that thousands feel this right now.",
+      "Acknowledge that struggling is part of being human."
+    ]
+  },
+  {
+    "id": "exercise_127",
+    "title": "Mastery Task 4",
+    "category": "Behavioral Activation",
+    "duration": 11,
+    "description": "Do something that gives a sense of accomplishment.",
+    "steps": [
+      "Pick a task you've been putting off.",
+      "Break it into an incredibly small first step.",
+      "Complete just that first step."
+    ]
+  },
+  {
+    "id": "exercise_128",
+    "title": "Safety Behavior Drop 4",
+    "category": "Exposure Practice",
+    "duration": 12,
+    "description": "Gradually remove crutches.",
+    "steps": [
+      "Identify something you do just to feel 'safe'.",
+      "Try doing the activity without it once.",
+      "Notice that you survived without the safety behavior."
+    ]
+  },
+  {
+    "id": "exercise_129",
+    "title": "Identify the Stressor 5",
+    "category": "Thought Reframing",
+    "duration": 13,
+    "description": "Notice what situation triggers your stressful thought.",
+    "steps": [
+      "Write down the specific situation.",
+      "Notice how your body feels.",
+      "Write the literal thought as if it was a quote."
+    ]
+  },
+  {
+    "id": "exercise_130",
+    "title": "Spotting All-or-Nothing 5",
+    "category": "Cognitive Distortions",
+    "duration": 14,
+    "description": "Find shades of grey in your thinking.",
+    "steps": [
+      "Write your absolute thought (e.g. ruined, always, never).",
+      "List one exception to this rule.",
+      "Rewrite the thought to include 'sometimes' or 'partially'."
+    ]
+  },
+  {
+    "id": "exercise_131",
+    "title": "5-4-3-2-1 Technique 5",
+    "category": "Grounding",
+    "duration": 5,
+    "description": "Use your senses to anchor yourself in the present.",
+    "steps": [
+      "Acknowledge 5 things you see.",
+      "Acknowledge 4 things you can touch.",
+      "Acknowledge 3 things you hear.",
+      "Acknowledge 2 things you smell.",
+      "Acknowledge 1 thing you can taste."
+    ]
+  },
+  {
+    "id": "exercise_132",
+    "title": "Box Breathing 5",
+    "category": "Anxiety Reset",
+    "duration": 6,
+    "description": "Calm your nervous system with measured breaths.",
+    "steps": [
+      "Breathe in for 4 seconds.",
+      "Hold for 4 seconds.",
+      "Exhale for 4 seconds.",
+      "Hold empty for 4 seconds.",
+      "Repeat 5 times."
+    ]
+  },
+  {
+    "id": "exercise_133",
+    "title": "Three Good Things 5",
+    "category": "Gratitude",
+    "duration": 7,
+    "description": "Shift focus to positives from today.",
+    "steps": [
+      "Write down one good thing.",
+      "Write down a second good thing.",
+      "Write down a third good thing.",
+      "Reflect on how these make you feel."
+    ]
+  },
+  {
+    "id": "exercise_134",
+    "title": "Inner Friend 5",
+    "category": "Self Compassion",
+    "duration": 8,
+    "description": "Talk to yourself as you would a friend.",
+    "steps": [
+      "Write down your self-critical thought.",
+      "Imagine a dear friend having this thought.",
+      "Write down what you would tell them.",
+      "Read those words back to yourself."
+    ]
+  },
+  {
+    "id": "exercise_135",
+    "title": "Do One Small Thing 5",
+    "category": "Behavioral Activation",
+    "duration": 9,
+    "description": "Break the cycle of avoidance.",
+    "steps": [
+      "Pick a task that takes under 5 minutes.",
+      "Set a timer for 5 minutes.",
+      "Do the task immediately.",
+      "Check in on your mood afterwards."
+    ]
+  },
+  {
+    "id": "exercise_136",
+    "title": "Imaginal Exposure 5",
+    "category": "Exposure Practice",
+    "duration": 10,
+    "description": "Visualize a mildly anxiety-provoking scenario.",
+    "steps": [
+      "Sit somewhere safe.",
+      "Close your eyes and imagine the scenario.",
+      "Rate your anxiety 1-10.",
+      "Breathe until it drops by 2 points."
+    ]
+  },
+  {
+    "id": "exercise_137",
+    "title": "Challenge the Thought 5",
+    "category": "Thought Reframing",
+    "duration": 11,
+    "description": "Examine a recurring negative belief.",
+    "steps": [
+      "Identify the negative belief.",
+      "Ask: Is it 100% true?",
+      "Ask: What would I tell a friend?",
+      "Reframe the thought."
+    ]
+  },
+  {
+    "id": "exercise_138",
+    "title": "Mind Reading Check 5",
+    "category": "Cognitive Distortions",
+    "duration": 12,
+    "description": "Stop assuming you know what others think.",
+    "steps": [
+      "Notice who you are mind-reading.",
+      "List alternative reasons for their behavior.",
+      "Remind yourself you cannot read minds."
+    ]
+  },
+  {
+    "id": "exercise_139",
+    "title": "Color Focus 5",
+    "category": "Grounding",
+    "duration": 13,
+    "description": "Ground yourself visually by finding colors.",
+    "steps": [
+      "Pick a color.",
+      "Find 5 objects of that color in the room.",
+      "Describe each object out loud.",
+      "Pick another color and repeat."
+    ]
+  },
+  {
+    "id": "exercise_140",
+    "title": "Progressive Relaxation 5",
+    "category": "Anxiety Reset",
+    "duration": 14,
+    "description": "Release tension from your muscles.",
+    "steps": [
+      "Tense your toes for 5 seconds.",
+      "Release and notice the relaxation.",
+      "Move up to your calves, tense and release.",
+      "Continue moving up your body to your face."
+    ]
+  },
+  {
+    "id": "exercise_141",
+    "title": "Appreciation Letter 5",
+    "category": "Gratitude",
+    "duration": 5,
+    "description": "Express gratitude mentally or in writing.",
+    "steps": [
+      "Think of someone who helped you.",
+      "Write a short paragraph of what they did.",
+      "Notice any warm feelings in your chest."
+    ]
+  },
+  {
+    "id": "exercise_142",
+    "title": "Forgiveness Practice 5",
+    "category": "Self Compassion",
+    "duration": 6,
+    "description": "Let go of a small mistake.",
+    "steps": [
+      "Acknowledge the mistake without judgment.",
+      "Remind yourself everyone makes mistakes.",
+      "Take a deep breath and visualize letting it go."
+    ]
+  },
+  {
+    "id": "exercise_143",
+    "title": "Pleasant Activity Scheduling 5",
+    "category": "Behavioral Activation",
+    "duration": 7,
+    "description": "Plan a small enjoyment.",
+    "steps": [
+      "Brainstorm 3 simple things you enjoy.",
+      "Pick one to do today.",
+      "Schedule an exact time.",
+      "Do it."
+    ]
+  },
+  {
+    "id": "exercise_144",
+    "title": "Worry Time 5",
+    "category": "Exposure Practice",
+    "duration": 8,
+    "description": "Confine worry to a specific block of time.",
+    "steps": [
+      "Schedule 15 minutes of 'worry time'.",
+      "During the day, jot down worries and postpone them.",
+      "When the time comes, review the list.",
+      "When time is up, stop and do another activity."
+    ]
+  },
+  {
+    "id": "exercise_145",
+    "title": "Examine the Evidence 5",
+    "category": "Thought Reframing",
+    "duration": 9,
+    "description": "Look at facts objectively.",
+    "steps": [
+      "Write down the belief.",
+      "List evidence that supports it.",
+      "List evidence against it.",
+      "Incorporate both into a balanced thought."
+    ]
+  },
+  {
+    "id": "exercise_146",
+    "title": "Label Reducer 5",
+    "category": "Cognitive Distortions",
+    "duration": 10,
+    "description": "Change global labels to specific behaviors.",
+    "steps": [
+      "Catch yourself calling yourself a name.",
+      "Identify the specific behavior you regret.",
+      "Acknowledge that one behavior doesn't define you."
+    ]
+  },
+  {
+    "id": "exercise_147",
+    "title": "Texture Walk 5",
+    "category": "Grounding",
+    "duration": 11,
+    "description": "Focus on the physical sensation of touch.",
+    "steps": [
+      "Find an object near you.",
+      "Feel its texture with your fingertips.",
+      "Describe the texture (smooth, rough, cold).",
+      "Find a second object and compare."
+    ]
+  },
+  {
+    "id": "exercise_148",
+    "title": "Shoulder Drop 5",
+    "category": "Anxiety Reset",
+    "duration": 12,
+    "description": "Release physical tension held in your shoulders.",
+    "steps": [
+      "Notice if your shoulders are raised.",
+      "Take a deep breath in.",
+      "Exhale forcibly while dropping shoulders.",
+      "Roll them back twice."
+    ]
+  },
+  {
+    "id": "exercise_149",
+    "title": "Silver Linings 5",
+    "category": "Gratitude",
+    "duration": 13,
+    "description": "Find one positive in a neutral or negative situation.",
+    "steps": [
+      "Pick a minor annoyance from today.",
+      "Find one small silver lining in it.",
+      "Focus on that silver lining for 30 seconds."
+    ]
+  },
+  {
+    "id": "exercise_150",
+    "title": "Soothing Touch 5",
+    "category": "Self Compassion",
+    "duration": 14,
+    "description": "Provide yourself with physical comfort.",
+    "steps": [
+      "Place a hand over your heart or on your arm.",
+      "Feel the warmth of your hand.",
+      "Take three deep, slow breaths."
+    ]
+  },
+  {
+    "id": "exercise_151",
+    "title": "Routine Anchor 5",
+    "category": "Behavioral Activation",
+    "duration": 5,
+    "description": "Attach a new habit to an existing one.",
+    "steps": [
+      "Identify something you do every day (like brushing teeth).",
+      "Choose a 2-minute positive action.",
+      "Do them together."
+    ]
+  },
+  {
+    "id": "exercise_152",
+    "title": "Decatastrophize a Fear 5",
+    "category": "Exposure Practice",
+    "duration": 6,
+    "description": "Examine the feared outcome.",
+    "steps": [
+      "Write down what you fear will happen.",
+      "Write down how you would survive it.",
+      "Write down a more realistic outcome."
+    ]
+  },
+  {
+    "id": "exercise_153",
+    "title": "De-catastrophizing 5",
+    "category": "Thought Reframing",
+    "duration": 7,
+    "description": "Manage worst-case scenario thinking.",
+    "steps": [
+      "Identify the worst-case scenario.",
+      "Estimate how likely it really is.",
+      "Imagine how you would cope if it happened.",
+      "Identify the best-case scenario."
+    ]
+  },
+  {
+    "id": "exercise_154",
+    "title": "Should Statements 5",
+    "category": "Cognitive Distortions",
+    "duration": 8,
+    "description": "Replace 'should' with 'would like'.",
+    "steps": [
+      "Write down a 'should' statement.",
+      "Change it to 'I would prefer' or 'It would be nice if'.",
+      "Notice how the pressure changes."
+    ]
+  },
+  {
+    "id": "exercise_155",
+    "title": "Temperature Notice 5",
+    "category": "Grounding",
+    "duration": 9,
+    "description": "Use temperature to ground your body.",
+    "steps": [
+      "Hold an ice cube or something cold.",
+      "Focus entirely on the cold sensation.",
+      "Notice how your hand feels as it warns up."
+    ]
+  },
+  {
+    "id": "exercise_156",
+    "title": "4-7-8 Breathing 5",
+    "category": "Anxiety Reset",
+    "duration": 10,
+    "description": "A relaxing breath pattern.",
+    "steps": [
+      "Inhale quietly through your nose for 4 seconds.",
+      "Hold the breath for 7 seconds.",
+      "Exhale completely through your mouth for 8 seconds.",
+      "Repeat 4 times."
+    ]
+  },
+  {
+    "id": "exercise_157",
+    "title": "Future Gratitude 5",
+    "category": "Gratitude",
+    "duration": 11,
+    "description": "Look forward to something positive.",
+    "steps": [
+      "Think of one thing happening tomorrow to enjoy.",
+      "Visualize it.",
+      "Write down why you are looking forward to it."
+    ]
+  },
+  {
+    "id": "exercise_158",
+    "title": "Shared Humanity 5",
+    "category": "Self Compassion",
+    "duration": 12,
+    "description": "Remember you are not alone.",
+    "steps": [
+      "Notice a feeling of inadequacy.",
+      "Remind yourself that thousands feel this right now.",
+      "Acknowledge that struggling is part of being human."
+    ]
+  },
+  {
+    "id": "exercise_159",
+    "title": "Mastery Task 5",
+    "category": "Behavioral Activation",
+    "duration": 13,
+    "description": "Do something that gives a sense of accomplishment.",
+    "steps": [
+      "Pick a task you've been putting off.",
+      "Break it into an incredibly small first step.",
+      "Complete just that first step."
+    ]
+  },
+  {
+    "id": "exercise_160",
+    "title": "Safety Behavior Drop 5",
+    "category": "Exposure Practice",
+    "duration": 14,
+    "description": "Gradually remove crutches.",
+    "steps": [
+      "Identify something you do just to feel 'safe'.",
+      "Try doing the activity without it once.",
+      "Notice that you survived without the safety behavior."
+    ]
+  },
+  {
+    "id": "exercise_161",
+    "title": "Identify the Stressor 6",
+    "category": "Thought Reframing",
+    "duration": 5,
+    "description": "Notice what situation triggers your stressful thought.",
+    "steps": [
+      "Write down the specific situation.",
+      "Notice how your body feels.",
+      "Write the literal thought as if it was a quote."
+    ]
+  },
+  {
+    "id": "exercise_162",
+    "title": "Spotting All-or-Nothing 6",
+    "category": "Cognitive Distortions",
+    "duration": 6,
+    "description": "Find shades of grey in your thinking.",
+    "steps": [
+      "Write your absolute thought (e.g. ruined, always, never).",
+      "List one exception to this rule.",
+      "Rewrite the thought to include 'sometimes' or 'partially'."
+    ]
+  },
+  {
+    "id": "exercise_163",
+    "title": "5-4-3-2-1 Technique 6",
+    "category": "Grounding",
+    "duration": 7,
+    "description": "Use your senses to anchor yourself in the present.",
+    "steps": [
+      "Acknowledge 5 things you see.",
+      "Acknowledge 4 things you can touch.",
+      "Acknowledge 3 things you hear.",
+      "Acknowledge 2 things you smell.",
+      "Acknowledge 1 thing you can taste."
+    ]
+  },
+  {
+    "id": "exercise_164",
+    "title": "Box Breathing 6",
+    "category": "Anxiety Reset",
+    "duration": 8,
+    "description": "Calm your nervous system with measured breaths.",
+    "steps": [
+      "Breathe in for 4 seconds.",
+      "Hold for 4 seconds.",
+      "Exhale for 4 seconds.",
+      "Hold empty for 4 seconds.",
+      "Repeat 5 times."
+    ]
+  },
+  {
+    "id": "exercise_165",
+    "title": "Three Good Things 6",
+    "category": "Gratitude",
+    "duration": 9,
+    "description": "Shift focus to positives from today.",
+    "steps": [
+      "Write down one good thing.",
+      "Write down a second good thing.",
+      "Write down a third good thing.",
+      "Reflect on how these make you feel."
+    ]
+  },
+  {
+    "id": "exercise_166",
+    "title": "Inner Friend 6",
+    "category": "Self Compassion",
+    "duration": 10,
+    "description": "Talk to yourself as you would a friend.",
+    "steps": [
+      "Write down your self-critical thought.",
+      "Imagine a dear friend having this thought.",
+      "Write down what you would tell them.",
+      "Read those words back to yourself."
+    ]
+  },
+  {
+    "id": "exercise_167",
+    "title": "Do One Small Thing 6",
+    "category": "Behavioral Activation",
+    "duration": 11,
+    "description": "Break the cycle of avoidance.",
+    "steps": [
+      "Pick a task that takes under 5 minutes.",
+      "Set a timer for 5 minutes.",
+      "Do the task immediately.",
+      "Check in on your mood afterwards."
+    ]
+  },
+  {
+    "id": "exercise_168",
+    "title": "Imaginal Exposure 6",
+    "category": "Exposure Practice",
+    "duration": 12,
+    "description": "Visualize a mildly anxiety-provoking scenario.",
+    "steps": [
+      "Sit somewhere safe.",
+      "Close your eyes and imagine the scenario.",
+      "Rate your anxiety 1-10.",
+      "Breathe until it drops by 2 points."
+    ]
+  },
+  {
+    "id": "exercise_169",
+    "title": "Challenge the Thought 6",
+    "category": "Thought Reframing",
+    "duration": 13,
+    "description": "Examine a recurring negative belief.",
+    "steps": [
+      "Identify the negative belief.",
+      "Ask: Is it 100% true?",
+      "Ask: What would I tell a friend?",
+      "Reframe the thought."
+    ]
+  },
+  {
+    "id": "exercise_170",
+    "title": "Mind Reading Check 6",
+    "category": "Cognitive Distortions",
+    "duration": 14,
+    "description": "Stop assuming you know what others think.",
+    "steps": [
+      "Notice who you are mind-reading.",
+      "List alternative reasons for their behavior.",
+      "Remind yourself you cannot read minds."
+    ]
+  },
+  {
+    "id": "exercise_171",
+    "title": "Color Focus 6",
+    "category": "Grounding",
+    "duration": 5,
+    "description": "Ground yourself visually by finding colors.",
+    "steps": [
+      "Pick a color.",
+      "Find 5 objects of that color in the room.",
+      "Describe each object out loud.",
+      "Pick another color and repeat."
+    ]
+  },
+  {
+    "id": "exercise_172",
+    "title": "Progressive Relaxation 6",
+    "category": "Anxiety Reset",
+    "duration": 6,
+    "description": "Release tension from your muscles.",
+    "steps": [
+      "Tense your toes for 5 seconds.",
+      "Release and notice the relaxation.",
+      "Move up to your calves, tense and release.",
+      "Continue moving up your body to your face."
+    ]
+  },
+  {
+    "id": "exercise_173",
+    "title": "Appreciation Letter 6",
+    "category": "Gratitude",
+    "duration": 7,
+    "description": "Express gratitude mentally or in writing.",
+    "steps": [
+      "Think of someone who helped you.",
+      "Write a short paragraph of what they did.",
+      "Notice any warm feelings in your chest."
+    ]
+  },
+  {
+    "id": "exercise_174",
+    "title": "Forgiveness Practice 6",
+    "category": "Self Compassion",
+    "duration": 8,
+    "description": "Let go of a small mistake.",
+    "steps": [
+      "Acknowledge the mistake without judgment.",
+      "Remind yourself everyone makes mistakes.",
+      "Take a deep breath and visualize letting it go."
+    ]
+  },
+  {
+    "id": "exercise_175",
+    "title": "Pleasant Activity Scheduling 6",
+    "category": "Behavioral Activation",
+    "duration": 9,
+    "description": "Plan a small enjoyment.",
+    "steps": [
+      "Brainstorm 3 simple things you enjoy.",
+      "Pick one to do today.",
+      "Schedule an exact time.",
+      "Do it."
+    ]
+  },
+  {
+    "id": "exercise_176",
+    "title": "Worry Time 6",
+    "category": "Exposure Practice",
+    "duration": 10,
+    "description": "Confine worry to a specific block of time.",
+    "steps": [
+      "Schedule 15 minutes of 'worry time'.",
+      "During the day, jot down worries and postpone them.",
+      "When the time comes, review the list.",
+      "When time is up, stop and do another activity."
+    ]
+  },
+  {
+    "id": "exercise_177",
+    "title": "Examine the Evidence 6",
+    "category": "Thought Reframing",
+    "duration": 11,
+    "description": "Look at facts objectively.",
+    "steps": [
+      "Write down the belief.",
+      "List evidence that supports it.",
+      "List evidence against it.",
+      "Incorporate both into a balanced thought."
+    ]
+  },
+  {
+    "id": "exercise_178",
+    "title": "Label Reducer 6",
+    "category": "Cognitive Distortions",
+    "duration": 12,
+    "description": "Change global labels to specific behaviors.",
+    "steps": [
+      "Catch yourself calling yourself a name.",
+      "Identify the specific behavior you regret.",
+      "Acknowledge that one behavior doesn't define you."
+    ]
+  },
+  {
+    "id": "exercise_179",
+    "title": "Texture Walk 6",
+    "category": "Grounding",
+    "duration": 13,
+    "description": "Focus on the physical sensation of touch.",
+    "steps": [
+      "Find an object near you.",
+      "Feel its texture with your fingertips.",
+      "Describe the texture (smooth, rough, cold).",
+      "Find a second object and compare."
+    ]
+  },
+  {
+    "id": "exercise_180",
+    "title": "Shoulder Drop 6",
+    "category": "Anxiety Reset",
+    "duration": 14,
+    "description": "Release physical tension held in your shoulders.",
+    "steps": [
+      "Notice if your shoulders are raised.",
+      "Take a deep breath in.",
+      "Exhale forcibly while dropping shoulders.",
+      "Roll them back twice."
+    ]
+  },
+  {
+    "id": "exercise_181",
+    "title": "Silver Linings 6",
+    "category": "Gratitude",
+    "duration": 5,
+    "description": "Find one positive in a neutral or negative situation.",
+    "steps": [
+      "Pick a minor annoyance from today.",
+      "Find one small silver lining in it.",
+      "Focus on that silver lining for 30 seconds."
+    ]
+  },
+  {
+    "id": "exercise_182",
+    "title": "Soothing Touch 6",
+    "category": "Self Compassion",
+    "duration": 6,
+    "description": "Provide yourself with physical comfort.",
+    "steps": [
+      "Place a hand over your heart or on your arm.",
+      "Feel the warmth of your hand.",
+      "Take three deep, slow breaths."
+    ]
+  },
+  {
+    "id": "exercise_183",
+    "title": "Routine Anchor 6",
+    "category": "Behavioral Activation",
+    "duration": 7,
+    "description": "Attach a new habit to an existing one.",
+    "steps": [
+      "Identify something you do every day (like brushing teeth).",
+      "Choose a 2-minute positive action.",
+      "Do them together."
+    ]
+  },
+  {
+    "id": "exercise_184",
+    "title": "Decatastrophize a Fear 6",
+    "category": "Exposure Practice",
+    "duration": 8,
+    "description": "Examine the feared outcome.",
+    "steps": [
+      "Write down what you fear will happen.",
+      "Write down how you would survive it.",
+      "Write down a more realistic outcome."
+    ]
+  },
+  {
+    "id": "exercise_185",
+    "title": "De-catastrophizing 6",
+    "category": "Thought Reframing",
+    "duration": 9,
+    "description": "Manage worst-case scenario thinking.",
+    "steps": [
+      "Identify the worst-case scenario.",
+      "Estimate how likely it really is.",
+      "Imagine how you would cope if it happened.",
+      "Identify the best-case scenario."
+    ]
+  },
+  {
+    "id": "exercise_186",
+    "title": "Should Statements 6",
+    "category": "Cognitive Distortions",
+    "duration": 10,
+    "description": "Replace 'should' with 'would like'.",
+    "steps": [
+      "Write down a 'should' statement.",
+      "Change it to 'I would prefer' or 'It would be nice if'.",
+      "Notice how the pressure changes."
+    ]
+  },
+  {
+    "id": "exercise_187",
+    "title": "Temperature Notice 6",
+    "category": "Grounding",
+    "duration": 11,
+    "description": "Use temperature to ground your body.",
+    "steps": [
+      "Hold an ice cube or something cold.",
+      "Focus entirely on the cold sensation.",
+      "Notice how your hand feels as it warns up."
+    ]
+  },
+  {
+    "id": "exercise_188",
+    "title": "4-7-8 Breathing 6",
+    "category": "Anxiety Reset",
+    "duration": 12,
+    "description": "A relaxing breath pattern.",
+    "steps": [
+      "Inhale quietly through your nose for 4 seconds.",
+      "Hold the breath for 7 seconds.",
+      "Exhale completely through your mouth for 8 seconds.",
+      "Repeat 4 times."
+    ]
+  },
+  {
+    "id": "exercise_189",
+    "title": "Future Gratitude 6",
+    "category": "Gratitude",
+    "duration": 13,
+    "description": "Look forward to something positive.",
+    "steps": [
+      "Think of one thing happening tomorrow to enjoy.",
+      "Visualize it.",
+      "Write down why you are looking forward to it."
+    ]
+  },
+  {
+    "id": "exercise_190",
+    "title": "Shared Humanity 6",
+    "category": "Self Compassion",
+    "duration": 14,
+    "description": "Remember you are not alone.",
+    "steps": [
+      "Notice a feeling of inadequacy.",
+      "Remind yourself that thousands feel this right now.",
+      "Acknowledge that struggling is part of being human."
+    ]
+  },
+  {
+    "id": "exercise_191",
+    "title": "Mastery Task 6",
+    "category": "Behavioral Activation",
+    "duration": 5,
+    "description": "Do something that gives a sense of accomplishment.",
+    "steps": [
+      "Pick a task you've been putting off.",
+      "Break it into an incredibly small first step.",
+      "Complete just that first step."
+    ]
+  },
+  {
+    "id": "exercise_192",
+    "title": "Safety Behavior Drop 6",
+    "category": "Exposure Practice",
+    "duration": 6,
+    "description": "Gradually remove crutches.",
+    "steps": [
+      "Identify something you do just to feel 'safe'.",
+      "Try doing the activity without it once.",
+      "Notice that you survived without the safety behavior."
+    ]
+  },
+  {
+    "id": "exercise_193",
+    "title": "Identify the Stressor 7",
+    "category": "Thought Reframing",
+    "duration": 7,
+    "description": "Notice what situation triggers your stressful thought.",
+    "steps": [
+      "Write down the specific situation.",
+      "Notice how your body feels.",
+      "Write the literal thought as if it was a quote."
+    ]
+  },
+  {
+    "id": "exercise_194",
+    "title": "Spotting All-or-Nothing 7",
+    "category": "Cognitive Distortions",
+    "duration": 8,
+    "description": "Find shades of grey in your thinking.",
+    "steps": [
+      "Write your absolute thought (e.g. ruined, always, never).",
+      "List one exception to this rule.",
+      "Rewrite the thought to include 'sometimes' or 'partially'."
+    ]
+  },
+  {
+    "id": "exercise_195",
+    "title": "5-4-3-2-1 Technique 7",
+    "category": "Grounding",
+    "duration": 9,
+    "description": "Use your senses to anchor yourself in the present.",
+    "steps": [
+      "Acknowledge 5 things you see.",
+      "Acknowledge 4 things you can touch.",
+      "Acknowledge 3 things you hear.",
+      "Acknowledge 2 things you smell.",
+      "Acknowledge 1 thing you can taste."
+    ]
+  },
+  {
+    "id": "exercise_196",
+    "title": "Box Breathing 7",
+    "category": "Anxiety Reset",
+    "duration": 10,
+    "description": "Calm your nervous system with measured breaths.",
+    "steps": [
+      "Breathe in for 4 seconds.",
+      "Hold for 4 seconds.",
+      "Exhale for 4 seconds.",
+      "Hold empty for 4 seconds.",
+      "Repeat 5 times."
+    ]
+  },
+  {
+    "id": "exercise_197",
+    "title": "Three Good Things 7",
+    "category": "Gratitude",
+    "duration": 11,
+    "description": "Shift focus to positives from today.",
+    "steps": [
+      "Write down one good thing.",
+      "Write down a second good thing.",
+      "Write down a third good thing.",
+      "Reflect on how these make you feel."
+    ]
+  },
+  {
+    "id": "exercise_198",
+    "title": "Inner Friend 7",
+    "category": "Self Compassion",
+    "duration": 12,
+    "description": "Talk to yourself as you would a friend.",
+    "steps": [
+      "Write down your self-critical thought.",
+      "Imagine a dear friend having this thought.",
+      "Write down what you would tell them.",
+      "Read those words back to yourself."
+    ]
+  },
+  {
+    "id": "exercise_199",
+    "title": "Do One Small Thing 7",
+    "category": "Behavioral Activation",
+    "duration": 13,
+    "description": "Break the cycle of avoidance.",
+    "steps": [
+      "Pick a task that takes under 5 minutes.",
+      "Set a timer for 5 minutes.",
+      "Do the task immediately.",
+      "Check in on your mood afterwards."
+    ]
+  },
+  {
+    "id": "exercise_200",
+    "title": "Imaginal Exposure 7",
+    "category": "Exposure Practice",
+    "duration": 14,
+    "description": "Visualize a mildly anxiety-provoking scenario.",
+    "steps": [
+      "Sit somewhere safe.",
+      "Close your eyes and imagine the scenario.",
+      "Rate your anxiety 1-10.",
+      "Breathe until it drops by 2 points."
+    ]
+  }
+]

@@ -1,0 +1,1052 @@
+[
+  {
+    "id": "dist_001",
+    "distortion": "Catastrophizing",
+    "thought": "If I don't finish this report perfectly, I'll be fired and won't be able to pay my rent.",
+    "explanation": "Catastrophizing jumps to the worst possible outcome, bypassing all intermediate reasonable outcomes.",
+    "balancedThought": "Even if I make a mistake, my boss usually just asks for corrections. It's unlikely I'd be fired instantly."
+  },
+  {
+    "id": "dist_002",
+    "distortion": "Catastrophizing",
+    "thought": "This slight ache in my side means I have a severe illness.",
+    "explanation": "Catastrophizing interprets an minor event as signaling a certain, huge disaster without evidence.",
+    "balancedThought": "Ache could be from sleeping awkwardly or a minor muscle strain, which is much more common than a rare illness."
+  },
+  {
+    "id": "dist_003",
+    "distortion": "Catastrophizing",
+    "thought": "I accidentally sent the email without the attachment. Everyone will think I'm completely incompetent.",
+    "explanation": "Assuming one minor error leads inevitably to complete professional ruin.",
+    "balancedThought": "People forget attachments all the time. I can just send a quick follow-up with the document attached."
+  },
+  {
+    "id": "dist_004",
+    "distortion": "Catastrophizing",
+    "thought": "My partner hasn't replied to my text for three hours; they must be furious with me and planning to leave.",
+    "explanation": "Jumping to extreme negative conclusions without considering benign, ordinary explanations.",
+    "balancedThought": "They are likely just busy with work or haven't checked their phone recently. It doesn't mean they are angry."
+  },
+  {
+    "id": "dist_005",
+    "distortion": "Catastrophizing",
+    "thought": "I stumbled over my words during the presentation. The client will definitely cancel our contract.",
+    "explanation": "Believing a small slip-up will absolutely trigger the worst-case scenario.",
+    "balancedThought": "Stumbling over words is a normal human moment. The client cares more about the overall message than a perfect delivery."
+  },
+  {
+    "id": "dist_006",
+    "distortion": "Catastrophizing",
+    "thought": "I got a C on this quiz, which means I'll fail the class and never get my degree.",
+    "explanation": "Extrapolating one minor setback into a complete, life-altering catastrophe.",
+    "balancedThought": "One quiz is only a small percentage of my grade. I have plenty of time to study harder for the next one."
+  },
+  {
+    "id": "dist_007",
+    "distortion": "Catastrophizing",
+    "thought": "The check engine light came on. The car's transmission is ruined and I'll have to pay thousands of dollars.",
+    "explanation": "Assuming any warning sign means the most expensive and worst outcome.",
+    "balancedThought": "It could be a loose gas cap or a minor sensor issue. A mechanic can check it before I assume the worst."
+  },
+  {
+    "id": "dist_008",
+    "distortion": "Catastrophizing",
+    "thought": "I felt nervous speaking up in the meeting. Everyone probably noticed and thought I was weak.",
+    "explanation": "Turning an internal feeling of nervousness into a universally noticed social catastrophe.",
+    "balancedThought": "Most people probably didn't notice, as they are focused on their own thoughts or the topic being discussed."
+  },
+  {
+    "id": "dist_009",
+    "distortion": "Catastrophizing",
+    "thought": "My child is late coming home from school. They must have been in a terrible accident.",
+    "explanation": "Immediately assuming a tragic event explains a normal delay.",
+    "balancedThought": "There could be traffic, they might have missed the bus, or they are just chatting with a friend."
+  },
+  {
+    "id": "dist_010",
+    "distortion": "Catastrophizing",
+    "thought": "I accidentally broke my favorite mug. Today is completely ruined and nothing will go right.",
+    "explanation": "Letting one negative event cast a shadow of catastrophe over an entire day's potential.",
+    "balancedThought": "It's sad the mug broke, but the whole day isn't ruined. I have other mugs and other things to accomplish today."
+  },
+  {
+    "id": "dist_011",
+    "distortion": "Catastrophizing",
+    "thought": "I feel tired today so I'll probably be exhausted all week and won't get any work done.",
+    "explanation": "Predicting that a temporary negative state will become a permanent, widespread disaster.",
+    "balancedThought": "I'm just tired today. If I rest tonight, I can likely bounce back and have a productive week."
+  },
+  {
+    "id": "dist_012",
+    "distortion": "Catastrophizing",
+    "thought": "I overcooked the dinner. Now the whole evening is spoiled and my guests will hate it.",
+    "explanation": "Assuming a minor mistake ruins an entire experience.",
+    "balancedThought": "The dinner might be slightly overcooked, but the main point is spending time together. We can still laugh and talk."
+  },
+  {
+    "id": "dist_013",
+    "distortion": "All-or-Nothing Thinking",
+    "thought": "I ate a piece of cake on my diet, so I've completely failed and might as well eat everything.",
+    "explanation": "Viewing situations in absolute black-or-white terms; a slight deviation is seen as total failure.",
+    "balancedThought": "Having one piece of cake is a minor slip, not a failure. I can just resume my healthy eating plan for the next meal."
+  },
+  {
+    "id": "dist_014",
+    "distortion": "All-or-Nothing Thinking",
+    "thought": "If I don't get exactly a 100% on this test, my studying was a complete waste of time.",
+    "explanation": "Believing anything less than perfection is totally worthless.",
+    "balancedThought": "Even an 85% shows I learned the majority of the material. That knowledge is valuable regardless of not being 'perfect.'"
+  },
+  {
+    "id": "dist_015",
+    "distortion": "All-or-Nothing Thinking",
+    "thought": "My boss gave me some constructive feedback; I must be a terrible employee.",
+    "explanation": "Equating one piece of criticism with being a completely bad worker, ignoring all other successes.",
+    "balancedThought": "Constructive feedback is meant to help me improve in one specific area. It doesn't erase all the good work I've done."
+  },
+  {
+    "id": "dist_016",
+    "distortion": "All-or-Nothing Thinking",
+    "thought": "Because I missed my morning workout, my whole day of being healthy is ruined.",
+    "explanation": "Seeing an all-or-nothing requirement for success, meaning one misstep cancels all progress.",
+    "balancedThought": "Missing one workout doesn't undo everything. I can take a walk later or simply exercise tomorrow."
+  },
+  {
+    "id": "dist_017",
+    "distortion": "All-or-Nothing Thinking",
+    "thought": "I either need to clean the entire house today, or not bother starting at all.",
+    "explanation": "Believing you must complete a task perfectly or fully, or else it is pointless.",
+    "balancedThought": "Cleaning one room or even just a counter is better than nothing. Partial progress is still progress."
+  },
+  {
+    "id": "dist_018",
+    "distortion": "All-or-Nothing Thinking",
+    "thought": "If they don't agree with my idea enthusiastically, it means my idea is garbage.",
+    "explanation": "Seeing others' reactions only as either pure acceptance or total rejection.",
+    "balancedThought": "They might have questions or partial agreement. A lack of sheer enthusiasm doesn't make the idea bad."
+  },
+  {
+    "id": "dist_019",
+    "distortion": "All-or-Nothing Thinking",
+    "thought": "Since I haven't saved enough for a full vacation, there's no point in saving money at all right now.",
+    "explanation": "Treating a goal as either fully achieved or functionally useless, ignoring incremental benefits.",
+    "balancedThought": "Even a little bit of savings builds a safety net. Incremental progress is important and helpful."
+  },
+  {
+    "id": "dist_020",
+    "distortion": "All-or-Nothing Thinking",
+    "thought": "My painting didn't turn out exactly as I pictured it, so it's a completely ruined piece of art.",
+    "explanation": "Judging a creative effort solely on an absolute metric of matching an idealized vision.",
+    "balancedThought": "The painting might be different than planned, but it might still be beautiful or interesting in its own way."
+  },
+  {
+    "id": "dist_021",
+    "distortion": "All-or-Nothing Thinking",
+    "thought": "If my partner doesn't understand exactly how I feel immediately, they don't care about me at all.",
+    "explanation": "Viewing empathy or understanding as an all-or-nothing trait based on immediate perfection.",
+    "balancedThought": "Sometimes people need time to understand complex emotions. Asking questions shows they care enough to try."
+  },
+  {
+    "id": "dist_022",
+    "distortion": "All-or-Nothing Thinking",
+    "thought": "I tripped slightly while running, so I'm completely uncoordinated and terrible at sports.",
+    "explanation": "Using one minor flaw to label yourself absolutely in a negative way.",
+    "balancedThought": "Tripping is a minor, isolated event that happens to everyone, even professional athletes. It doesn't define my coordination."
+  },
+  {
+    "id": "dist_023",
+    "distortion": "All-or-Nothing Thinking",
+    "thought": "Because I haven't finished reading the whole book, I cannot discuss any part of it.",
+    "explanation": "Believing partial knowledge is completely invalid.",
+    "balancedThought": "I can still discuss the chapters I have read and share my thoughts on those specific parts."
+  },
+  {
+    "id": "dist_024",
+    "distortion": "All-or-Nothing Thinking",
+    "thought": "If this first date wasn't magical and perfect, there's zero chance for a relationship.",
+    "explanation": "Expecting immediate perfection or absolutely ruling out any future potential.",
+    "balancedThought": "First dates can be awkward. Sometimes a connection builds slowly over time, rather than instantly."
+  },
+  {
+    "id": "dist_025",
+    "distortion": "Overgeneralization",
+    "thought": "I was rejected after one interview. I'm never going to find a job.",
+    "explanation": "Taking a single negative event and concluding it's a never-ending pattern of defeat.",
+    "balancedThought": "One rejection means I wasn't right for that specific role. There are many other roles I can apply for."
+  },
+  {
+    "id": "dist_026",
+    "distortion": "Overgeneralization",
+    "thought": "My friend had to cancel our lunch date. People always flake on me.",
+    "explanation": "Using words like 'always' or 'never' based on one or two isolated incidents.",
+    "balancedThought": "My friend had a scheduling conflict today. Other friends have kept their plans with me recently."
+  },
+  {
+    "id": "dist_027",
+    "distortion": "Overgeneralization",
+    "thought": "I failed to fix the leaky faucet. I am terrible at everything handy.",
+    "explanation": "Applying a failure in one specific area broadly to all related activities.",
+    "balancedThought": "I may not be good at plumbing, but I am good at fixing computers. I can just call a plumber for this."
+  },
+  {
+    "id": "dist_028",
+    "distortion": "Overgeneralization",
+    "thought": "It rained on my vacation. I have the worst luck ever.",
+    "explanation": "Generalizing a random negative event as a permanent rule about your life.",
+    "balancedThought": "It rains sometimes; weather is unpredictable. I've had many sunny vacations in the past."
+  },
+  {
+    "id": "dist_029",
+    "distortion": "Overgeneralization",
+    "thought": "I accidentally locked my keys in the car. I'm always making stupid mistakes.",
+    "explanation": "Concluding an ongoing pattern of stupidity from a single, common human error.",
+    "balancedThought": "Locking keys in the car is an irritating, but common mistake. I do many smart things every day."
+  },
+  {
+    "id": "dist_030",
+    "distortion": "Overgeneralization",
+    "thought": "My teenager yelled at me this morning. I'm completely failing as a parent.",
+    "explanation": "Overgeneralizing a single negative interaction to define your entire role as a parent.",
+    "balancedThought": "Teens often have volatile moods. One argument does not undo years of good parenting and care."
+  },
+  {
+    "id": "dist_031",
+    "distortion": "Overgeneralization",
+    "thought": "The restaurant got my order wrong. Service everywhere is going downhill lately.",
+    "explanation": "Extrapolating a single poor experience to a broad societal trend.",
+    "balancedThought": "This specific restaurant just made a mistake today. I've had good service at other places recently."
+  },
+  {
+    "id": "dist_032",
+    "distortion": "Overgeneralization",
+    "thought": "I felt socially awkward at the party. I'm totally incapable of making new friends.",
+    "explanation": "Generalizing one difficult social outing to your entire social capability.",
+    "balancedThought": "I was just nervous at that specific party. I've successfully made friends in smaller, quieter settings before."
+  },
+  {
+    "id": "dist_033",
+    "distortion": "Overgeneralization",
+    "thought": "I couldn't solve that math problem. I simply just can't do math.",
+    "explanation": "Believing one difficult challenge represents a permanent, unchangeable limitation.",
+    "balancedThought": "That specific problem was hard. If I review the concepts, I can probably learn how to solve it."
+  },
+  {
+    "id": "dist_034",
+    "distortion": "Overgeneralization",
+    "thought": "My first cake experiment was dense. I'll never be able to bake.",
+    "explanation": "Taking a first attempt failure as proof of permanent inability.",
+    "balancedThought": "Baking takes practice. I can try an easier recipe next time and learn from this outcome."
+  },
+  {
+    "id": "dist_035",
+    "distortion": "Overgeneralization",
+    "thought": "I forgot my cousin's phone number. My memory is completely deteriorating.",
+    "explanation": "Generalizing a common momentary lapse into a sweeping conclusion about mental decline.",
+    "balancedThought": "Forgetting one piece of info happens to everyone. My memory works fine for most things."
+  },
+  {
+    "id": "dist_036",
+    "distortion": "Overgeneralization",
+    "thought": "The first chapter was boring. The entire rest of the series is going to be terrible.",
+    "explanation": "Concluding the quality of a whole based only on a small initial sample.",
+    "balancedThought": "The story might just be having a slow start. Many good books pick up pace after setting the scene."
+  },
+  {
+    "id": "dist_037",
+    "distortion": "Mental Filter",
+    "thought": "I received five compliments on my presentation, but one person noted a typo. My presentation was a disaster.",
+    "explanation": "Focusing exclusively on one negative detail while ignoring all the positive context.",
+    "balancedThought": "The overwhelming majority found it useful. One typo does not invalidate an otherwise solid presentation."
+  },
+  {
+    "id": "dist_038",
+    "distortion": "Mental Filter",
+    "thought": "My review at work was 90% positive, but my boss told me to speak up more. I'm obviously doing a bad job.",
+    "explanation": "Filtering out the praises and fixating solely on the one area suggested for improvement.",
+    "balancedThought": "A 90% positive review is excellent. The suggestion is meant to help me grow, not tear me down."
+  },
+  {
+    "id": "dist_039",
+    "distortion": "Mental Filter",
+    "thought": "We had a lovely family dinner, but my youngest spilled a drink at the end. The whole evening was ruined.",
+    "explanation": "Letting one negative moment color the memory of the entire good event.",
+    "balancedThought": "The spilled drink was a brief annoyance. We had two hours of great conversation and good food before that."
+  },
+  {
+    "id": "dist_040",
+    "distortion": "Mental Filter",
+    "thought": "I enjoyed the vacation until I lost my sunglasses on the last day. It was a terrible trip.",
+    "explanation": "Focusing on a single loss to negate a string of enjoyable experiences.",
+    "balancedThought": "Losing my sunglasses was frustrating, but it doesn't erase the rest of the amazing memories I made."
+  },
+  {
+    "id": "dist_041",
+    "distortion": "Mental Filter",
+    "thought": "My date and I laughed a lot, but there was one awkward silence. We clearly aren't a match.",
+    "explanation": "Filtering out the connection and fixating on a normal lull in conversation.",
+    "balancedThought": "Even people married for years have awkward silences. The laughter and connection are more important indicators."
+  },
+  {
+    "id": "dist_042",
+    "distortion": "Mental Filter",
+    "thought": "I completed all my tasks today except for one email. My day was completely unproductive.",
+    "explanation": "Ignoring a long list of achievements to focus on the single missed item.",
+    "balancedThought": "I accomplished 9 out of 10 things on my list. That is a highly productive day."
+  },
+  {
+    "id": "dist_043",
+    "distortion": "Mental Filter",
+    "thought": "The view from the hike was stunning, but my shoes got muddy. The hike was a miserable experience.",
+    "explanation": "Allowing a minor discomfort to completely overshadow a beautiful main event.",
+    "balancedThought": "Mud is part of hiking. The gorgeous view at the top was completely worth a little bit of dirt."
+  },
+  {
+    "id": "dist_044",
+    "distortion": "Mental Filter",
+    "thought": "My drawing has good proportions and shading, but the hand looks slightly off. The drawing is ugly.",
+    "explanation": "Staring only at the flaw while ignoring the technical skill shown in the rest of the piece.",
+    "balancedThought": "Hands are notoriously difficult to draw. The rest of the piece is strong, and I can keep practicing hands."
+  },
+  {
+    "id": "dist_045",
+    "distortion": "Mental Filter",
+    "thought": "I lost 5 pounds this month, but gained half a pound back this weekend. My diet is failing.",
+    "explanation": "Filtering out the larger trend of progress to focus on a tiny, temporary setback.",
+    "balancedThought": "Overall, I am still down 4.5 pounds. Weight fluctuates naturally, and the trend is still positive."
+  },
+  {
+    "id": "dist_046",
+    "distortion": "Mental Filter",
+    "thought": "The concert had amazing sound and energy, but the band was 15 minutes late. It was a bad show.",
+    "explanation": "Focusing purely on a brief delay rather than the quality of the actual performance.",
+    "balancedThought": "A short delay is common. The actual music and atmosphere were fantastic once it started."
+  },
+  {
+    "id": "dist_047",
+    "distortion": "Mental Filter",
+    "thought": "I saved enough for an emergency fund, but I didn't maximize my retirement this year. I'm bad at finances.",
+    "explanation": "Ignoring the huge financial milestone of an emergency fund to focus on a different unmet goal.",
+    "balancedThought": "Building an emergency fund is a great achievement. I can focus on retirement savings now that I have a safety net."
+  },
+  {
+    "id": "dist_048",
+    "distortion": "Mental Filter",
+    "thought": "My friends all remembered my birthday, but only sent texts instead of calling. They don't actually care.",
+    "explanation": "Dismissing the fact they remembered and reached out, focusing only on the delivery method.",
+    "balancedThought": "Texting is often the default communication method today. The fact they remembered at all shows they care."
+  },
+  {
+    "id": "dist_049",
+    "distortion": "Discounting the Positive",
+    "thought": "I got an A on the test, but it was just an easy test; it doesn't mean I'm smart.",
+    "explanation": "Rejecting a positive achievement by attributing it to luck, ease, or outside forces.",
+    "balancedThought": "I studied hard for that test and answered the questions correctly. I earned that grade through effort."
+  },
+  {
+    "id": "dist_050",
+    "distortion": "Discounting the Positive",
+    "thought": "My boss said I did a great job on the project, but they're just saying that to be nice.",
+    "explanation": "Invalidating a positive compliment by assuming the person has an ulterior, non-genuine motive.",
+    "balancedThought": "My boss is busy and wouldn't go out of their way to praise me if they didn't really mean it."
+  },
+  {
+    "id": "dist_051",
+    "distortion": "Discounting the Positive",
+    "thought": "I managed to cook a complex meal, but anyone could do it if they followed the recipe.",
+    "explanation": "Downplaying a personal skill or success by claiming it's too common or easy to matter.",
+    "balancedThought": "Following a complex recipe still takes time, attention, and effort. I did a good job making it happen."
+  },
+  {
+    "id": "dist_052",
+    "distortion": "Discounting the Positive",
+    "thought": "My friend thanked me for my support, but I wasn't that helpful anyway; I just listened.",
+    "explanation": "Minimizing the value of your own positive and supportive actions.",
+    "balancedThought": "Listening carefully is often exactly what someone needs. My presence and support were genuinely valuable to them."
+  },
+  {
+    "id": "dist_053",
+    "distortion": "Discounting the Positive",
+    "thought": "I won the award, but there weren't that many strong candidates this year, so it doesn't count.",
+    "explanation": "Devaluing a personal victory by attempting to lower the standard of the competition.",
+    "balancedThought": "I still had to put in the work to stand out. An award is an achievement regardless of the competition size."
+  },
+  {
+    "id": "dist_054",
+    "distortion": "Discounting the Positive",
+    "thought": "I finally cleaned the whole living room, but I'm supposed to do that anyway, so it's not a big deal.",
+    "explanation": "Dismissing a positive accomplishment because it's considered an 'expectation' or 'baseline'.",
+    "balancedThought": "Even if it's an expectation, it still takes effort to accomplish. It's okay to feel good about getting it done."
+  },
+  {
+    "id": "dist_055",
+    "distortion": "Discounting the Positive",
+    "thought": "I saved money this month, but it's only a tiny amount, so it won't make a difference.",
+    "explanation": "Rejecting a positive step because you feel the magnitude of the step isn't large enough.",
+    "balancedThought": "Every small step contributes to a larger goal. Saving a little bit is much better than saving nothing at all."
+  },
+  {
+    "id": "dist_056",
+    "distortion": "Discounting the Positive",
+    "thought": "They complimented my shirt, but it's really old so they probably were just trying to fill the silence.",
+    "explanation": "Discounting a direct compliment by finding a reason the item complimented isn't worthy.",
+    "balancedThought": "They simply liked what they saw. An old shirt can still look great, and I can just say 'thank you'."
+  },
+  {
+    "id": "dist_057",
+    "distortion": "Discounting the Positive",
+    "thought": "I kept my cool during an argument, but I only did it because I was too tired to yell.",
+    "explanation": "Invalidating your own positive behavior by attributing it entirely to a negative or neutral state.",
+    "balancedThought": "Regardless of being tired, I successfully managed my emotions and communicated calmly, which is a positive outcome."
+  },
+  {
+    "id": "dist_058",
+    "distortion": "Discounting the Positive",
+    "thought": "I landed the job, but it was just sheer luck that my resume was at the top of the pile.",
+    "explanation": "Giving credit solely to external chance rather than recognizing your own qualifications.",
+    "balancedThought": "Luck may play a small part in timing, but my skills and interview performance actually won me the job."
+  },
+  {
+    "id": "dist_059",
+    "distortion": "Discounting the Positive",
+    "thought": "I ran a 5K, but I was so slow compared to the actual runners, I shouldn't even count it.",
+    "explanation": "Discounting an achievement by comparing it negatively to elites, rather than your own baseline.",
+    "balancedThought": "Completing a 5K is an achievement for my health. Speed doesn't determine whether or not it counts as a healthy accomplishment."
+  },
+  {
+    "id": "dist_060",
+    "distortion": "Discounting the Positive",
+    "thought": "I helped my neighbor move a couch, but it only took five minutes so it wasn't really a favor.",
+    "explanation": "Minimizing a kind act because the effort didn't cross some arbitrary threshold of difficulty.",
+    "balancedThought": "Whether it took five minutes or five hours, I offered my time and muscles to help someone else. It was a kind favor."
+  },
+  {
+    "id": "dist_061",
+    "distortion": "Mind Reading",
+    "thought": "My coworker walked past my desk without saying hello. They must be angry with me.",
+    "explanation": "Assuming you know another person's thoughts or feelings without asking, usually assuming something negative.",
+    "balancedThought": "They were probably just distracted by a work problem or completely lost in thought."
+  },
+  {
+    "id": "dist_062",
+    "distortion": "Mind Reading",
+    "thought": "I saw the interviewer glance at the clock. Oh no, they think my answers are incredibly boring.",
+    "explanation": "Interpreting a neutral action as definite proof of a negative internal judgment.",
+    "balancedThought": "They might need to keep track of time to stay on schedule for other meetings. It rarely means I am boring."
+  },
+  {
+    "id": "dist_063",
+    "distortion": "Mind Reading",
+    "thought": "My spouse sighed deeply while doing the dishes. They definitely resent me for not helping sooner.",
+    "explanation": "Assuming a sigh or minor gesture represents a specific, targeted grievance against you.",
+    "balancedThought": "A sigh often just means someone is tired after a long day. If they need help, they can ask me directly."
+  },
+  {
+    "id": "dist_064",
+    "distortion": "Mind Reading",
+    "thought": "I made a small joke and no one laughed immediately. They must all think I'm weird and annoying.",
+    "explanation": "Concluding that a lack of immediate positive feedback means definite negative judgment.",
+    "balancedThought": "The joke might have just been hard to hear, or maybe it just wasn't their style of humor. It doesn't mean they dislike me."
+  },
+  {
+    "id": "dist_065",
+    "distortion": "Mind Reading",
+    "thought": "My boss sent me a meeting invite without an agenda. They are planning to fire me.",
+    "explanation": "Reading a catastrophic intent into a neutral, administrative action by someone else.",
+    "balancedThought": "Bosses often send quick invites just to catch up on projects. Without an agenda, I shouldn't assume the worst."
+  },
+  {
+    "id": "dist_066",
+    "distortion": "Mind Reading",
+    "thought": "The cashier wasn't smiling. They clearly judge what I'm buying.",
+    "explanation": "Assuming a stranger is specifically focusing negative attention on you.",
+    "balancedThought": "The cashier is likely just feeling tired or stressed about the long line, and their expression has nothing to do with me."
+  },
+  {
+    "id": "dist_067",
+    "distortion": "Mind Reading",
+    "thought": "My friend politely declined my invitation. They are probably trying to phase me out of their life.",
+    "explanation": "Assuming a simple 'no' holds a deep, hidden meaning about ending the relationship.",
+    "balancedThought": "People get busy or tired. They probably just truly couldn't make it to this one specific event."
+  },
+  {
+    "id": "dist_068",
+    "distortion": "Mind Reading",
+    "thought": "I wore a bright yellow sweater today. Everyone is staring at me and thinking it looks ridiculous.",
+    "explanation": "Projecting your own insecurity onto the minds of everyone around you.",
+    "balancedThought": "Most people are too focused on their own errands to harshly judge a stranger's clothing. A bright color is just a bright color."
+  },
+  {
+    "id": "dist_069",
+    "distortion": "Mind Reading",
+    "thought": "My child didn't want to talk about school today. They must be hiding something terrible from me.",
+    "explanation": "Assuming silence is a deliberate attempt to conceal a major negative secret.",
+    "balancedThought": "Many kids just need downtime after school and don't feel like recounting their day immediately. It's usually not a big secret."
+  },
+  {
+    "id": "dist_070",
+    "distortion": "Mind Reading",
+    "thought": "The client asked multiple questions about the timeline. They definitely think we are incompetent and slow.",
+    "explanation": "Interpreting normal, clarifying questions as a hostile accusation.",
+    "balancedThought": "Asking questions about timelines is a standard part of business planning. It just means they need the information, not that they doubt us."
+  },
+  {
+    "id": "dist_071",
+    "distortion": "Mind Reading",
+    "thought": "My sibling hasn't returned my call yet. They must still be holding a grudge from our argument last year.",
+    "explanation": "Assuming a delay in communication is specifically tied to a long-past conflict.",
+    "balancedThought": "They are likely just dealing with their own busy schedule today. It's improbable it's about a resolved argument from a year ago."
+  },
+  {
+    "id": "dist_072",
+    "distortion": "Mind Reading",
+    "thought": "The gym instructor gently corrected my form. They must think I'm totally out of shape and clueless.",
+    "explanation": "Reading absolute negative judgment into an action that is meant to be helpful and constructive.",
+    "balancedThought": "It's literally their job to correct form to prevent injury. They are just being helpful, not passing judgment on my worth."
+  },
+  {
+    "id": "dist_073",
+    "distortion": "Fortune Telling",
+    "thought": "I just know I'm going to fail this exam, so what's the point of studying?",
+    "explanation": "Predicting a negative outcome in the future as an absolute fact, abandoning agency.",
+    "balancedThought": "I cannot tell the future. If I study, I significantly increase my chances of passing."
+  },
+  {
+    "id": "dist_074",
+    "distortion": "Fortune Telling",
+    "thought": "If I go to this party, I'll definitely say something stupid and embarrass myself.",
+    "explanation": "Prophesying social ruin before even stepping foot into the situation.",
+    "balancedThought": "I have navigated many social situations just fine. It's more likely I will simply chat a bit and come home."
+  },
+  {
+    "id": "dist_075",
+    "distortion": "Fortune Telling",
+    "thought": "This new project at work is going to be a complete mess; it's doomed from the start.",
+    "explanation": "Concluding a project will fail before it has even properly begun.",
+    "balancedThought": "There may be challenges, but we have a capable team. We can solve problems as they arise instead of declaring it doomed."
+  },
+  {
+    "id": "dist_076",
+    "distortion": "Fortune Telling",
+    "thought": "I shouldn't apply for that promotion because I definitely won't get it anyway.",
+    "explanation": "Predicting failure to justify avoiding a risk or an opportunity.",
+    "balancedThought": "I don't know who else is applying or what exactly they want. I have a chance if I apply; I have zero chance if I don't."
+  },
+  {
+    "id": "dist_077",
+    "distortion": "Fortune Telling",
+    "thought": "If I speak up and tell my partner I'm upset, it will just turn into a massive fight.",
+    "explanation": "Assuming that addressing a concern will inevitably lead to a worst-case confrontation.",
+    "balancedThought": "We have had constructive conversations before. If I approach it calmly, we can likely figure it out without a massive fight."
+  },
+  {
+    "id": "dist_078",
+    "distortion": "Fortune Telling",
+    "thought": "This diet isn't going to work long-term; I'll end up gaining all the weight back anyway.",
+    "explanation": "Projecting past failures onto future attempts as a guaranteed outcome.",
+    "balancedThought": "Just because past attempts didn't work doesn't guarantee the future. I can try new strategies and learn as I go."
+  },
+  {
+    "id": "dist_079",
+    "distortion": "Fortune Telling",
+    "thought": "There's no point in going to therapy; it's never going to help me get better.",
+    "explanation": "Predicting a treatment will be worthless before giving it a genuine, sustained effort.",
+    "balancedThought": "Therapy helps many people. I cannot know it won't help me until I actually commit to trying it for a while."
+  },
+  {
+    "id": "dist_080",
+    "distortion": "Fortune Telling",
+    "thought": "I know if I start painting again, I'll just end up hating what I make.",
+    "explanation": "Predicting dissatisfaction with a creative process before making a single brushstroke.",
+    "balancedThought": "The goal of painting can just be enjoying the process, not judging the final product. I might surprise myself and like it."
+  },
+  {
+    "id": "dist_081",
+    "distortion": "Fortune Telling",
+    "thought": "My teen will never learn to be responsible; they are always going to struggle.",
+    "explanation": "Predicting a child's permanent character based on current developmental growing pains.",
+    "balancedThought": "Teenagers change and mature a lot over time. Current struggles are normal and don't dictate their entire adult life."
+  },
+  {
+    "id": "dist_082",
+    "distortion": "Fortune Telling",
+    "thought": "If I ask for a raise, my boss will absolutely say no and might even fire me for asking.",
+    "explanation": "Inventing a hugely catastrophic future outcome for a very standard professional conversation.",
+    "balancedThought": "The worst likely scenario is a polite 'not right now.' Firing someone just for asking for a raise is incredibly rare."
+  },
+  {
+    "id": "dist_083",
+    "distortion": "Fortune Telling",
+    "thought": "I'm going to have a panic attack on the airplane, I just know it.",
+    "explanation": "Predicting a severe physiological response as an undeniable certainty.",
+    "balancedThought": "I may feel anxious, but I have coping tools. Feeling anxious does not guarantee a full panic attack will happen."
+  },
+  {
+    "id": "dist_084",
+    "distortion": "Fortune Telling",
+    "thought": "This date goes well, but I bet they will ghosts me next week anyway.",
+    "explanation": "Forecasting abandonment to protect yourself from getting your hopes up prematurely.",
+    "balancedThought": "I can't predict what they will do. I can just focus on enjoying the date right now and see what happens naturally."
+  },
+  {
+    "id": "dist_085",
+    "distortion": "Emotional Reasoning",
+    "thought": "I feel incredibly anxious right now; therefore, I must be in real, imminent physical danger.",
+    "explanation": "Believing that because you feel a strong negative emotion, it accurately reflects the objective reality.",
+    "balancedThought": "Anxiety is a feeling, not a fact. My body is sounding a false alarm. I am safe right here in my room."
+  },
+  {
+    "id": "dist_086",
+    "distortion": "Emotional Reasoning",
+    "thought": "I feel so guilty; I must have done something horribly wrong to someone.",
+    "explanation": "Using the presence of guilt to conclude that an actual offense or sin has occurred.",
+    "balancedThought": "Sometimes I feel guilty just for setting a healthy boundary. I need evidence of wronging someone, not just the feeling."
+  },
+  {
+    "id": "dist_087",
+    "distortion": "Emotional Reasoning",
+    "thought": "I feel stupid when I'm trying to learn this software, which means I truly am unintelligent.",
+    "explanation": "Taking the emotion of frustration or inadequacy as proof of your actual lacking intelligence.",
+    "balancedThought": "Learning new things often feels frustrating or 'stupid' at first. It just means the skill is new, not that I lack intelligence."
+  },
+  {
+    "id": "dist_088",
+    "distortion": "Emotional Reasoning",
+    "thought": "I feel hopeless about my financial situation, so it must be actually impossible to fix.",
+    "explanation": "Allowing a feeling of despair to convince you that the situation logically cannot improve.",
+    "balancedThought": "Feeling overwhelmed makes things seem worse than they are. With a strict budget and time, the situation can slowly improve."
+  },
+  {
+    "id": "dist_089",
+    "distortion": "Emotional Reasoning",
+    "thought": "I feel completely overwhelmed by this messy kitchen; therefore, it is physically impossible to clean.",
+    "explanation": "Converting an emotional state of overwhelm into a judgment about the physical complexity of a task.",
+    "balancedThought": "The task feels huge, but it's just a matter of putting things away one by one. I can just start with the trash first."
+  },
+  {
+    "id": "dist_090",
+    "distortion": "Emotional Reasoning",
+    "thought": "I feel jealous when my partner talks to their ex, so they must be secretly cheating on me.",
+    "explanation": "Using an emotion (jealousy) as evidence to validate an unfounded accusation (cheating).",
+    "balancedThought": "Jealousy is my own insecurity acting up. Unless I have actual proof, my partner is just having a normal conversation."
+  },
+  {
+    "id": "dist_091",
+    "distortion": "Emotional Reasoning",
+    "thought": "I feel unattractive today, so everyone looking at me must be noticing how bad I look.",
+    "explanation": "Assuming an internal negative feeling about oneself is visibly obvious and agreed upon by everyone else.",
+    "balancedThought": "My internal feelings don't dictate how others perceive me. People are mostly just going about their day."
+  },
+  {
+    "id": "dist_092",
+    "distortion": "Emotional Reasoning",
+    "thought": "I feel angry at my friend, therefore they must have definitely done something intentionally malicious to hurt me.",
+    "explanation": "Using your anger as undeniable proof that another person's intent was hostile.",
+    "balancedThought": "My anger shows I'm hurt, but my friend may have just made an honest mistake or communicated poorly, without malice."
+  },
+  {
+    "id": "dist_093",
+    "distortion": "Emotional Reasoning",
+    "thought": "I feel lonely at this party, which proves that nobody here actually likes me.",
+    "explanation": "Taking an internal feeling of isolation as external proof of social rejection.",
+    "balancedThought": "Loneliness at a party often just means I haven't found someone easy to talk to yet. It doesn't mean I am universally disliked."
+  },
+  {
+    "id": "dist_094",
+    "distortion": "Emotional Reasoning",
+    "thought": "I feel like a fraud at work (imposter syndrome), so it's a fact that I don't belong here.",
+    "explanation": "Treating 'imposter' feelings as objective truth regarding your qualifications.",
+    "balancedThought": "Many competent people feel this way. I was hired based on my actual resume, experience, and interviews."
+  },
+  {
+    "id": "dist_095",
+    "distortion": "Emotional Reasoning",
+    "thought": "I feel afraid of flying, so airplanes must be intrinsically highly dangerous.",
+    "explanation": "Using the emotion of fear to validate an incorrect assessment of statistical risk.",
+    "balancedThought": "Flight is statistically very safe. My fear response is misinterpreting the actual level of danger involved."
+  },
+  {
+    "id": "dist_096",
+    "distortion": "Emotional Reasoning",
+    "thought": "I feel resentful that I have to work late, so my boss is definitely exploiting me intentionally.",
+    "explanation": "Letting resentment conclude that an action represents deliberate malice rather than a project constraint.",
+    "balancedThought": "Working late is frustrating, but it's likely just a mismanaged timeline, not a deliberate plot to make me miserable."
+  },
+  {
+    "id": "dist_097",
+    "distortion": "Should Statements",
+    "thought": "I should always be productive and never waste a moment of my day relaxing.",
+    "explanation": "Creating a rigid, inescapable rule ('should', 'must') that causes guilt when inevitably broken.",
+    "balancedThought": "Humans are not machines. Rest and relaxation are necessary for long-term health and actual productivity."
+  },
+  {
+    "id": "dist_098",
+    "distortion": "Should Statements",
+    "thought": "My partner should know exactly what I want for my birthday without me telling them.",
+    "explanation": "Using 'should' to impose an impossible standard (mind reading) onto someone else, leading to resentment.",
+    "balancedThought": "It's unfair to expect anyone to mind-read. If I want something specific, communicating it clearly is much healthier."
+  },
+  {
+    "id": "dist_099",
+    "distortion": "Should Statements",
+    "thought": "I shouldn't feel sad about this loss; it's a minor thing and others have it much worse.",
+    "explanation": "Using 'shouldn't' to invalidate and dismiss your own authentic emotional responses.",
+    "balancedThought": "Emotions just happen. It's okay to feel sad about small losses. Invalidating my feelings only makes them linger longer."
+  },
+  {
+    "id": "dist_100",
+    "distortion": "Should Statements",
+    "thought": "I must never make a mistake at a job I've held for three years.",
+    "explanation": "Imposing a demand for absolute perfection based on arbitrary milestones.",
+    "balancedThought": "Even experts make mistakes. Being experienced means I know how to fix the mistake efficiently, not that I'll never make one."
+  },
+  {
+    "id": "dist_101",
+    "distortion": "Should Statements",
+    "thought": "People should always drive politely and follow every rule perfectly on the highway.",
+    "explanation": "Projecting a rigid rule onto the chaotic public, causing constant frustration when the public fails.",
+    "balancedThought": "While nice in theory, people are flawed and distracted. Getting angry at 'what should be' just ruins my own commute."
+  },
+  {
+    "id": "dist_102",
+    "distortion": "Should Statements",
+    "thought": "I should be married with a house by age thirty, like my parents were.",
+    "explanation": "Using a 'should' based on outdated timelines or comparisons to others, leading to feelings of failure.",
+    "balancedThought": "Everyone's life path is different. Imposing an arbitrary timeline only creates unnecessary pressure and disappointment."
+  },
+  {
+    "id": "dist_103",
+    "distortion": "Should Statements",
+    "thought": "I ought to go to the gym every single day, no matter how tired I am.",
+    "explanation": "A rigid rule that ignores physical reality and needs, leading to burnout.",
+    "balancedThought": "Rest days are crucial for physical recovery. Going 3-4 times a week is sustainable and much healthier overall."
+  },
+  {
+    "id": "dist_104",
+    "distortion": "Should Statements",
+    "thought": "My boss should appreciate how hard I work and offer me praise daily.",
+    "explanation": "Setting an expectation for another person's behavior that you cannot control.",
+    "balancedThought": "It would be nice to get daily praise, but bosses are busy too. I can validate my own hard work without needing external praise constantly."
+  },
+  {
+    "id": "dist_105",
+    "distortion": "Should Statements",
+    "thought": "I shouldn't need help with this simple task; I should be able to do it myself.",
+    "explanation": "Using 'should' to arbitrarily block yourself from seeking necessary assistance.",
+    "balancedThought": "There is no shame in asking for help, even for 'simple' things. It's often the fastest way to learn and solve the problem."
+  },
+  {
+    "id": "dist_106",
+    "distortion": "Should Statements",
+    "thought": "They must apologize to me before I will even consider moving on from this argument.",
+    "explanation": "Using 'must' to create a stubborn absolute that keeps you locked in conflict.",
+    "balancedThought": "An apology is ideal, but holding my peace hostage to someone else's actions gives them too much power over my feelings."
+  },
+  {
+    "id": "dist_107",
+    "distortion": "Should Statements",
+    "thought": "I shouldn't eat any sugar ever again if I want to be healthy.",
+    "explanation": "An incredibly rigid 'should' regarding diet that sets up inevitable failure and guilt.",
+    "balancedThought": "A balanced diet can include moderate amounts of sugar. Extreme rules usually lead to binging and stress."
+  },
+  {
+    "id": "dist_108",
+    "distortion": "Should Statements",
+    "thought": "My children should always be grateful and well-behaved.",
+    "explanation": "Holding children to an impossible standard of continuous adult-level emotional regulation.",
+    "balancedThought": "Children are learning and will naturally have bad days, emotional outbursts, and moments of ingratitude. It's expected."
+  },
+  {
+    "id": "dist_109",
+    "distortion": "Labeling",
+    "thought": "I completely failed this math test. I am an absolute idiot.",
+    "explanation": "Attaching a highly negative, permanent label to yourself based on one specific performance.",
+    "balancedThought": "Failing one test just means I struggled with that specific material. It does not mean my overall intelligence is low."
+  },
+  {
+    "id": "dist_110",
+    "distortion": "Labeling",
+    "thought": "That driver cut me off in traffic. He is entirely a selfish monster.",
+    "explanation": "Applying a sweeping negative label to another person based on a single action in a stressful context.",
+    "balancedThought": "He made a bad driving decision. He might just be late or distracted, not entirely a monstrous person."
+  },
+  {
+    "id": "dist_111",
+    "distortion": "Labeling",
+    "thought": "I burned the toast again. I am a total disaster in the kitchen.",
+    "explanation": "Labeling yourself globally based on a minor, easily fixable mistake.",
+    "balancedThought": "I simply burned a piece of bread. I can make another slice. I successfully make coffee and other meals often."
+  },
+  {
+    "id": "dist_112",
+    "distortion": "Labeling",
+    "thought": "My friend forgot to call me back. She is a completely unreliable flake.",
+    "explanation": "Judging an entire person's character intensely over one lapse in memory.",
+    "balancedThought": "She forgot one call. Normally she is there when I need her. She just made a human error today."
+  },
+  {
+    "id": "dist_113",
+    "distortion": "Labeling",
+    "thought": "I couldn't get myself out of bed early to jog. I am lazy and worthless.",
+    "explanation": "Equating a biological state of tiredness with a moral failing or broad character flaw.",
+    "balancedThought": "I was just overly tired this morning. Needing rest does not mean my entire character is 'lazy'."
+  },
+  {
+    "id": "dist_114",
+    "distortion": "Labeling",
+    "thought": "He didn't hold the door open for me. He is a totally toxic jerk.",
+    "explanation": "Jumping to an extreme label about character based on a minor social oversight.",
+    "balancedThought": "He might have just not seen me behind him. Categorizing him as 'toxic' over a door is an extreme leap."
+  },
+  {
+    "id": "dist_115",
+    "distortion": "Labeling",
+    "thought": "I lost my keys for the second time this month. I'm a scatterbrained mess.",
+    "explanation": "Using an exaggerated label to summarize a few instances of misplacing items.",
+    "balancedThought": "Losing keys happens. It means I need a better system, like a bowl by the door, not that I am entirely a mess."
+  },
+  {
+    "id": "dist_116",
+    "distortion": "Labeling",
+    "thought": "The customer service rep couldn't help me immediately. They are completely useless.",
+    "explanation": "Sticking a definitive, harsh label on a worker dealing with system limitations.",
+    "balancedThought": "The rep has constraints on what they can authorize. 'Useless' is an unfair label for someone just doing their job."
+  },
+  {
+    "id": "dist_117",
+    "distortion": "Labeling",
+    "thought": "I cried during the movie. I am just an overly sensitive crybaby.",
+    "explanation": "Using a pejorative label to describe entirely normal emotional resonance.",
+    "balancedThought": "Crying at a sad movie just means I have empathy and feelings. It's a normal human response, not a weakness."
+  },
+  {
+    "id": "dist_118",
+    "distortion": "Labeling",
+    "thought": "My colleague spoke over me in the meeting. They are an arrogant narcissist.",
+    "explanation": "Upgrading a rude behavior into a clinical, permanent personality disorder label.",
+    "balancedThought": "Interrupting is rude, but attributing it to profound narcissism is a huge leap. They might just be overly eager to share."
+  },
+  {
+    "id": "dist_119",
+    "distortion": "Labeling",
+    "thought": "I tripped on the sidewalk. I am nothing but a clumsy fool.",
+    "explanation": "Labeling your entire way of moving through the world over a single crack in the pavement.",
+    "balancedThought": "Anyone can trip on an uneven surface. One physical misstep doesn't make me a 'fool'."
+  },
+  {
+    "id": "dist_120",
+    "distortion": "Labeling",
+    "thought": "We argued about finances again. Our relationship is completely toxic.",
+    "explanation": "Labeling an entire complex relationship with a harsh word over a common disagreement point.",
+    "balancedThought": "Money is a stressful topic for most couples. Having arguments is difficult, but it doesn't instantly make the entire relationship toxic."
+  },
+  {
+    "id": "dist_121",
+    "distortion": "Personalization",
+    "thought": "My boss looks angry today. It must be something I did wrong yesterday.",
+    "explanation": "Assuming you are the direct cause of another person's negative mood or behavior without evidence.",
+    "balancedThought": "My boss has their own life, stress, and higher-ups to deal with. Their anger is highly likely unrelated to me."
+  },
+  {
+    "id": "dist_122",
+    "distortion": "Personalization",
+    "thought": "Our team lost the softball game. If I had caught that one fly ball, we would have won. It's my fault.",
+    "explanation": "Taking disproportionate blame for an outcome that was the result of many people's actions over time.",
+    "balancedThought": "A game depends on dozens of plays by many players. One missed catch does not shoulder the blame for the entire loss."
+  },
+  {
+    "id": "dist_123",
+    "distortion": "Personalization",
+    "thought": "My child is struggling with reading. I must have completely failed them as a parent.",
+    "explanation": "Assuming complete personal responsibility for another person's inherent struggles.",
+    "balancedThought": "Learning paces differ. It has much more to do with their developmental timeline than anything I did 'wrong'."
+  },
+  {
+    "id": "dist_124",
+    "distortion": "Personalization",
+    "thought": "The dinner party was kind of quiet. I must be a terrible host who doesn't know how to entertain.",
+    "explanation": "Taking personal responsibility for the collective mood and chemistry of a group of adults.",
+    "balancedThought": "Sometimes groups are just tired or quiet. As a host, I provide food and space; I cannot control everyone's energy levels."
+  },
+  {
+    "id": "dist_125",
+    "distortion": "Personalization",
+    "thought": "My friend is sad today, and I couldn't cheer them up. I'm a bad friend.",
+    "explanation": "Believing you are responsible for 'fixing' someone else's emotions, and failing means you are bad.",
+    "balancedThought": "I cannot control or turn off someone else's sadness. Simply being present and supportive is what makes a good friend."
+  },
+  {
+    "id": "dist_126",
+    "distortion": "Personalization",
+    "thought": "The company didn't hit its quarterly goals. If I had worked slightly harder on my minor project, it would have.",
+    "explanation": "Inflating your own singular importance in a massive, multi-variable corporate system.",
+    "balancedThought": "Quarterly goals rely on complex market factors, total sales, and whole departments. My minor project wasn't the single deciding factor."
+  },
+  {
+    "id": "dist_127",
+    "distortion": "Personalization",
+    "thought": "My dog seems anxious today. I clearly don't know how to properly care for an animal.",
+    "explanation": "Personalizing an animal's natural fluctuations in mood or behavior as a direct failure of care.",
+    "balancedThought": "Dogs get anxious over weird noises, weather, or slight stomach aches. It's rarely a reflection of my overall care."
+  },
+  {
+    "id": "dist_128",
+    "distortion": "Personalization",
+    "thought": "They canceled our second date. I must be completely unlovable and boring.",
+    "explanation": "Interpreting an external event (cancellation) as an indictment of your core worth.",
+    "balancedThought": "They might have reconnected with an ex, gotten too busy, or just didn't feel a spark. It doesn't mean I am fundamentally unlovable."
+  },
+  {
+    "id": "dist_129",
+    "distortion": "Personalization",
+    "thought": "The store didn't have the item my partner wanted. I failed because I didn't go earlier.",
+    "explanation": "Blaming yourself for external inventory issues outside of your absolute control.",
+    "balancedThought": "I couldn't have known it would sell out. Store inventory is not my responsibility, and I can just check back later."
+  },
+  {
+    "id": "dist_130",
+    "distortion": "Personalization",
+    "thought": "It rained on the outdoor picnic I planned. I always ruin everything.",
+    "explanation": "Taking personal blame for literally uncontrollable forces like the weather.",
+    "balancedThought": "I cannot control the weather. The rain is unfortunate, but no human is responsible for the sky raining."
+  },
+  {
+    "id": "dist_131",
+    "distortion": "Magnification/Minimization",
+    "thought": "I found a typo in the newsletter I sent out. This is a massive, unforgivable disaster.",
+    "explanation": "Blowing a small error wildly out of proportion (Magnification/Catastrophizing variant).",
+    "balancedThought": "It's just one typo among thousands of words. Most people won't notice, and those who do won't care heavily."
+  },
+  {
+    "id": "dist_132",
+    "distortion": "Magnification/Minimization",
+    "thought": "Sure, I got promoted, but it's just 'Assistant Manager.' Anyone could get that.",
+    "explanation": "Shrinking a significant positive accomplishment down to make it seem trivial (Minimization).",
+    "balancedThought": "A promotion is a clear sign of recognized hard work and leadership. It is a genuine step up that I earned."
+  },
+  {
+    "id": "dist_133",
+    "distortion": "Magnification/Minimization",
+    "thought": "I stuttered over one word during my speech. The entire 20-minute address was completely ruined.",
+    "explanation": "Magnifying one minor flaw so large that it eclipses the vast majority of good work done.",
+    "balancedThought": "The audience was engaged for 19.9 minutes of excellent material. One stutter does not ruin a presentation."
+  },
+  {
+    "id": "dist_134",
+    "distortion": "Magnification/Minimization",
+    "thought": "I know I haven't smoked in three months, but I'm still using a nicotine patch so the quitting doesn't really 'count'.",
+    "explanation": "Minimizing a huge behavioral victory by fixating on a transitional aid.",
+    "balancedThought": "Three months without smoking is a massive health victory. The patch is a valid tool, not a reason to minimize the achievement."
+  },
+  {
+    "id": "dist_135",
+    "distortion": "Magnification/Minimization",
+    "thought": "I accidentally scratched the rental car. I am going to end up owing millions and go bankrupt.",
+    "explanation": "Magnifying the consequences of a mildly expensive mistake into life-ending financial ruin.",
+    "balancedThought": "Insurance exists for this reason. I will have to pay a deductible, which is annoying, but far from bankruptcy."
+  },
+  {
+    "id": "dist_136",
+    "distortion": "Magnification/Minimization",
+    "thought": "My friend praised my art, but they're just my friend, so their opinion holds zero actual artistic weight.",
+    "explanation": "Minimizing positive feedback by disqualifying the source as inherently biased.",
+    "balancedThought": "My friend can still recognize good art when they see it. I should accept the compliment instead of finding ways to diminish it."
+  },
+  {
+    "id": "dist_137",
+    "distortion": "Magnification/Minimization",
+    "thought": "I gained one pound back this week. All my months of dieting and exercise are entirely destroyed.",
+    "explanation": "Magnifying a tiny fluctuation into a total collapse of long-term progress.",
+    "balancedThought": "Weight fluctuates naturally. One pound does not erase months of built strength and cardiovascular health."
+  },
+  {
+    "id": "dist_138",
+    "distortion": "Magnification/Minimization",
+    "thought": "Yes, I finally finished my novel, but it's completely unpublishable garbage so doing it was utterly pointless.",
+    "explanation": "Minimizing an incredible act of endurance and creativity by judging it harshly right at the end.",
+    "balancedThought": "Writing a book is something most people only dream of doing. Completing the draft is a massive accomplishment in itself."
+  },
+  {
+    "id": "dist_139",
+    "distortion": "Magnification/Minimization",
+    "thought": "I accidentally interrupted my boss in the meeting. My entire professional reputation is now permanently garbage.",
+    "explanation": "Blowing up a minor faux pas into a permanent character assassination.",
+    "balancedThought": "People interrupt each other accidentally in meetings all the time. An apology handles it smoothly, and it will be forgotten by tomorrow."
+  },
+  {
+    "id": "dist_140",
+    "distortion": "Magnification/Minimization",
+    "thought": "I helped my neighbor fix their fence, but it only took an hour, so I shouldn't feel good about it.",
+    "explanation": "Minimizing an act of service purely because it didn't take extreme, grueling effort.",
+    "balancedThought": "An act of kindness is valuable regardless of how long it takes. My neighbor was helped, and that's good."
+  },
+  {
+    "id": "dist_141",
+    "distortion": "Comparison / Unfair Standards",
+    "thought": "Look at her social media; she's younger than me and already a CEO. I am a complete failure.",
+    "explanation": "Measuring your entire worth against the highly curated, highlighted achievements of someone else.",
+    "balancedThought": "Social media is a highlight reel. Everyone's path is different, and I have my own quiet successes that matter to me."
+  },
+  {
+    "id": "dist_142",
+    "distortion": "Comparison / Unfair Standards",
+    "thought": "My brother makes twice as much money as I do. Therefore, he is vastly more successful at life.",
+    "explanation": "Defining 'success at life' strictly by an unfair, single metric (income) against a specific peer.",
+    "balancedThought": "Success is multifaceted. I have good health, great friends, and a job I enjoy, which has high value beyond money."
+  },
+  {
+    "id": "dist_143",
+    "distortion": "Comparison / Unfair Standards",
+    "thought": "I'll never be as fit as that fitness influencer, so there's no reason to even bother working out.",
+    "explanation": "Setting the standard for effort against an unrealistic, professional extreme.",
+    "balancedThought": "My goal isn't to be a fitness model; my goal is to be healthier and stronger than I currently am. That is achievable."
+  },
+  {
+    "id": "dist_144",
+    "distortion": "Comparison / Unfair Standards",
+    "thought": "My coworker finished the project in three days, and it took me a week. I must be incredibly slow and stupid.",
+    "explanation": "Comparing speeds without acknowledging different methodologies, external workloads, or learning curves.",
+    "balancedThought": "We both got it done. Fast isn't always better; maybe I was more thorough. Moving forward, I can see if they have efficiency tips to share."
+  },
+  {
+    "id": "dist_145",
+    "distortion": "Comparison / Unfair Standards",
+    "thought": "They seem completely relaxed parenting their toddler, while I am constantly stressed. There's something defective about me.",
+    "explanation": "Comparing your complex internal reality against the calm external facade of someone else.",
+    "balancedThought": "Toddlers are universally stressful. I only see them in public for brief moments; I guarantee they are stressed at home sometimes too."
+  },
+  {
+    "id": "dist_146",
+    "distortion": "Comparison / Unfair Standards",
+    "thought": "Everyone else my age has bought a house already. I am hopelessly trailing behind in life.",
+    "explanation": "Comparing yourself against an imaginary, generalized 'everyone' regarding a major life milestone.",
+    "balancedThought": "Homeownership depends heavily on location and background. Many people my age rent, and life isn't a strict race on a timeline."
+  },
+  {
+    "id": "dist_147",
+    "distortion": "Comparison / Unfair Standards",
+    "thought": "I shouldn't feel pain about my breakup; my friend lost a parent, which is much worse.",
+    "explanation": "Using a standard of 'someone has it worse' to unfairly deny your own pain (also Shoulding/Minimization).",
+    "balancedThought": "Pain is not a competition. Their terrible loss doesn't make my heartbreak any less real or painful for me right now."
+  },
+  {
+    "id": "dist_148",
+    "distortion": "Comparison / Unfair Standards",
+    "thought": "My painting looks amateurish compared to the masterpieces in the museum.",
+    "explanation": "Evaluating beginner or hobbyist work against the highest echelon of historical greatness.",
+    "balancedThought": "They practiced for their entire lives to be in museums. I just started painting. A more fair comparison is against my own work from last year."
+  },
+  {
+    "id": "dist_149",
+    "distortion": "Comparison / Unfair Standards",
+    "thought": "She always knows exactly what to say at parties, but I'm always awkward. I have zero social skills.",
+    "explanation": "Comparing a single weakness of yours against a singular strength of someone else's.",
+    "balancedThought": "She might be great at parties, but maybe she struggles with 1-on-1 deep talks where I excel. Nobody is perfect at everything."
+  },
+  {
+    "id": "dist_150",
+    "distortion": "Comparison / Unfair Standards",
+    "thought": "I'm exhausted after a 40-hour week, but my grandfather worked 60 hours in a factory. I'm just weak.",
+    "explanation": "Measuring your mental fatigue against a heavily romanticized, different era of physical labor standards.",
+    "balancedThought": "Modern mental workload is different from physical labor. Exhaustion is valid, and standards change over generations; I am allowed to be tired."
+  }
+]

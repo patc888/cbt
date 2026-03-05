@@ -1,10 +1,3 @@
-//
-//  CBTApp.swift
-//  CBT
-//
-//  Created by Melissa Chan on 3/4/26.
-//
-
 import SwiftUI
 import SwiftData
 
@@ -13,6 +6,11 @@ struct CBTApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
+            UserSettings.self,
+            MoodEntry.self,
+            ThoughtRecord.self,
+            ExerciseCompletion.self,
+            JournalEntry.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -23,9 +21,13 @@ struct CBTApp: App {
         }
     }()
 
+    @State private var themeManager = ThemeManager()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(themeManager)
+                .preferredColorScheme(themeManager.appTheme.colorScheme)
         }
         .modelContainer(sharedModelContainer)
     }

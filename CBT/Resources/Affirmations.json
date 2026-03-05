@@ -1,0 +1,602 @@
+[
+    {
+        "id": "aff_000",
+        "category": "Calm",
+        "text": "I can handle this feeling, it will pass."
+    },
+    {
+        "id": "aff_001",
+        "category": "Calm",
+        "text": "I am allowed to pause, breathe, and reset."
+    },
+    {
+        "id": "aff_002",
+        "category": "Calm",
+        "text": "My peace is more important than my to-do list right now."
+    },
+    {
+        "id": "aff_003",
+        "category": "Calm",
+        "text": "I can soften my shoulders and release the tension."
+    },
+    {
+        "id": "aff_004",
+        "category": "Calm",
+        "text": "I do not have to have everything figured out this very minute."
+    },
+    {
+        "id": "aff_005",
+        "category": "Calm",
+        "text": "I am safe in this present moment."
+    },
+    {
+        "id": "aff_006",
+        "category": "Calm",
+        "text": "I can step back and give myself space."
+    },
+    {
+        "id": "aff_007",
+        "category": "Calm",
+        "text": "This discomfort is temporary."
+    },
+    {
+        "id": "aff_008",
+        "category": "Calm",
+        "text": "I give myself permission to rest today."
+    },
+    {
+        "id": "aff_009",
+        "category": "Calm",
+        "text": "I can observe my racing thoughts without acting on them."
+    },
+    {
+        "id": "aff_010",
+        "category": "Calm",
+        "text": "There is no rush; I have time to figure this out."
+    },
+    {
+        "id": "aff_011",
+        "category": "Calm",
+        "text": "Breathing in deeper, I find a steady center."
+    },
+    {
+        "id": "aff_012",
+        "category": "Confidence",
+        "text": "I am capable of figuring things out as I go."
+    },
+    {
+        "id": "aff_013",
+        "category": "Confidence",
+        "text": "I have unique strengths that help me navigate challenges."
+    },
+    {
+        "id": "aff_014",
+        "category": "Confidence",
+        "text": "I trust my intuition and my decisions."
+    },
+    {
+        "id": "aff_015",
+        "category": "Confidence",
+        "text": "My voice matters and deserves to be heard."
+    },
+    {
+        "id": "aff_016",
+        "category": "Confidence",
+        "text": "I am enough exactly as I am today."
+    },
+    {
+        "id": "aff_017",
+        "category": "Confidence",
+        "text": "I bring value to the spaces I enter."
+    },
+    {
+        "id": "aff_018",
+        "category": "Confidence",
+        "text": "I give myself permission to take up space."
+    },
+    {
+        "id": "aff_019",
+        "category": "Confidence",
+        "text": "I am standing my ground with grace and strength."
+    },
+    {
+        "id": "aff_020",
+        "category": "Confidence",
+        "text": "I am learning and growing every single day."
+    },
+    {
+        "id": "aff_021",
+        "category": "Confidence",
+        "text": "I can trust my ability to adapt."
+    },
+    {
+        "id": "aff_022",
+        "category": "Confidence",
+        "text": "My worth is not defined by my productivity."
+    },
+    {
+        "id": "aff_023",
+        "category": "Confidence",
+        "text": "I choose to believe in my potential over my doubts."
+    },
+    {
+        "id": "aff_024",
+        "category": "Self-compassion",
+        "text": "I am doing the best I can right now, and that is enough."
+    },
+    {
+        "id": "aff_025",
+        "category": "Self-compassion",
+        "text": "I am gentle with myself when I make mistakes."
+    },
+    {
+        "id": "aff_026",
+        "category": "Self-compassion",
+        "text": "I choose to be my own friend and advocate."
+    },
+    {
+        "id": "aff_027",
+        "category": "Self-compassion",
+        "text": "My flaws make me human, not broken."
+    },
+    {
+        "id": "aff_028",
+        "category": "Self-compassion",
+        "text": "I give myself the same kindness I give others."
+    },
+    {
+        "id": "aff_029",
+        "category": "Self-compassion",
+        "text": "I deserve comfort when I am hurting."
+    },
+    {
+        "id": "aff_030",
+        "category": "Self-compassion",
+        "text": "I forgive myself for not knowing what I didn't know."
+    },
+    {
+        "id": "aff_031",
+        "category": "Self-compassion",
+        "text": "Being hard on myself won't make me better."
+    },
+    {
+        "id": "aff_032",
+        "category": "Self-compassion",
+        "text": "I honor my limits and my needs."
+    },
+    {
+        "id": "aff_033",
+        "category": "Self-compassion",
+        "text": "I can accept where I am today without judgment."
+    },
+    {
+        "id": "aff_034",
+        "category": "Self-compassion",
+        "text": "It is okay if all I did today was survive."
+    },
+    {
+        "id": "aff_035",
+        "category": "Self-compassion",
+        "text": "I choose progress over perfection."
+    },
+    {
+        "id": "aff_036",
+        "category": "Motivation",
+        "text": "I can take one small step right now."
+    },
+    {
+        "id": "aff_037",
+        "category": "Motivation",
+        "text": "Even tiny actions move me forward."
+    },
+    {
+        "id": "aff_038",
+        "category": "Motivation",
+        "text": "I focus on progress, not perfection."
+    },
+    {
+        "id": "aff_039",
+        "category": "Motivation",
+        "text": "I have the energy to tackle the next task, however small."
+    },
+    {
+        "id": "aff_040",
+        "category": "Motivation",
+        "text": "I choose to start, even if I feel unready."
+    },
+    {
+        "id": "aff_041",
+        "category": "Motivation",
+        "text": "Everything feels hard before it feels easy."
+    },
+    {
+        "id": "aff_042",
+        "category": "Motivation",
+        "text": "I am building habits that support my well-being."
+    },
+    {
+        "id": "aff_043",
+        "category": "Motivation",
+        "text": "A slow pace is still forward momentum."
+    },
+    {
+        "id": "aff_044",
+        "category": "Motivation",
+        "text": "I try my best, and my best changes every day."
+    },
+    {
+        "id": "aff_045",
+        "category": "Motivation",
+        "text": "I celebrate the small wins."
+    },
+    {
+        "id": "aff_046",
+        "category": "Motivation",
+        "text": "I trust the process of my personal growth."
+    },
+    {
+        "id": "aff_047",
+        "category": "Motivation",
+        "text": "I am capable of discipline and focus today."
+    },
+    {
+        "id": "aff_048",
+        "category": "Boundaries",
+        "text": "Saying 'no' to others is saying 'yes' to myself."
+    },
+    {
+        "id": "aff_049",
+        "category": "Boundaries",
+        "text": "I do not have to explain my limits."
+    },
+    {
+        "id": "aff_050",
+        "category": "Boundaries",
+        "text": "My energy is valuable, and I choose where to spend it."
+    },
+    {
+        "id": "aff_051",
+        "category": "Boundaries",
+        "text": "I am allowed to protect my peace."
+    },
+    {
+        "id": "aff_052",
+        "category": "Boundaries",
+        "text": "Setting a boundary is an act of self-care."
+    },
+    {
+        "id": "aff_053",
+        "category": "Boundaries",
+        "text": "I can disappoint others if it means honoring myself."
+    },
+    {
+        "id": "aff_054",
+        "category": "Boundaries",
+        "text": "I am not responsible for other people's reactions."
+    },
+    {
+        "id": "aff_055",
+        "category": "Boundaries",
+        "text": "I prioritize my own needs without feeling selfish."
+    },
+    {
+        "id": "aff_056",
+        "category": "Boundaries",
+        "text": "I deserve to feel safe and respected in my relationships."
+    },
+    {
+        "id": "aff_057",
+        "category": "Boundaries",
+        "text": "It is okay to walk away from what depletes me."
+    },
+    {
+        "id": "aff_058",
+        "category": "Boundaries",
+        "text": "I have the right to change my mind."
+    },
+    {
+        "id": "aff_059",
+        "category": "Boundaries",
+        "text": "I respect my own boundaries as much as I respect others'."
+    },
+    {
+        "id": "aff_060",
+        "category": "Gratitude",
+        "text": "I am thankful for the little things that went right today."
+    },
+    {
+        "id": "aff_061",
+        "category": "Gratitude",
+        "text": "I appreciate the strength my body gives me."
+    },
+    {
+        "id": "aff_062",
+        "category": "Gratitude",
+        "text": "I can find one small thing to be grateful for right now."
+    },
+    {
+        "id": "aff_063",
+        "category": "Gratitude",
+        "text": "There is goodness in my life, even when things are hard."
+    },
+    {
+        "id": "aff_064",
+        "category": "Gratitude",
+        "text": "I acknowledge the effort I've put in to get here."
+    },
+    {
+        "id": "aff_065",
+        "category": "Gratitude",
+        "text": "I appreciate the people who check on me and care for me."
+    },
+    {
+        "id": "aff_066",
+        "category": "Gratitude",
+        "text": "I look for the light in small moments."
+    },
+    {
+        "id": "aff_067",
+        "category": "Gratitude",
+        "text": "I am grateful for another opportunity to try today."
+    },
+    {
+        "id": "aff_068",
+        "category": "Gratitude",
+        "text": "I express gratitude for the lessons I've learned."
+    },
+    {
+        "id": "aff_069",
+        "category": "Gratitude",
+        "text": "There is beauty around me if I take the time to notice."
+    },
+    {
+        "id": "aff_070",
+        "category": "Gratitude",
+        "text": "I value the quiet moments of peace in my day."
+    },
+    {
+        "id": "aff_071",
+        "category": "Gratitude",
+        "text": "I am thankful for my resilience and growth."
+    },
+    {
+        "id": "aff_072",
+        "category": "Resilience",
+        "text": "I have overcome difficult things before, and I can do it again."
+    },
+    {
+        "id": "aff_073",
+        "category": "Resilience",
+        "text": "Setbacks do not erase my progress."
+    },
+    {
+        "id": "aff_074",
+        "category": "Resilience",
+        "text": "I am getting stronger every time I try again."
+    },
+    {
+        "id": "aff_075",
+        "category": "Resilience",
+        "text": "I can handle discomfort without rushing to fix it."
+    },
+    {
+        "id": "aff_076",
+        "category": "Resilience",
+        "text": "I am bending, not breaking."
+    },
+    {
+        "id": "aff_077",
+        "category": "Resilience",
+        "text": "Challenges are an opportunity for me to learn."
+    },
+    {
+        "id": "aff_078",
+        "category": "Resilience",
+        "text": "My past does not dictate my future."
+    },
+    {
+        "id": "aff_079",
+        "category": "Resilience",
+        "text": "I am resilient, resourceful, and ready."
+    },
+    {
+        "id": "aff_080",
+        "category": "Resilience",
+        "text": "Getting back up is always an option."
+    },
+    {
+        "id": "aff_081",
+        "category": "Resilience",
+        "text": "I can tolerate difficult emotions; they will not destroy me."
+    },
+    {
+        "id": "aff_082",
+        "category": "Resilience",
+        "text": "I trust my capacity to rebuild when necessary."
+    },
+    {
+        "id": "aff_083",
+        "category": "Resilience",
+        "text": "I am more adaptable than I think."
+    },
+    {
+        "id": "aff_084",
+        "category": "Sleep / evening",
+        "text": "The day is done, and I can let it go."
+    },
+    {
+        "id": "aff_085",
+        "category": "Sleep / evening",
+        "text": "I release the worries of today."
+    },
+    {
+        "id": "aff_086",
+        "category": "Sleep / evening",
+        "text": "My body and mind deserve deep, restorative rest."
+    },
+    {
+        "id": "aff_087",
+        "category": "Sleep / evening",
+        "text": "I give myself permission to close my eyes and surrender control."
+    },
+    {
+        "id": "aff_088",
+        "category": "Sleep / evening",
+        "text": "Whatever is left undone can wait until tomorrow."
+    },
+    {
+        "id": "aff_089",
+        "category": "Sleep / evening",
+        "text": "I am creating a peaceful space for sleep."
+    },
+    {
+        "id": "aff_090",
+        "category": "Sleep / evening",
+        "text": "As I breathe out, I let go of the day's stress."
+    },
+    {
+        "id": "aff_091",
+        "category": "Sleep / evening",
+        "text": "I am safe, warm, and ready to rest."
+    },
+    {
+        "id": "aff_092",
+        "category": "Sleep / evening",
+        "text": "Tomorrow is a fresh start."
+    },
+    {
+        "id": "aff_093",
+        "category": "Sleep / evening",
+        "text": "I welcome calm and stillness into my mind."
+    },
+    {
+        "id": "aff_094",
+        "category": "Sleep / evening",
+        "text": "I forgive myself for any mistakes I made today."
+    },
+    {
+        "id": "aff_095",
+        "category": "Sleep / evening",
+        "text": "Now is the time for my mind to be still."
+    },
+    {
+        "id": "aff_096",
+        "category": "Work stress",
+        "text": "My worth is not measured by my career or output."
+    },
+    {
+        "id": "aff_097",
+        "category": "Work stress",
+        "text": "I focus only on the next action I need to take."
+    },
+    {
+        "id": "aff_098",
+        "category": "Work stress",
+        "text": "I can handle high pressure by staying grounded."
+    },
+    {
+        "id": "aff_099",
+        "category": "Work stress",
+        "text": "Mistakes at work are opportunities, not life sentences."
+    },
+    {
+        "id": "aff_100",
+        "category": "Work stress",
+        "text": "I unplug and leave work at work."
+    },
+    {
+        "id": "aff_101",
+        "category": "Work stress",
+        "text": "I ask for help when the load is too heavy."
+    },
+    {
+        "id": "aff_102",
+        "category": "Work stress",
+        "text": "I am doing my best in a challenging environment."
+    },
+    {
+        "id": "aff_103",
+        "category": "Work stress",
+        "text": "I pace myself so I don't burn out."
+    },
+    {
+        "id": "aff_104",
+        "category": "Work stress",
+        "text": "I am allowed to take breaks to clear my head."
+    },
+    {
+        "id": "aff_105",
+        "category": "Work stress",
+        "text": "I set realistic expectations for what I can achieve today."
+    },
+    {
+        "id": "aff_106",
+        "category": "Work stress",
+        "text": "I separate my identity from my job title."
+    },
+    {
+        "id": "aff_107",
+        "category": "Work stress",
+        "text": "One task at a time is enough."
+    },
+    {
+        "id": "aff_108",
+        "category": "Social anxiety support",
+        "text": "I am allowed to feel nervous; it is a human feeling."
+    },
+    {
+        "id": "aff_109",
+        "category": "Social anxiety support",
+        "text": "I am safe and secure in my own company."
+    },
+    {
+        "id": "aff_110",
+        "category": "Social anxiety support",
+        "text": "People are rarely scrutinizing me as much as I think."
+    },
+    {
+        "id": "aff_111",
+        "category": "Social anxiety support",
+        "text": "I can participate at my own comfort level."
+    },
+    {
+        "id": "aff_112",
+        "category": "Social anxiety support",
+        "text": "I am interesting and worthy of connection."
+    },
+    {
+        "id": "aff_113",
+        "category": "Social anxiety support",
+        "text": "It is okay to be quiet if I prefer to listen."
+    },
+    {
+        "id": "aff_114",
+        "category": "Social anxiety support",
+        "text": "I allow myself to leave if I feel overwhelmed."
+    },
+    {
+        "id": "aff_115",
+        "category": "Social anxiety support",
+        "text": "My thoughts are not facts; my anxiety is lying to me."
+    },
+    {
+        "id": "aff_116",
+        "category": "Social anxiety support",
+        "text": "I focus on the conversation, not on my internal critic."
+    },
+    {
+        "id": "aff_117",
+        "category": "Social anxiety support",
+        "text": "A moment of awkwardness does not define the whole interaction."
+    },
+    {
+        "id": "aff_118",
+        "category": "Social anxiety support",
+        "text": "I give myself grace softly navigating new situations."
+    },
+    {
+        "id": "aff_119",
+        "category": "Social anxiety support",
+        "text": "I am completely fine just being myself."
+    }
+]
