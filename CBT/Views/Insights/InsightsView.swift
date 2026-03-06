@@ -236,7 +236,7 @@ struct InsightsView: View {
                         .foregroundStyle(themeManager.secondaryColor.opacity(0.85))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
                 }
-                .chartYScale(domain: 1...10)
+                .chartYScale(domain: 0...10)
                 .frame(height: 220)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(String(localized: "Daily mood trend chart"))
@@ -328,7 +328,7 @@ struct InsightsView: View {
                         .foregroundStyle(themeManager.secondaryColor.opacity(0.85))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
                 }
-                .chartYScale(domain: 1...10)
+                .chartYScale(domain: 0...11)
                 .frame(height: 180)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(String(localized: "Weekly mood trend chart"))

@@ -14,7 +14,7 @@ struct SubscriptionView: View {
     
     let config: SubscriptionConfig
     
-    @State private var selectedPlanID: String? = "com.xeo.WeightTracker.premium.yearly"
+    @State private var selectedPlanID: String? = "com.xeo.CBT.premium.yearly"
     @State private var isPurchasing: Bool = false
     
     private var useTwoUpLayout: Bool {
@@ -336,11 +336,6 @@ struct StubProductCardView: View {
             Text(plan.label)
                 .font(.system(.title2, design: .rounded, weight: .bold))
                 .foregroundStyle(.primary)
-            if plan.id.contains("lifetime") {
-                Text(String(localized: "One time payment"))
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(.secondary)
-            }
         }
     }
     

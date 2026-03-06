@@ -46,10 +46,10 @@ extension SubscriptionConfig {
         title: String(localized: "Full Access"),
         subtitle: String(localized: "One subscription for all your devices with unlimited access."),
         plans: [
-            SubscriptionPlan(id: "com.xeo.WeightTracker.premium.yearly", label: String(localized: "Yearly"), price: "$1.00/mo", billingFrequency: String(localized: "billed at $11.99/yr after free trial"), badge: String(localized: "50% OFF"), isRecommended: true),
-            SubscriptionPlan(id: "com.xeo.WeightTracker.premium.monthly", label: String(localized: "Monthly"), price: "$1.99/month", billingFrequency: String(localized: "billed at $1.99/month"))
+            SubscriptionPlan(id: "com.xeo.CBT.premium.yearly", label: String(localized: "Yearly"), price: "$1.00/mo", billingFrequency: String(localized: "billed at $11.99/yr after free trial"), badge: String(localized: "50% OFF"), isRecommended: true),
+            SubscriptionPlan(id: "com.xeo.CBT.premium.monthly", label: String(localized: "Monthly"), price: "$1.99/month", billingFrequency: String(localized: "billed at $1.99/month"))
         ],
-        oneTimeOption: SubscriptionPlan(id: "com.xeo.MeliWeightTracker.premium.lifetime", label: String(localized: "Lifetime"), price: "$39.99", billingFrequency: String(localized: "one-time payment")),
+        oneTimeOption: SubscriptionPlan(id: "com.xeo.CBT.premium.lifetime", label: String(localized: "Lifetime"), price: "$39.99", billingFrequency: String(localized: "one-time payment")),
         features: [
             SubscriptionFeature(icon: "list.bullet.clipboard", title: String(localized: "Unlimited Entries"), description: String(localized: "Log as often as you like without any restrictions.")),
             SubscriptionFeature(icon: "chart.line.uptrend.xyaxis", title: String(localized: "Advanced Analytics"), description: String(localized: "Get detailed predictions and advanced trends.")),
