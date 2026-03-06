@@ -1,10 +1,12 @@
 import SwiftUI
 
 struct BalancedThoughtEducationView: View {
+    var hideBackground: Bool = false
+    var hideTitle: Bool = false
     @State private var showingFlow = false
     
     var body: some View {
-        CBTEducationLayout(title: "Balanced Perspectives") {
+        CBTEducationLayout(title: "Balanced Perspectives", hideBackground: hideBackground, hideTitle: hideTitle) {
             DSCardContainer {
                 VStack(alignment: .leading, spacing: DSSpacing.medium) {
                     Text("Beyond Positive Thinking")
@@ -63,8 +65,11 @@ struct BalancedThoughtEducationView: View {
 }
 
 struct ProfessionalHelpEducationView: View {
+    var hideBackground: Bool = false
+    var hideTitle: Bool = false
+    
     var body: some View {
-        CBTEducationLayout(title: "Professional Support") {
+        CBTEducationLayout(title: "Professional Support", hideBackground: hideBackground, hideTitle: hideTitle) {
             DSCardContainer {
                 VStack(alignment: .leading, spacing: DSSpacing.medium) {
                     Text("When to Seek Help")

@@ -105,6 +105,9 @@ struct BreathingResetView: View {
                 .responsiveMaxWidth()
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
+        }
         .navigationBarHidden(true) // Using custom header for premium feel
         .onChange(of: selectedDuration) { _, newValue in
             engine.setDuration(seconds: newValue)

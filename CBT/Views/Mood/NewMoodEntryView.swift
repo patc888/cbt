@@ -19,7 +19,7 @@ struct NewMoodEntryView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Theme.backgroundColor.ignoresSafeArea()
+                ThemedBackground().ignoresSafeArea()
                 
                 ScrollView {
                     VStack(spacing: 24) {

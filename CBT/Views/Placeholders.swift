@@ -36,7 +36,7 @@ struct JournalView: View {
     
     var body: some View {
         ZStack {
-            Theme.secondaryBackground.ignoresSafeArea()
+            ThemedBackground().ignoresSafeArea()
 
             VStack(spacing: 0) {
                 VStack(spacing: 10) {
@@ -137,6 +137,7 @@ struct JournalSessionsListView: View {
                 .padding(.top, 8)
                 .padding(.bottom, LayoutMetrics.floatingToolbarBottomInset + 16)
                 .responsiveMaxWidth()
+                .frame(maxWidth: .infinity)
             }
         }
     }

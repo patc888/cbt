@@ -55,10 +55,11 @@ struct ProUpgradeCard: View {
                 .padding(.vertical, 10)
                 .padding(.horizontal, 32)
                 .frame(maxWidth: .infinity)
-                .background(themeManager.selectedColor)
+                .background(themeManager.primaryColor)
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
+            .premiumPressEffect()
             .disabled(isLoading)
             
             if let footnote = footnote {
@@ -69,9 +70,8 @@ struct ProUpgradeCard: View {
                     .padding(.top, -4)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 12)
+        .padding(.top, 8)
+        .padding(.bottom, 2)
         .contentShape(Rectangle())
         .onTapGesture {
             HapticManager.shared.lightImpact()

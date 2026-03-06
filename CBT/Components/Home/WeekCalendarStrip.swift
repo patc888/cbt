@@ -50,6 +50,7 @@ struct WeekStripView: View {
 }
 
 struct WeekStripDayView: View {
+    @Environment(ThemeManager.self) private var themeManager
     let date: Date
     let isSelected: Bool
     let isToday: Bool
@@ -66,7 +67,7 @@ struct WeekStripDayView: View {
                 if isToday {
                     // Today ring (subtle pulse-like ring)
                     Circle()
-                        .stroke(isSelected ? .white.opacity(0.4) : Theme.primaryColor.opacity(0.3), lineWidth: 1.5)
+                        .stroke(isSelected ? .white.opacity(0.4) : themeManager.selectedColor.opacity(0.3), lineWidth: 1.5)
                         .frame(width: 36, height: 36)
                 }
 
@@ -84,7 +85,7 @@ struct WeekStripDayView: View {
             
             // Has Activity Indicator
             Circle()
-                .fill(hasActivity ? (isSelected ? .white : Theme.primaryColor.opacity(0.6)) : Color.clear)
+                .fill(hasActivity ? (isSelected ? .white : themeManager.selectedColor.opacity(0.6)) : Color.clear)
                 .frame(width: 5, height: 5)
         }
         .frame(width: 54)
@@ -92,7 +93,7 @@ struct WeekStripDayView: View {
         .background {
             if isSelected {
                 RoundedRectangle(cornerRadius: 32, style: .continuous)
-                    .fill(Theme.primaryColor)
+                    .fill(themeManager.selectedColor)
                     .matchedGeometryEffect(id: "selectionPill", in: namespace)
             }
         }

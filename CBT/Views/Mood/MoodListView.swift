@@ -10,11 +10,12 @@ struct MoodListView: View {
     ) private var entries: [MoodEntry]
     
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(ThemeManager.self) private var themeManager
     @State private var showingNewEntry = false
     
     var body: some View {
         ZStack {
-            Theme.secondaryBackground.ignoresSafeArea()
+            ThemedBackground().ignoresSafeArea()
             
             if entries.isEmpty {
                 VStack(spacing: 16) {
@@ -38,7 +39,7 @@ struct MoodListView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 12)
-                            .background(Theme.primaryColor)
+                            .background(themeManager.selectedColor)
                             .clipShape(Capsule())
                     }
                     .padding(.top, 8)
@@ -81,7 +82,7 @@ struct MoodListView: View {
                 } label: {
                     Text("+ Mood")
                         .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundColor(Theme.primaryColor)
+                        .foregroundColor(themeManager.selectedColor)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(Theme.cardBackground)
@@ -108,6 +109,7 @@ struct MoodListView: View {
 }
 
 fileprivate struct MoodEntryRow: View {
+    @Environment(ThemeManager.self) private var themeManager
     let entry: MoodEntry
     
     var body: some View {
@@ -115,11 +117,11 @@ fileprivate struct MoodEntryRow: View {
             HStack(alignment: .top, spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(Theme.primaryColor.opacity(0.14))
+                        .fill(themeManager.selectedColor.opacity(0.14))
                         .frame(width: 40, height: 40)
                     Image(systemName: "face.smiling")
                         .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(Theme.primaryColor)
+                        .foregroundStyle(themeManager.selectedColor)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -135,10 +137,10 @@ fileprivate struct MoodEntryRow: View {
 
                 Text("\(entry.moodScore)/10")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.primaryColor)
+                    .foregroundStyle(themeManager.selectedColor)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Theme.primaryColor.opacity(0.12))
+                    .background(themeManager.selectedColor.opacity(0.12))
                     .clipShape(Capsule())
             }
 

@@ -7,6 +7,7 @@ struct DismissButton: View {
     }
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(ThemeManager.self) private var themeManager
 
     var style: Style = .chevron
 
@@ -16,7 +17,7 @@ struct DismissButton: View {
             case .chevron:
                 Image(systemName: "chevron.right")
                     .font(.system(.body, weight: .bold))
-                    .foregroundStyle(Theme.primaryColor)
+                    .foregroundStyle(themeManager.selectedColor)
                     .padding(8)
                     .accessibilityLabel("Go back")
             case let .xmarkCircle(background, foreground):

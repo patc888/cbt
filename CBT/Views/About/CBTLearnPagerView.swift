@@ -8,13 +8,18 @@ struct CBTLearnPagerView: View {
     let pages = [
         "What is CBT?",
         "The CBT Triangle",
-        "Cognitive Distortions",
         "How CBT Works",
+        "Mood Check-In",
+        "Thought Records",
+        "Cognitive Distortions",
+        "Evidence for & Against",
+        "Balanced Perspectives",
         "What Research Shows",
         "CBT Skills",
         "Seeing Patterns",
         "Flexible Thinking",
         "Using This App",
+        "Professional Support",
         "Further Reading"
     ]
     
@@ -48,14 +53,19 @@ struct CBTLearnPagerView: View {
                 TabView(selection: $currentPage) {
                     CBTEducationIntroView(hideBackground: true, hideTitle: true).tag(0)
                     CBTTriangleView(hideBackground: true, hideTitle: true).tag(1)
-                    CBTCognitiveDistortionsView(hideBackground: true, hideTitle: true).tag(2)
-                    CBTHowItWorksView(hideBackground: true, hideTitle: true).tag(3)
-                    CBTResearchView(hideBackground: true, hideTitle: true).tag(4)
-                    CBTSkillsView(hideBackground: true, hideTitle: true).tag(5)
-                    CBTPatternsView(hideBackground: true, hideTitle: true).tag(6)
-                    CBTFlexibleThinkingView(hideBackground: true, hideTitle: true).tag(7)
-                    CBTUsingAppView(hideBackground: true, hideTitle: true).tag(8)
-                    CBTFurtherReadingView(hideBackground: true, hideTitle: true).tag(9)
+                    CBTHowItWorksView(hideBackground: true, hideTitle: true).tag(2)
+                    MoodCheckInEducationView(hideBackground: true, hideTitle: true).tag(3)
+                    ThoughtRecordEducationView(hideBackground: true, hideTitle: true).tag(4)
+                    CBTCognitiveDistortionsView(hideBackground: true, hideTitle: true).tag(5)
+                    EvidenceEducationView(hideBackground: true, hideTitle: true).tag(6)
+                    BalancedThoughtEducationView(hideBackground: true, hideTitle: true).tag(7)
+                    CBTResearchView(hideBackground: true, hideTitle: true).tag(8)
+                    CBTSkillsView(hideBackground: true, hideTitle: true).tag(9)
+                    CBTPatternsView(hideBackground: true, hideTitle: true).tag(10)
+                    CBTFlexibleThinkingView(hideBackground: true, hideTitle: true).tag(11)
+                    CBTUsingAppView(hideBackground: true, hideTitle: true).tag(12)
+                    ProfessionalHelpEducationView(hideBackground: true, hideTitle: true).tag(13)
+                    CBTFurtherReadingView(hideBackground: true, hideTitle: true).tag(14)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .onChange(of: currentPage) { _, _ in

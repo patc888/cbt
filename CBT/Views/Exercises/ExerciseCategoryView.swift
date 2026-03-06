@@ -10,7 +10,7 @@ struct ExerciseCategoryView: View {
     
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            Theme.backgroundColor.ignoresSafeArea()
+            ThemedBackground().ignoresSafeArea()
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {

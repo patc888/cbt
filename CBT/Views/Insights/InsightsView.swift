@@ -17,6 +17,7 @@ struct InsightsView: View {
 
     @State private var timeRange: TimeRange = .sevenDays
     @AppStorage("cbt_moodGoalValue") private var moodGoalValue = 7
+    @Environment(ThemeManager.self) private var themeManager
     @State private var viewModel = InsightsViewModel()
 
     enum TimeRange: String, CaseIterable, Identifiable {
@@ -35,7 +36,7 @@ struct InsightsView: View {
 
     var body: some View {
         ZStack {
-            Theme.secondaryBackground.ignoresSafeArea()
+            ThemedBackground().ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: 14) {
@@ -60,8 +61,6 @@ struct InsightsView: View {
                         goalProgressSection
                         
                         topMetricsSection
-                        
-                        exportSection
                     }
                 }
                 .padding(.horizontal, 16)
@@ -146,22 +145,22 @@ struct InsightsView: View {
 
             ZStack {
                 Circle()
-                    .stroke(Theme.secondaryColor.opacity(0.15), lineWidth: 24)
+                    .stroke(themeManager.secondaryColor.opacity(0.15), lineWidth: 24)
                     .frame(width: 190, height: 190)
 
                 Circle()
                     .trim(from: 0, to: max(0.001, viewModel.consistencyProgress))
-                    .stroke(Theme.secondaryColor, style: StrokeStyle(lineWidth: 24, lineCap: .round))
+                    .stroke(themeManager.secondaryColor, style: StrokeStyle(lineWidth: 24, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .frame(width: 190, height: 190)
 
                 Circle()
-                    .stroke(Theme.primaryColor.opacity(0.12), lineWidth: 18)
+                    .stroke(themeManager.selectedColor.opacity(0.12), lineWidth: 18)
                     .frame(width: 136, height: 136)
 
                 Circle()
                     .trim(from: 0, to: max(0.001, Double(viewModel.milestonesCompleted) / 4.0))
-                    .stroke(Theme.primaryColor, style: StrokeStyle(lineWidth: 18, lineCap: .round))
+                    .stroke(themeManager.selectedColor, style: StrokeStyle(lineWidth: 18, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .frame(width: 136, height: 136)
 
@@ -213,17 +212,17 @@ struct InsightsView: View {
                             y: .value("Mood", point.averageScore)
                         )
                         .lineStyle(StrokeStyle(lineWidth: 2.2))
-                        .foregroundStyle(Theme.primaryColor)
+                        .foregroundStyle(themeManager.selectedColor)
 
                         PointMark(
                             x: .value("Date", point.date, unit: .day),
                             y: .value("Mood", point.averageScore)
                         )
-                        .foregroundStyle(Theme.primaryColor)
+                        .foregroundStyle(themeManager.selectedColor)
                     }
 
                     RuleMark(y: .value("Mood Goal", Double(moodGoalValue)))
-                        .foregroundStyle(Theme.secondaryColor.opacity(0.85))
+                        .foregroundStyle(themeManager.secondaryColor.opacity(0.85))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
                 }
                 .chartYScale(domain: 1...10)
@@ -239,7 +238,7 @@ struct InsightsView: View {
                     value: viewModel.averageMood.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "-",
                     unit: "/10",
                     icon: "chart.line.uptrend.xyaxis",
-                    iconColor: Theme.primaryColor,
+                    iconColor: themeManager.selectedColor,
                     valueColor: Theme.primaryText,
                     state: .neutral
                 )
@@ -249,7 +248,7 @@ struct InsightsView: View {
                     value: viewModel.averageIntensityImprovement.map { "\($0)" } ?? "-",
                     unit: "pts",
                     icon: "brain",
-                    iconColor: Theme.secondaryColor,
+                    iconColor: themeManager.secondaryColor,
                     valueColor: Theme.primaryText,
                     state: .neutral
                 )
@@ -264,7 +263,7 @@ struct InsightsView: View {
                             .frame(width: 32, height: 32)
                         Image(systemName: "waveform.path.ecg")
                             .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(Theme.primaryColor)
+                            .foregroundStyle(themeManager.selectedColor)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Mood Volatility (\(volatility.formatted(.number.precision(.fractionLength(1)))))")
@@ -310,12 +309,12 @@ struct InsightsView: View {
                             x: .value("Week", point.weekStart, unit: .weekOfYear),
                             y: .value("Mood", point.averageScore)
                         )
-                        .foregroundStyle(Theme.primaryColor.opacity(0.8))
+                        .foregroundStyle(themeManager.selectedColor.opacity(0.8))
                         .cornerRadius(4)
                     }
 
                     RuleMark(y: .value("Mood Goal", Double(moodGoalValue)))
-                        .foregroundStyle(Theme.secondaryColor.opacity(0.85))
+                        .foregroundStyle(themeManager.secondaryColor.opacity(0.85))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
                 }
                 .chartYScale(domain: 1...10)
@@ -340,14 +339,14 @@ struct InsightsView: View {
                 title: "Consistency Goal",
                 subtitle: "\(viewModel.activeDaysCount) of \(viewModel.consistencyGoalTarget) active days",
                 progress: viewModel.consistencyProgress,
-                tint: Theme.primaryColor
+                tint: themeManager.selectedColor
             )
 
             goalProgressCard(
                 title: "Mood Goal (\(moodGoalValue)+)",
                 subtitle: "\(Int((viewModel.moodGoalProgress * 100).rounded()))% entries hit target",
                 progress: viewModel.moodGoalProgress,
-                tint: Theme.secondaryColor
+                tint: themeManager.secondaryColor
             )
 
             goalProgressCard(
@@ -438,7 +437,7 @@ struct InsightsView: View {
                                 .foregroundStyle(Theme.primaryText)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
-                                .background(Theme.primaryColor.opacity(0.12))
+                                .background(themeManager.selectedColor.opacity(0.12))
                                 .clipShape(Capsule())
                         }
                         .accessibilityElement(children: .combine)
@@ -451,46 +450,4 @@ struct InsightsView: View {
         .cardStyle()
     }
     
-    // MARK: - Export Section
-    private var exportSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Export Data")
-                .font(.system(.title, design: .rounded).weight(.bold))
-                .foregroundStyle(Theme.primaryText)
-            
-            Text("Export your records as standard CSV files for analysis in a spreadsheet.")
-                .font(.system(.subheadline, design: .rounded))
-                .foregroundStyle(Theme.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.bottom, 4)
-                
-            HStack(spacing: 12) {
-                if let csv = CSVExporter.shared.exportMoodEntries(moodEntries) {
-                    ShareLink(item: csv, preview: SharePreview("Mood Entries CSV")) {
-                        Label("Mood", systemImage: "square.and.arrow.up")
-                            .font(.system(.body, design: .rounded).weight(.bold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Theme.primaryColor)
-                            .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
-                }
-                
-                if let csv = CSVExporter.shared.exportThoughtRecords(thoughtRecords) {
-                    ShareLink(item: csv, preview: SharePreview("Thought Records CSV")) {
-                        Label("Thoughts", systemImage: "square.and.arrow.up")
-                            .font(.system(.body, design: .rounded).weight(.bold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Theme.secondaryColor)
-                            .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
-                }
-            }
-        }
-        .padding(Theme.paddingMedium)
-        .cardStyle()
-    }
 }

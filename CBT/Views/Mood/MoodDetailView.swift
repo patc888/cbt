@@ -4,13 +4,14 @@ import SwiftData
 struct MoodDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(ThemeManager.self) private var themeManager
     
     let entry: MoodEntry
     @State private var showingDeleteConfirm = false
     
     var body: some View {
         ZStack {
-            Theme.backgroundColor.ignoresSafeArea()
+            ThemedBackground().ignoresSafeArea()
             
             ScrollView {
                 VStack(spacing: 24) {
@@ -18,7 +19,7 @@ struct MoodDetailView: View {
                     VStack(spacing: 8) {
                         Text("\(entry.moodScore)")
                             .font(.system(size: 80, weight: .bold, design: .rounded))
-                            .foregroundStyle(Theme.primaryColor)
+                            .foregroundStyle(themeManager.selectedColor)
                         
                         Text("Score")
                             .font(.subheadline)

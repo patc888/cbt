@@ -1,10 +1,12 @@
 import SwiftUI
 
 struct MoodCheckInEducationView: View {
+    var hideBackground: Bool = false
+    var hideTitle: Bool = false
     @State private var showingFlow = false
     
     var body: some View {
-        CBTEducationLayout(title: "Mood Check-In") {
+        CBTEducationLayout(title: "Mood Check-In", hideBackground: hideBackground, hideTitle: hideTitle) {
             DSCardContainer {
                 VStack(alignment: .leading, spacing: DSSpacing.medium) {
                     Text("Why Track Your Mood?")

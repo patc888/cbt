@@ -4,6 +4,7 @@ import SwiftData
 struct NewThoughtRecordFlowView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(ThemeManager.self) private var themeManager
     
     // Step 0: Situation & Auto Thought
     @State private var situation = ""
@@ -37,13 +38,13 @@ struct NewThoughtRecordFlowView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Theme.backgroundColor.ignoresSafeArea()
+                ThemedBackground().ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     
                     // Progress Header
                     ProgressView(value: Double(currentStep + 1), total: Double(totalSteps))
-                        .tint(Theme.primaryColor)
+                        .tint(themeManager.selectedColor)
                         .padding()
                         .accessibilityLabel("Step \(currentStep + 1) of \(totalSteps)")
                     
@@ -65,7 +66,7 @@ struct NewThoughtRecordFlowView: View {
                                     currentStep -= 1
                                 }
                             }
-                            .foregroundColor(Theme.primaryColor)
+                            .foregroundColor(themeManager.selectedColor)
                             .padding()
                             .accessibilityLabel("Go back to previous step")
                         } else {
@@ -84,7 +85,7 @@ struct NewThoughtRecordFlowView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 12)
-                            .background(Theme.primaryColor)
+                            .background(themeManager.selectedColor)
                             .clipShape(Capsule())
                             .padding()
                             .accessibilityLabel("Go to next step")
@@ -96,7 +97,7 @@ struct NewThoughtRecordFlowView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 12)
-                            .background(canSave ? Theme.primaryColor : Color.gray)
+                            .background(canSave ? themeManager.selectedColor : Color.gray)
                             .clipShape(Capsule())
                             .padding()
                             .disabled(!canSave)
@@ -170,7 +171,7 @@ struct NewThoughtRecordFlowView: View {
                             .accessibilityLabel("New emotion")
                         Button(action: addEmotion) {
                             Image(systemName: "plus.circle.fill")
-                                .foregroundColor(Theme.primaryColor)
+                                .foregroundColor(themeManager.selectedColor)
                         }
                         .accessibilityLabel("Add emotion")
                     }
@@ -255,7 +256,7 @@ struct NewThoughtRecordFlowView: View {
                             .accessibilityLabel("New distortion")
                         Button(action: addDistortion) {
                             Image(systemName: "plus.circle.fill")
-                                .foregroundColor(Theme.primaryColor)
+                                .foregroundColor(themeManager.selectedColor)
                         }
                         .accessibilityLabel("Add distortion")
                     }

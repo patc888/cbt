@@ -3,6 +3,7 @@ import SwiftData
 
 struct ThoughtRecordListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(ThemeManager.self) private var themeManager
     @Query(
         filter: #Predicate<ThoughtRecord> { !$0.isDeleted },
         sort: \ThoughtRecord.createdAt,
@@ -14,7 +15,7 @@ struct ThoughtRecordListView: View {
     
     var body: some View {
         ZStack {
-            Theme.secondaryBackground.ignoresSafeArea()
+            ThemedBackground().ignoresSafeArea()
             
             if records.isEmpty {
                 VStack(spacing: 16) {
@@ -81,7 +82,7 @@ struct ThoughtRecordListView: View {
                 } label: {
                     Text("+ Thought")
                         .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundColor(Theme.secondaryColor)
+                        .foregroundColor(themeManager.secondaryColor)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(Theme.cardBackground)
@@ -108,6 +109,7 @@ struct ThoughtRecordListView: View {
 }
 
 fileprivate struct ThoughtRecordRow: View {
+    @Environment(ThemeManager.self) private var themeManager
     let record: ThoughtRecord
     
     var body: some View {
@@ -115,11 +117,11 @@ fileprivate struct ThoughtRecordRow: View {
             HStack(alignment: .top, spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(Theme.secondaryColor.opacity(0.14))
+                        .fill(themeManager.secondaryColor.opacity(0.14))
                         .frame(width: 40, height: 40)
                     Image(systemName: "brain.head.profile")
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Theme.secondaryColor)
+                        .foregroundStyle(themeManager.secondaryColor)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -135,10 +137,10 @@ fileprivate struct ThoughtRecordRow: View {
 
                 Text("\(record.intensityBefore)→\(record.intensityAfter)")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.secondaryColor)
+                    .foregroundStyle(themeManager.secondaryColor)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Theme.secondaryColor.opacity(0.12))
+                    .background(themeManager.secondaryColor.opacity(0.12))
                     .clipShape(Capsule())
             }
 

@@ -34,8 +34,9 @@ struct SettingsView: View {
                     mainContent
                 }
                 .frame(maxWidth: 600)
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: 600)
+            .frame(maxWidth: .infinity)
 
             if showsDismissControl {
                 navigationArrow
@@ -131,20 +132,7 @@ struct SettingsView: View {
             .padding(.top, 12)
             .padding(.bottom, 4)
             
-            SettingsSection(title: "Education") {
-                NavigationLink(destination: CBTEducationMenuView()) {
-                    SettingsRow(
-                        icon: "brain.head.profile",
-                        iconColor: themeManager.primaryColor,
-                        title: "Learn About CBT"
-                    ) {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Theme.secondaryText)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
+
             
             SubscriptionSettingsView(
                 subscriptionManager: subscriptionManager,
@@ -179,7 +167,7 @@ struct SettingsView: View {
                 NavigationLink(destination: BreathingResetView()) {
                     SettingsRow(
                         icon: "wind",
-                        iconColor: themeManager.primaryColor,
+                        iconColor: themeManager.selectedColor,
                         title: "Breathing Reset",
                         subtitle: "Guided box breathing session"
                     ) {
@@ -193,6 +181,28 @@ struct SettingsView: View {
 
             RemindersSettingsSection()
             
+            NavigationLink(destination: WhatIsCBTPagerView()) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("What is CBT")
+                            .font(.system(.title3, design: .rounded).weight(.bold))
+                            .foregroundStyle(.white)
+                        Text("A quick interactive guide to Cognitive Behavioral Therapy")
+                            .font(.system(.subheadline, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                    Spacer()
+                    Image(systemName: "book.pages.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+                .padding()
+                .background(themeManager.selectedColor)
+                .cornerRadius(Theme.cornerRadiusMedium)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 8)
+            
             AboutSettingsView()
             
             VStack(alignment: .leading, spacing: 12) {
@@ -202,7 +212,7 @@ struct SettingsView: View {
                         HapticManager.shared.lightImpact()
                         showingDebug = true
                     } label: {
-                        SettingsRow(icon: "ladybug", iconColor: themeManager.primaryColor, title: "Debug Tools") {
+                        SettingsRow(icon: "ladybug", iconColor: themeManager.selectedColor, title: "Debug Tools") {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(Theme.secondaryText)
@@ -215,7 +225,7 @@ struct SettingsView: View {
                         HapticManager.shared.lightImpact()
                         showingExportInfo = true
                     } label: {
-                        SettingsRow(icon: "square.and.arrow.up", iconColor: themeManager.primaryColor, title: "Export Data") {
+                        SettingsRow(icon: "square.and.arrow.up", iconColor: themeManager.selectedColor, title: "Export Data") {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(Theme.secondaryText)
@@ -262,7 +272,7 @@ struct SettingsView: View {
         }) {
             Image(systemName: "chevron.right")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(themeManager.primaryColor)
+                .foregroundStyle(themeManager.selectedColor)
                 .padding(8)
                 .contentShape(Rectangle())
         }

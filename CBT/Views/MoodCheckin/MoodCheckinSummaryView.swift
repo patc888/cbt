@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MoodCheckinSummaryView: View {
+    @Environment(ThemeManager.self) private var themeManager
     let color: MoodColor?
     let intensity: Int
     let emotions: [String]
@@ -23,12 +24,12 @@ struct MoodCheckinSummaryView: View {
                             if let mood = color {
                                 ZStack {
                                     Circle()
-                                        .fill(mood.color.opacity(0.15))
+                                        .fill(mood.color(with: themeManager.selectedColor).opacity(0.15))
                                         .frame(width: 80, height: 80)
                                     
                                     Image(systemName: mood.symbol)
                                         .font(.system(size: 32))
-                                        .foregroundStyle(mood.color)
+                                        .foregroundStyle(mood.color(with: themeManager.selectedColor))
                                 }
                                 
                                 VStack(alignment: .leading, spacing: 4) {

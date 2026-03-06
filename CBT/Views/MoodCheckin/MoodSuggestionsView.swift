@@ -57,6 +57,7 @@ struct MoodSuggestionsView: View {
 }
 
 private struct SuggestionButton: View {
+    @Environment(ThemeManager.self) private var themeManager
     let title: String
     let icon: String
     let action: () -> Void
@@ -81,7 +82,7 @@ private struct SuggestionButton: View {
                     .foregroundStyle(DSTheme.secondaryText)
             }
             .padding(20)
-            .foregroundStyle(Theme.primaryColor)
+            .foregroundStyle(themeManager.selectedColor)
             .background(
                 RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous)
                     .fill(DSTheme.cardBackground)

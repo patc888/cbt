@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MoodColorSelector: View {
+    @Environment(ThemeManager.self) private var themeManager
     @Binding var selectedColor: MoodColor?
     let onNext: () -> Void
     
@@ -27,7 +28,7 @@ struct MoodColorSelector: View {
             if let color = selectedColor {
                 Text(color.label)
                     .font(.headline)
-                    .foregroundStyle(color.color)
+                    .foregroundStyle(color.color(with: themeManager.selectedColor))
                     .transition(.opacity.combined(with: .scale))
             } else {
                 Text(" ")
@@ -49,6 +50,7 @@ struct MoodColorSelector: View {
 }
 
 private struct MoodCircleButton: View {
+    @Environment(ThemeManager.self) private var themeManager
     let mood: MoodColor
     let isSelected: Bool
     let action: () -> Void
@@ -60,13 +62,13 @@ private struct MoodCircleButton: View {
         }) {
             ZStack {
                 Circle()
-                    .fill(mood.color.opacity(isSelected ? 0.2 : 0.1))
+                    .fill(mood.color(with: themeManager.selectedColor).opacity(isSelected ? 0.2 : 0.1))
                     .frame(width: isSelected ? 72 : 56, height: isSelected ? 72 : 56)
                     .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isSelected)
                 
                 Image(systemName: mood.symbol)
                     .font(.system(size: isSelected ? 32 : 24))
-                    .foregroundStyle(mood.color)
+                    .foregroundStyle(mood.color(with: themeManager.selectedColor))
             }
         }
         .buttonStyle(.plain)

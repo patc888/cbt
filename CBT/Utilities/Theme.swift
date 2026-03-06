@@ -17,7 +17,7 @@ struct Theme {
            let theme = AppColorTheme(rawValue: stored) {
             return theme
         }
-        return .purple
+        return .blue
     }
 
     static var primaryGradient: LinearGradient {
@@ -29,7 +29,7 @@ struct Theme {
     }
 
     static var primaryColor: Color {
-        Color(hex: activeColorTheme.primaryHex)
+        Color.accentColor
     }
 
     static var secondaryColor: Color {

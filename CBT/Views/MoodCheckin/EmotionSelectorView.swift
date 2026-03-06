@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct EmotionSelectorView: View {
+    @Environment(ThemeManager.self) private var themeManager
     @Binding var selectedEmotions: Set<String>
     let onNext: () -> Void
     
@@ -44,7 +45,7 @@ struct EmotionSelectorView: View {
                                 .frame(maxWidth: .infinity)
                                 .background(
                                     RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous)
-                                        .fill(isSelected ? Theme.primaryColor : DSTheme.cardBackground)
+                                        .fill(isSelected ? themeManager.selectedColor : DSTheme.cardBackground)
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous)

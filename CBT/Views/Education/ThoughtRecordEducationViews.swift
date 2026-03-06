@@ -1,10 +1,12 @@
 import SwiftUI
 
 struct ThoughtRecordEducationView: View {
+    var hideBackground: Bool = false
+    var hideTitle: Bool = false
     @State private var showingFlow = false
     
     var body: some View {
-        CBTEducationLayout(title: "Thought Records") {
+        CBTEducationLayout(title: "Thought Records", hideBackground: hideBackground, hideTitle: hideTitle) {
             DSCardContainer {
                 VStack(alignment: .leading, spacing: DSSpacing.medium) {
                     Text("The 5-Step Method")
@@ -65,10 +67,12 @@ struct ThoughtRecordEducationView: View {
 }
 
 struct EvidenceEducationView: View {
+    var hideBackground: Bool = false
+    var hideTitle: Bool = false
     @State private var showingFlow = false
     
     var body: some View {
-        CBTEducationLayout(title: "Evidence for & Against") {
+        CBTEducationLayout(title: "Evidence for & Against", hideBackground: hideBackground, hideTitle: hideTitle) {
             DSCardContainer {
                 VStack(alignment: .leading, spacing: DSSpacing.medium) {
                     Text("Being Your Own Detective")

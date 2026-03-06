@@ -11,7 +11,12 @@ struct ThemeCardBackground: View {
                 Rectangle().fill(.ultraThinMaterial)
             }
         } else {
-            Color.white.opacity(0.001)
+            // Standard Mode
+            if colorScheme == .light {
+                Color.white
+            } else {
+                Color(uiColor: .tertiarySystemBackground)
+            }
         }
     }
 }

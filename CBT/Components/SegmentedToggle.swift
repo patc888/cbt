@@ -15,6 +15,7 @@ struct SegmentedToggle<T: Hashable, Label: View>: View {
     var activeColor: Color? = nil
     
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(ThemeManager.self) private var themeManager
     @Namespace private var internalNamespace
     
     init(
@@ -101,7 +102,7 @@ struct SegmentedToggle<T: Hashable, Label: View>: View {
         if let stringValue = option as? String, stringValue.lowercased() == "off" {
             return Color.gray
         }
-        return Theme.primaryColor
+        return themeManager.selectedColor
     }
 }
 

@@ -59,7 +59,7 @@ struct DistortionExamplesView: View {
                                         .padding(.vertical, Theme.paddingSmall)
                                         .background(
                                             Capsule()
-                                                .fill(selectedCategory == category ? Theme.primaryColor : Theme.tertiaryBackground)
+                                                .fill(selectedCategory == category ? accent : Theme.tertiaryBackground)
                                         )
                                         .foregroundColor(selectedCategory == category ? Theme.backgroundColor : Theme.primaryText)
                                 }
@@ -118,7 +118,7 @@ struct DistortionExamplesView: View {
                             .font(.system(size: 16, weight: .bold, design: .rounded))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, Theme.paddingMedium)
-                            .background(Theme.primaryColor)
+                            .background(accent)
                             .foregroundColor(Theme.backgroundColor)
                             .cornerRadius(12)
                     }
@@ -150,7 +150,7 @@ struct DistortionExamplesView: View {
             }
             .padding(.bottom, Theme.paddingXLarge)
         }
-        .background(Theme.secondaryBackground.ignoresSafeArea())
+        .background(ThemedBackground().ignoresSafeArea())
         .navigationTitle("Distortion Examples")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

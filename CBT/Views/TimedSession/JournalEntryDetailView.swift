@@ -71,7 +71,7 @@ struct JournalEntryDetailView: View {
             .padding(.top, DSSpacing.large)
             .responsiveMaxWidth()
         }
-        .background(Theme.backgroundColor.ignoresSafeArea())
+        .background(ThemedBackground().ignoresSafeArea())
         .navigationTitle("Journal Entry")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

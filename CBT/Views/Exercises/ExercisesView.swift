@@ -4,6 +4,7 @@ import SwiftData
 struct ExercisesView: View {
     @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse)
     private var completions: [ExerciseCompletion]
+    @Environment(ThemeManager.self) private var themeManager
 
     @State private var exercises: [Exercise] = []
     @State private var selectedCategory: String = "All"
@@ -60,7 +61,7 @@ struct ExercisesView: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            Theme.secondaryBackground.ignoresSafeArea()
+            ThemedBackground().ignoresSafeArea()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -131,6 +132,7 @@ struct ExercisesView: View {
                     Spacer(minLength: 8)
                 }
                 .responsiveMaxWidth()
+                .frame(maxWidth: .infinity)
                 .padding(.horizontal)
             }
             .safeAreaInset(edge: .bottom) {
@@ -167,7 +169,7 @@ struct ExercisesView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Theme.primaryColor)
+                            .foregroundStyle(themeManager.selectedColor)
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Affirmations")
@@ -194,7 +196,7 @@ struct ExercisesView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "brain.head.profile")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Theme.primaryColor)
+                            .foregroundStyle(themeManager.selectedColor)
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Distortion Examples")
@@ -232,7 +234,7 @@ struct ExercisesView: View {
             HStack(spacing: 10) {
                 Image(systemName: "wind")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Theme.primaryColor)
+                    .foregroundStyle(themeManager.selectedColor)
                 Text(title)
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundStyle(Theme.primaryText)
@@ -259,7 +261,7 @@ struct ExercisesView: View {
                     .foregroundStyle(selectedCategory == category ? Theme.backgroundColor : Theme.primaryText)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(selectedCategory == category ? Theme.primaryColor : Theme.tertiaryBackground)
+                    .background(selectedCategory == category ? themeManager.selectedColor : Theme.tertiaryBackground)
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -313,7 +315,7 @@ struct ExercisesView: View {
                         .font(.system(.caption, design: .rounded).weight(.bold))
                     Image(systemName: "arrow.right.circle.fill")
                         .font(.system(.title3))
-                        .foregroundStyle(Theme.primaryColor)
+                        .foregroundStyle(themeManager.selectedColor)
                 }
                 .foregroundStyle(Theme.secondaryText)
             }

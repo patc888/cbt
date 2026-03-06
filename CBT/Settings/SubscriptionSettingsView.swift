@@ -28,7 +28,8 @@ struct SubscriptionSettingsView: View {
             } else {
                 VStack(alignment: .leading, spacing: 20) {
                     HStack(alignment: .top, spacing: 16) {
-                        AppIconView(size: 60)
+                        subscriptionIcon
+                            .frame(width: 60, height: 60)
                             .cornerRadius(14)
                         
                         VStack(alignment: .leading, spacing: 4) {
@@ -47,8 +48,7 @@ struct SubscriptionSettingsView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 16)
+                .padding(.vertical, 8)
             }
         }
         .padding(.top, 4)
@@ -71,5 +71,29 @@ struct SubscriptionSettingsView: View {
             .padding(.vertical, 6)
             .background(themeManager.primaryColor.opacity(0.1))
             .clipShape(Capsule())
+    }
+
+    private var subscriptionIcon: some View {
+        Group {
+            #if canImport(UIKit)
+            if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
+               let primaryIcon = icons["CFBundlePrimaryIcon"] as? [String: Any],
+               let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String],
+               let lastIcon = iconFiles.last,
+               let image = UIImage(named: lastIcon) {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else if UIImage(named: "SubscriptionIcon") != nil {
+                Image("SubscriptionIcon")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else {
+                AppIconView(size: 60)
+            }
+            #else
+            AppIconView(size: 60)
+            #endif
+        }
     }
 }

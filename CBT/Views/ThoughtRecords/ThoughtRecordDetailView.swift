@@ -79,7 +79,7 @@ struct ThoughtRecordDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .padding()
         }
-        .background(Theme.backgroundColor.ignoresSafeArea())
+        .background(ThemedBackground().ignoresSafeArea())
         .navigationTitle("Thought Record Detail")
 #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)

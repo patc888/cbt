@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct TimelineRow: View {
+    @Environment(ThemeManager.self) private var themeManager
     let item: TimelineItem
 
     var body: some View {
@@ -56,7 +57,7 @@ struct TimelineRow: View {
 
     private var iconColor: Color {
         switch item.kind {
-        case .mood: return Theme.primaryColor
+        case .mood: return themeManager.selectedColor
         case .thought: return .purple
         case .exercise: return .green
         case .journal: return .orange

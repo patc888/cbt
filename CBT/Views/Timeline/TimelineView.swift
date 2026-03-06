@@ -8,6 +8,7 @@ struct TimelineView: View {
     @Query(filter: #Predicate<JournalEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var journalEntries: [JournalEntry]
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(ThemeManager.self) private var themeManager
     @State private var showingAddMood = false
     @State private var showingAddThought = false
 
@@ -93,7 +94,7 @@ struct TimelineView: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            Theme.secondaryBackground.ignoresSafeArea()
+            ThemedBackground().ignoresSafeArea()
 
             if groupedItems.isEmpty {
                 VStack(spacing: 20) {
@@ -125,7 +126,7 @@ struct TimelineView: View {
                                 .frame(maxWidth: 220)
                                 .padding(.vertical, 10)
                                 .foregroundStyle(.white)
-                                .background(Theme.primaryColor)
+                                .background(themeManager.selectedColor)
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
@@ -139,7 +140,7 @@ struct TimelineView: View {
                                 .frame(maxWidth: 220)
                                 .padding(.vertical, 10)
                                 .foregroundStyle(.white)
-                                .background(Theme.secondaryColor)
+                                .background(themeManager.secondaryColor)
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
@@ -149,6 +150,7 @@ struct TimelineView: View {
                     Spacer()
                 }
                 .responsiveMaxWidth()
+                .frame(maxWidth: .infinity)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
@@ -175,12 +177,13 @@ struct TimelineView: View {
                                 }
                                 .padding(.vertical, 8)
                                 .padding(.horizontal, 4)
-                                .background(Theme.secondaryBackground)
+                                .background(ThemedBackground())
                             }
                         }
                     }
                     .padding(.horizontal)
                     .responsiveMaxWidth()
+                    .frame(maxWidth: .infinity)
                 }
                 .safeAreaInset(edge: .bottom) {
                     Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
@@ -193,10 +196,10 @@ struct TimelineView: View {
         .safeAreaInset(edge: .top) {
             HStack {
                 Spacer()
-                quickActionButton(title: "+ Mood", color: Theme.primaryColor) {
+                quickActionButton(title: "+ Mood", color: themeManager.selectedColor) {
                     showingAddMood = true
                 }
-                quickActionButton(title: "+ Thought", color: Theme.secondaryColor) {
+                quickActionButton(title: "+ Thought", color: themeManager.secondaryColor) {
                     showingAddThought = true
                 }
             }

@@ -7,9 +7,9 @@ struct HomeView: View {
     @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var moodEntries: [MoodEntry]
     @Query(filter: #Predicate<ThoughtRecord> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
     @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
+    @Environment(ThemeManager.self) private var themeManager
 
     @State private var selectedDate = Date()
-    @State private var selectedSection: HomeSection = .plan
     @State private var showingNewMoodEntry = false
     @State private var showingNewThoughtRecord = false
     @State private var showingTipModal = false
@@ -22,31 +22,108 @@ struct HomeView: View {
         let weekDates = (-180...180).compactMap { calendar.date(byAdding: .day, value: $0, to: today) }
 
         ZStack {
-            Theme.secondaryBackground.ignoresSafeArea()
+            ThemedBackground().ignoresSafeArea()
 
-            VStack(spacing: 16) {
-                header
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    TopHeadlineView(
+                        title: "Daily Plan",
+                        subtitle: "Step by step toward balance",
+                        alignment: .leading
+                    )
                     .padding(.horizontal, 16)
-                    .padding(.top, 16)
 
-
-                SegmentedToggle(
-                    selection: $selectedSection,
-                    options: HomeSection.allCases,
-                    titleKey: \.rawValue
-                )
-                .padding(.horizontal, 16)
-
-                if selectedSection == .plan {
                     WeekStripView(selectedDate: $selectedDate, weekDates: weekDates) { date in
                         hasActivity(on: date)
                     }
-                    .frame(height: 90)
                     .padding(.top, 8)
-                    planContent
-                } else {
-                    TimelineView()
+
+                    VStack(alignment: .leading, spacing: 16) {
+                        PlanCard(
+                            title: "Mood Check-In",
+                            subtitle: "Capture how you feel right now.",
+                            trailingSymbol: "face.smiling"
+                        ) {
+                            VStack(spacing: 0) {
+                                Divider()
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Start quick check-in")
+                                            .font(.system(.subheadline, design: .rounded).weight(.bold))
+                                            .foregroundStyle(Theme.primaryText)
+                                        Text("Takes about 1 minute")
+                                            .font(.system(.caption, design: .rounded).weight(.medium))
+                                            .foregroundStyle(Theme.secondaryText)
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: "arrow.right.circle.fill")
+                                        .font(.title3)
+                                        .foregroundStyle(themeManager.selectedColor)
+                                }
+                                .padding(.top, 12)
+                            }
+                        } action: {
+                            showingNewMoodEntry = true
+                        }
+
+                        PlanCard(
+                            title: "Thought Record",
+                            subtitle: "Challenge one difficult thought.",
+                            trailingSymbol: "brain"
+                        ) {
+                            showingNewThoughtRecord = true
+                        }
+
+                        PlanCard(
+                            title: "Exercises",
+                            subtitle: "Practice one CBT tool.",
+                            trailingSymbol: "figure.mind.and.body"
+                        ) {
+                            selectedTab = .exercises
+                        }
+
+                        PlanCard(
+                            title: "Breathing Reset",
+                            subtitle: "Calm your body in 60 seconds",
+                            trailingSymbol: "wind"
+                        ) {
+                            BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
+                        }
+
+                        PlanCard(
+                            title: "Insights",
+                            subtitle: "Review trends and patterns.",
+                            trailingSymbol: "chart.line.uptrend.xyaxis"
+                        ) {
+                            selectedTab = .insights
+                        }
+
+                        PlanCard(
+                            title: "Journal",
+                            subtitle: "Browse mood and thought entries.",
+                            trailingSymbol: "book.pages"
+                        ) {
+                            selectedTab = .journal
+                        }
+
+                        PlanCard(
+                            title: "Tip of the Day",
+                            subtitle: "Open a quick CBT reminder.",
+                            trailingSymbol: "lightbulb"
+                        ) {
+                            showingTipModal = true
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
                 }
+                .responsiveMaxWidth()
+                .frame(maxWidth: .infinity)
+            }
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
             }
         }
         .navigationTitle("")
@@ -102,110 +179,6 @@ struct HomeView: View {
         }
     }
 
-    private var header: some View {
-        HStack {
-            Spacer()
- 
-            Text("Home")
-                .font(.system(.largeTitle, design: .rounded).weight(.bold))
-                .foregroundStyle(Theme.primaryText)
- 
-            Spacer()
-        }
-    }
-
-    private var planContent: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Daily Plan")
-                    .font(.system(.title, design: .rounded).weight(.bold))
-                    .foregroundStyle(Theme.primaryText)
-                    .padding(.bottom, 4)
-
-                PlanCard(
-                    title: "Mood Check-In",
-                    subtitle: "Capture how you feel right now.",
-                    trailingSymbol: "face.smiling"
-                ) {
-                    VStack(spacing: 0) {
-                        Divider()
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Start quick check-in")
-                                    .font(.system(.subheadline, design: .rounded).weight(.bold))
-                                    .foregroundStyle(Theme.primaryText)
-                                Text("Takes about 1 minute")
-                                    .font(.system(.caption, design: .rounded).weight(.medium))
-                                    .foregroundStyle(Theme.secondaryText)
-                            }
-
-                            Spacer()
-
-                            Image(systemName: "arrow.right.circle.fill")
-                                .font(.title3)
-                                .foregroundStyle(Theme.primaryColor)
-                        }
-                        .padding(.top, 12)
-                    }
-                } action: {
-                    showingNewMoodEntry = true
-                }
-
-                PlanCard(
-                    title: "Thought Record",
-                    subtitle: "Challenge one difficult thought.",
-                    trailingSymbol: "brain"
-                ) {
-                    showingNewThoughtRecord = true
-                }
-
-                PlanCard(
-                    title: "Exercises",
-                    subtitle: "Practice one CBT tool.",
-                    trailingSymbol: "figure.mind.and.body"
-                ) {
-                    selectedTab = .exercises
-                }
-
-                PlanCard(
-                    title: "Breathing Reset",
-                    subtitle: "Calm your body in 60 seconds",
-                    trailingSymbol: "wind"
-                ) {
-                    BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
-                }
-
-                PlanCard(
-                    title: "Insights",
-                    subtitle: "Review trends and patterns.",
-                    trailingSymbol: "chart.line.uptrend.xyaxis"
-                ) {
-                    selectedTab = .insights
-                }
-
-                PlanCard(
-                    title: "Journal",
-                    subtitle: "Browse mood and thought entries.",
-                    trailingSymbol: "book.pages"
-                ) {
-                    selectedTab = .journal
-                }
-
-                PlanCard(
-                    title: "Tip of the Day",
-                    subtitle: "Open a quick CBT reminder.",
-                    trailingSymbol: "lightbulb"
-                ) {
-                    showingTipModal = true
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, LayoutMetrics.floatingToolbarBottomInset + 12)
-            .responsiveMaxWidth()
-            .frame(maxWidth: .infinity)
-        }
-    }
-
     private func hasActivity(on date: Date) -> Bool {
         let calendar = Calendar.current
 
@@ -220,11 +193,4 @@ struct HomeView: View {
         }
         return false
     }
-}
-
-private enum HomeSection: String, CaseIterable, Identifiable {
-    case plan = "Plan"
-    case activity = "Activity"
-
-    var id: String { rawValue }
 }

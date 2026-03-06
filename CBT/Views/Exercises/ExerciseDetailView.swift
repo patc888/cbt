@@ -39,12 +39,12 @@ struct ExerciseDetailView: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
-                Theme.backgroundColor.ignoresSafeArea()
+                ThemedBackground().ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     // Progress Header
                     ProgressView(value: Double(currentStep + 1), total: Double(totalPages))
-                        .tint(Theme.primaryColor)
+                        .tint(accent)
                         .padding()
                         .accessibilityLabel("Step \(currentStep + 1) of \(totalPages)")
                     
@@ -72,7 +72,7 @@ struct ExerciseDetailView: View {
                             Button("Back") {
                                 withAnimation { currentStep -= 1 }
                             }
-                            .foregroundColor(Theme.primaryColor)
+                            .foregroundColor(accent)
                             .padding()
                             .accessibilityLabel("Go back to previous step")
                         } else {
@@ -92,7 +92,7 @@ struct ExerciseDetailView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 12)
-                            .background(Theme.primaryColor)
+                            .background(accent)
                             .clipShape(Capsule())
                             .padding()
                             .accessibilityLabel(currentStep == 0 ? "Start exercise" : "Go to next step")
@@ -104,7 +104,7 @@ struct ExerciseDetailView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 12)
-                            .background(Theme.primaryColor)
+                            .background(accent)
                             .clipShape(Capsule())
                             .padding()
                         }
@@ -172,7 +172,7 @@ struct ExerciseDetailView: View {
                 } label: {
                     Label("Start with \(exercise.duration)m Timer", systemImage: "timer")
                         .bold()
-                        .foregroundColor(Theme.primaryColor)
+                        .foregroundColor(accent)
                 }
                 
                 if !completions.isEmpty {

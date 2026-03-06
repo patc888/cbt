@@ -21,6 +21,7 @@ enum FloatingTab: String, CaseIterable, Hashable {
 struct FloatingBottomToolbar: View {
     @Binding var selectedTab: FloatingTab
 
+    @Environment(ThemeManager.self) private var themeManager
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -72,7 +73,7 @@ struct FloatingBottomToolbar: View {
                                     .font(.system(size: 10, weight: selectedTab == tab ? .bold : .medium, design: .rounded))
                                     .lineLimit(1)
                             }
-                            .foregroundStyle(selectedTab == tab ? Theme.primaryColor : Theme.secondaryText)
+                            .foregroundStyle(selectedTab == tab ? themeManager.selectedColor : Theme.secondaryText)
                             .frame(maxWidth: .infinity)
                             .contentShape(Rectangle())
                         }
@@ -105,10 +106,16 @@ struct FloatingBottomToolbar: View {
                                     }
                                 }
                             } label: {
-                                Circle()
-                                    .fill(mood.color)
-                                    .frame(width: 48, height: 48)
-                                    .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
+                                ZStack {
+                                    Circle()
+                                        .fill(mood.color(with: themeManager.selectedColor))
+                                        .frame(width: 48, height: 48)
+                                        .shadow(color: themeManager.selectedColor.opacity(0.3), radius: 4, x: 0, y: 2)
+                                    
+                                    Image(systemName: mood.symbol)
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .foregroundStyle(.white)
+                                }
                             }
                             .buttonStyle(.plain)
                             .transition(
@@ -136,9 +143,9 @@ struct FloatingBottomToolbar: View {
                     } label: {
                         ZStack {
                             Circle()
-                                .fill(Theme.primaryColor)
+                                .fill(themeManager.selectedColor)
                                 .frame(width: 56, height: 56)
-                                .shadow(color: Theme.primaryColor.opacity(colorScheme == .dark ? 0.4 : 0), radius: colorScheme == .dark ? 10 : 0, x: 0, y: colorScheme == .dark ? 5 : 0)
+                                .shadow(color: themeManager.selectedColor.opacity(colorScheme == .dark ? 0.4 : 0), radius: colorScheme == .dark ? 10 : 0, x: 0, y: colorScheme == .dark ? 5 : 0)
 
                             Image(systemName: isExpanded ? "xmark" : "plus")
                                 .font(.system(size: 24, weight: .bold))

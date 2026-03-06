@@ -14,6 +14,8 @@ struct DataSettingsView: View {
             .padding(.horizontal, 16)
             .padding(.top, 16)
             .padding(.bottom, 32)
+            .responsiveMaxWidth()
+            .frame(maxWidth: .infinity)
         }
         .navigationTitle("Data")
         .navigationBarTitleDisplayMode(.inline)
@@ -25,6 +27,12 @@ struct DataSettingsSection: View {
         case deleteOnly
         case deleteAndCancelReminders
     }
+
+    @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
+    private var moodEntries: [MoodEntry]
+
+    @Query(filter: #Predicate<ThoughtRecord> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
+    private var thoughtRecords: [ThoughtRecord]
 
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
@@ -52,14 +60,42 @@ struct DataSettingsSection: View {
             SettingsRow(
                 icon: "square.and.arrow.up",
                 iconColor: themeManager.primaryColor,
-                title: "Export Data"
+                title: "Export Backup (JSON)"
             ) {
-                Button("Export JSON") {
+                Button("Export") {
                     HapticManager.shared.lightImpact()
                     showingExportInfo = true
                 }
                 .font(.system(size: 14, weight: .bold, design: .rounded))
                 .foregroundColor(themeManager.primaryColor)
+            }
+
+            SettingsRow(
+                icon: "tablecells",
+                iconColor: themeManager.primaryColor,
+                title: "Export Moods (CSV)"
+            ) {
+                if let csv = CSVExporter.shared.exportMoodEntries(moodEntries) {
+                    ShareLink(item: csv, preview: SharePreview("Mood Entries CSV")) {
+                        Text("Export")
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundColor(themeManager.primaryColor)
+                    }
+                }
+            }
+
+            SettingsRow(
+                icon: "tablecells",
+                iconColor: themeManager.primaryColor,
+                title: "Export Thoughts (CSV)"
+            ) {
+                if let csv = CSVExporter.shared.exportThoughtRecords(thoughtRecords) {
+                    ShareLink(item: csv, preview: SharePreview("Thought Records CSV")) {
+                        Text("Export")
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundColor(themeManager.primaryColor)
+                    }
+                }
             }
 
             Button(role: .destructive) {

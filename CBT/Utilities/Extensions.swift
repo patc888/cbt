@@ -60,6 +60,34 @@ extension View {
             self
         }
     }
+
+    /// Applies a premium press effect with scaling, opacity reduction, and haptic feedback.
+    /// - Parameter style: The type of haptic to trigger on press. Pass nil to disable haptics.
+    func premiumPressEffect(style: HapticType? = .medium) -> some View {
+        self.buttonStyle(PremiumButtonStyle(hapticStyle: style))
+    }
+}
+
+// MARK: - Premium UI Polish
+
+/// A premium button style that provides scale, opacity, and haptic feedback.
+struct PremiumButtonStyle: ButtonStyle {
+    var hapticStyle: HapticType? = .medium
+    var id: String? = nil // Optional ID to prevent double-firing if nested
+    
+    @Environment(\.isEnabled) private var isEnabled
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed && isEnabled, let style = hapticStyle {
+                    HapticManager.shared.trigger(style)
+                }
+            }
+    }
 }
 
 struct LayoutMetrics {

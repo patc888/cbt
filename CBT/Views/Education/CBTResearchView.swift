@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct CBTResearchView: View {
+    @Environment(ThemeManager.self) private var themeManager
     var hideBackground: Bool = false
     var hideTitle: Bool = false
     
@@ -72,7 +73,7 @@ struct CBTResearchView: View {
                     
                     VStack(spacing: DSSpacing.large) {
                         ResearchBar(label: "CBT Effectiveness (High)", value: 0.9, color: Theme.primaryColor, delay: 0.1)
-                        ResearchBar(label: "Medication Alone (Moderate)", value: 0.65, color: Theme.secondaryColor, delay: 0.3)
+                        ResearchBar(label: "Medication Alone (Moderate)", value: 0.65, color: themeManager.secondaryColor, delay: 0.3)
                         ResearchBar(label: "No Treatment (Low)", value: 0.15, color: DSTheme.secondaryText.opacity(0.4), delay: 0.5)
                     }
                     

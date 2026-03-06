@@ -41,6 +41,8 @@ struct CBTEducationMenuView: View {
                 }
                 .padding(.bottom, DSSpacing.xLarge)
             }
+            .responsiveMaxWidth()
+            .frame(maxWidth: .infinity)
         }
         .navigationTitle("")
 #if os(iOS)
@@ -121,6 +123,8 @@ struct CBTEducationLayout<Content: View>: View {
             }
             .padding(.bottom, DSSpacing.xLarge)
         }
+        .responsiveMaxWidth()
+        .frame(maxWidth: .infinity)
     }
 }
 

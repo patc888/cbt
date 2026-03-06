@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct DistortionExampleCardView: View {
+    @Environment(ThemeManager.self) private var themeManager
     let example: CognitiveDistortionExample
     
     var body: some View {
@@ -8,7 +9,7 @@ struct DistortionExampleCardView: View {
             // Distortion Name
             HStack {
                 Image(systemName: "brain.head.profile")
-                    .foregroundColor(Theme.primaryColor)
+                    .foregroundColor(themeManager.selectedColor)
                 Text(example.distortion)
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(Theme.primaryText)

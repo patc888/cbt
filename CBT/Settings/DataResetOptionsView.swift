@@ -71,6 +71,8 @@ struct DataResetOptionsView: View {
                     }
                 }
                 .padding()
+                .responsiveMaxWidth()
+                .frame(maxWidth: .infinity)
             }
         }
         .navigationTitle("Reset Data")

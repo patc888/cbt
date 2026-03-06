@@ -51,7 +51,7 @@ struct SecuritySettingsView: View {
             PrivacyInfoPopup()
                 .presentationDetents([.medium])
                 .presentationCornerRadius(Theme.cornerRadiusXLarge)
-                .presentationBackground { Theme.secondaryBackground }
+                .presentationBackground { ThemedBackground() }
         }
     }
 

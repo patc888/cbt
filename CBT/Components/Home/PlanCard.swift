@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct PlanCard<CTAContent: View>: View {
+    @Environment(ThemeManager.self) private var themeManager
     let title: String
     let subtitle: String
     let trailingSymbol: String?
@@ -43,9 +44,9 @@ struct PlanCard<CTAContent: View>: View {
                     if let trailingSymbol {
                         Image(systemName: trailingSymbol)
                             .font(.system(.body, weight: .bold))
-                            .foregroundStyle(Theme.primaryColor)
+                            .foregroundStyle(themeManager.selectedColor)
                             .frame(width: 36, height: 36)
-                            .background(Theme.primaryColor.opacity(0.12), in: Circle())
+                            .background(themeManager.selectedColor.opacity(0.12), in: Circle())
                             .accessibilityHidden(true)
                     }
                 }

@@ -4,6 +4,7 @@ import SwiftData
 struct MoodCheckinView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(ThemeManager.self) private var themeManager
     
     @State private var currentStep: Int = 0
     
@@ -22,7 +23,7 @@ struct MoodCheckinView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Theme.backgroundColor.ignoresSafeArea()
+                ThemedBackground().ignoresSafeArea()
                 
                 VStack {
                     // Progress Bar
@@ -149,6 +150,7 @@ struct MoodCheckinView: View {
 
 // Simple Progress Bar
 private struct ProgressBar: View {
+    @Environment(ThemeManager.self) private var themeManager
     let value: Double
     
     var body: some View {
@@ -159,7 +161,7 @@ private struct ProgressBar: View {
                     .frame(height: 6)
                 
                 Capsule()
-                    .fill(Theme.primaryColor)
+                    .fill(themeManager.selectedColor)
                     .frame(width: max(0, geometry.size.width * CGFloat(value)), height: 6)
                     .animation(.spring(), value: value)
             }
@@ -176,23 +178,23 @@ enum MoodColor: Int, CaseIterable {
     case good = 4
     case great = 5
     
-    var color: Color {
+    func color(with themeColor: Color) -> Color {
         switch self {
-        case .veryLow: return .red
-        case .low: return .orange
-        case .neutral: return .yellow
-        case .good: return .green
-        case .great: return .blue
+        case .veryLow: return themeColor.opacity(0.3)
+        case .low: return themeColor.opacity(0.45)
+        case .neutral: return themeColor.opacity(0.6)
+        case .good: return themeColor.opacity(0.8)
+        case .great: return themeColor
         }
     }
     
     var symbol: String {
         switch self {
-        case .veryLow: return "face.frowning.fill"
+        case .veryLow: return "face.dashed.fill"
         case .low: return "face.dashed"
         case .neutral: return "face.smiling"
         case .good: return "face.smiling.fill"
-        case .great: return "star.fill"
+        case .great: return "face.smiling.inverse"
         }
     }
     

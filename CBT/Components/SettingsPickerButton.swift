@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Reusable picker button for settings
 struct SettingsPickerButton: View {
+    @Environment(ThemeManager.self) private var themeManager
     let value: String
     let isExpanded: Bool
     var placeholder: String? = nil
@@ -21,18 +22,18 @@ struct SettingsPickerButton: View {
             
             Image(systemName: "pencil.circle.fill")
                 .font(.system(size: 14, weight: .bold))
-                .shadow(color: Theme.primaryColor.opacity(0.1), radius: 4, x: 0, y: 2)
+                .shadow(color: themeManager.selectedColor.opacity(0.1), radius: 4, x: 0, y: 2)
         }
-        .foregroundStyle(Theme.primaryColor)
+        .foregroundStyle(themeManager.selectedColor)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(
             Capsule()
-                .fill(Theme.primaryColor.opacity(isExpanded ? 0.15 : 0.1))
+                .fill(themeManager.selectedColor.opacity(isExpanded ? 0.15 : 0.1))
         )
         .overlay(
             Capsule()
-                .stroke(Theme.primaryColor, lineWidth: isExpanded ? 2 : 0)
+                .stroke(themeManager.selectedColor, lineWidth: isExpanded ? 2 : 0)
         )
     }
 }
@@ -40,6 +41,7 @@ struct SettingsPickerButton: View {
 
 /// Variant for frequency/dropdown pickers
 struct SettingsDropdownButton: View {
+    @Environment(ThemeManager.self) private var themeManager
     let value: String
     let isExpanded: Bool
     
@@ -51,16 +53,16 @@ struct SettingsDropdownButton: View {
             Image(systemName: "chevron.up.chevron.down")
                 .font(.system(size: 10, weight: .bold))
         }
-        .foregroundStyle(Theme.primaryColor)
+        .foregroundStyle(themeManager.selectedColor)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(
             Capsule()
-                .fill(Theme.primaryColor.opacity(isExpanded ? 0.15 : 0.1))
+                .fill(themeManager.selectedColor.opacity(isExpanded ? 0.15 : 0.1))
         )
         .overlay(
             Capsule()
-                .stroke(Theme.primaryColor, lineWidth: isExpanded ? 2 : 0)
+                .stroke(themeManager.selectedColor, lineWidth: isExpanded ? 2 : 0)
         )
     }
 }

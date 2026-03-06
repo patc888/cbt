@@ -3,7 +3,7 @@ import Observation
 
 @Observable
 final class ThemeManager {
-    var selectedTheme: AppColorTheme = .purple {
+    var selectedTheme: AppColorTheme = .blue {
         didSet { saveTheme() }
     }
 

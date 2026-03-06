@@ -30,6 +30,10 @@ struct AffirmationPlayerView: View {
     
     private let timerOptions = [60, 120, 300] // 1m, 2m, 5m
     
+    private var accent: Color {
+        themeManager?.selectedColor ?? .accentColor
+    }
+    
     var currentList: [Affirmation] {
         if showingFavorites {
             let favs = allAffirmations.filter { store.isFavorite(id: $0.id) }
@@ -40,7 +44,7 @@ struct AffirmationPlayerView: View {
     
     var body: some View {
         ZStack {
-            Theme.secondaryBackground.ignoresSafeArea()
+            ThemedBackground().ignoresSafeArea()
             
             VStack {
                 // Header Options
@@ -155,11 +159,11 @@ struct AffirmationPlayerView: View {
             // Progress
             ZStack {
                 Circle()
-                    .stroke((themeManager?.selectedColor ?? .accentColor).opacity(0.15), lineWidth: 3)
+                    .stroke(accent.opacity(0.15), lineWidth: 3)
                     .frame(width: 32, height: 32)
                 Circle()
                     .trim(from: 0, to: timerManager.progress)
-                    .stroke(themeManager?.selectedColor ?? .accentColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .stroke(accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                     .frame(width: 32, height: 32)
                     .rotationEffect(.degrees(-90))
             }
@@ -178,7 +182,7 @@ struct AffirmationPlayerView: View {
                 } label: {
                     Image(systemName: "play.fill")
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(themeManager?.selectedColor ?? .accentColor)
+                        .foregroundStyle(accent)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Resume timer")
@@ -189,7 +193,7 @@ struct AffirmationPlayerView: View {
                 } label: {
                     Image(systemName: "pause.fill")
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(themeManager?.selectedColor ?? .accentColor)
+                        .foregroundStyle(accent)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Pause timer")
@@ -235,7 +239,7 @@ struct AffirmationPlayerView: View {
                 } label: {
                     Image(systemName: "timer")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(themeManager?.selectedColor ?? .accentColor)
+                        .foregroundStyle(accent)
                         .padding(DSSpacing.small)
                         .background(DSTheme.elevatedFill)
                         .clipShape(Circle())
@@ -300,7 +304,7 @@ struct AffirmationPlayerView: View {
             } label: {
                 Image(systemName: "chevron.left.circle.fill")
                     .font(.system(size: 44))
-                    .foregroundStyle(DSTheme.elevatedFill, themeManager?.selectedColor ?? .accentColor)
+                    .foregroundStyle(DSTheme.elevatedFill, accent)
             }
             .accessibilityLabel("Previous affirmation")
             
@@ -318,7 +322,7 @@ struct AffirmationPlayerView: View {
             } label: {
                 Image(systemName: "shuffle.circle.fill")
                     .font(.system(size: 44))
-                    .foregroundStyle(DSTheme.elevatedFill, themeManager?.selectedColor ?? .accentColor)
+                    .foregroundStyle(DSTheme.elevatedFill, accent)
             }
             .accessibilityLabel("Shuffle affirmations")
             
@@ -336,7 +340,7 @@ struct AffirmationPlayerView: View {
             } label: {
                 Image(systemName: "chevron.right.circle.fill")
                     .font(.system(size: 44))
-                    .foregroundStyle(DSTheme.elevatedFill, themeManager?.selectedColor ?? .accentColor)
+                    .foregroundStyle(DSTheme.elevatedFill, accent)
             }
             .accessibilityLabel("Next affirmation")
         }

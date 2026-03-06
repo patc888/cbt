@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MoodIntensitySelector: View {
+    @Environment(ThemeManager.self) private var themeManager
     @Binding var intensity: Double
     let selectedColor: MoodColor?
     let onNext: () -> Void
@@ -18,7 +19,7 @@ struct MoodIntensitySelector: View {
                 Text("\(Int(intensity))")
                     .font(.system(size: 64, weight: .bold, design: .rounded))
                     .minimumScaleFactor(0.5)
-                    .foregroundStyle(selectedColor?.color ?? Theme.primaryColor)
+                    .foregroundStyle(selectedColor.map { $0.color(with: themeManager.selectedColor) } ?? themeManager.selectedColor)
                     .contentTransition(.numericText())
                     .animation(.spring(), value: intensity)
                     .accessibilityHidden(true)
@@ -30,7 +31,7 @@ struct MoodIntensitySelector: View {
                 } maximumValueLabel: {
                     Text("10").font(.caption).foregroundStyle(Theme.secondaryText)
                 }
-                .tint(selectedColor?.color ?? Theme.primaryColor)
+                .tint(selectedColor.map { $0.color(with: themeManager.selectedColor) } ?? themeManager.selectedColor)
                 .padding(.horizontal, 32)
                 .accessibilityValue("\(Int(intensity)) out of 10")
             }
