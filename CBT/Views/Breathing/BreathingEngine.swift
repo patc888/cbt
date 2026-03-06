@@ -10,7 +10,7 @@ enum BreathingPhase {
 
 struct BreathingState {
     var phase: BreathingPhase
-    var phaseSecondsRemaining: Int
+    var phaseSecondsRemaining: Double
     var totalSecondsRemaining: Int
     var isRunning: Bool
     var isComplete: Bool
@@ -20,16 +20,17 @@ struct BreathingState {
 final class BreathingEngine: ObservableObject {
     @Published private(set) var state: BreathingState
 
-    private let phaseLengthSeconds = 4
+    private var pattern: BreathingPattern
     private var configuredDurationSeconds: Int
     private var timer: Timer?
 
-    init(durationSeconds: Int = 60) {
+    init(durationSeconds: Int = 60, pattern: BreathingPattern = .box) {
         let safeDuration = max(1, durationSeconds)
-        configuredDurationSeconds = safeDuration
-        state = BreathingState(
+        self.configuredDurationSeconds = safeDuration
+        self.pattern = pattern
+        self.state = BreathingState(
             phase: .inhale,
-            phaseSecondsRemaining: phaseLengthSeconds,
+            phaseSecondsRemaining: pattern.inhaleDuration,
             totalSecondsRemaining: safeDuration,
             isRunning: false,
             isComplete: false
@@ -71,30 +72,66 @@ final class BreathingEngine: ObservableObject {
         configuredDurationSeconds = max(1, seconds)
         resetState(totalSeconds: configuredDurationSeconds)
     }
+    
+    func setPattern(_ pattern: BreathingPattern) {
+        guard !state.isRunning else { return }
+        self.pattern = pattern
+        resetState(totalSeconds: configuredDurationSeconds)
+    }
 
     private func startTimer() {
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+        // Use 0.1s interval for smoother transitions if needed, but 1s is fine for totalSeconds.
+        // Actually, let's use 0.1s to allow for sub-second phase durations (like 4-7-8 if they were sub-second, though they are usually ints).
+        // But the user might want precision.
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.tick()
             }
         }
     }
 
+    private var tickCount = 0
     private func tick() {
         guard state.isRunning else { return }
 
-        state.totalSecondsRemaining -= 1
-        state.phaseSecondsRemaining -= 1
-
-        if state.totalSecondsRemaining <= 0 {
-            completeSession()
-            return
+        tickCount += 1
+        state.phaseSecondsRemaining -= 0.1
+        
+        // Every 10 ticks = 1 second
+        if tickCount >= 10 {
+            state.totalSecondsRemaining -= 1
+            tickCount = 0
+            
+            if state.totalSecondsRemaining <= 0 {
+                completeSession()
+                return
+            }
         }
 
         if state.phaseSecondsRemaining <= 0 {
-            state.phase = nextPhase(after: state.phase)
-            state.phaseSecondsRemaining = phaseLengthSeconds
+            advancePhase()
+        }
+    }
+
+    private func advancePhase() {
+        var next = nextPhase(after: state.phase)
+        
+        // Skip phases with 0 duration (like hold2 in 4-7-8)
+        while duration(for: next) <= 0 {
+            next = nextPhase(after: next)
+        }
+        
+        state.phase = next
+        state.phaseSecondsRemaining = duration(for: next)
+    }
+
+    private func duration(for phase: BreathingPhase) -> Double {
+        switch phase {
+        case .inhale: return pattern.inhaleDuration
+        case .hold1: return pattern.hold1Duration
+        case .exhale: return pattern.exhaleDuration
+        case .hold2: return pattern.hold2Duration
         }
     }
 
@@ -109,10 +146,11 @@ final class BreathingEngine: ObservableObject {
 
     private func resetState(totalSeconds: Int) {
         state.phase = .inhale
-        state.phaseSecondsRemaining = phaseLengthSeconds
+        state.phaseSecondsRemaining = pattern.inhaleDuration
         state.totalSecondsRemaining = totalSeconds
         state.isRunning = false
         state.isComplete = false
+        tickCount = 0
     }
 
     private func nextPhase(after phase: BreathingPhase) -> BreathingPhase {

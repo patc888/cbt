@@ -4,6 +4,7 @@ struct BreathingOrbView: View {
     let phase: BreathingPhase
     let isComplete: Bool
     let accent: Color
+    let pattern: BreathingPattern
     
     private var circleScale: CGFloat {
         if isComplete { return 1.0 }
@@ -94,16 +95,19 @@ struct BreathingOrbView: View {
     private var guidanceText: String {
         if isComplete { return "Well done!" }
         switch phase {
-        case .inhale: return "Through your nose"
-        case .hold1, .hold2: return "Hold gently"
-        case .exhale: return "Slow exhale"
+        case .inhale: return pattern.inhaleGuidance
+        case .hold1: return pattern.hold1Guidance
+        case .exhale: return pattern.exhaleGuidance
+        case .hold2: return pattern.hold2Guidance
         }
     }
     
     private var phaseDuration: Double {
         switch phase {
-        case .inhale, .exhale: return 4.0
-        default: return 0.5
+        case .inhale: return pattern.inhaleDuration
+        case .exhale: return pattern.exhaleDuration
+        case .hold1: return pattern.hold1Duration
+        case .hold2: return pattern.hold2Duration
         }
     }
 }

@@ -70,6 +70,7 @@ struct RootTabView: View {
             NavigationStack {
                 BreathingResetView(
                     durationSeconds: breathing.durationSeconds,
+                    pattern: breathing.pattern,
                     autoStart: breathing.autoStart,
                     showsDismissControl: true
                 )

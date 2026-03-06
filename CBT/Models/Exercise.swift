@@ -7,4 +7,5 @@ struct Exercise: Codable, Identifiable, Hashable {
     let duration: Int
     let description: String
     let steps: [String]
+    let breathingPattern: BreathingPattern?
 }

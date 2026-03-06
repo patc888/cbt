@@ -7,8 +7,6 @@ struct BreathingResetView: View {
 
     @StateObject private var engine: BreathingEngine
     @State private var selectedDuration: Int
-    @State private var soundEnabled = false
-    @State private var soundManager = BreathingSoundManager()
     @State private var hasAutoStarted = false
     
     // Journal save state
@@ -16,13 +14,15 @@ struct BreathingResetView: View {
     @State private var completedSummary: SessionSummary?
     @State private var sessionStartDate: Date?
 
+    let pattern: BreathingPattern
     let autoStart: Bool
     let showsDismissControl: Bool
 
-    init(durationSeconds: Int = 60, autoStart: Bool = false, showsDismissControl: Bool = false) {
+    init(durationSeconds: Int = 60, pattern: BreathingPattern = .box, autoStart: Bool = false, showsDismissControl: Bool = false) {
         let safeDuration = max(1, durationSeconds)
-        _engine = StateObject(wrappedValue: BreathingEngine(durationSeconds: safeDuration))
+        _engine = StateObject(wrappedValue: BreathingEngine(durationSeconds: safeDuration, pattern: pattern))
         _selectedDuration = State(initialValue: safeDuration)
+        self.pattern = pattern
         self.autoStart = autoStart
         self.showsDismissControl = showsDismissControl
     }
@@ -52,7 +52,8 @@ struct BreathingResetView: View {
                 BreathingOrbView(
                     phase: engine.state.phase,
                     isComplete: engine.state.isComplete,
-                    accent: accent
+                    accent: accent,
+                    pattern: pattern
                 )
                 .padding(.vertical, 32)
                 
@@ -81,7 +82,6 @@ struct BreathingResetView: View {
                 // D: Controls Dock card
                 BreathingControlsBar(
                     selectedDuration: $selectedDuration,
-                    soundEnabled: $soundEnabled,
                     isRunning: engine.state.isRunning,
                     isComplete: engine.state.isComplete,
                     canResume: shouldShowResume,
@@ -133,11 +133,11 @@ struct BreathingResetView: View {
     private var headerSection: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Breathing Reset")
+                Text(pattern.name)
                     .font(DSTypography.pageTitle)
                     .foregroundStyle(DSTheme.primaryText)
                 
-                Text("Box breathing • \(formattedTime(engine.state.totalSecondsRemaining))")
+                Text("\(formattedTime(engine.state.totalSecondsRemaining)) remaining")
                     .font(DSTypography.caption)
                     .foregroundStyle(DSTheme.secondaryText)
             }
@@ -161,17 +161,12 @@ struct BreathingResetView: View {
         .padding(.horizontal, 24)
         .padding(.top, 16)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Breathing Reset. Box breathing session. \(formattedTime(engine.state.totalSecondsRemaining)) remaining.")
+        .accessibilityLabel("\(pattern.name). \(formattedTime(engine.state.totalSecondsRemaining)) remaining.")
     }
 
     // MARK: - Sub-logic
     private func handlePhaseChange(from oldPhase: BreathingPhase, to newPhase: BreathingPhase) {
         guard engine.state.isRunning, oldPhase != newPhase else { return }
-        
-        // Sound logic
-        if soundEnabled {
-            soundManager.playPhaseChange()
-        }
         
         // Haptic logic (6: Optional, safe)
         #if os(iOS) && !targetEnvironment(macCatalyst)
@@ -197,9 +192,9 @@ struct BreathingResetView: View {
         let start = sessionStartDate ?? Date().addingTimeInterval(TimeInterval(-elapsed))
         let summary = SessionSummary(
             sourceKind: .breathing,
-            sourceID: "breathing-box",
-            title: "Breathing Reset",
-            bodyText: "Box breathing session — \(formattedTime(selectedDuration)) duration",
+            sourceID: "breathing-\(pattern.name.lowercased().replacingOccurrences(of: " ", with: "-"))",
+            title: pattern.name,
+            bodyText: "\(pattern.name) session — \(formattedTime(selectedDuration)) duration",
             durationSeconds: elapsed,
             startedAt: start,
             endedAt: Date()
@@ -211,6 +206,6 @@ struct BreathingResetView: View {
 
 #Preview {
     NavigationStack {
-        BreathingResetView()
+        BreathingResetView(pattern: .box)
     }
 }

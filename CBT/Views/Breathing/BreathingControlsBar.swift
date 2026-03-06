@@ -2,7 +2,6 @@ import SwiftUI
 
 struct BreathingControlsBar: View {
     @Binding var selectedDuration: Int
-    @Binding var soundEnabled: Bool
     let isRunning: Bool
     let isComplete: Bool
     let canResume: Bool
@@ -39,21 +38,6 @@ struct BreathingControlsBar: View {
                 .clipShape(Capsule())
                 
                 Spacer()
-                
-                // Sound Toggle
-                Button {
-                    HapticManager.shared.lightImpact()
-                    soundEnabled.toggle()
-                } label: {
-                    Image(systemName: soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                        .font(.system(.body, weight: .semibold))
-                        .padding(10)
-                        .background(soundEnabled ? accent.opacity(0.12) : Color(.secondarySystemFill))
-                        .foregroundStyle(soundEnabled ? accent : .secondary)
-                        .clipShape(Circle())
-                }
-                .accessibilityLabel(soundEnabled ? "Mute sounds" : "Unmute sounds")
-                .accessibilityHint("Toggles breathing guiding sounds")
             }
             .padding(.horizontal, 4)
             

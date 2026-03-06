@@ -175,6 +175,21 @@ struct ExerciseDetailView: View {
                         .foregroundColor(accent)
                 }
                 
+                if let pattern = exercise.breathingPattern {
+                    Button {
+                        HapticManager.shared.mediumImpact()
+                        BreathingPresenter.shared.present(
+                            durationSeconds: exercise.duration * 60,
+                            autoStart: true,
+                            pattern: pattern
+                        )
+                    } label: {
+                        Label("Guided \(pattern.name)", systemImage: "wind")
+                            .bold()
+                            .foregroundColor(accent)
+                    }
+                }
+                
                 if !completions.isEmpty {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")

@@ -49,7 +49,18 @@
       "Exhale for 4 seconds.",
       "Hold empty for 4 seconds.",
       "Repeat 5 times."
-    ]
+    ],
+    "breathingPattern": {
+      "name": "Box Breathing",
+      "inhaleDuration": 4.0,
+      "hold1Duration": 4.0,
+      "exhaleDuration": 4.0,
+      "hold2Duration": 4.0,
+      "inhaleGuidance": "Through your nose",
+      "hold1Guidance": "Hold gently",
+      "exhaleGuidance": "Slow exhale",
+      "hold2Guidance": "Hold empty"
+    }
   },
   {
     "id": "exercise_005",
@@ -351,7 +362,18 @@
       "Hold the breath for 7 seconds.",
       "Exhale completely through your mouth for 8 seconds.",
       "Repeat 4 times."
-    ]
+    ],
+    "breathingPattern": {
+      "name": "4-7-8 Breathing",
+      "inhaleDuration": 4.0,
+      "hold1Duration": 7.0,
+      "exhaleDuration": 8.0,
+      "hold2Duration": 0.0,
+      "inhaleGuidance": "Through your nose",
+      "hold1Guidance": "Hold your breath",
+      "exhaleGuidance": "With a whoosh",
+      "hold2Guidance": ""
+    }
   },
   {
     "id": "exercise_029",
