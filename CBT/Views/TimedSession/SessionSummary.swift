@@ -8,10 +8,10 @@ enum SessionSourceKind: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .breathing: return "Breathing"
-        case .affirmation: return "Affirmations"
-        case .distortionExample: return "Distortion Practice"
-        case .exercise: return "Exercise"
+        case .breathing: return String(localized: "Breathing")
+        case .affirmation: return String(localized: "Affirmations")
+        case .distortionExample: return String(localized: "Distortion Practice")
+        case .exercise: return String(localized: "Exercise")
         }
     }
 

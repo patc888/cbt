@@ -30,16 +30,18 @@
 		9BB71A7FD613C3C752212A00 /* ExercisesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA7BAAECF66D2C5F5399C1F0 /* ExercisesView.swift */; };
 		9E7FCBBE6337ED8D579B4E30 /* ExerciseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE10F67FC739093236172516 /* ExerciseDetailView.swift */; };
 		AD4CCB2DC22E8BB3786A4CA5 /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41C6873C6A6F717126C99CCB /* Exercise.swift */; };
+		AEC23C5A5D947F5F567AB13A /* JournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 887DA3C1FFE683A5C3CABF86 /* JournalView.swift */; };
 		B36C1E6E7170743BB0E41A28 /* CBTEducationMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D81099BC20784051632ABCD5 /* CBTEducationMenuView.swift */; };
+		B396A71F5095531E665DFE07 /* JournalSessionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D61A50E20D669C8F26B1AD /* JournalSessionRow.swift */; };
 		B3FF0B858FC6407FC7646AEF /* DistortionExamplesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 096D7D3AFE3744DCC008BC64 /* DistortionExamplesView.swift */; };
 		B4822D6F1287115793C90E26 /* CognitiveDistortionExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E9BE42FDDA6B26379C30C7 /* CognitiveDistortionExample.swift */; };
 		B7AEB4A16410BCCBEEF04078 /* CBTCognitiveDistortionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 339CE04FF2EE2D22EDF03881 /* CBTCognitiveDistortionsView.swift */; };
 		BA58BF3DA83A6D55E330F932 /* CBTEducationIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 981AE1920ADF97B45092B1FE /* CBTEducationIntroView.swift */; };
 		BF72952CD3E29FEB588C3360 /* TimedSessionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46174A2410EBE5205677063D /* TimedSessionSheet.swift */; };
+		C036E0E94CF95649E733B2E2 /* JournalSessionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE15F5487CA46335064442E3 /* JournalSessionsListView.swift */; };
 		C202C213FFFD5902BE27EE09 /* JournalEntryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84494DAB22A331ACE16537B6 /* JournalEntryDetailView.swift */; };
 		D3668EE3B32FC79515189C51 /* ThemeBackgrounds.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA4ED997B3D1A5FA46287FF /* ThemeBackgrounds.swift */; };
 		E7F38248BFEFFD8E84BE012A /* SessionSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8100DA3282A4D0C06646B6E /* SessionSummary.swift */; };
-		EB20AAC2CB3F0163BE31159C /* Exercises.json in Resources */ = {isa = PBXBuildFile; fileRef = 62D79DAF0421FDCC6CD4EC45 /* Exercises.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,49 +65,52 @@
 		00F49E7549B6795A52FA6D52 /* Exercises.json */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.json; name = Exercises.json; path = CBT/Resources/Exercises.json; sourceTree = "<group>"; };
 		036A393EF4B16FD2EAC76FB4 /* ExerciseLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExerciseLoader.swift; path = CBT/Services/ExerciseLoader.swift; sourceTree = "<group>"; };
 		057FEC65B18A263510493031 /* AppTheme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppTheme.swift; path = CBT/Utilities/AppTheme.swift; sourceTree = "<group>"; };
-		08F60EA20CA9A593F305E726 /* CBTResearchView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTResearchView.swift; path = CBT/Views/Education/CBTResearchView.swift; sourceTree = "<group>"; };
+		08F60EA20CA9A593F305E726 /* CBTResearchView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTResearchView.swift; path = CBTResearchView.swift; sourceTree = "<group>"; };
 		096D7D3AFE3744DCC008BC64 /* DistortionExamplesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DistortionExamplesView.swift; path = ../CBT/Views/Exercises/Distortions/DistortionExamplesView.swift; sourceTree = "<group>"; };
 		10F438FB03B7BC72D6CD963B /* ThemeManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ThemeManager.swift; path = CBT/Utilities/ThemeManager.swift; sourceTree = "<group>"; };
 		11B32A76A78B980E08161AFD /* Color+Extensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "Color+Extensions.swift"; path = "CBT/Utilities/Color+Extensions.swift"; sourceTree = "<group>"; };
 		1D41DD8111E2DA9E02A329A7 /* DistortionExampleCardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DistortionExampleCardView.swift; path = ../CBT/Views/Exercises/Distortions/DistortionExampleCardView.swift; sourceTree = "<group>"; };
 		222FA855280230292348BA9D /* CognitiveDistortions.json */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.json; name = CognitiveDistortions.json; path = CBT/Resources/CognitiveDistortions.json; sourceTree = "<group>"; };
 		2FE75C21E59658D0712C728D /* Exercises.json */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.json; name = Exercises.json; path = CBT/Resources/Exercises.json; sourceTree = "<group>"; };
-		339CE04FF2EE2D22EDF03881 /* CBTCognitiveDistortionsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTCognitiveDistortionsView.swift; path = CBT/Views/Education/CBTCognitiveDistortionsView.swift; sourceTree = "<group>"; };
+		339CE04FF2EE2D22EDF03881 /* CBTCognitiveDistortionsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTCognitiveDistortionsView.swift; path = CBTCognitiveDistortionsView.swift; sourceTree = "<group>"; };
 		406969468C7CD36175E0769B /* ExerciseLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExerciseLoader.swift; path = CBT/Services/ExerciseLoader.swift; sourceTree = "<group>"; };
 		41C6873C6A6F717126C99CCB /* Exercise.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Exercise.swift; path = CBT/Models/Exercise.swift; sourceTree = "<group>"; };
+		41D61A50E20D669C8F26B1AD /* JournalSessionRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = JournalSessionRow.swift; path = CBT/Views/Journal/JournalSessionRow.swift; sourceTree = "<group>"; };
 		43B49C0265DB577719E637D9 /* ExercisesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExercisesView.swift; path = CBT/Views/Exercises/ExercisesView.swift; sourceTree = "<group>"; };
 		46174A2410EBE5205677063D /* TimedSessionSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TimedSessionSheet.swift; path = CBT/Views/TimedSession/TimedSessionSheet.swift; sourceTree = "<group>"; };
 		474346CF0C2315C7851B546D /* ExerciseCategoryView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExerciseCategoryView.swift; path = CBT/Views/Exercises/ExerciseCategoryView.swift; sourceTree = "<group>"; };
 		5A3640DABF47ACD7204B6E1C /* SaveSessionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SaveSessionView.swift; path = CBT/Views/TimedSession/SaveSessionView.swift; sourceTree = "<group>"; };
 		5D1D2D8CE722F568AE7263EA /* Exercise.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Exercise.swift; path = CBT/Models/Exercise.swift; sourceTree = "<group>"; };
 		62D79DAF0421FDCC6CD4EC45 /* Exercises.json */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.json; name = Exercises.json; path = CBT/Resources/Exercises.json; sourceTree = "<group>"; };
-		6C62D7B98E9F52CCB742FC7A /* CBTHowItWorksView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTHowItWorksView.swift; path = CBT/Views/Education/CBTHowItWorksView.swift; sourceTree = "<group>"; };
-		6DF0DA74540D76C256A91E75 /* CBTFlexibleThinkingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTFlexibleThinkingView.swift; path = CBT/Views/Education/CBTFlexibleThinkingView.swift; sourceTree = "<group>"; };
+		6C62D7B98E9F52CCB742FC7A /* CBTHowItWorksView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTHowItWorksView.swift; path = CBTHowItWorksView.swift; sourceTree = "<group>"; };
+		6DF0DA74540D76C256A91E75 /* CBTFlexibleThinkingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTFlexibleThinkingView.swift; path = CBTFlexibleThinkingView.swift; sourceTree = "<group>"; };
 		71D11379CED71F7CB59553D3 /* ExerciseLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExerciseLoader.swift; path = CBT/Services/ExerciseLoader.swift; sourceTree = "<group>"; };
 		7F769CE7DCC5F5AD641C153B /* JournalEntry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = JournalEntry.swift; path = CBT/Models/JournalEntry.swift; sourceTree = "<group>"; };
 		80E9BE42FDDA6B26379C30C7 /* CognitiveDistortionExample.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CognitiveDistortionExample.swift; path = CBT/Models/CognitiveDistortionExample.swift; sourceTree = "<group>"; };
 		8385E1E357B033612DE80C9C /* ExerciseLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExerciseLoader.swift; path = CBT/Services/ExerciseLoader.swift; sourceTree = "<group>"; };
 		84494DAB22A331ACE16537B6 /* JournalEntryDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = JournalEntryDetailView.swift; path = CBT/Views/TimedSession/JournalEntryDetailView.swift; sourceTree = "<group>"; };
+		887DA3C1FFE683A5C3CABF86 /* JournalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = JournalView.swift; path = CBT/Views/Journal/JournalView.swift; sourceTree = "<group>"; };
 		8B9B990D97780AA6A2BB10E4 /* Exercise.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Exercise.swift; path = CBT/Models/Exercise.swift; sourceTree = "<group>"; };
 		91953F34558AC5ADC039E331 /* ExerciseCategoryView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExerciseCategoryView.swift; path = CBT/Views/Exercises/ExerciseCategoryView.swift; sourceTree = "<group>"; };
 		96783EC08D340E69E5FD8356 /* TimedSessionManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TimedSessionManager.swift; path = CBT/Services/TimedSessionManager.swift; sourceTree = "<group>"; };
-		981AE1920ADF97B45092B1FE /* CBTEducationIntroView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTEducationIntroView.swift; path = CBT/Views/Education/CBTEducationIntroView.swift; sourceTree = "<group>"; };
+		981AE1920ADF97B45092B1FE /* CBTEducationIntroView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTEducationIntroView.swift; path = CBTEducationIntroView.swift; sourceTree = "<group>"; };
 		9DB6B92B88BDB8E7BCE4D112 /* ExerciseDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExerciseDetailView.swift; path = CBT/Views/Exercises/ExerciseDetailView.swift; sourceTree = "<group>"; };
 		A8B8C08190223427F721E99A /* ExerciseDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExerciseDetailView.swift; path = CBT/Views/Exercises/ExerciseDetailView.swift; sourceTree = "<group>"; };
-		AF0FFB13482B34B4F6D57AA6 /* CBTSkillsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTSkillsView.swift; path = CBT/Views/Education/CBTSkillsView.swift; sourceTree = "<group>"; };
+		AE15F5487CA46335064442E3 /* JournalSessionsListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = JournalSessionsListView.swift; path = CBT/Views/Journal/JournalSessionsListView.swift; sourceTree = "<group>"; };
+		AF0FFB13482B34B4F6D57AA6 /* CBTSkillsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTSkillsView.swift; path = CBTSkillsView.swift; sourceTree = "<group>"; };
 		B79C3342DB4D37DAB1CF664D /* CognitiveDistortionsLibrary.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CognitiveDistortionsLibrary.swift; path = CBT/Services/CognitiveDistortionsLibrary.swift; sourceTree = "<group>"; };
 		B8100DA3282A4D0C06646B6E /* SessionSummary.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SessionSummary.swift; path = CBT/Views/TimedSession/SessionSummary.swift; sourceTree = "<group>"; };
 		BDA4ED997B3D1A5FA46287FF /* ThemeBackgrounds.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ThemeBackgrounds.swift; path = CBT/Components/ThemeBackgrounds.swift; sourceTree = "<group>"; };
 		C15119E4DDF923170FEA0191 /* Exercise.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Exercise.swift; path = CBT/Models/Exercise.swift; sourceTree = "<group>"; };
 		CBB49565415FFA113A187A1C /* ExercisesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExercisesView.swift; path = CBT/Views/Exercises/ExercisesView.swift; sourceTree = "<group>"; };
-		CD1D5CCD5A201F9626D9F001 /* CBTTriangleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTTriangleView.swift; path = CBT/Views/Education/CBTTriangleView.swift; sourceTree = "<group>"; };
+		CD1D5CCD5A201F9626D9F001 /* CBTTriangleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTTriangleView.swift; path = CBTTriangleView.swift; sourceTree = "<group>"; };
 		D81099BC20784051632ABCD5 /* CBTEducationMenuView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTEducationMenuView.swift; path = CBT/Views/Education/CBTEducationMenuView.swift; sourceTree = "<group>"; };
 		DA7BAAECF66D2C5F5399C1F0 /* ExercisesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExercisesView.swift; path = CBT/Views/Exercises/ExercisesView.swift; sourceTree = "<group>"; };
 		DBADA70402C05E26CC8F55BA /* ExerciseDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExerciseDetailView.swift; path = CBT/Views/Exercises/ExerciseDetailView.swift; sourceTree = "<group>"; };
-		DDB12D0BE5CDAB194B91025F /* CBTUsingAppView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTUsingAppView.swift; path = CBT/Views/Education/CBTUsingAppView.swift; sourceTree = "<group>"; };
+		DDB12D0BE5CDAB194B91025F /* CBTUsingAppView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTUsingAppView.swift; path = CBTUsingAppView.swift; sourceTree = "<group>"; };
 		DE10F67FC739093236172516 /* ExerciseDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExerciseDetailView.swift; path = CBT/Views/Exercises/ExerciseDetailView.swift; sourceTree = "<group>"; };
-		DFEBA9AC38A6DB8BB52FAAA2 /* CBTFurtherReadingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTFurtherReadingView.swift; path = CBT/Views/Education/CBTFurtherReadingView.swift; sourceTree = "<group>"; };
-		E09BBA00442C253A7670C49F /* CBTPatternsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTPatternsView.swift; path = CBT/Views/Education/CBTPatternsView.swift; sourceTree = "<group>"; };
+		DFEBA9AC38A6DB8BB52FAAA2 /* CBTFurtherReadingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTFurtherReadingView.swift; path = CBTFurtherReadingView.swift; sourceTree = "<group>"; };
+		E09BBA00442C253A7670C49F /* CBTPatternsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CBTPatternsView.swift; path = CBTPatternsView.swift; sourceTree = "<group>"; };
 		E1886DBE87071E95C4C140E5 /* Exercises.json */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.json; name = Exercises.json; path = CBT/Resources/Exercises.json; sourceTree = "<group>"; };
 		E2E55C492F58B8550055850B /* CBT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CBT.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E55C5A2F58B8560055850B /* CBTTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CBTTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -136,11 +141,15 @@
 		};
 		E2E55C5D2F58B8560055850B /* CBTTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = CBTTests;
 			sourceTree = "<group>";
 		};
 		E2E55C672F58B8560055850B /* CBTUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = CBTUITests;
 			sourceTree = "<group>";
 		};
@@ -236,8 +245,26 @@
 				072C2DF186FFF41A8F528DAA /* Exercises */,
 				B99E7120A6DE82BB908A262F /* Education */,
 				CACEF8A2A3579F306448084F /* TimedSession */,
+				D7BF953F2F77C6AE917ED4BC /* Journal */,
 			);
 			name = Views;
+			sourceTree = "<group>";
+		};
+		455482B9AC0CE15598F65CEB /* Archives */ = {
+			isa = PBXGroup;
+			children = (
+				339CE04FF2EE2D22EDF03881 /* CBTCognitiveDistortionsView.swift */,
+				981AE1920ADF97B45092B1FE /* CBTEducationIntroView.swift */,
+				6DF0DA74540D76C256A91E75 /* CBTFlexibleThinkingView.swift */,
+				DFEBA9AC38A6DB8BB52FAAA2 /* CBTFurtherReadingView.swift */,
+				6C62D7B98E9F52CCB742FC7A /* CBTHowItWorksView.swift */,
+				E09BBA00442C253A7670C49F /* CBTPatternsView.swift */,
+				08F60EA20CA9A593F305E726 /* CBTResearchView.swift */,
+				AF0FFB13482B34B4F6D57AA6 /* CBTSkillsView.swift */,
+				CD1D5CCD5A201F9626D9F001 /* CBTTriangleView.swift */,
+				DDB12D0BE5CDAB194B91025F /* CBTUsingAppView.swift */,
+			);
+			name = Archives;
 			sourceTree = "<group>";
 		};
 		53F9A05F6CB72E997C083820 /* Resources */ = {
@@ -264,17 +291,8 @@
 		B99E7120A6DE82BB908A262F /* Education */ = {
 			isa = PBXGroup;
 			children = (
-				339CE04FF2EE2D22EDF03881 /* CBTCognitiveDistortionsView.swift */,
-				981AE1920ADF97B45092B1FE /* CBTEducationIntroView.swift */,
 				D81099BC20784051632ABCD5 /* CBTEducationMenuView.swift */,
-				6DF0DA74540D76C256A91E75 /* CBTFlexibleThinkingView.swift */,
-				DFEBA9AC38A6DB8BB52FAAA2 /* CBTFurtherReadingView.swift */,
-				6C62D7B98E9F52CCB742FC7A /* CBTHowItWorksView.swift */,
-				E09BBA00442C253A7670C49F /* CBTPatternsView.swift */,
-				08F60EA20CA9A593F305E726 /* CBTResearchView.swift */,
-				AF0FFB13482B34B4F6D57AA6 /* CBTSkillsView.swift */,
-				CD1D5CCD5A201F9626D9F001 /* CBTTriangleView.swift */,
-				DDB12D0BE5CDAB194B91025F /* CBTUsingAppView.swift */,
+				455482B9AC0CE15598F65CEB /* Archives */,
 			);
 			name = Education;
 			sourceTree = "<group>";
@@ -300,6 +318,16 @@
 			name = TimedSession;
 			sourceTree = "<group>";
 		};
+		D7BF953F2F77C6AE917ED4BC /* Journal */ = {
+			isa = PBXGroup;
+			children = (
+				887DA3C1FFE683A5C3CABF86 /* JournalView.swift */,
+				AE15F5487CA46335064442E3 /* JournalSessionsListView.swift */,
+				41D61A50E20D669C8F26B1AD /* JournalSessionRow.swift */,
+			);
+			name = Journal;
+			sourceTree = "<group>";
+		};
 		E2E55C402F58B8550055850B = {
 			isa = PBXGroup;
 			children = (
@@ -307,7 +335,6 @@
 				E2E55C5D2F58B8560055850B /* CBTTests */,
 				E2E55C672F58B8560055850B /* CBTUITests */,
 				E2E55C4A2F58B8550055850B /* Products */,
-				1467372BB7EB3099AD9213F3 /* CBT */,
 			);
 			sourceTree = "<group>";
 		};
@@ -443,9 +470,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2F68B264F7292636821F21B0 /* Exercises.json in Resources */,
-				EB20AAC2CB3F0163BE31159C /* Exercises.json in Resources */,
-				37138EECB153F1CB2AC9B8D7 /* CognitiveDistortions.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -470,36 +494,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B7AEB4A16410BCCBEEF04078 /* CBTCognitiveDistortionsView.swift in Sources */,
-				BA58BF3DA83A6D55E330F932 /* CBTEducationIntroView.swift in Sources */,
-				B36C1E6E7170743BB0E41A28 /* CBTEducationMenuView.swift in Sources */,
-				4CE1D1C4C26775BBAA5ACD06 /* CBTFlexibleThinkingView.swift in Sources */,
-				8741B2139D8D691F167A3048 /* CBTFurtherReadingView.swift in Sources */,
-				63B0FDBDEF2E0107D1353581 /* CBTHowItWorksView.swift in Sources */,
-				1D1311E7AFA7FB77C4EF09EC /* CBTPatternsView.swift in Sources */,
-				6422C2B6D522F241DF1A0EB8 /* CBTResearchView.swift in Sources */,
-				7A0B598DF59B29049CF72E5E /* CBTSkillsView.swift in Sources */,
-				8C49E6C3F7DB95F2CC0A3C22 /* CBTTriangleView.swift in Sources */,
-				007E64A52DA7D3CB607725E5 /* CBTUsingAppView.swift in Sources */,
-				AD4CCB2DC22E8BB3786A4CA5 /* Exercise.swift in Sources */,
-				9074BB61A519653041AB6BE0 /* ExerciseLoader.swift in Sources */,
-				9BB71A7FD613C3C752212A00 /* ExercisesView.swift in Sources */,
-				34D6510BAC59C6C2FF75F802 /* ExerciseCategoryView.swift in Sources */,
-				9E7FCBBE6337ED8D579B4E30 /* ExerciseDetailView.swift in Sources */,
-				9A4A6CB31E40DFEEDC08A250 /* Color+Extensions.swift in Sources */,
-				5E62D247F038560112DC774E /* AppTheme.swift in Sources */,
-				439FFA773C69392344FB1985 /* ThemeManager.swift in Sources */,
-				D3668EE3B32FC79515189C51 /* ThemeBackgrounds.swift in Sources */,
-				B4822D6F1287115793C90E26 /* CognitiveDistortionExample.swift in Sources */,
-				69172317DFD0CA0BDF6D4F97 /* CognitiveDistortionsLibrary.swift in Sources */,
-				B3FF0B858FC6407FC7646AEF /* DistortionExamplesView.swift in Sources */,
-				3291C1B08540E7E2BD48BBDF /* DistortionExampleCardView.swift in Sources */,
-				30E3E3A686691A4C69CAEBD8 /* JournalEntry.swift in Sources */,
-				81F5B6B9677292645E672F69 /* TimedSessionManager.swift in Sources */,
-				E7F38248BFEFFD8E84BE012A /* SessionSummary.swift in Sources */,
-				BF72952CD3E29FEB588C3360 /* TimedSessionSheet.swift in Sources */,
-				929FD8EC0C9D839400464EDD /* SaveSessionView.swift in Sources */,
-				C202C213FFFD5902BE27EE09 /* JournalEntryDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

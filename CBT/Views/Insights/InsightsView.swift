@@ -26,6 +26,13 @@ struct InsightsView: View {
 
         var id: String { rawValue }
 
+        var localizedName: String {
+            switch self {
+            case .sevenDays: return String(localized: "7D")
+            case .thirtyDays: return String(localized: "30D")
+            }
+        }
+
         var days: Int {
             switch self {
             case .sevenDays: return 7
@@ -40,15 +47,15 @@ struct InsightsView: View {
 
             ScrollView {
                 VStack(spacing: 14) {
-                    TopHeadlineView(title: "Insights")
+                    TopHeadlineView(title: String(localized: "Insights"))
 
-                    SegmentedToggle(selection: $timeRange, options: TimeRange.allCases, titleKey: \.rawValue)
+                    SegmentedToggle(selection: $timeRange, options: TimeRange.allCases, titleKey: \.localizedName)
 
                     if viewModel.isCalculating {
                         VStack {
                             ProgressView()
                                 .padding()
-                            Text("Crunching your data...")
+                            Text(String(localized: "Crunching your data..."))
                                 .foregroundStyle(Theme.secondaryText)
                                 .font(.subheadline)
                         }
@@ -61,6 +68,8 @@ struct InsightsView: View {
                         goalProgressSection
                         
                         topMetricsSection
+                        
+                        exportSection
                     }
                 }
                 .padding(.horizontal, 16)
@@ -97,27 +106,29 @@ struct InsightsView: View {
     // MARK: - Streaks
     private var streaksCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Activity Streaks")
+            Text(String(localized: "Activity Streaks"))
                 .font(.system(.title, design: .rounded).weight(.bold))
                 .foregroundStyle(Theme.primaryText)
             
             HStack(spacing: 12) {
                 MiniStatCard(
-                    title: "Current Streak",
+                    title: String(localized: "Current Streak"),
                     value: "\(viewModel.currentStreak)",
-                    unit: viewModel.currentStreak == 1 ? "day" : "days",
+                    unit: viewModel.currentStreak == 1 ? String(localized: "day") : String(localized: "days"),
                     icon: "flame.fill",
                     iconColor: .orange,
+                    iconGradient: [Color.orange, Color.red],
                     valueColor: Theme.primaryText,
                     state: viewModel.currentStreak > 0 ? .success : .neutral
                 )
                 
                 MiniStatCard(
-                    title: "Longest Streak",
+                    title: String(localized: "Longest Streak"),
                     value: "\(viewModel.longestStreak)",
-                    unit: viewModel.longestStreak == 1 ? "day" : "days",
+                    unit: viewModel.longestStreak == 1 ? String(localized: "day") : String(localized: "days"),
                     icon: "star.fill",
                     iconColor: .yellow,
+                    iconGradient: [Color.yellow, Color.orange],
                     valueColor: Theme.primaryText,
                     state: .neutral
                 )
@@ -126,14 +137,14 @@ struct InsightsView: View {
         .padding(Theme.paddingMedium)
         .cardStyle()
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Activity streaks: Current \(viewModel.currentStreak) days, Longest \(viewModel.longestStreak) days.")
+        .accessibilityLabel(String(localized: "Activity streaks: Current \(viewModel.currentStreak) days, Longest \(viewModel.longestStreak) days."))
     }
 
     // MARK: - Milestones Ring
     private var milestonesRingCard: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("Milestones")
+                Text(String(localized: "Milestones"))
                     .font(.system(.title, design: .rounded).weight(.bold))
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
@@ -189,18 +200,18 @@ struct InsightsView: View {
     private var trendsCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Daily Trends")
+                Text(String(localized: "Daily Trends"))
                     .font(.system(.title, design: .rounded).weight(.bold))
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
-                Text("LAST \(timeRange.days) DAYS")
+                Text(String(localized: "LAST \(timeRange.days) DAYS"))
                     .font(.system(.caption, design: .rounded).weight(.black))
                     .foregroundStyle(Theme.secondaryText.opacity(0.65))
                     .tracking(1.5)
             }
 
             if viewModel.dailyMoodAverages.isEmpty {
-                Text("No mood data for this range.")
+                Text(String(localized: "No mood data for this range."))
                     .font(.system(size: 14, design: .rounded))
                     .foregroundStyle(Theme.secondaryText)
                     .padding(.vertical, 18)
@@ -208,33 +219,33 @@ struct InsightsView: View {
                 Chart {
                     ForEach(viewModel.dailyMoodAverages) { point in
                         LineMark(
-                            x: .value("Date", point.date, unit: .day),
-                            y: .value("Mood", point.averageScore)
+                            x: .value(String(localized: "Date"), point.date, unit: .day),
+                            y: .value(String(localized: "Mood"), point.averageScore)
                         )
                         .lineStyle(StrokeStyle(lineWidth: 2.2))
                         .foregroundStyle(themeManager.selectedColor)
 
                         PointMark(
-                            x: .value("Date", point.date, unit: .day),
-                            y: .value("Mood", point.averageScore)
+                            x: .value(String(localized: "Date"), point.date, unit: .day),
+                            y: .value(String(localized: "Mood"), point.averageScore)
                         )
                         .foregroundStyle(themeManager.selectedColor)
                     }
 
-                    RuleMark(y: .value("Mood Goal", Double(moodGoalValue)))
+                    RuleMark(y: .value(String(localized: "Mood Goal"), Double(moodGoalValue)))
                         .foregroundStyle(themeManager.secondaryColor.opacity(0.85))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
                 }
                 .chartYScale(domain: 1...10)
                 .frame(height: 220)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Daily mood trend chart")
-                .accessibilityValue("Showing mood averages over the last \(timeRange.days) days. Average mood is \(viewModel.averageMood?.formatted(.number.precision(.fractionLength(1))) ?? "not available").")
+                .accessibilityLabel(String(localized: "Daily mood trend chart"))
+                .accessibilityValue(String(localized: "Showing mood averages over the last \(timeRange.days) days. Average mood is \(viewModel.averageMood?.formatted(.number.precision(.fractionLength(1))) ?? String(localized: "not available"))."))
             }
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 MiniStatCard(
-                    title: "Avg Mood",
+                    title: String(localized: "Avg Mood"),
                     value: viewModel.averageMood.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "-",
                     unit: "/10",
                     icon: "chart.line.uptrend.xyaxis",
@@ -244,9 +255,9 @@ struct InsightsView: View {
                 )
 
                 MiniStatCard(
-                    title: "Thought Relief",
+                    title: String(localized: "Thought Relief"),
                     value: viewModel.averageIntensityImprovement.map { "\($0)" } ?? "-",
-                    unit: "pts",
+                    unit: String(localized: "pts"),
                     icon: "brain",
                     iconColor: themeManager.secondaryColor,
                     valueColor: Theme.primaryText,
@@ -266,17 +277,17 @@ struct InsightsView: View {
                             .foregroundStyle(themeManager.selectedColor)
                     }
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Mood Volatility (\(volatility.formatted(.number.precision(.fractionLength(1)))))")
+                        Text(String(localized: "Mood Volatility (\(volatility.formatted(.number.precision(.fractionLength(1)))))"))
                             .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundStyle(Theme.primaryText)
-                        Text("Average day-to-day score change.")
+                        Text(String(localized: "Average day-to-day score change."))
                             .font(.system(size: 12, design: .rounded))
                             .foregroundStyle(Theme.secondaryText)
                     }
                     Spacer()
                 }
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("Mood volatility is \(volatility.formatted(.number.precision(.fractionLength(1)))). Average day-to-day absolute change in score over last 30 days.")
+                .accessibilityLabel(String(localized: "Mood volatility is \(volatility.formatted(.number.precision(.fractionLength(1)))). Average day-to-day absolute change in score over last 30 days."))
             }
         }
         .padding(Theme.paddingMedium)
@@ -287,18 +298,18 @@ struct InsightsView: View {
     private var weeklyAverageCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Weekly Overview")
+                Text(String(localized: "Weekly Overview"))
                     .font(.system(.title, design: .rounded).weight(.bold))
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
-                Text("LAST 8 WEEKS")
+                Text(String(localized: "LAST 8 WEEKS"))
                     .font(.system(.caption, design: .rounded).weight(.black))
                     .foregroundStyle(Theme.secondaryText.opacity(0.65))
                     .tracking(1.5)
             }
 
             if viewModel.weeklyMoodAverages.isEmpty {
-                Text("Not enough data to graph weekly trends.")
+                Text(String(localized: "Not enough data to graph weekly trends."))
                     .font(.system(size: 14, design: .rounded))
                     .foregroundStyle(Theme.secondaryText)
                     .padding(.vertical, 18)
@@ -306,22 +317,22 @@ struct InsightsView: View {
                 Chart {
                     ForEach(viewModel.weeklyMoodAverages) { point in
                         BarMark(
-                            x: .value("Week", point.weekStart, unit: .weekOfYear),
-                            y: .value("Mood", point.averageScore)
+                            x: .value(String(localized: "Week"), point.weekStart, unit: .weekOfYear),
+                            y: .value(String(localized: "Mood"), point.averageScore)
                         )
                         .foregroundStyle(themeManager.selectedColor.opacity(0.8))
                         .cornerRadius(4)
                     }
 
-                    RuleMark(y: .value("Mood Goal", Double(moodGoalValue)))
+                    RuleMark(y: .value(String(localized: "Mood Goal"), Double(moodGoalValue)))
                         .foregroundStyle(themeManager.secondaryColor.opacity(0.85))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
                 }
                 .chartYScale(domain: 1...10)
                 .frame(height: 180)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Weekly mood trend chart")
-                .accessibilityValue("Showing weekly average mood over the last 8 weeks.")
+                .accessibilityLabel(String(localized: "Weekly mood trend chart"))
+                .accessibilityValue(String(localized: "Showing weekly average mood over the last 8 weeks."))
             }
         }
         .padding(Theme.paddingMedium)
@@ -331,34 +342,34 @@ struct InsightsView: View {
     // MARK: - Goals Section
     private var goalProgressSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Goal Progress")
+            Text(String(localized: "Goal Progress"))
                 .font(.system(.title, design: .rounded).weight(.bold))
                 .foregroundStyle(Theme.primaryText)
 
             goalProgressCard(
-                title: "Consistency Goal",
-                subtitle: "\(viewModel.activeDaysCount) of \(viewModel.consistencyGoalTarget) active days",
+                title: String(localized: "Consistency Goal"),
+                subtitle: String(localized: "\(viewModel.activeDaysCount) of \(viewModel.consistencyGoalTarget) active days"),
                 progress: viewModel.consistencyProgress,
                 tint: themeManager.selectedColor
             )
 
             goalProgressCard(
-                title: "Mood Goal (\(moodGoalValue)+)",
-                subtitle: "\(Int((viewModel.moodGoalProgress * 100).rounded()))% entries hit target",
+                title: String(localized: "Mood Goal (\(moodGoalValue)+)"),
+                subtitle: String(localized: "\(Int((viewModel.moodGoalProgress * 100).rounded()))% entries hit target"),
                 progress: viewModel.moodGoalProgress,
                 tint: themeManager.secondaryColor
             )
 
             goalProgressCard(
-                title: "Thought Relief Goal",
-                subtitle: viewModel.averageIntensityImprovement.map { "\($0) of 15 pts average relief" } ?? "No thought records yet",
+                title: String(localized: "Thought Relief Goal"),
+                subtitle: viewModel.averageIntensityImprovement.map { String(localized: "\($0) of 15 pts average relief") } ?? String(localized: "No thought records yet"),
                 progress: viewModel.thoughtGoalProgress,
                 tint: .orange
             )
 
             goalProgressCard(
-                title: "Exercise Goal",
-                subtitle: "\(Int((viewModel.exerciseProgress * Double(viewModel.exerciseGoalTarget)).rounded())) of \(viewModel.exerciseGoalTarget) exercises",
+                title: String(localized: "Exercise Goal"),
+                subtitle: String(localized: "\(Int((viewModel.exerciseProgress * Double(viewModel.exerciseGoalTarget)).rounded())) of \(viewModel.exerciseGoalTarget) exercises"),
                 progress: viewModel.exerciseProgress,
                 tint: .green
             )
@@ -368,13 +379,59 @@ struct InsightsView: View {
     // MARK: - Top Metrics
     private var topMetricsSection: some View {
         VStack(spacing: 14) {
-            rankingCard(title: "Top Emotions", rows: viewModel.topEmotions.map { ($0.name, $0.count) }, emptyText: "No emotions recorded.")
-            rankingCard(title: "Top Triggers", rows: viewModel.topTriggers.map { ($0.name, $0.count) }, emptyText: "No triggers recorded.")
+            rankingCard(title: String(localized: "Top Emotions"), rows: viewModel.topEmotions.map { ($0.name, $0.count) }, emptyText: String(localized: "No emotions recorded."))
+            rankingCard(title: String(localized: "Top Triggers"), rows: viewModel.topTriggers.map { ($0.name, $0.count) }, emptyText: String(localized: "No triggers recorded."))
             
             if !viewModel.topDistortions.isEmpty {
-                rankingCard(title: "Top Distortions", rows: viewModel.topDistortions.map { ($0.name, $0.count) }, emptyText: "")
+                rankingCard(title: String(localized: "Top Distortions"), rows: viewModel.topDistortions.map { ($0.name, $0.count) }, emptyText: "")
             }
         }
+    }
+
+    // MARK: - Export Section
+    private var exportSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(String(localized: "Export Data"))
+                .font(.system(.title, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.primaryText)
+            
+            VStack(spacing: 8) {
+                if let csv = CSVExporter.shared.exportMoodEntries(moodEntries) {
+                    ShareLink(item: csv, preview: SharePreview(String(localized: "Mood Entries CSV"))) {
+                        exportRow(title: String(localized: "Export Moods (CSV)"), icon: "tablecells")
+                    }
+                }
+                
+                if let csv = CSVExporter.shared.exportThoughtRecords(thoughtRecords) {
+                    ShareLink(item: csv, preview: SharePreview(String(localized: "Thought Records CSV"))) {
+                        exportRow(title: String(localized: "Export Thoughts (CSV)"), icon: "tablecells")
+                    }
+                }
+            }
+        }
+        .padding(Theme.paddingMedium)
+        .cardStyle()
+    }
+    
+    private func exportRow(title: String, icon: String) -> some View {
+        HStack {
+            ZStack {
+                Circle()
+                    .fill(themeManager.primaryColor.opacity(0.12))
+                    .frame(width: 32, height: 32)
+                Image(systemName: icon)
+                    .foregroundStyle(themeManager.primaryColor)
+                    .font(.system(size: 14, weight: .bold))
+            }
+            Text(title)
+                .font(.system(.body, design: .rounded).weight(.medium))
+                .foregroundStyle(Theme.primaryText)
+            Spacer()
+            Image(systemName: "square.and.arrow.up")
+                .foregroundStyle(themeManager.primaryColor)
+                .font(.system(size: 14, weight: .bold))
+        }
+        .padding(.vertical, 4)
     }
 
     // MARK: - Helpers

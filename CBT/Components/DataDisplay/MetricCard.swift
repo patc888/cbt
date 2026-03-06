@@ -77,6 +77,7 @@ struct MiniStatCard: View {
     var unit: String? = nil
     let icon: String
     var iconColor: Color = Theme.primaryColor
+    var iconGradient: [Color]? = nil
     var valueColor: Color = Theme.primaryText
     var state: StatState = .neutral
 
@@ -135,7 +136,11 @@ struct MiniStatCard: View {
                     .minimumScaleFactor(0.7)
                     .tracking(1.0)
             }
-            .foregroundColor(displayIconColor)
+            .foregroundStyle(
+                iconGradient != nil && state == .neutral
+                ? AnyShapeStyle(LinearGradient(colors: iconGradient!, startPoint: .topLeading, endPoint: .bottomTrailing))
+                : AnyShapeStyle(displayIconColor)
+            )
             .textCase(.uppercase)
 
             HStack(alignment: .firstTextBaseline, spacing: 2) {

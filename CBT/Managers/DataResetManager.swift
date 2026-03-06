@@ -3,6 +3,7 @@ import SwiftData
 import CloudKit
 import UserNotifications
 import SwiftUI
+import OSLog
 
 extension Notification.Name {
     static let didResetData = Notification.Name("didResetData")
@@ -11,6 +12,20 @@ extension Notification.Name {
 @Observable
 final class DataResetManager {
     static let shared = DataResetManager()
+    private static let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "CBT",
+        category: "DataReset"
+    )
+
+    var defaultStoreURL: URL {
+        ModelConfiguration().url
+    }
+
+    var fallbackStoreURL: URL {
+        defaultStoreURL
+            .deletingLastPathComponent()
+            .appendingPathComponent("local-recovery.store")
+    }
 
     // 1. Clears AppStorage/UserDefaults
     // 2. Cancels scheduled local notifications
@@ -29,19 +44,11 @@ final class DataResetManager {
             UNUserNotificationCenter.current().removeAllDeliveredNotifications()
         }
         
-        // 3. Wipe local SwiftData default.store
-        let storeURL = ModelConfiguration().url
-        let storeDir = storeURL.deletingLastPathComponent()
-        
         do {
-            let files = try FileManager.default.contentsOfDirectory(at: storeDir, includingPropertiesForKeys: nil)
-            for file in files {
-                if file.lastPathComponent.hasPrefix(storeURL.lastPathComponent) {
-                    try? FileManager.default.removeItem(at: file)
-                }
-            }
+            try removeStoreFiles(at: defaultStoreURL)
+            try removeStoreFiles(at: fallbackStoreURL)
         } catch {
-            print("Failed to access store directory: \(error)")
+            logFileOperationFailure(error, action: "local-wipe")
         }
         
         // 4. Broadcast reset so UI recreates its context
@@ -77,5 +84,72 @@ final class DataResetManager {
         await MainActor.run {
             self.performLocalWipe()
         }
+    }
+
+    @discardableResult
+    func quarantineDefaultStoreForRepair() throws -> URL? {
+        let files = try relatedStoreFiles(for: defaultStoreURL)
+        guard !files.isEmpty else { return nil }
+
+        let quarantineDirectory = defaultStoreURL
+            .deletingLastPathComponent()
+            .appendingPathComponent("StoreRecovery", isDirectory: true)
+            .appendingPathComponent(Self.recoveryFolderName(from: Date()), isDirectory: true)
+
+        try FileManager.default.createDirectory(
+            at: quarantineDirectory,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+
+        for file in files {
+            try FileManager.default.moveItem(
+                at: file,
+                to: quarantineDirectory.appendingPathComponent(file.lastPathComponent)
+            )
+        }
+
+        Self.logger.notice("Quarantined local store files count=\(files.count, privacy: .public)")
+        return quarantineDirectory
+    }
+
+    func removeFallbackStoreFiles() throws {
+        try removeStoreFiles(at: fallbackStoreURL)
+    }
+
+    private func removeStoreFiles(at storeURL: URL) throws {
+        let files = try relatedStoreFiles(for: storeURL)
+        for file in files {
+            if FileManager.default.fileExists(atPath: file.path) {
+                try FileManager.default.removeItem(at: file)
+            }
+        }
+    }
+
+    private func relatedStoreFiles(for storeURL: URL) throws -> [URL] {
+        let storeDirectory = storeURL.deletingLastPathComponent()
+        guard FileManager.default.fileExists(atPath: storeDirectory.path) else {
+            return []
+        }
+
+        let files = try FileManager.default.contentsOfDirectory(
+            at: storeDirectory,
+            includingPropertiesForKeys: nil
+        )
+
+        return files.filter { $0.lastPathComponent.hasPrefix(storeURL.lastPathComponent) }
+    }
+
+    private func logFileOperationFailure(_ error: Error, action: String) {
+        let nsError = error as NSError
+        Self.logger.error(
+            "Store file operation failed action=\(action, privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public)"
+        )
+    }
+
+    private static func recoveryFolderName(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd-HH-mm-ss"
+        return "repair-\(formatter.string(from: date))"
     }
 }

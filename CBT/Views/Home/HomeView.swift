@@ -7,6 +7,7 @@ struct HomeView: View {
     @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var moodEntries: [MoodEntry]
     @Query(filter: #Predicate<ThoughtRecord> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
     @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
+    @Query(filter: #Predicate<JournalEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var journalEntries: [JournalEntry]
     @Environment(ThemeManager.self) private var themeManager
 
     @State private var selectedDate = Date()
@@ -16,10 +17,50 @@ struct HomeView: View {
     @State private var showingQuickAdd = false
     @State private var selectedMoodForFlow: MoodColor? = nil
 
+    private enum DailyPlanItem {
+        case moodCheckIn
+        case thoughtRecord
+        case exercises
+        case breathingReset
+        case insights
+        case journal
+        case tipOfTheDay
+    }
+
+    private struct DailyPlanCompletionSnapshot {
+        let moodCheckIn: PlanCardCompletionState
+        let thoughtRecord: PlanCardCompletionState
+        let exercises: PlanCardCompletionState
+        let breathingReset: PlanCardCompletionState
+        let insights: PlanCardCompletionState
+        let journal: PlanCardCompletionState
+        let tipOfTheDay: PlanCardCompletionState
+
+        func state(for item: DailyPlanItem) -> PlanCardCompletionState {
+            switch item {
+            case .moodCheckIn:
+                return moodCheckIn
+            case .thoughtRecord:
+                return thoughtRecord
+            case .exercises:
+                return exercises
+            case .breathingReset:
+                return breathingReset
+            case .insights:
+                return insights
+            case .journal:
+                return journal
+            case .tipOfTheDay:
+                return tipOfTheDay
+            }
+        }
+    }
+
     var body: some View {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let weekDates = (-180...180).compactMap { calendar.date(byAdding: .day, value: $0, to: today) }
+        let completionSnapshot = dailyPlanCompletionSnapshot(calendar: calendar)
 
         ZStack {
             ThemedBackground().ignoresSafeArea()
@@ -42,7 +83,8 @@ struct HomeView: View {
                         PlanCard(
                             title: "Mood Check-In",
                             subtitle: "Capture how you feel right now.",
-                            trailingSymbol: "face.smiling"
+                            trailingSymbol: "face.smiling",
+                            completionState: completionSnapshot.state(for: .moodCheckIn)
                         ) {
                             VStack(spacing: 0) {
                                 Divider()
@@ -71,7 +113,8 @@ struct HomeView: View {
                         PlanCard(
                             title: "Thought Record",
                             subtitle: "Challenge one difficult thought.",
-                            trailingSymbol: "brain"
+                            trailingSymbol: "brain",
+                            completionState: completionSnapshot.state(for: .thoughtRecord)
                         ) {
                             showingNewThoughtRecord = true
                         }
@@ -79,7 +122,8 @@ struct HomeView: View {
                         PlanCard(
                             title: "Exercises",
                             subtitle: "Practice one CBT tool.",
-                            trailingSymbol: "figure.mind.and.body"
+                            trailingSymbol: "figure.mind.and.body",
+                            completionState: completionSnapshot.state(for: .exercises)
                         ) {
                             selectedTab = .exercises
                         }
@@ -87,7 +131,8 @@ struct HomeView: View {
                         PlanCard(
                             title: "Breathing Reset",
                             subtitle: "Calm your body in 60 seconds",
-                            trailingSymbol: "wind"
+                            trailingSymbol: "wind",
+                            completionState: completionSnapshot.state(for: .breathingReset)
                         ) {
                             BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
                         }
@@ -95,7 +140,8 @@ struct HomeView: View {
                         PlanCard(
                             title: "Insights",
                             subtitle: "Review trends and patterns.",
-                            trailingSymbol: "chart.line.uptrend.xyaxis"
+                            trailingSymbol: "chart.line.uptrend.xyaxis",
+                            completionState: completionSnapshot.state(for: .insights)
                         ) {
                             selectedTab = .insights
                         }
@@ -103,7 +149,8 @@ struct HomeView: View {
                         PlanCard(
                             title: "Journal",
                             subtitle: "Browse mood and thought entries.",
-                            trailingSymbol: "book.pages"
+                            trailingSymbol: "book.pages",
+                            completionState: completionSnapshot.state(for: .journal)
                         ) {
                             selectedTab = .journal
                         }
@@ -111,7 +158,8 @@ struct HomeView: View {
                         PlanCard(
                             title: "Tip of the Day",
                             subtitle: "Open a quick CBT reminder.",
-                            trailingSymbol: "lightbulb"
+                            trailingSymbol: "lightbulb",
+                            completionState: completionSnapshot.state(for: .tipOfTheDay)
                         ) {
                             showingTipModal = true
                         }
@@ -192,5 +240,28 @@ struct HomeView: View {
             return true
         }
         return false
+    }
+
+    private func dailyPlanCompletionSnapshot(calendar: Calendar) -> DailyPlanCompletionSnapshot {
+        let selectedDay = calendar.startOfDay(for: selectedDate)
+
+        let moodDays = Set(moodEntries.map { calendar.startOfDay(for: $0.createdAt) })
+        let thoughtRecordDays = Set(thoughtRecords.map { calendar.startOfDay(for: $0.createdAt) })
+        let exerciseDays = Set(exerciseCompletions.map { calendar.startOfDay(for: $0.createdAt) })
+        let breathingDays = Set(
+            journalEntries
+                .filter { $0.sourceKind == SessionSourceKind.breathing.rawValue }
+                .map { calendar.startOfDay(for: $0.createdAt) }
+        )
+
+        return DailyPlanCompletionSnapshot(
+            moodCheckIn: moodDays.contains(selectedDay) ? .completed : .incomplete,
+            thoughtRecord: thoughtRecordDays.contains(selectedDay) ? .completed : .incomplete,
+            exercises: exerciseDays.contains(selectedDay) ? .completed : .incomplete,
+            breathingReset: breathingDays.contains(selectedDay) ? .completed : .incomplete,
+            insights: .notTracked,
+            journal: .notTracked,
+            tipOfTheDay: .notTracked
+        )
     }
 }
