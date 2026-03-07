@@ -132,6 +132,13 @@ struct NewThoughtRecordFlowView: View {
                         .foregroundStyle(Theme.secondaryText)
                     TextEditor(text: $situation)
                         .frame(minHeight: 80)
+                        .scrollContentBackground(.hidden)
+                        .background(Theme.cardBackground)
+                        .cornerRadius(Theme.cornerRadiusSmall)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
+                                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                        )
                 }
                 .padding(.vertical, 4)
                 
@@ -150,6 +157,13 @@ struct NewThoughtRecordFlowView: View {
                         .foregroundStyle(Theme.secondaryText)
                     TextEditor(text: $automaticThought)
                         .frame(minHeight: 80)
+                        .scrollContentBackground(.hidden)
+                        .background(Theme.cardBackground)
+                        .cornerRadius(Theme.cornerRadiusSmall)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
+                                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                        )
                 }
                 .padding(.vertical, 4)
             }
@@ -307,6 +321,13 @@ struct NewThoughtRecordFlowView: View {
                         .foregroundStyle(Theme.secondaryText)
                     TextEditor(text: $evidenceFor)
                         .frame(minHeight: 80)
+                        .scrollContentBackground(.hidden)
+                        .background(Theme.cardBackground)
+                        .cornerRadius(Theme.cornerRadiusSmall)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
+                                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                        )
                 }
                 .padding(.vertical, 4)
                 
@@ -325,6 +346,13 @@ struct NewThoughtRecordFlowView: View {
                         .foregroundStyle(Theme.secondaryText)
                     TextEditor(text: $evidenceAgainst)
                         .frame(minHeight: 80)
+                        .scrollContentBackground(.hidden)
+                        .background(Theme.cardBackground)
+                        .cornerRadius(Theme.cornerRadiusSmall)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
+                                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                        )
                 }
                 .padding(.vertical, 4)
             }
@@ -350,6 +378,13 @@ struct NewThoughtRecordFlowView: View {
                         .foregroundStyle(Theme.secondaryText)
                     TextEditor(text: $balancedThought)
                         .frame(minHeight: 100)
+                        .scrollContentBackground(.hidden)
+                        .background(Theme.cardBackground)
+                        .cornerRadius(Theme.cornerRadiusSmall)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
+                                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                        )
                 }
                 .padding(.vertical, 4)
                 

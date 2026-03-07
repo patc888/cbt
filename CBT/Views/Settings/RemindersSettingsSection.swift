@@ -11,279 +11,68 @@ struct RemindersSettingsSection: View {
     @AppStorage("cbt_reflectionReminderHour") private var reflectionReminderHour = 20
     @AppStorage("cbt_reflectionReminderMinute") private var reflectionReminderMinute = 0
 
-    @AppStorage("cbt_quietHoursEnabled") private var quietHoursEnabled = false
-    @AppStorage("cbt_quietHoursStartHour") private var quietHoursStartHour = 22
-    @AppStorage("cbt_quietHoursStartMinute") private var quietHoursStartMinute = 0
-    @AppStorage("cbt_quietHoursEndHour") private var quietHoursEndHour = 7
-    @AppStorage("cbt_quietHoursEndMinute") private var quietHoursEndMinute = 0
-
     @Environment(ThemeManager.self) private var themeManager
 
     @State private var authorizationState: ReminderManager.AuthorizationState = .unknown
-    @State private var showingMoodTimePicker = false
-    @State private var showingReflectionTimePicker = false
-    @State private var showingQuietStartPicker = false
-    @State private var showingQuietEndPicker = false
 
     private let reminderManager = ReminderManager.shared
     private let moodReminderIdentifier = "daily_mood_reminder"
     private let reflectionReminderIdentifier = "daily_reflection_reminder"
 
     var body: some View {
-        Group {
-            SettingsSection(title: "Reminders") {
-                // Mood Reminder Row
-                ToggleRow(
-                    icon: "face.smiling",
-                    iconColor: themeManager.primaryColor,
-                    title: "Mood Check-In",
-                    subtitle: "Daily prompt to log your mood",
-                    isOn: Binding(
-                        get: { moodReminderEnabled },
-                        set: { newValue in
-                            Task {
-                                await handleMoodReminderToggleChange(newValue)
-                            }
+        SettingsSection(title: String(localized: "Reminders")) {
+            ToggleRow(
+                icon: "bell.badge.fill",
+                iconColor: themeManager.primaryColor,
+                title: String(localized: "Reminders"),
+                subtitle: String(localized: "Daily mood check-in and evening reflection"),
+                isOn: Binding(
+                    get: { moodReminderEnabled || reflectionReminderEnabled },
+                    set: { newValue in
+                        Task {
+                            await handleMasterRemindersToggle(newValue)
                         }
-                    )
+                    }
                 )
-                
-                if moodReminderEnabled {
-                    Button {
-                        HapticManager.shared.lightImpact()
-                        withAnimation(.spring()) {
-                            showingMoodTimePicker.toggle()
-                        }
-                    } label: {
-                        SettingsRow(title: "Time") {
-                            SettingsPickerButton(
-                                value: moodTimeLabel,
-                                isExpanded: showingMoodTimePicker
-                            )
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    
-                    if showingMoodTimePicker {
-                        DatePicker(
-                            "",
-                            selection: moodTimeBinding,
-                            displayedComponents: .hourAndMinute
-                        )
-                        .datePickerStyle(.wheel)
-                        .labelsHidden()
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                        .padding(.horizontal, 16)
-                    }
-                }
-                
-                // Reflection Reminder Row
-                ToggleRow(
-                    icon: "moon.stars.fill",
+            )
+
+            NavigationLink(destination: AdvancedRemindersView()) {
+                SettingsRow(
+                    icon: "gearshape.2.fill",
                     iconColor: themeManager.primaryColor,
-                    title: "Evening Reflection",
-                    subtitle: "Evening prompt for exercises",
-                    isOn: Binding(
-                        get: { reflectionReminderEnabled },
-                        set: { newValue in
-                            Task {
-                                await handleReflectionReminderToggleChange(newValue)
-                            }
-                        }
-                    )
-                )
-                
-                if reflectionReminderEnabled {
-                    Button {
-                        HapticManager.shared.lightImpact()
-                        withAnimation(.spring()) {
-                            showingReflectionTimePicker.toggle()
-                        }
-                    } label: {
-                        SettingsRow(title: "Time") {
-                            SettingsPickerButton(
-                                value: reflectionTimeLabel,
-                                isExpanded: showingReflectionTimePicker
-                            )
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    
-                    if showingReflectionTimePicker {
-                        DatePicker(
-                            "",
-                            selection: reflectionTimeBinding,
-                            displayedComponents: .hourAndMinute
-                        )
-                        .datePickerStyle(.wheel)
-                        .labelsHidden()
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                        .padding(.horizontal, 16)
-                    }
-                }
-                
-                if authorizationState == .denied {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Notifications Disabled")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundStyle(Theme.primaryColor)
-                        
-                        Text("Enable notifications in System Settings to receive reminders.")
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundStyle(Theme.secondaryText)
-                            
-                        Button("Open Settings") {
-                            reminderManager.openSystemNotificationSettings()
-                        }
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryColor)
-                        .padding(.top, 4)
-                    }
-                    .padding(16)
+                    title: String(localized: "Advanced Reminders"),
+                    subtitle: String(localized: "Mood check-in, evening reflection, quiet hours")
+                ) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.secondaryText)
                 }
             }
+            .buttonStyle(.plain)
 
-            SettingsSection(title: "Quiet Hours") {
-                ToggleRow(
-                    icon: "moon.zzz.fill",
-                    iconColor: themeManager.primaryColor,
-                    title: "Enable Quiet Hours",
-                    subtitle: "Mutes reminders during these times",
-                    isOn: $quietHoursEnabled
-                )
+            if authorizationState == .denied {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(String(localized: "Notifications Disabled"))
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(Theme.primaryColor)
 
-                if quietHoursEnabled {
-                    Button {
-                        HapticManager.shared.lightImpact()
-                        withAnimation(.spring()) {
-                            showingQuietStartPicker.toggle()
-                        }
-                    } label: {
-                        SettingsRow(title: "Quiet Start") {
-                            SettingsPickerButton(
-                                value: quietStartLabel,
-                                isExpanded: showingQuietStartPicker
-                            )
-                        }
+                    Text(String(localized: "Enable notifications in System Settings to receive reminders."))
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+
+                    Button(String(localized: "Open Settings")) {
+                        reminderManager.openSystemNotificationSettings()
                     }
-                    .buttonStyle(.plain)
-
-                    if showingQuietStartPicker {
-                        DatePicker(
-                            "",
-                            selection: quietStartBinding,
-                            displayedComponents: .hourAndMinute
-                        )
-                        .datePickerStyle(.wheel)
-                        .labelsHidden()
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                        .padding(.horizontal, 16)
-                    }
-
-                    Button {
-                        HapticManager.shared.lightImpact()
-                        withAnimation(.spring()) {
-                            showingQuietEndPicker.toggle()
-                        }
-                    } label: {
-                        SettingsRow(title: "Quiet End") {
-                            SettingsPickerButton(
-                                value: quietEndLabel,
-                                isExpanded: showingQuietEndPicker
-                            )
-                        }
-                    }
-                    .buttonStyle(.plain)
-
-                    if showingQuietEndPicker {
-                        DatePicker(
-                            "",
-                            selection: quietEndBinding,
-                            displayedComponents: .hourAndMinute
-                        )
-                        .datePickerStyle(.wheel)
-                        .labelsHidden()
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                        .padding(.horizontal, 16)
-                    }
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.primaryColor)
+                    .padding(.top, 4)
                 }
+                .padding(16)
             }
         }
         .task {
             await refreshAuthorizationState()
         }
-    }
-
-    private var moodTimeLabel: String {
-        date(hour: moodReminderHour, minute: moodReminderMinute).timeOnly
-    }
-
-    private var reflectionTimeLabel: String {
-        date(hour: reflectionReminderHour, minute: reflectionReminderMinute).timeOnly
-    }
-
-    private var quietStartLabel: String {
-        date(hour: quietHoursStartHour, minute: quietHoursStartMinute).timeOnly
-    }
-
-    private var quietEndLabel: String {
-        date(hour: quietHoursEndHour, minute: quietHoursEndMinute).timeOnly
-    }
-
-    private var moodTimeBinding: Binding<Date> {
-        Binding(
-            get: { date(hour: moodReminderHour, minute: moodReminderMinute) },
-            set: { newDate in
-                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
-                moodReminderHour = components.hour ?? 9
-                moodReminderMinute = components.minute ?? 0
-
-                if moodReminderEnabled {
-                    Task {
-                        await scheduleMoodReminderIfAuthorized()
-                    }
-                }
-            }
-        )
-    }
-
-    private var reflectionTimeBinding: Binding<Date> {
-        Binding(
-            get: { date(hour: reflectionReminderHour, minute: reflectionReminderMinute) },
-            set: { newDate in
-                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
-                reflectionReminderHour = components.hour ?? 20
-                reflectionReminderMinute = components.minute ?? 0
-
-                if reflectionReminderEnabled {
-                    Task {
-                        await scheduleReflectionReminderIfAuthorized()
-                    }
-                }
-            }
-        )
-    }
-
-    private var quietStartBinding: Binding<Date> {
-        Binding(
-            get: { date(hour: quietHoursStartHour, minute: quietHoursStartMinute) },
-            set: { newDate in
-                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
-                quietHoursStartHour = components.hour ?? 22
-                quietHoursStartMinute = components.minute ?? 0
-            }
-        )
-    }
-
-    private var quietEndBinding: Binding<Date> {
-        Binding(
-            get: { date(hour: quietHoursEndHour, minute: quietHoursEndMinute) },
-            set: { newDate in
-                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
-                quietHoursEndHour = components.hour ?? 7
-                quietHoursEndMinute = components.minute ?? 0
-            }
-        )
     }
 
     private func refreshAuthorizationState() async {
@@ -293,44 +82,22 @@ struct RemindersSettingsSection: View {
         }
     }
 
-    private func handleMoodReminderToggleChange(_ isEnabled: Bool) async {
+    private func handleMasterRemindersToggle(_ isEnabled: Bool) async {
         if isEnabled {
             let canSchedule = await ensureAuthorizationForScheduling()
-            guard canSchedule else {
-                await MainActor.run {
-                    moodReminderEnabled = false
-                }
-                return
-            }
+            guard canSchedule else { return }
             await MainActor.run {
                 moodReminderEnabled = true
-            }
-            await scheduleMoodReminderIfAuthorized()
-        } else {
-            await MainActor.run {
-                moodReminderEnabled = false
-            }
-            await reminderManager.cancel(moodReminderIdentifier)
-        }
-    }
-
-    private func handleReflectionReminderToggleChange(_ isEnabled: Bool) async {
-        if isEnabled {
-            let canSchedule = await ensureAuthorizationForScheduling()
-            guard canSchedule else {
-                await MainActor.run {
-                    reflectionReminderEnabled = false
-                }
-                return
-            }
-            await MainActor.run {
                 reflectionReminderEnabled = true
             }
+            await scheduleMoodReminderIfAuthorized()
             await scheduleReflectionReminderIfAuthorized()
         } else {
             await MainActor.run {
+                moodReminderEnabled = false
                 reflectionReminderEnabled = false
             }
+            await reminderManager.cancel(moodReminderIdentifier)
             await reminderManager.cancel(reflectionReminderIdentifier)
         }
     }
@@ -366,13 +133,5 @@ struct RemindersSettingsSection: View {
             hour: reflectionReminderHour,
             minute: reflectionReminderMinute
         )
-    }
-
-    private func date(hour: Int, minute: Int) -> Date {
-        let now = Date()
-        var components = Calendar.current.dateComponents([.year, .month, .day], from: now)
-        components.hour = hour
-        components.minute = minute
-        return Calendar.current.date(from: components) ?? now
     }
 }

@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 
 enum AppColorTheme: String, CaseIterable, Identifiable {
+    case cyan = "Cyan"
     case blue = "Blue"
     case purple = "Purple"
     case pink = "Pink"
@@ -9,7 +10,6 @@ enum AppColorTheme: String, CaseIterable, Identifiable {
     case emerald = "Emerald"
     case gold = "Gold"
     case red = "Red"
-    case cyan = "Cyan"
     case indigo = "Indigo"
     case teal = "Teal"
 

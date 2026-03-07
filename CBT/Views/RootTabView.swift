@@ -2,9 +2,11 @@ import SwiftUI
 
 struct RootTabView: View {
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var selectedTab: FloatingTab = .home
     @StateObject private var breathing = BreathingPresenter.shared
+    @State private var isInExerciseFlow = false
     var body: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $selectedTab) {
@@ -60,22 +62,57 @@ struct RootTabView: View {
             }
             .tint(themeManager.selectedColor)
 
-            FloatingBottomToolbar(selectedTab: $selectedTab)
+            if !isInExerciseFlow {
+                FloatingBottomToolbar(selectedTab: $selectedTab)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .exerciseFlowDidEnter)) { _ in
+            isInExerciseFlow = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .exerciseFlowDidExit)) { _ in
+            isInExerciseFlow = false
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear {
             updateTabBarAppearance()
         }
-        .sheet(isPresented: $breathing.isPresented) {
-            NavigationStack {
-                BreathingResetView(
-                    durationSeconds: breathing.durationSeconds,
-                    pattern: breathing.pattern,
-                    autoStart: breathing.autoStart,
-                    showsDismissControl: true
-                )
+        .overlay {
+            if breathing.isPresented {
+                breathingStepCardOverlay
             }
         }
+        .animation(
+            reduceMotion ? .easeOut(duration: 0.2) : .easeInOut(duration: 0.52),
+            value: breathing.isPresented
+        )
+    }
+
+    @ViewBuilder
+    private var breathingStepCardOverlay: some View {
+        NavigationStack {
+            BreathingResetView(
+                durationSeconds: breathing.durationSeconds,
+                pattern: breathing.pattern,
+                autoStart: breathing.autoStart,
+                showsDismissControl: true,
+                showControls: breathing.showControls,
+                hideBackground: false,
+                onComplete: breathing.onComplete,
+                onDismiss: {
+                    breathing.onDismiss?()
+                    breathing.isPresented = false
+                }
+            )
+        }
+        .ignoresSafeArea()
+        .transition(.asymmetric(
+            insertion: reduceMotion
+                ? .opacity
+                : .opacity.combined(with: .move(edge: .bottom)),
+            removal: reduceMotion
+                ? .opacity
+                : .opacity.combined(with: .move(edge: .bottom))
+        ))
     }
 
     private func updateTabBarAppearance() {

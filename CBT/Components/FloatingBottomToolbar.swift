@@ -90,6 +90,7 @@ struct FloatingBottomToolbar: View {
                         .stroke(Theme.isImmersive ? Color.clear : Color.primary.opacity(0.06), lineWidth: 0.5)
                 )
                 .cardShadow(colorScheme: colorScheme)
+                .offset(y: DSSpacing.xSmall)
 
                 VStack(spacing: 12) {
                     if isExpanded {

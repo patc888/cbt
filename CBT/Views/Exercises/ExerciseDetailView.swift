@@ -17,11 +17,24 @@ struct ExerciseDetailView: View {
     
     // Timer state
     @StateObject private var timerManager = TimedSessionManager()
-    @State private var showingSaveSession = false
     @State private var completedSummary: SessionSummary?
     
-    // Total pages = Overview (1) + Steps (N)
-    private var totalPages: Int { exercise.steps.count + 1 }
+    // Total pages = Overview (1) + Steps (N) + Optional breathing (1)
+    private var totalPages: Int { 
+        var count = exercise.steps.count + 1
+        if exercise.breathingPattern != nil { count += 1 }
+        return count
+    }
+    
+    private var breathingStepIndex: Int? {
+        exercise.breathingPattern != nil ? 1 : nil
+    }
+    
+    private func stepTag(forIndex index: Int) -> Int {
+        var tag = index + 1
+        if exercise.breathingPattern != nil { tag += 1 }
+        return tag
+    }
     
     private var accent: Color {
         themeManager?.selectedColor ?? .accentColor
@@ -58,9 +71,14 @@ struct ExerciseDetailView: View {
                     TabView(selection: $currentStep) {
                         overviewStepView.tag(0)
                         
+                        if let pattern = exercise.breathingPattern {
+                            breathingStepView(pattern: pattern)
+                                .tag(1)
+                        }
+                        
                         ForEach(Array(exercise.steps.enumerated()), id: \.offset) { index, step in
                             stepPageView(index: index, step: step)
-                                .tag(index + 1)
+                                .tag(stepTag(forIndex: index))
                         }
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
@@ -114,30 +132,19 @@ struct ExerciseDetailView: View {
             }
             .navigationTitle(exercise.title)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        HapticManager.shared.selection()
-                        dismiss()
-                    }
-                }
-            }
             .onAppear {
+                NotificationCenter.default.post(name: .exerciseFlowDidEnter, object: nil)
                 timerManager.onComplete = { summary in
                     var finalSummary = summary
                     finalSummary.bodyText = buildFinalBodyText()
                     completedSummary = finalSummary
-                    showingSaveSession = true
                 }
             }
-            .sheet(isPresented: $showingSaveSession, onDismiss: {
-                dismiss()
-            }) {
-                if let summary = completedSummary {
-                    SaveSessionView(summary: summary)
-                }
+            .navigationDestination(item: $completedSummary) { summary in
+                SaveSessionView(summary: summary, onSaveComplete: { dismiss() })
             }
             .onDisappear {
+                NotificationCenter.default.post(name: .exerciseFlowDidExit, object: nil)
                 timerManager.stop()
             }
         }
@@ -178,11 +185,9 @@ struct ExerciseDetailView: View {
                 if let pattern = exercise.breathingPattern {
                     Button {
                         HapticManager.shared.mediumImpact()
-                        BreathingPresenter.shared.present(
-                            durationSeconds: exercise.duration * 60,
-                            autoStart: true,
-                            pattern: pattern
-                        )
+                        withAnimation {
+                            currentStep = 1
+                        }
                     } label: {
                         Label("Guided \(pattern.name)", systemImage: "wind")
                             .bold()
@@ -202,6 +207,25 @@ struct ExerciseDetailView: View {
             }
         }
         .scrollContentBackground(.hidden)
+    }
+    
+    private func breathingStepView(pattern: BreathingPattern) -> some View {
+        VStack(spacing: 0) {
+            BreathingResetView(
+                durationSeconds: exercise.duration * 60,
+                pattern: pattern,
+                autoStart: true,
+                showsDismissControl: false,
+                showControls: true,
+                hideBackground: true,
+                hideHeader: true,
+                onComplete: {
+                    // We don't auto-advance here to avoid jarring UX,
+                    // user can tap "Next" when they feel ready.
+                },
+                embeddedInFlow: true
+            )
+        }
     }
     
     private func stepPageView(index: Int, step: String) -> some View {
@@ -233,8 +257,40 @@ struct ExerciseDetailView: View {
                         set: { if index < stepResponses.count { stepResponses[index] = $0 } }
                     ))
                     .frame(minHeight: 180)
+                    .scrollContentBackground(.hidden)
+                    .background(Theme.cardBackground)
+                    .cornerRadius(Theme.cornerRadiusSmall)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
+                            .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                    )
                 }
                 .padding(.vertical, 8)
+
+                if let pattern = exercise.breathingPattern {
+                    Button {
+                        HapticManager.shared.mediumImpact()
+                        withAnimation {
+                            currentStep = 1
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "wind")
+                            VStack(alignment: .leading) {
+                                Text("Guided \(pattern.name)")
+                                    .font(.subheadline.bold())
+                                Text("Center yourself with this guided session.")
+                                    .font(.caption2)
+                            }
+                        }
+                        .foregroundStyle(.white)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(accent)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .padding(.vertical, 8)
+                }
             }
         }
         .scrollContentBackground(.hidden)
@@ -367,7 +423,6 @@ struct ExerciseDetailView: View {
                     endedAt: Date()
                 )
                 completedSummary = summary
-                showingSaveSession = true
             }
         } catch {
             print("Failed to save exercise completion: \(error)")

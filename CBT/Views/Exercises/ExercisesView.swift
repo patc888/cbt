@@ -8,7 +8,6 @@ struct ExercisesView: View {
 
     @State private var exercises: [Exercise] = []
     @State private var selectedCategory: String = "All"
-    @State private var selectedExercise: Exercise?
 
     var categories: [String] {
         let allCategories = exercises.map { $0.category }
@@ -147,9 +146,6 @@ struct ExercisesView: View {
         .onAppear {
             exercises = ExerciseLibrary.shared.exercises
         }
-        .sheet(item: $selectedExercise) { exercise in
-            ExerciseDetailView(exercise: exercise)
-        }
     }
 
     private func sectionTitle(_ title: String) -> some View {
@@ -270,10 +266,7 @@ struct ExercisesView: View {
     }
 
     private func exerciseCard(_ exercise: Exercise, showCategory: Bool, isComplete: Bool) -> some View {
-        Button {
-            selectedExercise = exercise
-            HapticManager.shared.selection()
-        } label: {
+        NavigationLink(destination: ExerciseDetailView(exercise: exercise)) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -323,6 +316,7 @@ struct ExercisesView: View {
             .cardStyle()
         }
         .buttonStyle(.plain)
+        .simultaneousGesture(TapGesture().onEnded { HapticManager.shared.selection() })
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(exercise.title). \(exercise.description). \(exercise.steps.count) steps, \(exercise.duration) minutes.")
         .accessibilityHint("Tap to start exercise")

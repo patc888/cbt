@@ -17,14 +17,38 @@ struct BreathingResetView: View {
     let pattern: BreathingPattern
     let autoStart: Bool
     let showsDismissControl: Bool
+    let showControls: Bool
+    let hideBackground: Bool
+    let hideHeader: Bool
+    let onComplete: (() -> Void)?
+    let onDismiss: (() -> Void)?
+    /// When true, view is embedded (e.g. in exercise flow): no dismiss on complete, no bottom safe area inset.
+    let embeddedInFlow: Bool
 
-    init(durationSeconds: Int = 60, pattern: BreathingPattern = .box, autoStart: Bool = false, showsDismissControl: Bool = false) {
+    init(
+        durationSeconds: Int = 60,
+        pattern: BreathingPattern = .box,
+        autoStart: Bool = false,
+        showsDismissControl: Bool = false,
+        showControls: Bool = true,
+        hideBackground: Bool = false,
+        hideHeader: Bool = false,
+        onComplete: (() -> Void)? = nil,
+        onDismiss: (() -> Void)? = nil,
+        embeddedInFlow: Bool = false
+    ) {
         let safeDuration = max(1, durationSeconds)
         _engine = StateObject(wrappedValue: BreathingEngine(durationSeconds: safeDuration, pattern: pattern))
         _selectedDuration = State(initialValue: safeDuration)
         self.pattern = pattern
         self.autoStart = autoStart
         self.showsDismissControl = showsDismissControl
+        self.showControls = showControls
+        self.hideBackground = hideBackground
+        self.hideHeader = hideHeader
+        self.onComplete = onComplete
+        self.onDismiss = onDismiss
+        self.embeddedInFlow = embeddedInFlow
     }
 
     private var accent: Color {
@@ -40,11 +64,15 @@ struct BreathingResetView: View {
     var body: some View {
         ZStack {
             // A: Background Layer
-            ThemedBackground().ignoresSafeArea()
+            if !hideBackground {
+                ThemedBackground().ignoresSafeArea()
+            }
             
             VStack(spacing: 0) {
                 // B: Header Setup
-                headerSection
+                if !hideHeader {
+                    headerSection
+                }
                 
                 Spacer()
                 
@@ -59,8 +87,8 @@ struct BreathingResetView: View {
                 
                 Spacer()
                 
-                // Save to Journal button (shown only when complete)
-                if engine.state.isComplete {
+                // Save to Journal button (shown only when complete and not in exercise flow)
+                if engine.state.isComplete && onComplete == nil {
                     Button {
                         HapticManager.shared.lightImpact()
                         prepareSaveSession()
@@ -80,40 +108,49 @@ struct BreathingResetView: View {
                 }
                 
                 // D: Controls Dock card
-                BreathingControlsBar(
-                    selectedDuration: $selectedDuration,
-                    isRunning: engine.state.isRunning,
-                    isComplete: engine.state.isComplete,
-                    canResume: shouldShowResume,
-                    accent: accent,
-                    onStart: {
-                        if engine.state.isComplete {
+                if showControls {
+                    BreathingControlsBar(
+                        selectedDuration: $selectedDuration,
+                        isRunning: engine.state.isRunning,
+                        isComplete: engine.state.isComplete,
+                        canResume: shouldShowResume,
+                        accent: accent,
+                        onStart: {
+                            if engine.state.isComplete {
+                                engine.stop(resetDurationSeconds: selectedDuration)
+                            }
+                            sessionStartDate = Date()
+                            engine.start()
+                        },
+                        onPause: {
+                            engine.pause()
+                        },
+                        onStop: {
                             engine.stop(resetDurationSeconds: selectedDuration)
                         }
-                        sessionStartDate = Date()
-                        engine.start()
-                    },
-                    onPause: {
-                        engine.pause()
-                    },
-                    onStop: {
-                        engine.stop(resetDurationSeconds: selectedDuration)
-                    }
-                )
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
-                .responsiveMaxWidth()
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+                    .responsiveMaxWidth()
+                }
             }
         }
-        .safeAreaInset(edge: .bottom) {
-            Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
-        }
+        .modifier(EmbeddedFlowBottomInset(embeddedInFlow: embeddedInFlow))
         .navigationBarHidden(true) // Using custom header for premium feel
         .onChange(of: selectedDuration) { _, newValue in
             engine.setDuration(seconds: newValue)
         }
         .onChange(of: engine.state.phase) { oldValue, newValue in
             handlePhaseChange(from: oldValue, to: newValue)
+        }
+        .onChange(of: engine.state.isComplete) { _, newValue in
+            if newValue, let onComplete {
+                // Delay briefly so user sees the completed orb state
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    onComplete()
+                    if !embeddedInFlow { dismiss() }
+                }
+            }
         }
         .onAppear {
             guard autoStart, !hasAutoStarted else { return }
@@ -146,6 +183,7 @@ struct BreathingResetView: View {
             
             if showsDismissControl {
                 Button {
+                    onDismiss?()
                     dismiss()
                 } label: {
                     Image(systemName: "xmark")
@@ -201,6 +239,20 @@ struct BreathingResetView: View {
         )
         completedSummary = summary
         showingSaveSession = true
+    }
+}
+
+// MARK: - Embedded flow layout
+private struct EmbeddedFlowBottomInset: ViewModifier {
+    let embeddedInFlow: Bool
+    func body(content: Content) -> some View {
+        if embeddedInFlow {
+            content
+        } else {
+            content.safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
+            }
+        }
     }
 }
 

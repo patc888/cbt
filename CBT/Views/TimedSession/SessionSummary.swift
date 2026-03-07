@@ -25,7 +25,7 @@ enum SessionSourceKind: String, CaseIterable {
     }
 }
 
-struct SessionSummary {
+struct SessionSummary: Hashable {
     var sourceKind: SessionSourceKind
     var sourceID: String
     var title: String

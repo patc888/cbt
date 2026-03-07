@@ -8,6 +8,7 @@ struct SaveSessionView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     let summary: SessionSummary
+    var onSaveComplete: (() -> Void)?
 
     @State private var editableTitle: String
     @State private var notes: String = ""
@@ -21,15 +22,17 @@ struct SaveSessionView: View {
         themeManager?.selectedColor ?? .accentColor
     }
 
-    init(summary: SessionSummary) {
+    init(summary: SessionSummary, onSaveComplete: (() -> Void)? = nil) {
         self.summary = summary
+        self.onSaveComplete = onSaveComplete
         _editableTitle = State(initialValue: summary.title)
     }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DSSpacing.large) {
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: DSSpacing.large) {
 
                     // Duration Badge
                     HStack(spacing: DSSpacing.small) {
@@ -155,27 +158,43 @@ struct SaveSessionView: View {
                     }
 
                     Spacer().frame(height: DSSpacing.xLarge)
+                    }
                 }
+                .background(DSTheme.background.ignoresSafeArea())
+
+                // Bottom bar – Save in same position as exercise Next button
+                HStack {
+                    Spacer().frame(width: 60)
+                    Spacer()
+                    Button {
+                        saveEntry()
+                    } label: {
+                        Text("Save")
+                            .bold()
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(accent)
+                            .clipShape(Capsule())
+                            .padding()
+                    }
+                    .disabled(editableTitle.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .accessibilityLabel("Save session")
+                }
+                .background(Theme.cardBackground.ignoresSafeArea(edges: .bottom))
+            }
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
             }
             .background(DSTheme.background.ignoresSafeArea())
             .navigationTitle("Save Session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button("Cancel") {
                         HapticManager.shared.lightImpact()
                         dismiss()
                     }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        saveEntry()
-                    } label: {
-                        Text("Save")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .foregroundStyle(accent)
-                    }
-                    .disabled(editableTitle.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
         }
@@ -216,6 +235,7 @@ struct SaveSessionView: View {
             HapticManager.shared.success()
             saved = true
             dismiss()
+            onSaveComplete?()
         } catch {
             print("Failed to save journal entry: \(error)")
         }

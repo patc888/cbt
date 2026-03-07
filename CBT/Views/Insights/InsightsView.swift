@@ -49,8 +49,6 @@ struct InsightsView: View {
                 VStack(spacing: 14) {
                     TopHeadlineView(title: String(localized: "Insights"))
 
-                    SegmentedToggle(selection: $timeRange, options: TimeRange.allCases, titleKey: \.localizedName)
-
                     if viewModel.isCalculating {
                         VStack {
                             ProgressView()
@@ -68,8 +66,6 @@ struct InsightsView: View {
                         goalProgressSection
                         
                         topMetricsSection
-                        
-                        exportSection
                     }
                 }
                 .padding(.horizontal, 16)
@@ -153,6 +149,8 @@ struct InsightsView: View {
                     .foregroundStyle(Theme.secondaryText.opacity(0.65))
                     .tracking(1.5)
             }
+
+            SegmentedToggle(selection: $timeRange, options: TimeRange.allCases, titleKey: \.localizedName)
 
             ZStack {
                 Circle()
@@ -386,52 +384,6 @@ struct InsightsView: View {
                 rankingCard(title: String(localized: "Top Distortions"), rows: viewModel.topDistortions.map { ($0.name, $0.count) }, emptyText: "")
             }
         }
-    }
-
-    // MARK: - Export Section
-    private var exportSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(String(localized: "Export Data"))
-                .font(.system(.title, design: .rounded).weight(.bold))
-                .foregroundStyle(Theme.primaryText)
-            
-            VStack(spacing: 8) {
-                if let csv = CSVExporter.shared.exportMoodEntries(moodEntries) {
-                    ShareLink(item: csv, preview: SharePreview(String(localized: "Mood Entries CSV"))) {
-                        exportRow(title: String(localized: "Export Moods (CSV)"), icon: "tablecells")
-                    }
-                }
-                
-                if let csv = CSVExporter.shared.exportThoughtRecords(thoughtRecords) {
-                    ShareLink(item: csv, preview: SharePreview(String(localized: "Thought Records CSV"))) {
-                        exportRow(title: String(localized: "Export Thoughts (CSV)"), icon: "tablecells")
-                    }
-                }
-            }
-        }
-        .padding(Theme.paddingMedium)
-        .cardStyle()
-    }
-    
-    private func exportRow(title: String, icon: String) -> some View {
-        HStack {
-            ZStack {
-                Circle()
-                    .fill(themeManager.primaryColor.opacity(0.12))
-                    .frame(width: 32, height: 32)
-                Image(systemName: icon)
-                    .foregroundStyle(themeManager.primaryColor)
-                    .font(.system(size: 14, weight: .bold))
-            }
-            Text(title)
-                .font(.system(.body, design: .rounded).weight(.medium))
-                .foregroundStyle(Theme.primaryText)
-            Spacer()
-            Image(systemName: "square.and.arrow.up")
-                .foregroundStyle(themeManager.primaryColor)
-                .font(.system(size: 14, weight: .bold))
-        }
-        .padding(.vertical, 4)
     }
 
     // MARK: - Helpers
