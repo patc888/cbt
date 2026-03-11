@@ -1,32 +1,16 @@
-//
-//  TimeBlockingApp.swift
-//  TimeBlocking
-//
-//  Created by Melissa Chan on 3/7/26.
-//
-
 import SwiftUI
 import SwiftData
 
+@MainActor
 @main
 struct TimeBlockingApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    @State private var appEnvironment = AppEnvironment()
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
+                .environment(appEnvironment)
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(appEnvironment.persistenceController.container)
     }
 }
