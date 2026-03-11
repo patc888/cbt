@@ -16,14 +16,13 @@ struct HomeView: View {
     @State private var showingTipModal = false
     @State private var showingQuickAdd = false
     @State private var selectedMoodForFlow: MoodColor? = nil
+    @State private var manualCompletions: [Date: Set<DailyPlanItem>] = [:]
 
-    private enum DailyPlanItem {
+    private enum DailyPlanItem: Hashable {
         case moodCheckIn
         case thoughtRecord
         case exercises
         case breathingReset
-        case insights
-        case journal
         case tipOfTheDay
     }
 
@@ -32,8 +31,6 @@ struct HomeView: View {
         let thoughtRecord: PlanCardCompletionState
         let exercises: PlanCardCompletionState
         let breathingReset: PlanCardCompletionState
-        let insights: PlanCardCompletionState
-        let journal: PlanCardCompletionState
         let tipOfTheDay: PlanCardCompletionState
 
         func state(for item: DailyPlanItem) -> PlanCardCompletionState {
@@ -46,10 +43,6 @@ struct HomeView: View {
                 return exercises
             case .breathingReset:
                 return breathingReset
-            case .insights:
-                return insights
-            case .journal:
-                return journal
             case .tipOfTheDay:
                 return tipOfTheDay
             }
@@ -137,23 +130,6 @@ struct HomeView: View {
                             BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
                         }
 
-                        PlanCard(
-                            title: "Insights",
-                            subtitle: "Review trends and patterns.",
-                            trailingSymbol: "chart.line.uptrend.xyaxis",
-                            completionState: completionSnapshot.state(for: .insights)
-                        ) {
-                            selectedTab = .insights
-                        }
-
-                        PlanCard(
-                            title: "Journal",
-                            subtitle: "Browse mood and thought entries.",
-                            trailingSymbol: "book.pages",
-                            completionState: completionSnapshot.state(for: .journal)
-                        ) {
-                            selectedTab = .journal
-                        }
 
                         PlanCard(
                             title: "Tip of the Day",
@@ -177,13 +153,20 @@ struct HomeView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
+        .focusable()
+        .onKeyPress(".") {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                toggleManualItems()
+            }
+            return .handled
+        }
         .sheet(isPresented: $showingNewMoodEntry, onDismiss: { selectedMoodForFlow = nil }) {
             MoodCheckinView(initialMood: selectedMoodForFlow)
         }
         .sheet(isPresented: $showingNewThoughtRecord) {
             NewThoughtRecordFlowView()
         }
-        .sheet(isPresented: $showingTipModal) {
+        .sheet(isPresented: $showingTipModal, onDismiss: { markItemAsDone(.tipOfTheDay) }) {
             FeatureModalPresenter {
                 DSFeatureModal(
                     title: "Tip for Today",
@@ -242,6 +225,36 @@ struct HomeView: View {
         return false
     }
 
+    private func toggleManualItems() {
+        let calendar = Calendar.current
+        let selectedDay = calendar.startOfDay(for: selectedDate)
+        let itemsToToggle: [DailyPlanItem] = [.tipOfTheDay]
+
+        var currentSet = manualCompletions[selectedDay] ?? []
+        let allCompleted = itemsToToggle.allSatisfy { currentSet.contains($0) }
+
+        if allCompleted {
+            itemsToToggle.forEach { currentSet.remove($0) }
+        } else {
+            itemsToToggle.forEach { currentSet.insert($0) }
+        }
+
+        manualCompletions[selectedDay] = currentSet
+        HapticManager.shared.lightImpact()
+    }
+
+    private func markItemAsDone(_ item: DailyPlanItem) {
+        let calendar = Calendar.current
+        let selectedDay = calendar.startOfDay(for: selectedDate)
+        var currentSet = manualCompletions[selectedDay] ?? []
+        if !currentSet.contains(item) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                currentSet.insert(item)
+                manualCompletions[selectedDay] = currentSet
+            }
+        }
+    }
+
     private func dailyPlanCompletionSnapshot(calendar: Calendar) -> DailyPlanCompletionSnapshot {
         let selectedDay = calendar.startOfDay(for: selectedDate)
 
@@ -254,14 +267,14 @@ struct HomeView: View {
                 .map { calendar.startOfDay(for: $0.createdAt) }
         )
 
+        let manualForDay = manualCompletions[selectedDay] ?? []
+
         return DailyPlanCompletionSnapshot(
             moodCheckIn: moodDays.contains(selectedDay) ? .completed : .incomplete,
             thoughtRecord: thoughtRecordDays.contains(selectedDay) ? .completed : .incomplete,
             exercises: exerciseDays.contains(selectedDay) ? .completed : .incomplete,
             breathingReset: breathingDays.contains(selectedDay) ? .completed : .incomplete,
-            insights: .notTracked,
-            journal: .notTracked,
-            tipOfTheDay: .notTracked
+            tipOfTheDay: manualForDay.contains(.tipOfTheDay) ? .completed : .notTracked
         )
     }
 }

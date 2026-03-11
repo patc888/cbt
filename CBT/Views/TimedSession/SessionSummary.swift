@@ -25,7 +25,8 @@ enum SessionSourceKind: String, CaseIterable {
     }
 }
 
-struct SessionSummary: Hashable {
+struct SessionSummary: Hashable, Identifiable {
+    var id: String { sourceID + "-" + String(startedAt.timeIntervalSinceReferenceDate) }
     var sourceKind: SessionSourceKind
     var sourceID: String
     var title: String

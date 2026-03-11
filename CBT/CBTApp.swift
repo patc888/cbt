@@ -37,6 +37,9 @@ struct CBTApp: App {
     @State private var launchState: LaunchState
     @State private var resetID = UUID()
     @State private var themeManager = ThemeManager()
+    @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var securityManager = SecurityManager.shared
+    @State private var hasCheckedLockOnLaunch = false
 
     init() {
         _launchState = State(initialValue: Self.bootstrap(reason: "app launch"))
@@ -47,10 +50,32 @@ struct CBTApp: App {
             rootView
                 .environment(themeManager)
                 .preferredColorScheme(themeManager.appTheme.colorScheme)
+                .onChange(of: scenePhase) { _, newPhase in
+                    if newPhase == .active, !hasCheckedLockOnLaunch, case .ready(let container) = launchState {
+                        checkLockState(container: container)
+                        hasCheckedLockOnLaunch = true
+                    }
+                }
                 .onReceive(NotificationCenter.default.publisher(for: .didResetData)) { _ in
                     themeManager = ThemeManager()
+                    securityManager.unlock()
+                    hasCheckedLockOnLaunch = false
                     bootstrapIntoCurrentState(reason: "local reset")
                 }
+        }
+    }
+
+    @MainActor
+    private func checkLockState(container: ModelContainer) {
+        let descriptor = FetchDescriptor<UserSettings>()
+        do {
+            let settings = try container.mainContext.fetch(descriptor).first
+            if settings?.appLockEnabled == true {
+                securityManager.lock()
+                securityManager.authenticate()
+            }
+        } catch {
+            Self.logger.error("Failed to fetch settings for lock check: \(error.localizedDescription, privacy: .public)")
         }
     }
 

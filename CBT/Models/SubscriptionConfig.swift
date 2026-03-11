@@ -46,8 +46,8 @@ extension SubscriptionConfig {
         title: String(localized: "Full Access"),
         subtitle: String(localized: "One subscription for all your devices with unlimited access."),
         plans: [
-            SubscriptionPlan(id: "com.xeo.CBT.premium.yearly", label: String(localized: "Yearly"), price: "$1.00/mo", billingFrequency: String(localized: "billed at $11.99/yr after free trial"), badge: String(localized: "50% OFF"), isRecommended: true),
-            SubscriptionPlan(id: "com.xeo.CBT.premium.monthly", label: String(localized: "Monthly"), price: "$1.99/month", billingFrequency: String(localized: "billed at $1.99/month"))
+            SubscriptionPlan(id: "com.xeo.CBT.premium.yearly", label: String(localized: "Yearly"), price: "$11.99/year", billingFrequency: String(localized: "Billed at $11.99/yr after trial"), badge: String(localized: "50% OFF"), isRecommended: true),
+            SubscriptionPlan(id: "com.xeo.CBT.premium.monthly", label: String(localized: "Monthly"), price: "$1.99/month", billingFrequency: String(localized: "Billed at $1.99/month"))
         ],
         oneTimeOption: SubscriptionPlan(id: "com.xeo.CBT.premium.lifetime", label: String(localized: "Lifetime"), price: "$39.99", billingFrequency: String(localized: "one-time payment")),
         features: [

@@ -23,6 +23,36 @@ struct DataSettingsView: View {
 }
 
 struct DataSettingsSection: View {
+    @Environment(ThemeManager.self) private var themeManager
+
+    var body: some View {
+        SettingsSection(title: "Data") {
+            SettingsRow(icon: "icloud.fill", iconColor: themeManager.primaryColor, title: "iCloud Sync", subtitle: "Sync between iPhone, iPad, and Mac") {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(Theme.successGreen)
+            }
+            
+            Divider()
+                .padding(.vertical, 8)
+                
+            NavigationLink(destination: AdvancedDataSettingsView()) {
+                SettingsRow(
+                    icon: "gearshape.2.fill",
+                    iconColor: themeManager.primaryColor,
+                    title: "Advanced Data",
+                    subtitle: "Exports and data management"
+                ) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+struct AdvancedDataSettingsView: View {
     private enum DeleteMode {
         case deleteOnly
         case deleteAndCancelReminders
@@ -48,75 +78,82 @@ struct DataSettingsSection: View {
     private let dataExportService = DataExportService()
 
     var body: some View {
-        SettingsSection(title: "Data") {
-            SettingsRow(icon: "icloud.fill", iconColor: themeManager.primaryColor, title: "iCloud Sync", subtitle: "Sync between iPhone, iPad, and Mac") {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(Theme.successGreen)
-            }
+        ZStack {
+            ThemedBackground().ignoresSafeArea()
             
-            Divider()
-                .padding(.vertical, 8)
-                
-            SettingsRow(
-                icon: "square.and.arrow.up",
-                iconColor: themeManager.primaryColor,
-                title: "Export Backup (JSON)"
-            ) {
-                Button("Export") {
-                    HapticManager.shared.lightImpact()
-                    showingExportInfo = true
-                }
-                .font(.system(size: 14, weight: .bold, design: .rounded))
-                .foregroundColor(themeManager.primaryColor)
-            }
-
-            SettingsRow(
-                icon: "tablecells",
-                iconColor: themeManager.primaryColor,
-                title: "Export Moods (CSV)"
-            ) {
-                if let csv = CSVExporter.shared.exportMoodEntries(moodEntries) {
-                    ShareLink(item: csv, preview: SharePreview("Mood Entries CSV")) {
-                        Text("Export")
+            ScrollView {
+                VStack(spacing: 16) {
+                    SettingsSection(title: "Advanced Data") {
+                        SettingsRow(
+                            icon: "square.and.arrow.up",
+                            iconColor: themeManager.primaryColor,
+                            title: "Export Backup (JSON)"
+                        ) {
+                            Button("Export") {
+                                HapticManager.shared.lightImpact()
+                                showingExportInfo = true
+                            }
                             .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundColor(themeManager.primaryColor)
+                        }
+
+                        SettingsRow(
+                            icon: "tablecells",
+                            iconColor: themeManager.primaryColor,
+                            title: "Export Moods (CSV)"
+                        ) {
+                            if let csv = CSVExporter.shared.exportMoodEntries(moodEntries) {
+                                ShareLink(item: csv, preview: SharePreview("Mood Entries CSV")) {
+                                    Text("Export")
+                                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                                        .foregroundColor(themeManager.primaryColor)
+                                }
+                            }
+                        }
+
+                        SettingsRow(
+                            icon: "tablecells",
+                            iconColor: themeManager.primaryColor,
+                            title: "Export Thoughts (CSV)"
+                        ) {
+                            if let csv = CSVExporter.shared.exportThoughtRecords(thoughtRecords) {
+                                ShareLink(item: csv, preview: SharePreview("Thought Records CSV")) {
+                                    Text("Export")
+                                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                                        .foregroundColor(themeManager.primaryColor)
+                                }
+                            }
+                        }
+
+                        Button(role: .destructive) {
+                            HapticManager.shared.mediumImpact()
+                            showingDeleteDialog = true
+                        } label: {
+                            SettingsRow(
+                                icon: "trash",
+                                iconColor: Theme.errorRed,
+                                title: "Delete All Data",
+                                subtitle: "Remove all local entries"
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Text("This cannot be undone.")
+                            .font(.system(size: 12, design: .rounded))
+                            .foregroundStyle(Theme.secondaryText)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 12)
                     }
                 }
-            }
-
-            SettingsRow(
-                icon: "tablecells",
-                iconColor: themeManager.primaryColor,
-                title: "Export Thoughts (CSV)"
-            ) {
-                if let csv = CSVExporter.shared.exportThoughtRecords(thoughtRecords) {
-                    ShareLink(item: csv, preview: SharePreview("Thought Records CSV")) {
-                        Text("Export")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundColor(themeManager.primaryColor)
-                    }
-                }
-            }
-
-            Button(role: .destructive) {
-                HapticManager.shared.mediumImpact()
-                showingDeleteDialog = true
-            } label: {
-                SettingsRow(
-                    icon: "trash",
-                    iconColor: Theme.errorRed,
-                    title: "Delete All Data",
-                    subtitle: "Remove all local entries"
-                )
-            }
-            .buttonStyle(.plain)
-            
-            Text("This cannot be undone.")
-                .font(.system(size: 12, design: .rounded))
-                .foregroundStyle(Theme.secondaryText)
                 .padding(.horizontal, 16)
-                .padding(.bottom, 12)
+                .padding(.top, 16)
+                .padding(.bottom, 32)
+                .responsiveMaxWidth()
+                .frame(maxWidth: .infinity)
+            }
         }
+        .navigationTitle("Advanced Data")
+        .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Delete all data?", isPresented: $showingDeleteDialog, titleVisibility: .visible) {
             Button("Delete All Data", role: .destructive) {
                 deleteMode = .deleteOnly
@@ -234,6 +271,7 @@ struct DataSettingsSection: View {
         }
     }
 }
+
 
 #if canImport(UIKit)
 private struct ActivityViewController: UIViewControllerRepresentable {

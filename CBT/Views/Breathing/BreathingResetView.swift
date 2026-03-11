@@ -10,7 +10,6 @@ struct BreathingResetView: View {
     @State private var hasAutoStarted = false
     
     // Journal save state
-    @State private var showingSaveSession = false
     @State private var completedSummary: SessionSummary?
     @State private var sessionStartDate: Date?
 
@@ -159,10 +158,8 @@ struct BreathingResetView: View {
             sessionStartDate = Date()
             engine.start()
         }
-        .sheet(isPresented: $showingSaveSession) {
-            if let summary = completedSummary {
-                SaveSessionView(summary: summary)
-            }
+        .sheet(item: $completedSummary) { summary in
+            SaveSessionView(summary: summary)
         }
     }
 
@@ -238,7 +235,6 @@ struct BreathingResetView: View {
             endedAt: Date()
         )
         completedSummary = summary
-        showingSaveSession = true
     }
 }
 

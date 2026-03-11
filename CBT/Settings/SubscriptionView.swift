@@ -340,12 +340,12 @@ struct StubProductCardView: View {
     }
     
     private var priceDisplayView: some View {
-        VStack(alignment: isFullWidth ? .trailing : .leading, spacing: 4) {
+        VStack(alignment: isFullWidth ? .trailing : .leading, spacing: 2) {
             Text(plan.price)
                 .font(.system(.headline, design: .rounded, weight: .bold))
             Text(plan.billingFrequency)
-                .font(.system(.caption, design: .rounded))
-                .foregroundStyle(.secondary)
+                .font(.system(.caption2, design: .rounded, weight: .medium))
+                .foregroundStyle(.secondary.opacity(0.8))
         }
     }
     

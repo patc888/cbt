@@ -42,7 +42,7 @@ struct SecuritySettingsView: View {
                     }
                     .foregroundStyle(themeManager.primaryColor)
                     .padding(.top, 12)
-                    .padding(.leading, 32)
+                    .padding(.leading, 32) // Align with text
                 }
                 .buttonStyle(PlainButtonStyle())
             }
@@ -51,7 +51,7 @@ struct SecuritySettingsView: View {
             PrivacyInfoPopup()
                 .presentationDetents([.medium])
                 .presentationCornerRadius(Theme.cornerRadiusXLarge)
-                .presentationBackground { ThemedBackground() }
+                .presentationBackground { Theme.secondaryBackground }
         }
     }
 
@@ -74,7 +74,9 @@ struct PrivacyInfoPopup: View {
                     .foregroundStyle(themeManager.primaryColor)
                     .padding(.bottom, 8)
                 
-                TopHeadlineView(title: "Your Data is Private")
+                Text("Your Data is Private")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.primaryText)
                 
                 Text("We believe your data is personal. This app is designed with privacy at its core.")
                     .font(.system(size: 16, design: .rounded))
