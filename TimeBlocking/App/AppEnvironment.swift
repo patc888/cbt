@@ -8,6 +8,9 @@ final class AppEnvironment {
     let persistenceController: PersistenceController
     let preferencesStore: AppPreferencesStore
     let scheduleRepository: ScheduleRepository
+    let timeCalendarManager: TimeCalendarManager
+    let timeNotificationManager: TimeNotificationManager
+    let widgetSnapshotManager: TimeWidgetSnapshotManager
     let subscriptionStore: TimeSubscriptionStore
     let appState: TimeAppState
 
@@ -17,12 +20,22 @@ final class AppEnvironment {
         persistenceController: PersistenceController? = nil,
         preferencesStore: AppPreferencesStore? = nil,
         scheduleRepository: ScheduleRepository? = nil,
+        timeCalendarManager: TimeCalendarManager? = nil,
+        timeNotificationManager: TimeNotificationManager? = nil,
+        widgetSnapshotManager: TimeWidgetSnapshotManager? = nil,
         subscriptionStore: TimeSubscriptionStore? = nil,
         appState: TimeAppState? = nil
     ) {
+        let resolvedScheduleRepository = scheduleRepository ?? ScheduleRepository()
+
         self.persistenceController = persistenceController ?? .shared
         self.preferencesStore = preferencesStore ?? AppPreferencesStore()
-        self.scheduleRepository = scheduleRepository ?? ScheduleRepository()
+        self.scheduleRepository = resolvedScheduleRepository
+        self.timeCalendarManager = timeCalendarManager ?? TimeCalendarManager()
+        self.timeNotificationManager = timeNotificationManager ?? TimeNotificationManager()
+        self.widgetSnapshotManager = widgetSnapshotManager ?? TimeWidgetSnapshotManager(
+            repository: resolvedScheduleRepository
+        )
         self.subscriptionStore = subscriptionStore ?? TimeSubscriptionStore(config: .time)
         self.appState = appState ?? TimeAppState()
     }
@@ -35,7 +48,11 @@ final class AppEnvironment {
         do {
             let preferences = try preferencesStore.fetchOrCreate(in: modelContext)
             try seedSampleDataIfNeeded(using: preferences, modelContext: modelContext)
+            refreshWidgets(using: modelContext)
             hasPreparedPersistentState = true
+            Task {
+                await resyncNotifications(using: modelContext, preferences: preferences)
+            }
         } catch {
             assertionFailure("Failed to prepare app foundation: \(error)")
         }
@@ -44,8 +61,60 @@ final class AppEnvironment {
     func generateScheduleIfNeeded(for date: Date, using modelContext: ModelContext) {
         do {
             try scheduleRepository.generateBlocksIfNeeded(for: date, in: modelContext)
+            refreshWidgets(using: modelContext)
+            Task {
+                await resyncNotifications(using: modelContext)
+            }
         } catch {
             assertionFailure("Failed to generate schedule blocks: \(error)")
+        }
+    }
+
+    func syncReminder(for block: TimeBlock, using modelContext: ModelContext) async {
+        guard let preferences = try? preferencesStore.fetchOrCreate(in: modelContext) else {
+            refreshWidgets(using: modelContext)
+            return
+        }
+
+        await timeNotificationManager.scheduleReminder(for: block, preferences: preferences)
+        refreshWidgets(using: modelContext)
+    }
+
+    func cancelReminder(for block: TimeBlock, using modelContext: ModelContext) async {
+        timeNotificationManager.cancelReminder(for: block)
+        refreshWidgets(using: modelContext)
+    }
+
+    func cancelReminder(forBlockID blockID: UUID, using modelContext: ModelContext) async {
+        timeNotificationManager.cancelReminder(forBlockID: blockID)
+        refreshWidgets(using: modelContext)
+    }
+
+    func resyncNotifications(
+        using modelContext: ModelContext,
+        preferences: AppPreferences? = nil
+    ) async {
+        let resolvedPreferences: AppPreferences
+        if let preferences {
+            resolvedPreferences = preferences
+        } else if let fetchedPreferences = try? preferencesStore.fetchOrCreate(in: modelContext) {
+            resolvedPreferences = fetchedPreferences
+        } else {
+            return
+        }
+
+        await timeNotificationManager.resyncUpcomingReminders(
+            in: modelContext,
+            preferences: resolvedPreferences
+        )
+        refreshWidgets(using: modelContext)
+    }
+
+    func refreshWidgets(using modelContext: ModelContext) {
+        do {
+            try widgetSnapshotManager.refresh(using: modelContext)
+        } catch {
+            assertionFailure("Failed to refresh widget snapshot: \(error)")
         }
     }
 

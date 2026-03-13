@@ -42,6 +42,12 @@ enum AppColorTheme: String, CaseIterable, Codable, Identifiable {
     case emerald = "Emerald"
     case gold = "Gold"
     case red = "Red"
+    case indigo = "Indigo"
+    case teal = "Teal"
+    case cyan = "Cyan"
+    case rose = "Rose"
+    case lavender = "Lavender"
+    case slate = "Slate"
     
     var id: String { rawValue }
     
@@ -55,6 +61,12 @@ enum AppColorTheme: String, CaseIterable, Codable, Identifiable {
         case .emerald: return "2ECC71"
         case .gold: return "F6C852"
         case .red: return "FF3B30"
+        case .indigo: return "818CF8"
+        case .teal: return "2DD4BF"
+        case .cyan: return "67E8F9"
+        case .rose: return "F472B6"
+        case .lavender: return "C084FC"
+        case .slate: return "94A3B8"
         }
     }
     
@@ -68,6 +80,12 @@ enum AppColorTheme: String, CaseIterable, Codable, Identifiable {
         case .emerald: return "10B981"
         case .gold: return "FF9F0A"
         case .red: return "CC2F26"
+        case .indigo: return "6366F1"
+        case .teal: return "14B8A6"
+        case .cyan: return "06B6D4"
+        case .rose: return "E11D48"
+        case .lavender: return "A855F7"
+        case .slate: return "64748B"
         }
     }
 }
@@ -95,6 +113,8 @@ final class AppPreferences {
     var defaultBlockDurationMinutes: Int = 60
     var dayStartHour: Int = 6
     var firstWeekday: Weekday = Weekday.monday
+    var notificationsEnabled: Bool? = false
+    var notificationLeadTimeMinutes: Int? = 0
     var showsCompletedBlocks: Bool? = true
     var appTheme: AppTheme? = AppTheme.system
     var selectedColorTheme: AppColorTheme? = AppColorTheme.purple
@@ -108,6 +128,8 @@ final class AppPreferences {
         defaultBlockDurationMinutes: Int = 60,
         dayStartHour: Int = 6,
         firstWeekday: Weekday = .monday,
+        notificationsEnabled: Bool? = false,
+        notificationLeadTimeMinutes: Int? = 0,
         showsCompletedBlocks: Bool? = true,
         appTheme: AppTheme? = .system,
         selectedColorTheme: AppColorTheme? = .purple,
@@ -120,6 +142,8 @@ final class AppPreferences {
         self.defaultBlockDurationMinutes = defaultBlockDurationMinutes
         self.dayStartHour = dayStartHour
         self.firstWeekday = firstWeekday
+        self.notificationsEnabled = notificationsEnabled
+        self.notificationLeadTimeMinutes = notificationLeadTimeMinutes
         self.showsCompletedBlocks = showsCompletedBlocks
         self.appTheme = appTheme
         self.selectedColorTheme = selectedColorTheme

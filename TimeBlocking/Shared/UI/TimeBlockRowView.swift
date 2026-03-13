@@ -2,9 +2,14 @@ import SwiftData
 import SwiftUI
 
 struct TimeBlockRowView: View {
+    @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @Bindable var block: TimeBlock
+    let conflictSummary: ScheduleBlockConflictSummary?
     let onEdit: (() -> Void)?
+    let isChecklistExpanded: Bool
+    let onToggleChecklistExpansion: (() -> Void)?
     let dragCoordinateSpaceName: String?
     let isDragging: Bool
     let emphasizesDragAffordance: Bool
@@ -16,7 +21,10 @@ struct TimeBlockRowView: View {
 
     init(
         block: TimeBlock,
+        conflictSummary: ScheduleBlockConflictSummary? = nil,
         onEdit: (() -> Void)? = nil,
+        isChecklistExpanded: Bool = false,
+        onToggleChecklistExpansion: (() -> Void)? = nil,
         dragCoordinateSpaceName: String? = nil,
         isDragging: Bool = false,
         emphasizesDragAffordance: Bool = false,
@@ -25,7 +33,10 @@ struct TimeBlockRowView: View {
         onDragEnded: ((CGPoint) -> Void)? = nil
     ) {
         self.block = block
+        self.conflictSummary = conflictSummary
         self.onEdit = onEdit
+        self.isChecklistExpanded = isChecklistExpanded
+        self.onToggleChecklistExpansion = onToggleChecklistExpansion
         self.dragCoordinateSpaceName = dragCoordinateSpaceName
         self.isDragging = isDragging
         self.emphasizesDragAffordance = emphasizesDragAffordance
@@ -35,31 +46,53 @@ struct TimeBlockRowView: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Button {
-                toggleCompletion()
-            } label: {
-                Image(systemName: statusSymbol)
-                    .font(.title3)
-                    .foregroundStyle(statusColor)
-                    .frame(width: 28, height: 28)
+        VStack(alignment: .leading, spacing: sortedChecklistItems.isEmpty || !isChecklistExpanded ? 0 : 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Button {
+                    toggleCompletion()
+                } label: {
+                    Image(systemName: statusSymbol)
+                        .font(.title3)
+                        .foregroundStyle(statusColor)
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(block.status == .completed ? "Mark block as planned" : "Mark block as completed")
+
+                TimeBlockRowDetailsView(
+                    block: block,
+                    conflictSummary: conflictSummary,
+                    isChecklistExpanded: isChecklistExpanded,
+                    onToggleChecklistExpansion: onToggleChecklistExpansion
+                )
+
+                Spacer(minLength: 0)
+
+                if supportsDrag {
+                    dragHandle
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(block.status == .completed ? "Mark block as planned" : "Mark block as completed")
 
-            TimeBlockRowDetailsView(block: block)
-
-            Spacer(minLength: 0)
-
-            if supportsDrag {
-                dragHandle
+            if !sortedChecklistItems.isEmpty && isChecklistExpanded {
+                inlineChecklist
             }
         }
         .padding(.vertical, 6)
-        .padding(.horizontal, 4)
+        .padding(.horizontal, 12)
         .background {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Theme.primaryPurple.opacity(isDragging ? 0.08 : 0))
+                .fill(
+                    isDragging
+                        ? Theme.primaryPurple.opacity(0.08)
+                        : (colorScheme == .light ? Color.black.opacity(0.015) : Color.white.opacity(0.03))
+                )
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(
+                    isDragging ? Theme.primaryPurple.opacity(0.2) : Color.primary.opacity(0.06),
+                    lineWidth: 1
+                )
         }
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .opacity(isDragging ? 0.26 : 1)
@@ -95,15 +128,68 @@ struct TimeBlockRowView: View {
         }
         .animation(.spring(response: 0.28, dampingFraction: 0.82), value: isDragging)
         .animation(.spring(response: 0.28, dampingFraction: 0.82), value: emphasizesDragAffordance)
+        .animation(.spring(response: 0.24, dampingFraction: 0.86), value: isChecklistExpanded)
+    }
+
+    private var sortedChecklistItems: [BlockChecklistItem] {
+        (block.checklistItems ?? []).sorted { lhs, rhs in
+            if lhs.sortOrder == rhs.sortOrder {
+                return lhs.createdAt < rhs.createdAt
+            }
+
+            return lhs.sortOrder < rhs.sortOrder
+        }
     }
 
     private var supportsDrag: Bool {
-        dragCoordinateSpaceName != nil && onDragBegan != nil && onDragChanged != nil && onDragEnded != nil
+        block.status == .planned &&
+        dragCoordinateSpaceName != nil &&
+        onDragBegan != nil &&
+        onDragChanged != nil &&
+        onDragEnded != nil
+    }
+
+    private var inlineChecklist: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Divider()
+                .padding(.leading, 40)
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(sortedChecklistItems) { item in
+                    Button {
+                        toggleChecklistItem(item)
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(item.isCompleted ? .green : Theme.secondaryText)
+
+                            Text(item.title)
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundStyle(item.isCompleted ? Theme.secondaryText : Theme.primaryText)
+                                .strikethrough(item.isCompleted)
+                                .lineLimit(2)
+
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(item.isCompleted ? .green.opacity(0.08) : Color.primary.opacity(0.04))
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(item.isCompleted ? "Mark checklist item incomplete" : "Mark checklist item complete")
+                }
+            }
+            .padding(.leading, 40)
+        }
     }
 
     private var dragHandle: some View {
         HStack(spacing: 6) {
-            Image(systemName: isDragging ? "arrow.up.and.down.and.arrow.left.and.right" : "line.3.horizontal")
+            Image(systemName: isDragging ? "arrow.up.and.down.and.arrow.left.and.right" : "circle.grid.2x2.fill")
                 .font(.system(size: 12, weight: .bold))
 
             Text(isDragging ? "Moving" : "Move")
@@ -114,7 +200,11 @@ struct TimeBlockRowView: View {
         .frame(height: 34)
         .background(
             Capsule(style: .continuous)
-                .fill(isDragging ? Theme.primaryPurple : Theme.primaryPurple.opacity(emphasizesDragAffordance ? 0.18 : 0.1))
+                .fill(
+                    isDragging
+                        ? Theme.primaryPurple
+                        : Theme.primaryPurple.opacity(emphasizesDragAffordance ? 0.18 : 0.12)
+                )
         )
         .overlay {
             Capsule(style: .continuous)
@@ -129,6 +219,7 @@ struct TimeBlockRowView: View {
         .contentShape(Capsule())
         .highPriorityGesture(dragGesture)
         .accessibilityLabel("Drag to move block to another day")
+        .accessibilityHint("Hold and drag this control to one of the day targets.")
     }
 
     private var dragGesture: some Gesture {
@@ -181,13 +272,37 @@ struct TimeBlockRowView: View {
     }
 
     private func toggleCompletion() {
-        block.status = block.status == .completed ? .planned : .completed
-        block.updatedAt = .now
-        saveChanges()
+        let nextStatus: TimeBlockStatus
+        switch block.status {
+        case .planned:
+            nextStatus = .completed
+        case .completed, .cancelled:
+            nextStatus = .planned
+        }
+
+        do {
+            try appEnvironment.scheduleRepository.setBlockStatus(
+                block,
+                to: nextStatus,
+                in: modelContext
+            )
+            Task {
+                await appEnvironment.syncReminder(for: block, using: modelContext)
+            }
+        } catch {
+            assertionFailure("Failed to update block completion state: \(error)")
+        }
     }
 
     private func saveChanges() {
         try? modelContext.save()
+    }
+
+    private func toggleChecklistItem(_ item: BlockChecklistItem) {
+        item.isCompleted.toggle()
+        item.updatedAt = .now
+        block.updatedAt = .now
+        saveChanges()
     }
 }
 
@@ -263,6 +378,9 @@ struct TimeBlockDragPreviewView: View {
 
 private struct TimeBlockRowDetailsView: View {
     let block: TimeBlock
+    let conflictSummary: ScheduleBlockConflictSummary?
+    let isChecklistExpanded: Bool
+    let onToggleChecklistExpansion: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -287,11 +405,32 @@ private struct TimeBlockRowDetailsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
+            if let conflictSummary {
+                Label(conflictSummary.detailText, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+
             let checklistItems = block.checklistItems ?? []
             if !checklistItems.isEmpty {
-                Label("\(checklistItems.filter(\.isCompleted).count)/\(checklistItems.count) checklist items", systemImage: "checklist")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if let onToggleChecklistExpansion {
+                    Button(action: onToggleChecklistExpansion) {
+                        HStack(spacing: 6) {
+                            Label("\(checklistItems.filter(\.isCompleted).count)/\(checklistItems.count) checklist items", systemImage: "checklist")
+                                .font(.caption)
+
+                            Image(systemName: isChecklistExpanded ? "chevron.up" : "chevron.down")
+                                .font(.system(size: 10, weight: .bold))
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(isChecklistExpanded ? "Collapse checklist" : "Expand checklist")
+                } else {
+                    Label("\(checklistItems.filter(\.isCompleted).count)/\(checklistItems.count) checklist items", systemImage: "checklist")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }

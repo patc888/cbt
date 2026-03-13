@@ -6,6 +6,7 @@ struct TemplatesView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @Query(sort: \ScheduleTemplate.sortOrder) private var templates: [ScheduleTemplate]
     @State private var editingTemplate: ScheduleTemplate?
+    @State private var isPresentingTemplateEditor = false
 
     var body: some View {
         ZStack {
@@ -16,30 +17,35 @@ struct TemplatesView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     TimeCard {
                         VStack(alignment: .leading, spacing: 16) {
-                            TimeSectionHeader("Routines & Templates", subtitle: "Reusable schedule structures for future block generation")
+                            HStack(alignment: .top, spacing: 12) {
+                                TimeSectionHeader("Templates", subtitle: "Reusable blocks for the weekdays you choose")
+
+                                if !templates.isEmpty {
+                                    Button {
+                                        isPresentingTemplateEditor = true
+                                    } label: {
+                                        Label("New Template", systemImage: "plus")
+                                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(Theme.primaryPurple)
+                                    .controlSize(.small)
+                                }
+                            }
 
                             if templates.isEmpty {
-                                ContentUnavailableView(
-                                    "No Templates Yet",
+                                EmptyStateView(
+                                    title: "No Templates Yet",
                                     systemImage: "square.on.square",
-                                    description: Text("Create reusable schedule templates that can generate planned blocks on the weekdays you choose.")
-                                )
-                                .padding(.vertical, 20)
-
-                                Button(action: { appEnvironment.appState.isPresentingAddModal = true }) {
-                                    HStack {
-                                        Text("Create Template")
-                                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                                        Spacer()
-                                        Image(systemName: "plus")
+                                    message: "Create a template for routines you want to regenerate into future days.",
+                                    eyebrow: "Templates"
+                                ) {
+                                    Button("Create Template") {
+                                        isPresentingTemplateEditor = true
                                     }
-                                    .foregroundStyle(.white)
-                                    .padding(.vertical, 14)
-                                    .padding(.horizontal, 20)
-                                    .background(Theme.primaryPurple.gradient)
-                                    .clipShape(Capsule())
+                                    .buttonStyle(.borderedProminent)
                                 }
-                                .buttonStyle(.plain)
+                                .padding(.vertical, 20)
                             } else {
                                 VStack(spacing: 0) {
                                     ForEach(templates) { template in
@@ -93,14 +99,8 @@ struct TemplatesView: View {
                                     }
                                 }
                             }
-                        }
-                    }
-
-                    TimeCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            TimeSectionHeader("Generation", subtitle: "How templates are used")
-
-                            Text("Templates continue to drive block generation through the existing repository flow. Editing a template changes future generated blocks only.")
+                            
+                            Text("Templates create planned blocks when you refresh a matching day in Schedule.")
                                 .font(.system(size: 13, design: .rounded))
                                 .foregroundStyle(Theme.secondaryText)
                         }
@@ -111,10 +111,7 @@ struct TemplatesView: View {
                 .padding(.bottom, 100)
             }
         }
-        .sheet(isPresented: Binding(
-            get: { appEnvironment.appState.isPresentingAddModal },
-            set: { appEnvironment.appState.isPresentingAddModal = $0 }
-        )) {
+        .sheet(isPresented: $isPresentingTemplateEditor) {
             TemplateEditorView()
         }
         .sheet(item: $editingTemplate) { template in
@@ -186,7 +183,7 @@ private struct TemplateEditorView: View {
                     TimeCard {
                         TimeSectionHeader(
                             template == nil ? "New Template" : "Edit Template",
-                            subtitle: "Reusable defaults for schedule generation"
+                            subtitle: "Reusable defaults for blocks you want the app to generate later"
                         )
 
                         VStack(alignment: .leading, spacing: 14) {
@@ -243,6 +240,10 @@ private struct TemplateEditorView: View {
                                 TextEditor(text: $notes)
                                     .frame(minHeight: 120)
                             }
+
+                            Text("Templates do not create a block immediately. They become planned blocks later when a matching day is generated.")
+                                .font(.system(size: 12, design: .rounded))
+                                .foregroundStyle(Theme.secondaryText)
                         }
                     }
 

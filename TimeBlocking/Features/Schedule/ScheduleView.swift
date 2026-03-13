@@ -4,10 +4,14 @@ import SwiftUI
 struct ScheduleView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \TimeBlock.startDate) private var blocks: [TimeBlock]
+    @Query(sort: \ScheduleTemplate.sortOrder) private var templates: [ScheduleTemplate]
     @Query private var preferences: [AppPreferences]
     @AppStorage("schedule.hasSeenBlockMoveHint") private var hasSeenBlockMoveHint = false
-    @State private var editingBlock: TimeBlock?
+    @SceneStorage("schedule.presentationMode") private var scheduleModeRawValue = SchedulePresentationMode.day.rawValue
+    @State private var editorRoute: ScheduleEditorRoute?
     @State private var isRegenerating = false
     @State private var regenerateErrorMessage: String?
     @State private var dragErrorMessage: String?
@@ -15,6 +19,8 @@ struct ScheduleView: View {
     @State private var activeDrag: ScheduleBlockDragSession?
     @State private var moveTargetFrames: [Date: CGRect] = [:]
     @State private var feedbackBanner: ScheduleFeedbackBannerState?
+    @State private var expandedChecklistBlockIDs: Set<UUID> = []
+    @Namespace private var scheduleModeNamespace
 
     private let dragCoordinateSpaceName = "schedule-drag-surface"
 
@@ -43,16 +49,60 @@ struct ScheduleView: View {
         )
     }
 
+    private var dayCalendarEvents: [TimeCalendarEvent] {
+        appEnvironment.timeCalendarManager.events(
+            on: appEnvironment.appState.selectedDate,
+            calendar: calendar
+        )
+    }
+
+    private var selectedDayOverlappingBlockIDs: Set<UUID> {
+        appEnvironment.scheduleRepository.overlappingPlannedBlockIDs(
+            on: appEnvironment.appState.selectedDate,
+            from: blocks,
+            calendar: calendar
+        )
+    }
+
+    private var resolveConflictsAction: (() -> Void)? {
+        selectedDayPlanningGuidance.hasOverlappingBlocks ? { resolveSelectedDayConflicts() } : nil
+    }
+
+    private var selectedDayPlanningGuidance: SchedulePlanningGuidanceSnapshot {
+        SchedulePlanningGuidanceSnapshot.build(
+            for: appEnvironment.appState.selectedDate,
+            blocks: daySnapshot.blocks,
+            overlappingBlockIDs: selectedDayOverlappingBlockIDs,
+            calendarEvents: dayCalendarEvents,
+            dayStartHour: dayStartHour,
+            calendar: calendar
+        )
+    }
+
     private var daySnapshot: ScheduleDaySnapshot {
         appEnvironment.scheduleRepository.daySnapshot(
             for: appEnvironment.appState.selectedDate,
             from: blocks,
-            includeCompleted: showsCompletedBlocks
+            includeCompleted: showsCompletedBlocks,
+            calendar: calendar
         )
     }
 
     private var upcomingBlocks: [TimeBlock] {
         appEnvironment.scheduleRepository.upcomingBlocks(from: blocks)
+    }
+
+    private var hasTemplates: Bool {
+        !templates.isEmpty
+    }
+
+    private var canRegenerateSelectedDay: Bool {
+        !isRegenerating && activeDrag == nil
+    }
+
+    private var scheduleMode: SchedulePresentationMode {
+        get { SchedulePresentationMode(rawValue: scheduleModeRawValue) ?? .day }
+        nonmutating set { scheduleModeRawValue = newValue.rawValue }
     }
 
     private var moveTargetDates: [Date] {
@@ -74,165 +124,192 @@ struct ScheduleView: View {
         !hasSeenBlockMoveHint && activeDrag == nil && feedbackBanner == nil && !daySnapshot.blocks.isEmpty
     }
 
+    private var contentHorizontalPadding: CGFloat {
+        horizontalSizeClass == .compact ? 8 : 24
+    }
+
+    private var metricColumns: [GridItem] {
+        if horizontalSizeClass == .compact {
+            return [GridItem(.flexible()), GridItem(.flexible())]
+        }
+
+        return [
+            GridItem(.flexible()),
+            GridItem(.flexible()),
+            GridItem(.flexible()),
+            GridItem(.flexible())
+        ]
+    }
+
+    private var selectedWeekDates: [Date] {
+        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: appEnvironment.appState.selectedDate) else {
+            return [calendar.startOfDay(for: appEnvironment.appState.selectedDate)]
+        }
+
+        let startDate = calendar.startOfDay(for: weekInterval.start)
+        return (0..<7).compactMap { offset in
+            calendar.date(byAdding: .day, value: offset, to: startDate).map(calendar.startOfDay(for:))
+        }
+    }
+
+    private var selectedWeekDays: [WeeklyPlanningDay] {
+        selectedWeekDates.map { date in
+            let snapshot = appEnvironment.scheduleRepository.daySnapshot(
+                for: date,
+                from: blocks,
+                includeCompleted: showsCompletedBlocks,
+                calendar: calendar
+            )
+            let calendarEvents = appEnvironment.timeCalendarManager.events(
+                on: date,
+                calendar: calendar
+            )
+            let planningGuidance = SchedulePlanningGuidanceSnapshot.build(
+                for: date,
+                blocks: snapshot.blocks,
+                overlappingBlockIDs: appEnvironment.scheduleRepository.overlappingPlannedBlockIDs(
+                    on: date,
+                    from: blocks,
+                    calendar: calendar
+                ),
+                calendarEvents: calendarEvents,
+                dayStartHour: dayStartHour,
+                calendar: calendar
+            )
+
+            return WeeklyPlanningDay(
+                date: date,
+                snapshot: snapshot,
+                calendarSummary: appEnvironment.timeCalendarManager.summary(
+                    for: date,
+                    calendar: calendar
+                ),
+                conflictCount: planningGuidance.conflictingBlockCount
+            )
+        }
+    }
+
+    private var selectedWeekSummary: ScheduleWeekSummary {
+        ScheduleWeekSummary(days: selectedWeekDays, calendar: calendar)
+    }
+
+    private var selectedMonthStart: Date {
+        ScheduleMonthSupport.startOfMonth(for: appEnvironment.appState.selectedDate, calendar: calendar)
+    }
+
+    private var selectedMonthDates: [Date] {
+        ScheduleMonthSupport.gridDates(for: appEnvironment.appState.selectedDate, calendar: calendar)
+    }
+
+    private var selectedMonthDays: [MonthlyPlanningDay] {
+        selectedMonthDates.map { date in
+            MonthlyPlanningDay(
+                date: date,
+                snapshot: appEnvironment.scheduleRepository.daySnapshot(
+                    for: date,
+                    from: blocks,
+                    includeCompleted: true,
+                    calendar: calendar
+                ),
+                isInDisplayedMonth: calendar.isDate(date, equalTo: selectedMonthStart, toGranularity: .month)
+            )
+        }
+    }
+
+    private var selectedMonthSummary: ScheduleMonthSummary {
+        ScheduleMonthSummary(days: selectedMonthDays, calendar: calendar)
+    }
+
+    private var visibleGenerationDates: [Date] {
+        if scheduleMode == .week {
+            return selectedWeekDates
+        }
+
+        if scheduleMode == .month {
+            return selectedMonthDates
+        }
+
+        return [calendar.startOfDay(for: appEnvironment.appState.selectedDate)]
+    }
+
+    private var visibleCalendarInterval: DateInterval? {
+        switch scheduleMode {
+        case .day:
+            let start = calendar.startOfDay(for: appEnvironment.appState.selectedDate)
+            let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
+            return DateInterval(start: start, end: end)
+        case .week:
+            return calendar.dateInterval(of: .weekOfYear, for: appEnvironment.appState.selectedDate)
+        case .month:
+            return nil
+        }
+    }
+
+    private var selectedWeekHasCalendarEvents: Bool {
+        selectedWeekDays.contains { $0.calendarSummary.hasEvents }
+    }
+
+    private var showsSelectedDayContent: Bool {
+        !daySnapshot.blocks.isEmpty || !dayCalendarEvents.isEmpty
+    }
+
+    private var showsSelectedWeekContent: Bool {
+        selectedWeekSummary.hasBlocks || selectedWeekHasCalendarEvents
+    }
+
+    private var calendarLoadTrigger: String {
+        guard let visibleCalendarInterval else {
+            return "month"
+        }
+
+        return [
+            scheduleModeRawValue,
+            String(visibleCalendarInterval.start.timeIntervalSinceReferenceDate),
+            String(visibleCalendarInterval.end.timeIntervalSinceReferenceDate),
+            appEnvironment.timeCalendarManager.accessState.rawValue
+        ].joined(separator: "|")
+    }
+
+    private var scheduleModeSelection: Binding<SchedulePresentationMode> {
+        Binding(
+            get: { scheduleMode },
+            set: { scheduleMode = $0 }
+        )
+    }
+
+    private var metricItems: [ScheduleMetricItem] {
+        if scheduleMode == .month {
+            return [
+                ScheduleMetricItem(title: "Planned", value: "\(selectedMonthSummary.plannedCount)", systemImage: "calendar.badge.clock"),
+                ScheduleMetricItem(title: "Completed", value: "\(selectedMonthSummary.completedCount)", systemImage: "checkmark.circle"),
+                ScheduleMetricItem(title: "Scheduled", value: selectedMonthSummary.scheduledTimeText, systemImage: "timer"),
+                ScheduleMetricItem(title: "Active Days", value: "\(selectedMonthSummary.activeDayCount)", systemImage: "calendar")
+            ]
+        }
+
+        if scheduleMode == .week {
+            return [
+                ScheduleMetricItem(title: "Planned", value: "\(selectedWeekSummary.plannedCount)", systemImage: "calendar.badge.clock"),
+                ScheduleMetricItem(title: "Completed", value: "\(selectedWeekSummary.completedCount)", systemImage: "checkmark.circle"),
+                ScheduleMetricItem(title: "Scheduled", value: "\(selectedWeekSummary.scheduledMinutes) min", systemImage: "timer"),
+                ScheduleMetricItem(title: "Busiest", value: selectedWeekSummary.busiestDayLabel, systemImage: "chart.bar.fill")
+            ]
+        }
+
+        return [
+            ScheduleMetricItem(title: "Planned", value: "\(daySnapshot.plannedCount)", systemImage: "calendar.badge.clock"),
+            ScheduleMetricItem(title: "Completed", value: "\(daySnapshot.completedCount)", systemImage: "checkmark.circle"),
+            ScheduleMetricItem(title: "Scheduled", value: "\(daySnapshot.scheduledMinutes) min", systemImage: "timer"),
+            ScheduleMetricItem(title: "Upcoming", value: "\(upcomingBlocks.count)", systemImage: "forward.fill")
+        ]
+    }
+
     var body: some View {
         ZStack {
             AuroraBackground()
                 .ignoresSafeArea()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    DateStripHeaderView(
-                        selectedDate: selectedDate,
-                        firstWeekday: firstWeekday,
-                        dateHasItems: blocksExist(on:)
-                    )
-                    .padding(.top, 64) // Offset for custom header
-
-                    if let activeDragBlock {
-                        DayMoveRibbon(
-                            targetDates: moveTargetDates,
-                            selectedDate: calendar.startOfDay(for: appEnvironment.appState.selectedDate),
-                            hoveredDate: activeDrag?.hoveredDate,
-                            coordinateSpaceName: dragCoordinateSpaceName,
-                            detachNotice: activeDragBlock.template != nil,
-                            preservedTimeText: activeDragBlock.startDate.formatted(date: .omitted, time: .shortened)
-                        )
-                        .onPreferenceChange(DayMoveTargetFramePreferenceKey.self) { moveTargetFrames = $0 }
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Theme.paddingMedium) {
-                        TimeMetricTile(title: "Planned", value: "\(daySnapshot.plannedCount)", systemImage: "calendar.badge.clock")
-                        TimeMetricTile(title: "Completed", value: "\(daySnapshot.completedCount)", systemImage: "checkmark.circle")
-                        TimeMetricTile(title: "Scheduled", value: "\(daySnapshot.scheduledMinutes) min", systemImage: "timer")
-                        TimeMetricTile(title: "Templates", value: upcomingBlocks.isEmpty ? "Ready" : "\(upcomingBlocks.count) next", systemImage: "square.on.square")
-                    }
-
-                    TimeCard {
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack(alignment: .top, spacing: 12) {
-                                TimeSectionHeader("Today's Plan", subtitle: "Timeline and block list for the selected day")
-
-                                Button {
-                                    regenerateSelectedDay()
-                                } label: {
-                                    Label(isRegenerating ? "Refreshing..." : "Regenerate", systemImage: "arrow.clockwise")
-                                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(Theme.primaryPurple)
-                                .controlSize(.small)
-                                .disabled(isRegenerating || activeDrag != nil)
-                            }
-
-                            Text(activeDrag == nil ? "Drag blocks on the timeline to retime the day, or use Move in the list to send a block to another day. Timeline drags snap to 15 minutes." : "Drag using the Move handle to send a block to a nearby day. The block keeps its start time and duration.")
-                                .font(.system(size: 12, design: .rounded))
-                                .foregroundStyle(Theme.secondaryText)
-
-                            if shouldShowMoveHint {
-                                MoveHintCallout()
-                                    .transition(.move(edge: .top).combined(with: .opacity))
-                            }
-
-                            if let feedbackBanner {
-                                ScheduleFeedbackBanner(state: feedbackBanner)
-                                    .transition(.move(edge: .top).combined(with: .opacity))
-                            }
-
-                            if let regenerateErrorMessage {
-                                Text(regenerateErrorMessage)
-                                    .font(.footnote)
-                                    .foregroundStyle(.red)
-                            }
-
-                            if let dragErrorMessage {
-                                Text(dragErrorMessage)
-                                    .font(.footnote)
-                                    .foregroundStyle(.red)
-                            }
-
-                            if let timelineErrorMessage {
-                                Text(timelineErrorMessage)
-                                    .font(.footnote)
-                                    .foregroundStyle(.red)
-                            }
-
-                            Divider()
-
-                            if daySnapshot.blocks.isEmpty {
-                                ContentUnavailableView(
-                                    "No Time Blocks",
-                                    systemImage: "calendar.badge.exclamationmark",
-                                    description: Text("This day is ready for planning. Time blocks, checklist items, and routine generation can build here next.")
-                                )
-                                .padding(.vertical, 20)
-                            } else {
-                                DayTimelineView(
-                                    date: appEnvironment.appState.selectedDate,
-                                    blocks: daySnapshot.blocks,
-                                    dayStartHour: dayStartHour,
-                                    calendar: calendar,
-                                    onEdit: { block in
-                                        editingBlock = block
-                                    },
-                                    onMoveBlock: { block, startDate in
-                                        rescheduleBlock(block, to: startDate)
-                                    }
-                                )
-
-                                Divider()
-
-                                VStack(spacing: 0) {
-                                    ForEach(daySnapshot.blocks) { block in
-                                        TimeBlockRowView(
-                                            block: block,
-                                            onEdit: {
-                                                editingBlock = block
-                                            },
-                                            dragCoordinateSpaceName: dragCoordinateSpaceName,
-                                            isDragging: activeDrag?.blockID == block.id,
-                                            emphasizesDragAffordance: shouldShowMoveHint,
-                                            onDragBegan: { location in
-                                                startDrag(for: block, at: location)
-                                            },
-                                            onDragChanged: { location in
-                                                updateDragLocation(location)
-                                            },
-                                            onDragEnded: { location in
-                                                finishDrag(for: block, at: location)
-                                            }
-                                        )
-
-                                        if block.id != daySnapshot.blocks.last?.id {
-                                            Divider().padding(.vertical, 12)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if !upcomingBlocks.isEmpty {
-                        TimeCard {
-                            VStack(alignment: .leading, spacing: 16) {
-                                TimeSectionHeader("Upcoming", subtitle: "Next planned blocks across the schedule")
-
-                                ForEach(upcomingBlocks) { block in
-                                    TimeBlockRowView(block: block) {
-                                        editingBlock = block
-                                    }
-
-                                    if block.id != upcomingBlocks.last?.id {
-                                        Divider().padding(.vertical, 12)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                .padding()
-                .padding(.bottom, 100)
-            }
+            contentView
         }
         .coordinateSpace(name: dragCoordinateSpaceName)
         .animation(.spring(response: 0.32, dampingFraction: 0.84), value: activeDrag?.hoveredDate)
@@ -250,21 +327,11 @@ struct ScheduleView: View {
                 }
             }
         }
-        .sheet(isPresented: Binding(
-            get: { appEnvironment.appState.isPresentingAddModal },
-            set: { appEnvironment.appState.isPresentingAddModal = $0 }
-        )) {
+        .sheet(item: $editorRoute) { route in
             AddTimeBlockView(
-                selectedDate: appEnvironment.appState.selectedDate,
-                onSave: { savedDate in
-                    appEnvironment.appState.selectedDate = savedDate
-                }
-            )
-        }
-        .sheet(item: $editingBlock) { block in
-            AddTimeBlockView(
-                selectedDate: block.startDate,
-                block: block,
+                selectedDate: route.draft.selectedDate,
+                editingBlockID: route.editingBlockID,
+                initialDraft: route.draft,
                 onSave: { savedDate in
                     appEnvironment.appState.selectedDate = savedDate
                 },
@@ -277,11 +344,161 @@ struct ScheduleView: View {
                 }
             )
         }
-        .task(id: appEnvironment.appState.selectedDate) {
-            appEnvironment.generateScheduleIfNeeded(
-                for: appEnvironment.appState.selectedDate,
-                using: modelContext
+        .task(id: visibleGenerationDates) {
+            for date in visibleGenerationDates {
+                appEnvironment.generateScheduleIfNeeded(
+                    for: date,
+                    using: modelContext
+                )
+            }
+        }
+        .task(id: calendarLoadTrigger) {
+            await refreshVisibleCalendarEvents()
+        }
+        .onChange(of: scenePhase) { _, newValue in
+            guard newValue == .active else {
+                return
+            }
+
+            Task {
+                await refreshVisibleCalendarEvents(forceRefresh: true)
+            }
+        }
+        .onChange(of: appEnvironment.appState.selectedDate) { _, _ in
+            clearActiveDrag()
+            dragErrorMessage = nil
+            timelineErrorMessage = nil
+        }
+        .onChange(of: appEnvironment.appState.isPresentingAddModal) { _, isPresenting in
+            guard isPresenting else {
+                return
+            }
+
+            presentNewBlockEditor(for: appEnvironment.appState.selectedDate)
+            appEnvironment.appState.isPresentingAddModal = false
+        }
+        .onChange(of: scheduleModeRawValue) { _, _ in
+            clearActiveDrag()
+            dragErrorMessage = nil
+            timelineErrorMessage = nil
+        }
+        .onChange(of: daySnapshot.blocks.map(\.id)) { _, blockIDs in
+            expandedChecklistBlockIDs = expandedChecklistBlockIDs.filter { blockIDs.contains($0) }
+
+            guard let activeDrag, !blockIDs.contains(activeDrag.blockID) else {
+                return
+            }
+
+            clearActiveDrag()
+        }
+    }
+
+    private var contentView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                dateHeader
+                moveRibbon
+                scheduleModeRow
+                metricGrid
+                scheduleSurface
+                upcomingSection
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, contentHorizontalPadding)
+            .padding(.bottom, 100)
+        }
+    }
+
+    private var dateHeader: some View {
+        DateStripHeaderView(
+            selectedDate: selectedDate,
+            firstWeekday: firstWeekday,
+            dateHasItems: blocksExist(on:)
+        )
+        .padding(.top, 64)
+    }
+
+    @ViewBuilder
+    private var moveRibbon: some View {
+        if let activeDragBlock {
+            DayMoveRibbon(
+                targetDates: moveTargetDates,
+                selectedDate: calendar.startOfDay(for: appEnvironment.appState.selectedDate),
+                hoveredDate: activeDrag?.hoveredDate,
+                coordinateSpaceName: dragCoordinateSpaceName,
+                detachNotice: activeDragBlock.template != nil,
+                preservedTimeText: activeDragBlock.startDate.formatted(date: .omitted, time: .shortened)
             )
+            .onPreferenceChange(DayMoveTargetFramePreferenceKey.self) { moveTargetFrames = $0 }
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+
+    private var scheduleModeRow: some View {
+        HStack(alignment: .center, spacing: 12) {
+            TimeSegmentedToggle(
+                selection: scheduleModeSelection,
+                options: SchedulePresentationMode.allCases,
+                namespace: scheduleModeNamespace,
+                fontSize: 12,
+                verticalPadding: 7,
+                useMinWidth: true,
+                minWidth: 74,
+                title: { $0.title }
+            )
+
+            Spacer(minLength: 0)
+
+            if scheduleMode == .week || scheduleMode == .month {
+                Text(scheduleModeSummaryLabel)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.primaryPurple)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Theme.primaryPurple.opacity(0.1))
+                    .clipShape(Capsule())
+            }
+        }
+    }
+
+    private var metricGrid: some View {
+        LazyVGrid(columns: metricColumns, spacing: Theme.paddingMedium) {
+            ForEach(metricItems) { item in
+                TimeMetricTile(title: item.title, value: item.value, systemImage: item.systemImage)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var upcomingSection: some View {
+        if !upcomingBlocks.isEmpty {
+            TimeCard {
+                VStack(alignment: .leading, spacing: 16) {
+                    TimeSectionHeader("Upcoming", subtitle: "Next planned blocks after the selected day")
+
+                    ForEach(upcomingBlocks) { block in
+                        TimeBlockRowView(block: block) {
+                            presentEditor(for: block)
+                        }
+
+                        if block.id != upcomingBlocks.last?.id {
+                            Divider().padding(.vertical, 12)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func toggleChecklistExpansion(for block: TimeBlock) {
+        guard !(block.checklistItems ?? []).isEmpty else {
+            return
+        }
+
+        if expandedChecklistBlockIDs.contains(block.id) {
+            expandedChecklistBlockIDs.remove(block.id)
+        } else {
+            expandedChecklistBlockIDs.insert(block.id)
         }
     }
 
@@ -289,14 +506,340 @@ struct ScheduleView: View {
         appEnvironment.scheduleRepository.hasBlocks(on: date, in: blocks)
     }
 
+    @ViewBuilder
+    private var scheduleSurface: some View {
+        if scheduleMode == .week {
+            weeklyPlanningCard
+        } else if scheduleMode == .month {
+            monthlyPlanningCard
+        } else {
+            selectedDayCard
+        }
+    }
+
+    private var selectedDayCard: some View {
+        TimeCard {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(alignment: .top, spacing: 12) {
+                    TimeSectionHeader(
+                        "Selected Day",
+                        subtitle: appEnvironment.appState.selectedDate.formatted(.dateTime.weekday(.wide).month(.wide).day())
+                    )
+
+                    Button {
+                        regenerateSelectedDay()
+                    } label: {
+                        Label(isRegenerating ? "Refreshing..." : "Refresh", systemImage: "arrow.clockwise")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.primaryPurple)
+                    .controlSize(.small)
+                    .disabled(!canRegenerateSelectedDay)
+                }
+
+                Text(activeDrag == nil
+                     ? "Drag planned blocks on the timeline to retime them, or use Move to send a planned block to another day."
+                     : "Drop on a nearby day to move this planned block while keeping its time and duration.")
+                    .font(.system(size: 12, design: .rounded))
+                    .foregroundStyle(Theme.secondaryText)
+
+                if shouldShowMoveHint {
+                    MoveHintCallout()
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
+                sharedScheduleMessages
+                calendarIntegrationStatus
+                calendarLoadingStatus
+                SchedulePlanningGuidanceView(
+                    snapshot: selectedDayPlanningGuidance,
+                    onResolveConflicts: resolveConflictsAction
+                )
+
+                Divider()
+
+                if !showsSelectedDayContent {
+                    EmptyStateView(
+                        title: "No Blocks Yet",
+                        systemImage: "calendar.badge.plus",
+                        message: hasTemplates
+                            ? "Add a one-off block for this date, or refresh the day to pull in matching templates."
+                            : "Add a one-off block for this date, or create a template first if it should repeat.",
+                        eyebrow: "Schedule"
+                    ) {
+                        Button("Add Block") {
+                            presentNewBlockEditor(for: appEnvironment.appState.selectedDate)
+                        }
+                        .buttonStyle(.borderedProminent)
+
+                        if !hasTemplates {
+                            Button("Open Templates") {
+                                appEnvironment.appState.selectedSection = .templates
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                    .padding(.vertical, 20)
+                } else {
+                    DayTimelineView(
+                        date: appEnvironment.appState.selectedDate,
+                        blocks: daySnapshot.blocks,
+                        calendarEvents: dayCalendarEvents,
+                        blockConflictsByID: selectedDayPlanningGuidance.blockConflictsByID,
+                        dayStartHour: dayStartHour,
+                        calendar: calendar,
+                        onEdit: { block in
+                            presentEditor(for: block)
+                        },
+                        onMoveBlock: { block, startDate in
+                            rescheduleBlock(block, to: startDate)
+                        }
+                    )
+
+                    Divider()
+
+                    VStack(spacing: 0) {
+                        if !daySnapshot.blocks.isEmpty {
+                            VStack(spacing: 0) {
+                                ForEach(daySnapshot.blocks) { block in
+                                    TimeBlockRowView(
+                                        block: block,
+                                        conflictSummary: selectedDayPlanningGuidance.blockConflictsByID[block.id],
+                                        onEdit: {
+                                            presentEditor(for: block)
+                                        },
+                                        isChecklistExpanded: expandedChecklistBlockIDs.contains(block.id),
+                                        onToggleChecklistExpansion: {
+                                            toggleChecklistExpansion(for: block)
+                                        },
+                                        dragCoordinateSpaceName: dragCoordinateSpaceName,
+                                        isDragging: activeDrag?.blockID == block.id,
+                                        emphasizesDragAffordance: shouldShowMoveHint,
+                                        onDragBegan: { location in
+                                            startDrag(for: block, at: location)
+                                        },
+                                        onDragChanged: { location in
+                                            updateDragLocation(location)
+                                        },
+                                        onDragEnded: { location in
+                                            finishDrag(for: block, at: location)
+                                        }
+                                    )
+
+                                    if block.id != daySnapshot.blocks.last?.id {
+                                        Divider().padding(.vertical, 12)
+                                    }
+                                }
+                            }
+                        }
+
+                        if !dayCalendarEvents.isEmpty {
+                            if !daySnapshot.blocks.isEmpty {
+                                Divider().padding(.vertical, 12)
+                            }
+
+                            VStack(alignment: .leading, spacing: 12) {
+                                Label("Apple Calendar", systemImage: "calendar")
+                                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                                    .foregroundStyle(Color.blue)
+
+                                ForEach(dayCalendarEvents) { event in
+                                    CalendarEventRow(event: event)
+
+                                    if event.id != dayCalendarEvents.last?.id {
+                                        Divider().padding(.vertical, 6)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var weeklyPlanningCard: some View {
+        TimeCard {
+            VStack(alignment: .leading, spacing: 16) {
+                sharedScheduleMessages
+                calendarIntegrationStatus
+                calendarLoadingStatus
+
+                if !showsSelectedWeekContent {
+                    EmptyStateView(
+                        title: "No Blocks This Week",
+                        systemImage: "calendar.badge.plus",
+                        message: hasTemplates
+                            ? "Switch weeks, add a one-off block, or open a day and refresh it to pull in matching templates."
+                            : "Add a block to any day in this week, or create templates first if the schedule should repeat.",
+                        eyebrow: "Weekly Planning"
+                    ) {
+                        Button("Add Block") {
+                            presentNewBlockEditor(for: appEnvironment.appState.selectedDate)
+                        }
+                        .buttonStyle(.borderedProminent)
+
+                        if !hasTemplates {
+                            Button("Open Templates") {
+                                appEnvironment.appState.selectedSection = .templates
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                    .padding(.vertical, 20)
+                } else {
+                    WeeklyPlanningView(
+                        selectedDate: selectedDate,
+                        weekDays: selectedWeekDays,
+                        calendar: calendar,
+                        onShiftWeek: { offset in
+                            shiftSelectedWeek(by: offset)
+                        },
+                        onEditBlock: { block in
+                            presentEditor(for: block)
+                        },
+                        onMoveBlock: { block, date in
+                            moveBlock(block, to: date, errorTarget: .drag)
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    private var monthlyPlanningCard: some View {
+        TimeCard {
+            VStack(alignment: .leading, spacing: 16) {
+                sharedScheduleMessages
+
+                MonthlyPlanningView(
+                    selectedDate: selectedDate,
+                    days: selectedMonthDays,
+                    summary: selectedMonthSummary,
+                    calendar: calendar,
+                    onShiftMonth: { offset in
+                        shiftSelectedMonth(by: offset)
+                    }
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var sharedScheduleMessages: some View {
+        if let feedbackBanner {
+            ScheduleFeedbackBanner(state: feedbackBanner)
+                .transition(.move(edge: .top).combined(with: .opacity))
+        }
+
+        if let regenerateErrorMessage {
+            Text(regenerateErrorMessage)
+                .font(.footnote)
+                .foregroundStyle(.red)
+        }
+
+        if let dragErrorMessage {
+            Text(dragErrorMessage)
+                .font(.footnote)
+                .foregroundStyle(.red)
+        }
+
+        if let timelineErrorMessage {
+            Text(timelineErrorMessage)
+                .font(.footnote)
+                .foregroundStyle(.red)
+        }
+    }
+
+    @ViewBuilder
+    private var calendarIntegrationStatus: some View {
+        switch appEnvironment.timeCalendarManager.accessState {
+        case .notDetermined:
+            CalendarIntegrationBanner(
+                title: "Show Apple Calendar events",
+                message: "Grant calendar access to overlay device events alongside your time blocks in Day and Week views.",
+                actionTitle: "Enable Calendar",
+                action: requestCalendarAccess
+            )
+        case .denied:
+            CalendarIntegrationBanner(
+                title: "Calendar access denied",
+                message: "Apple Calendar events stay hidden until this app is allowed to read calendars in system settings."
+            )
+        case .restricted:
+            CalendarIntegrationBanner(
+                title: "Calendar access restricted",
+                message: "This device currently restricts calendar access, so Apple Calendar events cannot be shown here."
+            )
+        case .insufficientAccess:
+            CalendarIntegrationBanner(
+                title: "Calendar read access unavailable",
+                message: "This app needs calendar read access to show Apple Calendar events next to your time blocks."
+            )
+        case .unsupported:
+            CalendarIntegrationBanner(
+                title: "Calendar unavailable",
+                message: "EventKit is unavailable in this environment, so external calendar events cannot be loaded."
+            )
+        case .authorized:
+            if let lastErrorMessage = appEnvironment.timeCalendarManager.lastErrorMessage {
+                Text(lastErrorMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var calendarLoadingStatus: some View {
+        if appEnvironment.timeCalendarManager.isLoading {
+            HStack(spacing: 10) {
+                ProgressView()
+                    .controlSize(.small)
+
+                Text("Loading Apple Calendar events...")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(Theme.secondaryText)
+            }
+        }
+    }
+
     private func regenerateSelectedDay() {
+        guard canRegenerateSelectedDay else {
+            return
+        }
+
         isRegenerating = true
         regenerateErrorMessage = nil
 
         do {
-            try appEnvironment.scheduleRepository.regenerateTemplateBlocks(
+            guard hasTemplates else {
+                showFeedback(
+                    title: "No templates yet",
+                    message: "Create a template first, then regenerate this day when you want routine blocks added.",
+                    systemImage: "square.on.square",
+                    tint: Theme.primaryPurple
+                )
+                isRegenerating = false
+                return
+            }
+
+            let regeneratedBlocks = try appEnvironment.scheduleRepository.regenerateTemplateBlocks(
                 for: appEnvironment.appState.selectedDate,
                 in: modelContext
+            )
+            Task {
+                await appEnvironment.resyncNotifications(using: modelContext)
+            }
+
+            showFeedback(
+                title: regeneratedBlocks.isEmpty ? "Nothing to regenerate" : "Day regenerated",
+                message: regeneratedBlocks.isEmpty
+                    ? "No templates match \(appEnvironment.appState.selectedDate.formatted(.dateTime.weekday(.wide))) yet."
+                    : "Template-backed planned blocks were refreshed for the selected day.",
+                systemImage: regeneratedBlocks.isEmpty ? "calendar.badge.exclamationmark" : "arrow.clockwise.circle.fill",
+                tint: regeneratedBlocks.isEmpty ? .orange : Theme.primaryPurple
             )
         } catch {
             regenerateErrorMessage = "Unable to regenerate this day right now."
@@ -304,6 +847,46 @@ struct ScheduleView: View {
         }
 
         isRegenerating = false
+    }
+
+    private func resolveSelectedDayConflicts() {
+        guard activeDrag == nil else {
+            return
+        }
+
+        timelineErrorMessage = nil
+
+        do {
+            let resolvedBlocks = try appEnvironment.scheduleRepository.resolveConflicts(
+                on: appEnvironment.appState.selectedDate,
+                in: modelContext,
+                calendar: calendar
+            )
+
+            guard !resolvedBlocks.isEmpty else {
+                showFeedback(
+                    title: "No overlaps found",
+                    message: "The selected day does not have overlapping planned blocks to resolve.",
+                    systemImage: "checkmark.circle",
+                    tint: Theme.primaryPurple
+                )
+                return
+            }
+
+            Task {
+                await appEnvironment.resyncNotifications(using: modelContext)
+            }
+
+            showFeedback(
+                title: "Conflicts resolved",
+                message: "\(resolvedBlocks.count) block\(resolvedBlocks.count == 1 ? "" : "s") shifted forward to remove overlaps.",
+                systemImage: "arrow.right.circle.fill",
+                tint: Theme.primaryPurple
+            )
+        } catch {
+            timelineErrorMessage = "Unable to resolve overlaps right now."
+            assertionFailure("Failed to resolve schedule conflicts: \(error)")
+        }
     }
 
     private func startDrag(for block: TimeBlock, at location: CGPoint) {
@@ -346,30 +929,21 @@ struct ScheduleView: View {
             return
         }
 
-        dragErrorMessage = nil
-
-        do {
-            try appEnvironment.scheduleRepository.moveBlock(
-                block,
-                toDay: hoveredDate,
-                in: modelContext,
-                calendar: calendar
-            )
-            showFeedback(
-                title: "Block moved",
-                message: "\"\(block.title)\" is now on \(hoveredDate.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())).",
-                systemImage: "checkmark.circle.fill",
-                tint: .green
-            )
-            appEnvironment.appState.selectedDate = hoveredDate
-        } catch {
-            dragErrorMessage = "Unable to move this block right now."
-            assertionFailure("Failed to move schedule block: \(error)")
+        guard block.status == .planned else {
+            dragErrorMessage = "Only planned blocks can be moved to another day."
+            return
         }
+
+        moveBlock(block, to: hoveredDate, errorTarget: .drag)
     }
 
     private func rescheduleBlock(_ block: TimeBlock, to startDate: Date) {
         timelineErrorMessage = nil
+
+        guard block.status == .planned else {
+            timelineErrorMessage = "Only planned blocks can be retimed on the timeline."
+            return
+        }
 
         do {
             try appEnvironment.scheduleRepository.rescheduleBlock(
@@ -378,6 +952,9 @@ struct ScheduleView: View {
                 in: modelContext,
                 calendar: calendar
             )
+            Task {
+                await appEnvironment.syncReminder(for: block, using: modelContext)
+            }
             showFeedback(
                 title: "Time updated",
                 message: "\"\(block.title)\" now starts at \(startDate.formatted(date: .omitted, time: .shortened)).",
@@ -388,6 +965,26 @@ struct ScheduleView: View {
             timelineErrorMessage = "Unable to update this block's time right now."
             assertionFailure("Failed to reschedule block on timeline: \(error)")
         }
+    }
+
+    private func requestCalendarAccess() {
+        Task {
+            await appEnvironment.timeCalendarManager.requestAccess()
+            await refreshVisibleCalendarEvents(forceRefresh: true)
+        }
+    }
+
+    private func refreshVisibleCalendarEvents(forceRefresh: Bool = false) async {
+        guard let visibleCalendarInterval else {
+            appEnvironment.timeCalendarManager.clearLoadedRange()
+            return
+        }
+
+        if forceRefresh {
+            appEnvironment.timeCalendarManager.clearLoadedRange()
+        }
+
+        await appEnvironment.timeCalendarManager.loadEvents(in: visibleCalendarInterval)
     }
 
     private func clearActiveDrag() {
@@ -447,12 +1044,129 @@ struct ScheduleView: View {
             }
         }
     }
+
+    private func moveBlock(
+        _ block: TimeBlock,
+        to destinationDate: Date,
+        errorTarget: ScheduleMoveErrorTarget
+    ) {
+        setMoveError(nil, for: errorTarget)
+
+        guard block.status == .planned else {
+            setMoveError("Only planned blocks can be moved to another day.", for: errorTarget)
+            return
+        }
+
+        guard !calendar.isDate(block.startDate, inSameDayAs: destinationDate) else {
+            return
+        }
+
+        do {
+            try appEnvironment.scheduleRepository.moveBlock(
+                block,
+                toDay: destinationDate,
+                in: modelContext,
+                calendar: calendar
+            )
+            Task {
+                await appEnvironment.syncReminder(for: block, using: modelContext)
+            }
+            showFeedback(
+                title: "Block moved",
+                message: "\"\(block.title)\" is now on \(destinationDate.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())).",
+                systemImage: "checkmark.circle.fill",
+                tint: .green
+            )
+            appEnvironment.appState.selectedDate = destinationDate
+        } catch {
+            setMoveError("Unable to move this block right now.", for: errorTarget)
+            assertionFailure("Failed to move schedule block: \(error)")
+        }
+    }
+
+    private func setMoveError(_ message: String?, for target: ScheduleMoveErrorTarget) {
+        switch target {
+        case .drag:
+            dragErrorMessage = message
+        }
+    }
+
+    private func presentEditor(for block: TimeBlock) {
+        editorRoute = ScheduleEditorRoute(
+            editingBlockID: block.id,
+            draft: TimeBlockEditorDraft(block: block)
+        )
+    }
+
+    private func presentNewBlockEditor(for date: Date) {
+        editorRoute = ScheduleEditorRoute(
+            editingBlockID: nil,
+            draft: TimeBlockEditorDraft(
+                title: "",
+                selectedDate: calendar.startOfDay(for: date),
+                startTime: defaultStartTime(for: date),
+                durationMinutes: 60,
+                category: .custom,
+                notes: ""
+            )
+        )
+    }
+
+    private func shiftSelectedWeek(by offset: Int) {
+        guard let shiftedDate = calendar.date(byAdding: .day, value: offset * 7, to: appEnvironment.appState.selectedDate) else {
+            return
+        }
+
+        appEnvironment.appState.selectedDate = shiftedDate
+    }
+
+    private func shiftSelectedMonth(by offset: Int) {
+        let monthDate = ScheduleMonthSupport.shiftedMonth(
+            for: appEnvironment.appState.selectedDate,
+            by: offset,
+            calendar: calendar
+        )
+
+        let selectedDay = calendar.component(.day, from: appEnvironment.appState.selectedDate)
+        let dayRange = calendar.range(of: .day, in: .month, for: monthDate) ?? 1..<29
+        let clampedDay = min(selectedDay, dayRange.count)
+
+        let shiftedDate = calendar.date(
+            byAdding: .day,
+            value: clampedDay - 1,
+            to: monthDate
+        ) ?? monthDate
+
+        appEnvironment.appState.selectedDate = shiftedDate
+    }
+
+    private func defaultStartTime(for date: Date) -> Date {
+        let dayStart = calendar.startOfDay(for: date)
+        return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: dayStart) ?? date
+    }
+
+    private var scheduleModeSummaryLabel: String {
+        switch scheduleMode {
+        case .day:
+            return ""
+        case .week:
+            return selectedWeekSummary.weekLabel
+        case .month:
+            return selectedMonthSummary.monthLabel
+        }
+    }
 }
 
 private struct ScheduleBlockDragSession {
     let blockID: UUID
     var location: CGPoint
     var hoveredDate: Date?
+}
+
+private struct ScheduleEditorRoute: Identifiable {
+    let id = UUID()
+    let editingBlockID: UUID?
+    let draft: TimeBlockEditorDraft
 }
 
 private struct ScheduleFeedbackBannerState: Identifiable {
@@ -463,189 +1177,68 @@ private struct ScheduleFeedbackBannerState: Identifiable {
     let tint: Color
 }
 
-private struct DayMoveRibbon: View {
-    let targetDates: [Date]
-    let selectedDate: Date
-    let hoveredDate: Date?
-    let coordinateSpaceName: String
-    let detachNotice: Bool
-    let preservedTimeText: String
+private enum SchedulePresentationMode: String, CaseIterable, Identifiable {
+    case day
+    case week
+    case month
 
-    var body: some View {
-        TimeCard {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .center, spacing: 10) {
-                    Label("Move Block", systemImage: "hand.draw.fill")
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
+    var id: String { rawValue }
 
-                    Spacer(minLength: 0)
-
-                    Text("Drop on a day")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryPurple)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Theme.primaryPurple.opacity(0.12))
-                        .clipShape(Capsule())
-                }
-
-                Text(ribbonMessage)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText)
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(targetDates, id: \.self) { date in
-                            DayMoveTargetChip(
-                                date: date,
-                                isSelectedDay: Calendar.current.isDate(date, inSameDayAs: selectedDate),
-                                isHovered: hoveredDate.map { Calendar.current.isDate($0, inSameDayAs: date) } ?? false,
-                                coordinateSpaceName: coordinateSpaceName
-                            )
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
-            }
+    var title: String {
+        switch self {
+        case .day:
+            return "Day"
+        case .week:
+            return "Week"
+        case .month:
+            return "Month"
         }
-    }
-
-    private var ribbonMessage: String {
-        if let hoveredDate {
-            let hoveredLabel = hoveredDate.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
-            let detachmentNote = detachNotice ? " It will become a manual block." : ""
-            return "Release to move this block to \(hoveredLabel) at \(preservedTimeText).\(detachmentNote)"
-        }
-
-        if detachNotice {
-            return "Drop on a nearby day to keep the \(preservedTimeText) start. Moving a generated block makes it manual."
-        }
-
-        return "Drop on a nearby day to keep the \(preservedTimeText) start and current duration."
     }
 }
 
-private struct DayMoveTargetChip: View {
-    let date: Date
-    let isSelectedDay: Bool
-    let isHovered: Bool
-    let coordinateSpaceName: String
+private struct ScheduleMetricItem: Identifiable {
+    let title: String
+    let value: String
+    let systemImage: String
 
-    var body: some View {
-        VStack(spacing: 8) {
-            Text(date.formatted(.dateTime.weekday(.abbreviated)))
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .foregroundStyle(isHovered ? .white.opacity(0.84) : Theme.secondaryText)
+    var id: String { title }
+}
 
-            Text(date.formatted(.dateTime.day()))
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundStyle(isHovered ? .white : Theme.primaryText)
+private struct ScheduleWeekSummary {
+    let plannedCount: Int
+    let completedCount: Int
+    let scheduledMinutes: Int
+    let busiestDayLabel: String
+    let weekLabel: String
+    let hasBlocks: Bool
 
-            Text(footerText)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                .foregroundStyle(isHovered ? .white.opacity(0.84) : Theme.secondaryText)
+    init(days: [WeeklyPlanningDay], calendar: Calendar) {
+        plannedCount = days.reduce(0) { $0 + $1.snapshot.plannedCount }
+        completedCount = days.reduce(0) { $0 + $1.snapshot.completedCount }
+        scheduledMinutes = days.reduce(0) { $0 + $1.snapshot.scheduledMinutes }
+        hasBlocks = days.contains { !$0.snapshot.blocks.isEmpty }
+
+        if let busiestDay = days.max(by: { $0.snapshot.scheduledMinutes < $1.snapshot.scheduledMinutes }),
+           busiestDay.snapshot.scheduledMinutes > 0 {
+            busiestDayLabel = busiestDay.date.formatted(.dateTime.weekday(.abbreviated))
+        } else {
+            busiestDayLabel = "Rest"
         }
-        .frame(width: 78)
-        .padding(.vertical, 14)
-        .background(backgroundShape)
-        .overlay(alignment: .topTrailing) {
-            if isSelectedDay {
-                Circle()
-                    .fill(isHovered ? Color.white.opacity(0.9) : Theme.primaryPurple)
-                    .frame(width: 8, height: 8)
-                    .padding(10)
+
+        if let firstDate = days.first?.date, let lastDate = days.last?.date {
+            if calendar.isDate(firstDate, equalTo: lastDate, toGranularity: .month) {
+                weekLabel = "\(firstDate.formatted(.dateTime.month(.abbreviated))) \(firstDate.formatted(.dateTime.day()))-\(lastDate.formatted(.dateTime.day()))"
+            } else {
+                weekLabel = "\(firstDate.formatted(.dateTime.month(.abbreviated).day()))-\(lastDate.formatted(.dateTime.month(.abbreviated).day()))"
             }
+        } else {
+            weekLabel = "This Week"
         }
-        .scaleEffect(isHovered ? 1.06 : 1)
-        .shadow(
-            color: isHovered ? Theme.primaryPurple.opacity(0.22) : .clear,
-            radius: 14,
-            x: 0,
-            y: 10
-        )
-        .background {
-            GeometryReader { proxy in
-                Color.clear.preference(
-                    key: DayMoveTargetFramePreferenceKey.self,
-                    value: [date: proxy.frame(in: .named(coordinateSpaceName))]
-                )
-            }
-        }
-        .animation(.spring(response: 0.24, dampingFraction: 0.82), value: isHovered)
-    }
-
-    private var backgroundShape: some View {
-        RoundedRectangle(cornerRadius: 22, style: .continuous)
-            .fill(
-                isHovered
-                    ? AnyShapeStyle(Theme.primaryGradient)
-                    : AnyShapeStyle(Theme.primaryPurple.opacity(isSelectedDay ? 0.12 : 0.06))
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .strokeBorder(
-                        isHovered ? Color.white.opacity(0.22) : Theme.primaryPurple.opacity(isSelectedDay ? 0.18 : 0.1),
-                        lineWidth: 1
-                    )
-            }
-    }
-
-    private var footerText: String {
-        if isHovered {
-            return "Drop Here"
-        }
-
-        if isSelectedDay {
-            return "Current"
-        }
-
-        return date.formatted(.dateTime.month(.abbreviated))
     }
 }
 
-private struct DayMoveTargetFramePreferenceKey: PreferenceKey {
-    static var defaultValue: [Date: CGRect] = [:]
-
-    static func reduce(value: inout [Date: CGRect], nextValue: () -> [Date: CGRect]) {
-        value.merge(nextValue()) { _, next in next }
-    }
-}
-
-private struct MoveHintCallout: View {
-    var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            Image(systemName: "hand.draw")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(Theme.primaryPurple)
-                .frame(width: 30, height: 30)
-                .background(
-                    Circle()
-                        .fill(Theme.primaryPurple.opacity(0.12))
-                )
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Move blocks directly")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.primaryText)
-
-                Text("Drag a block on the timeline to retime it, or use the Move handle in the list to send it to another nearby day.")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Theme.primaryPurple.opacity(0.08))
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(Theme.primaryPurple.opacity(0.14), lineWidth: 1)
-        }
-    }
+private enum ScheduleMoveErrorTarget {
+    case drag
 }
 
 private struct ScheduleFeedbackBanner: View {
@@ -683,326 +1276,107 @@ private struct ScheduleFeedbackBanner: View {
     }
 }
 
-private struct DayTimelineView: View {
-    let date: Date
-    let blocks: [TimeBlock]
-    let dayStartHour: Int
-    let calendar: Calendar
-    let onEdit: (TimeBlock) -> Void
-    let onMoveBlock: (TimeBlock, Date) -> Void
-
-    @State private var dragSession: TimelineBlockDragSession?
-
-    private let hourHeight: CGFloat = 76
-    private let labelColumnWidth: CGFloat = 58
-    private let snapMinutes = 15
-    private let minimumBlockHeight: CGFloat = 54
-
-    private var timelineBounds: TimelineBounds {
-        let startOfDay = calendar.startOfDay(for: date)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? startOfDay
-        let earliestHour = blocks.map { calendar.component(.hour, from: $0.startDate) }.min() ?? dayStartHour
-        let latestEndDate = blocks.map(\.endDate).max() ?? calendar.date(byAdding: .hour, value: 10, to: startOfDay) ?? startOfDay
-        let latestComponents = calendar.dateComponents([.hour, .minute], from: latestEndDate)
-        let latestRoundedHour = min(24, (latestComponents.hour ?? dayStartHour) + ((latestComponents.minute ?? 0) > 0 ? 1 : 0) + 1)
-        let startHour = max(0, min(dayStartHour, earliestHour - 1))
-        let endHour = min(24, max(startHour + 12, latestRoundedHour))
-        let rangeStart = calendar.date(bySettingHour: startHour, minute: 0, second: 0, of: startOfDay) ?? startOfDay
-        let rangeEnd = endHour == 24
-            ? endOfDay
-            : (calendar.date(bySettingHour: endHour, minute: 0, second: 0, of: startOfDay) ?? endOfDay)
-
-        return TimelineBounds(
-            startOfDay: startOfDay,
-            endOfDay: endOfDay,
-            rangeStart: rangeStart,
-            rangeEnd: rangeEnd,
-            startHour: startHour,
-            endHour: endHour
-        )
-    }
-
-    private var hourMarks: [Int] {
-        Array(timelineBounds.startHour..<timelineBounds.endHour)
-    }
-
-    private var timelineHeight: CGFloat {
-        CGFloat(max(timelineBounds.endHour - timelineBounds.startHour, 1)) * hourHeight
-    }
+private struct CalendarIntegrationBanner: View {
+    let title: String
+    let message: String
+    var actionTitle: String?
+    var action: (() -> Void)?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .center, spacing: 8) {
-                Label("Day Timeline", systemImage: "timeline.selection")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color.blue)
+
+                Text(title)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.primaryText)
-
-                Spacer(minLength: 0)
-
-                Text("15 min snap")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.primaryPurple)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Theme.primaryPurple.opacity(0.12))
-                    .clipShape(Capsule())
             }
 
-            Text("Drag a block vertically to reschedule it within the selected day. Duration stays fixed.")
+            Text(message)
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(Theme.secondaryText)
 
-            GeometryReader { proxy in
-                ZStack(alignment: .topLeading) {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .fill(Theme.primaryPurple.opacity(0.05))
-
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .strokeBorder(Theme.primaryPurple.opacity(0.12), lineWidth: 1)
-
-                    VStack(spacing: 0) {
-                        ForEach(hourMarks, id: \.self) { hour in
-                            HStack(alignment: .top, spacing: 0) {
-                                Text(hourLabel(for: hour))
-                                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                                    .foregroundStyle(Theme.secondaryText)
-                                    .frame(width: labelColumnWidth, alignment: .leading)
-
-                                Rectangle()
-                                    .fill(Theme.primaryPurple.opacity(hour == timelineBounds.startHour ? 0 : 0.1))
-                                    .frame(height: 1)
-                            }
-                            .frame(height: hourHeight, alignment: .top)
-                        }
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 18)
-
-                    ForEach(blocks) { block in
-                        let blockWidth = max(proxy.size.width - labelColumnWidth - 40, 150)
-                        DayTimelineBlockCard(
-                            block: block,
-                            displayedStartDate: displayedStartDate(for: block),
-                            isDragging: dragSession?.blockID == block.id
-                        )
-                        .frame(width: blockWidth, height: blockHeight(for: block))
-                        .position(
-                            x: labelColumnWidth + 24 + (blockWidth / 2),
-                            y: 18 + yOffset(for: displayedStartDate(for: block)) + (blockHeight(for: block) / 2)
-                        )
-                        .zIndex(dragSession?.blockID == block.id ? 20 : 1)
-                        .highPriorityGesture(dragGesture(for: block))
-                        .onTapGesture {
-                            onEdit(block)
-                        }
-                    }
-                }
+            if let actionTitle, let action {
+                Button(actionTitle, action: action)
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.blue)
+                    .controlSize(.small)
             }
-            .frame(height: timelineHeight + 36)
         }
-    }
-
-    private func hourLabel(for hour: Int) -> String {
-        let clampedHour = min(max(hour, 0), 23)
-        let sampleDate = calendar.date(bySettingHour: clampedHour, minute: 0, second: 0, of: timelineBounds.startOfDay) ?? timelineBounds.startOfDay
-        return sampleDate.formatted(.dateTime.hour(.defaultDigits(amPM: .abbreviated)))
-    }
-
-    private func blockHeight(for block: TimeBlock) -> CGFloat {
-        let durationMinutes = max(block.endDate.timeIntervalSince(block.startDate) / 60, 15)
-        return max(CGFloat(durationMinutes / 60) * hourHeight, minimumBlockHeight)
-    }
-
-    private func yOffset(for startDate: Date) -> CGFloat {
-        let minutes = startDate.timeIntervalSince(timelineBounds.rangeStart) / 60
-        return CGFloat(minutes / 60) * hourHeight
-    }
-
-    private func displayedStartDate(for block: TimeBlock) -> Date {
-        if dragSession?.blockID == block.id {
-            return dragSession?.proposedStartDate ?? block.startDate
-        }
-
-        return block.startDate
-    }
-
-    private func dragGesture(for block: TimeBlock) -> some Gesture {
-        DragGesture(minimumDistance: 3)
-            .onChanged { value in
-                let duration = block.endDate.timeIntervalSince(block.startDate)
-
-                if dragSession?.blockID != block.id {
-                    dragSession = TimelineBlockDragSession(
-                        blockID: block.id,
-                        originalStartDate: block.startDate,
-                        proposedStartDate: block.startDate,
-                        duration: duration
-                    )
-                }
-
-                guard let dragSession else {
-                    return
-                }
-
-                let proposedStartDate = snappedStartDate(
-                    from: dragSession.originalStartDate,
-                    translationHeight: value.translation.height,
-                    duration: dragSession.duration
-                )
-
-                self.dragSession?.proposedStartDate = proposedStartDate
-            }
-            .onEnded { _ in
-                guard let dragSession, dragSession.blockID == block.id else {
-                    return
-                }
-
-                let proposedStartDate = dragSession.proposedStartDate
-
-                withAnimation(.spring(response: 0.24, dampingFraction: 0.84)) {
-                    self.dragSession = nil
-                }
-
-                guard proposedStartDate != block.startDate else {
-                    return
-                }
-
-                onMoveBlock(block, proposedStartDate)
-            }
-    }
-
-    private func snappedStartDate(
-        from originalStartDate: Date,
-        translationHeight: CGFloat,
-        duration: TimeInterval
-    ) -> Date {
-        let minuteDelta = Int((translationHeight / hourHeight) * 60)
-        let snappedMinuteDelta = Int((Double(minuteDelta) / Double(snapMinutes)).rounded()) * snapMinutes
-        let unsnappedDate = originalStartDate.addingTimeInterval(Double(snappedMinuteDelta * 60))
-        let minimumStartDate = max(timelineBounds.rangeStart, timelineBounds.startOfDay)
-        let maximumStartDate = max(
-            minimumStartDate,
-            min(
-                timelineBounds.rangeEnd.addingTimeInterval(-duration),
-                timelineBounds.endOfDay.addingTimeInterval(-duration)
-            )
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.blue.opacity(0.08))
         )
-
-        if unsnappedDate < minimumStartDate {
-            return minimumStartDate
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.blue.opacity(0.16), lineWidth: 1)
         }
-
-        if unsnappedDate > maximumStartDate {
-            return maximumStartDate
-        }
-
-        return unsnappedDate
     }
 }
 
-private struct TimelineBounds {
-    let startOfDay: Date
-    let endOfDay: Date
-    let rangeStart: Date
-    let rangeEnd: Date
-    let startHour: Int
-    let endHour: Int
-}
-
-private struct TimelineBlockDragSession {
-    let blockID: UUID
-    let originalStartDate: Date
-    var proposedStartDate: Date
-    let duration: TimeInterval
-}
-
-private struct DayTimelineBlockCard: View {
-    let block: TimeBlock
-    let displayedStartDate: Date
-    let isDragging: Bool
+private struct CalendarEventRow: View {
+    let event: TimeCalendarEvent
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(block.title)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(event.title)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(Theme.primaryText)
+                        .lineLimit(2)
+
+                    Text(timeText)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                }
 
                 Spacer(minLength: 0)
 
-                if block.template != nil {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.84))
-                }
+                Text("Read only")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.blue)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(Color.blue.opacity(0.1))
+                    .clipShape(Capsule())
             }
-
-            Text(timeRangeText)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.9))
 
             HStack(spacing: 8) {
-                Label(block.category.title, systemImage: "tag")
+                Label(event.sourceTitle, systemImage: "calendar")
                     .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.82))
+                    .foregroundStyle(Color.blue)
 
-                if isDragging {
-                    Spacer(minLength: 0)
-
-                    Text(displayedStartDate.formatted(date: .omitted, time: .shortened))
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(tintColor)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.94))
-                        .clipShape(Capsule())
+                if let location = event.location {
+                    Label(location, systemImage: "mappin.and.ellipse")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                        .lineLimit(1)
                 }
             }
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .background {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(tintGradient)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
-                }
+                .fill(Color.blue.opacity(0.06))
         }
-        .shadow(color: tintColor.opacity(isDragging ? 0.26 : 0.16), radius: isDragging ? 18 : 10, x: 0, y: isDragging ? 12 : 6)
-        .scaleEffect(isDragging ? 1.02 : 1)
-        .opacity(isDragging ? 0.98 : 1)
-        .animation(.spring(response: 0.24, dampingFraction: 0.84), value: isDragging)
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.blue.opacity(0.12), lineWidth: 1)
+        }
     }
 
-    private var timeRangeText: String {
-        let endDate = displayedStartDate.addingTimeInterval(block.endDate.timeIntervalSince(block.startDate))
-        let start = displayedStartDate.formatted(date: .omitted, time: .shortened)
-        let end = endDate.formatted(date: .omitted, time: .shortened)
+    private var timeText: String {
+        if event.isAllDay {
+            return "All day"
+        }
+
+        let start = event.startDate.formatted(date: .omitted, time: .shortened)
+        let end = event.endDate.formatted(date: .omitted, time: .shortened)
         return "\(start) - \(end)"
-    }
-
-    private var tintColor: Color {
-        switch block.category {
-        case .focus:
-            Theme.primaryPurple
-        case .personal:
-            Color(hex: "F59E0B")
-        case .admin:
-            Color(hex: "0EA5E9")
-        case .routine:
-            Color(hex: "10B981")
-        case .custom:
-            Color(hex: "64748B")
-        }
-    }
-
-    private var tintGradient: LinearGradient {
-        LinearGradient(
-            colors: [tintColor, tintColor.opacity(0.84)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
     }
 }

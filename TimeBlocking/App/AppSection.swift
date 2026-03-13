@@ -10,7 +10,7 @@ enum AppSection: String, CaseIterable, Codable, Hashable, Identifiable {
     var title: String {
         switch self {
         case .dashboard:
-            "Summary"
+            "Dashboard"
         case .schedule:
             "Schedule"
         case .templates:

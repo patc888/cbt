@@ -84,18 +84,25 @@ struct DashboardView: View {
                             TimeSectionHeader("Today", subtitle: todayLabel)
                                 .padding(.top, 4)
 
-                            Text("A quick view of the current day and what is coming up next.")
-                                .font(.system(size: 13, design: .rounded))
-                                .foregroundStyle(Theme.secondaryText)
-
                             if summary.isEmpty {
                                 Divider()
-                                
+
                                 EmptyStateView(
-                                    title: "No Plan For Today",
+                                    title: "No Plan Yet",
                                     systemImage: "calendar.badge.plus",
-                                    message: "Add a time block in Schedule or generate routines from Templates to build today’s overview."
-                                )
+                                    message: "Add a block in Schedule or create templates for routines you want to reuse.",
+                                    eyebrow: "Get Started"
+                                ) {
+                                    Button("Open Schedule") {
+                                        appEnvironment.appState.selectedSection = .schedule
+                                    }
+                                    .buttonStyle(.borderedProminent)
+
+                                    Button("Open Templates") {
+                                        appEnvironment.appState.selectedSection = .templates
+                                    }
+                                    .buttonStyle(.bordered)
+                                }
                                 .padding(.vertical, 20)
                             } else {
                                 Divider()
@@ -136,10 +143,6 @@ struct DashboardView: View {
                             VStack(alignment: .leading, spacing: 16) {
                                 TimeSectionHeader("In Progress", subtitle: "Ends at \(currentBlock.endDate.formatted(date: .omitted, time: .shortened))")
 
-                                Text("This block is active right now.")
-                                    .font(.system(size: 12, design: .rounded))
-                                    .foregroundStyle(Theme.secondaryText)
-
                                 Divider()
 
                                 TimeBlockRowView(block: currentBlock)
@@ -165,10 +168,6 @@ struct DashboardView: View {
                         TimeCard {
                             VStack(alignment: .leading, spacing: 16) {
                                 TimeSectionHeader("Next Up", subtitle: nextBlock.startDate.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
-
-                                Text("The next planned block on today’s schedule.")
-                                    .font(.system(size: 12, design: .rounded))
-                                    .foregroundStyle(Theme.secondaryText)
 
                                 Divider()
 
@@ -196,10 +195,6 @@ struct DashboardView: View {
                         TimeCard {
                             VStack(alignment: .leading, spacing: 16) {
                                 TimeSectionHeader("Next Planned Block", subtitle: nextBlock.startDate.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute()))
-
-                                Text("Today is clear. This is the next planned block in the schedule.")
-                                    .font(.system(size: 12, design: .rounded))
-                                    .foregroundStyle(Theme.secondaryText)
 
                                 Divider()
 

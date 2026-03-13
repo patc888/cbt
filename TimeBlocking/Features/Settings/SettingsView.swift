@@ -1,9 +1,16 @@
 import SwiftData
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
+#if os(iOS)
+import UIKit
+#endif
 
 struct SettingsView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query private var preferences: [AppPreferences]
 
     private var appPreferences: AppPreferences? {
@@ -12,6 +19,7 @@ struct SettingsView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var showingResetAlert = false
+    @State private var notificationAccessState: TimeNotificationManager.AccessState = .notDetermined
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -42,6 +50,22 @@ struct SettingsView: View {
         } message: {
             Text("This will delete all your schedule blocks and templates. This action cannot be undone.")
         }
+        .task {
+            await refreshNotificationAccessState()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else {
+                return
+            }
+
+            Task {
+                await refreshNotificationAccessState()
+
+                if appPreferences?.notificationsEnabled ?? false {
+                    await appEnvironment.resyncNotifications(using: modelContext)
+                }
+            }
+        }
     }
 
     private var mainContent: some View {
@@ -55,37 +79,48 @@ struct SettingsView: View {
             .padding(.top, 12)
             .padding(.bottom, 8)
 
-            // 1. Subscription Section
-            TimeSubscriptionSettingsView(
-                isPremium: appEnvironment.subscriptionStore.isPremium,
-                action: {
-                    HapticManager.shared.lightImpact()
-                    appEnvironment.appState.showPremium()
+            if appPreferences == nil {
+                TimeSettingsSection(title: "Setup") {
+                    EmptyStateView(
+                        title: "Settings Are Preparing",
+                        systemImage: "gearshape.2.fill",
+                        message: "Your preferences are still loading. Reopen Settings in a moment if controls do not appear yet.",
+                        eyebrow: "Settings"
+                    )
+                    .padding(.vertical, 8)
                 }
-            )
+            } else {
+                TimeSubscriptionSettingsView(
+                    isPremium: appEnvironment.subscriptionStore.isPremium,
+                    action: {
+                        HapticManager.shared.lightImpact()
+                        appEnvironment.appState.showPremium()
+                    }
+                )
 
-            // 2. Appearance Section
-            TimeAppearanceSettingsView(
-                preferences: appPreferences,
-                onUpdate: updatePreferences
-            )
+                TimeSchedulingSettingsView(
+                    preferences: appPreferences,
+                    onUpdate: updatePreferences
+                )
 
-            // 3. Notifications
-            TimeNotificationsSettingsView()
+                TimeAppearanceSettingsView(
+                    preferences: appPreferences,
+                    onUpdate: updatePreferences
+                )
 
-            // 4. Data
-            TimeDataSettingsView()
+                TimeNotificationsSettingsView(
+                    preferences: appPreferences,
+                    accessState: notificationAccessState,
+                    onUpdate: updatePreferences,
+                    onEnabledChanged: setNotificationsEnabled,
+                    onLeadTimeChanged: resyncNotifications,
+                    onOpenSystemSettings: openNotificationSettings
+                )
 
-            // 5. Security
-            TimeSecuritySettingsView()
-
-            // 8. Overview Layout
-            TimeOverviewLayoutSettingsView()
-
-            // 10. About
-            TimeAboutSettingsView {
-                HapticManager.shared.mediumImpact()
-                showingResetAlert = true
+                TimeAboutSettingsView {
+                    HapticManager.shared.mediumImpact()
+                    showingResetAlert = true
+                }
             }
         }
         .padding(.horizontal, 16)
@@ -97,11 +132,12 @@ struct SettingsView: View {
             HapticManager.shared.lightImpact()
             dismiss()
         }) {
-            Image(systemName: "chevron.right")
-                .font(.system(size: 18, weight: .bold))
+            Image(systemName: "xmark")
+                .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(Theme.primaryPurple)
-                .padding(8)
-                .contentShape(Rectangle())
+                .frame(width: 32, height: 32)
+                .background(Theme.primaryPurple.opacity(0.1))
+                .clipShape(Circle())
         }
         .padding(.trailing, 20)
         .padding(.top, 12)
@@ -116,6 +152,43 @@ struct SettingsView: View {
         try? appEnvironment.preferencesStore.save(appPreferences, in: modelContext)
     }
 
+    private func setNotificationsEnabled(_ isEnabled: Bool) {
+        Task {
+            if isEnabled {
+                _ = await appEnvironment.timeNotificationManager.requestAuthorizationIfNeeded()
+                await refreshNotificationAccessState()
+            }
+
+            await appEnvironment.resyncNotifications(using: modelContext)
+            await refreshNotificationAccessState()
+        }
+    }
+
+    private func resyncNotifications() {
+        Task {
+            await appEnvironment.resyncNotifications(using: modelContext)
+            await refreshNotificationAccessState()
+        }
+    }
+
+    private func refreshNotificationAccessState() async {
+        notificationAccessState = await appEnvironment.timeNotificationManager.accessState()
+    }
+
+    private func openNotificationSettings() {
+#if os(iOS)
+        guard let url = URL(string: UIApplication.openSettingsURLString) else {
+            return
+        }
+        UIApplication.shared.open(url)
+#elseif os(macOS)
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension") else {
+            return
+        }
+        NSWorkspace.shared.open(url)
+#endif
+    }
+
     private func resetAllData() {
         HapticManager.shared.lightImpact()
         do {
@@ -127,10 +200,15 @@ struct SettingsView: View {
                 prefs.defaultBlockDurationMinutes = 60
                 prefs.dayStartHour = 6
                 prefs.firstWeekday = .monday
+                prefs.notificationsEnabled = false
+                prefs.notificationLeadTimeMinutes = 0
                 prefs.showsCompletedBlocks = true
             }
             
             try modelContext.save()
+            Task {
+                await appEnvironment.resyncNotifications(using: modelContext)
+            }
         } catch {
             print("Error resetting data: \(error)")
         }

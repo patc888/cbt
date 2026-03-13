@@ -1,10 +1,47 @@
 import SwiftData
 import SwiftUI
 
+struct TimeBlockEditorDraft {
+    let title: String
+    let selectedDate: Date
+    let startTime: Date
+    let durationMinutes: Int
+    let category: TimeBlockCategory
+    let notes: String
+
+    init(
+        title: String,
+        selectedDate: Date,
+        startTime: Date,
+        durationMinutes: Int,
+        category: TimeBlockCategory,
+        notes: String
+    ) {
+        self.title = title
+        self.selectedDate = selectedDate
+        self.startTime = startTime
+        self.durationMinutes = durationMinutes
+        self.category = category
+        self.notes = notes
+    }
+
+    init(block: TimeBlock) {
+        self.init(
+            title: block.title,
+            selectedDate: block.startDate,
+            startTime: block.startDate,
+            durationMinutes: max(Int(block.endDate.timeIntervalSince(block.startDate) / 60), 15),
+            category: block.category,
+            notes: block.notes ?? ""
+        )
+    }
+}
+
 struct AddTimeBlockView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query private var preferences: [AppPreferences]
 
     @State private var title: String
     @State private var selectedDate: Date
@@ -15,33 +52,39 @@ struct AddTimeBlockView: View {
     @State private var draftChecklistItems: [DraftChecklistItem]
     @State private var errorMessage: String?
     @State private var isShowingDeleteConfirmation = false
+    @State private var hasAppliedDefaultDuration = false
+    @FocusState private var focusedField: EditorField?
 
-    private let block: TimeBlock?
+    private let editingBlockID: UUID?
     private let onSave: (Date) -> Void
     private let onDelete: ((Date) -> Void)?
 
+    private enum EditorField: Hashable {
+        case title
+    }
+
     init(
         selectedDate: Date,
-        block: TimeBlock? = nil,
+        editingBlockID: UUID? = nil,
+        initialDraft: TimeBlockEditorDraft? = nil,
         onSave: @escaping (Date) -> Void = { _ in },
         onDelete: ((Date) -> Void)? = nil
     ) {
         let calendar = Calendar.current
-        let resolvedSelectedDate = block.map(\.startDate) ?? selectedDate
+        let resolvedDraft = initialDraft
+        let resolvedSelectedDate = resolvedDraft?.selectedDate ?? selectedDate
         let dayStart = calendar.startOfDay(for: resolvedSelectedDate)
         let defaultStartTime = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: dayStart) ?? resolvedSelectedDate
-        let initialDuration = block.map {
-            max(Int($0.endDate.timeIntervalSince($0.startDate) / 60), 15)
-        } ?? 60
+        let initialDuration = resolvedDraft?.durationMinutes ?? 60
 
-        _title = State(initialValue: block?.title ?? "")
+        _title = State(initialValue: resolvedDraft?.title ?? "")
         _selectedDate = State(initialValue: resolvedSelectedDate)
-        _startTime = State(initialValue: block?.startDate ?? defaultStartTime)
+        _startTime = State(initialValue: resolvedDraft?.startTime ?? defaultStartTime)
         _durationMinutes = State(initialValue: initialDuration)
-        _category = State(initialValue: block?.category ?? .custom)
-        _notes = State(initialValue: block?.notes ?? "")
+        _category = State(initialValue: resolvedDraft?.category ?? .custom)
+        _notes = State(initialValue: resolvedDraft?.notes ?? "")
         _draftChecklistItems = State(initialValue: [])
-        self.block = block
+        self.editingBlockID = editingBlockID
         self.onSave = onSave
         self.onDelete = onDelete
     }
@@ -56,16 +99,50 @@ struct AddTimeBlockView: View {
                         TimeCard {
                             VStack(alignment: .leading, spacing: 16) {
                                 TimeSectionHeader(
-                                    block == nil ? "Add Time Block" : "Edit Time Block",
-                                    subtitle: block == nil
-                                        ? "Create a planned block for the selected day"
-                                        : "Update this planned block for the selected day"
+                                    isEditing ? "Edit Time Block" : "Add Time Block",
+                                    subtitle: isEditing
+                                        ? "Update this planned block for the selected day"
+                                        : "Create a one-off manual block for the selected day"
                                 )
 
-                                VStack(alignment: .leading, spacing: 14) {
-                                    TextField("Title", text: $title)
-                                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                                        .padding(.bottom, 4)
+                                if isEditing && editingBlock == nil {
+                                    Text("This time block is no longer available. Close this sheet and reopen the block from the schedule.")
+                                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                                        .foregroundStyle(.red)
+                                }
+
+                                VStack(alignment: .leading, spacing: 16) {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("Title")
+                                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                                            .foregroundStyle(Theme.secondaryText)
+                                            .padding(.leading, 4)
+
+                                        TextField("Enter title...", text: $title)
+                                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                            .foregroundStyle(Theme.primaryText)
+                                            #if os(iOS)
+                                            .textInputAutocapitalization(.words)
+                                            #endif
+                                            .submitLabel(.done)
+                                            .focused($focusedField, equals: .title)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 12)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                    .fill(Color.primary.opacity(0.06))
+                                            )
+                                            .overlay {
+                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                    .strokeBorder(
+                                                        focusedField == .title ? Theme.primaryPurple.opacity(0.5) : Color.primary.opacity(0.08),
+                                                        lineWidth: focusedField == .title ? 1.5 : 1
+                                                    )
+                                            }
+                                    }
+
+                                    Divider()
+                                        .padding(.vertical, 4)
 
                                     DatePicker("Date", selection: $selectedDate, displayedComponents: .date)
                                     DatePicker("Start Time", selection: $startTime, displayedComponents: .hourAndMinute)
@@ -82,21 +159,42 @@ struct AddTimeBlockView: View {
 
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text("Notes")
-                                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                                            .font(.system(size: 13, weight: .bold, design: .rounded))
                                             .foregroundStyle(Theme.secondaryText)
+                                            .padding(.leading, 4)
 
                                         TextEditor(text: $notes)
                                             .frame(minHeight: 100)
-                                            .background(Color.primary.opacity(0.03))
-                                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                                            .padding(8)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                    .fill(Color.primary.opacity(0.04))
+                                            )
+                                            .overlay {
+                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                                            }
+                                            #if os(iOS)
+                                            .scrollContentBackground(.hidden)
+                                            #endif
+                                    }
+
+                                    if !isEditing {
+                                        Text("Use Templates for routines you want regenerated later. Manual blocks are for one-off plans and personal adjustments.")
+                                            .font(.system(size: 12, design: .rounded))
+                                            .foregroundStyle(Theme.secondaryText)
                                     }
                                 }
                             }
                         }
 
                         TimeCard {
-                            if let block {
-                                TimeBlockChecklistView(block: block)
+                            if let editingBlock {
+                                TimeBlockChecklistView(block: editingBlock)
+                            } else if isEditing {
+                                Text("Checklist editing is unavailable because this block was removed.")
+                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                    .foregroundStyle(Theme.secondaryText)
                             } else {
                                 DraftTimeBlockChecklistView(items: $draftChecklistItems)
                             }
@@ -109,7 +207,7 @@ struct AddTimeBlockView: View {
                                 .padding(.horizontal)
                         }
 
-                        if block != nil {
+                        if isEditing {
                             Button(role: .destructive) {
                                 isShowingDeleteConfirmation = true
                             } label: {
@@ -126,15 +224,26 @@ struct AddTimeBlockView: View {
                                 .clipShape(Capsule())
                             }
                             .buttonStyle(.plain)
+                            .disabled(editingBlock == nil)
                         }
                     }
                     .padding()
                     .padding(.bottom, 40)
                 }
+        }
+        .navigationTitle(isEditing ? "Edit Block" : "New Block")
+        .timeInlineNavigationTitle()
+        .task(id: preferences.first?.updatedAt) {
+            applyDefaultDurationIfNeeded()
+        }
+        .onAppear {
+            guard !isEditing else {
+                return
             }
-            .navigationTitle(block == nil ? "New Block" : "Edit Block")
-            .timeInlineNavigationTitle()
-            .toolbar {
+
+            focusedField = .title
+        }
+        .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
@@ -142,7 +251,7 @@ struct AddTimeBlockView: View {
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(block == nil ? "Save" : "Update") {
+                    Button(isEditing ? "Update" : "Save") {
                         saveBlock()
                     }
                     .disabled(isSaveDisabled)
@@ -162,17 +271,44 @@ struct AddTimeBlockView: View {
         }
     }
 
+    private var isEditing: Bool {
+        editingBlockID != nil
+    }
+
+    private var editingBlock: TimeBlock? {
+        guard let editingBlockID else {
+            return nil
+        }
+
+        let descriptor = FetchDescriptor<TimeBlock>(
+            predicate: #Predicate<TimeBlock> { block in
+                block.id == editingBlockID
+            }
+        )
+        return try? modelContext.fetch(descriptor).first
+    }
+
     private var durationText: String {
         "\(durationMinutes) min"
     }
 
+    private var trimmedTitle: String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private var isSaveDisabled: Bool {
-        title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        trimmedTitle.isEmpty ||
+        (isEditing && editingBlock == nil)
     }
 
     private func saveBlock() {
         do {
-            if let block {
+            if let editingBlockID {
+                guard let block = fetchBlock(id: editingBlockID) else {
+                    errorMessage = "This time block is no longer available."
+                    return
+                }
+
                 try appEnvironment.scheduleRepository.updateBlock(
                     block,
                     title: title,
@@ -183,8 +319,12 @@ struct AddTimeBlockView: View {
                     category: category,
                     in: modelContext
                 )
+                Task {
+                    await appEnvironment.syncReminder(for: block, using: modelContext)
+                }
                 onSave(block.startDate)
             } else {
+                normalizeDraftChecklistItems()
                 let block = try appEnvironment.scheduleRepository.createBlock(
                     title: title,
                     notes: notes,
@@ -195,6 +335,9 @@ struct AddTimeBlockView: View {
                     checklistItemTitles: draftChecklistItems.map(\.title),
                     in: modelContext
                 )
+                Task {
+                    await appEnvironment.syncReminder(for: block, using: modelContext)
+                }
                 onSave(block.startDate)
             }
             dismiss()
@@ -205,20 +348,64 @@ struct AddTimeBlockView: View {
     }
 
     private func deleteBlock() {
-        guard let block else {
+        guard let editingBlockID, let block = fetchBlock(id: editingBlockID) else {
+            errorMessage = "This time block is no longer available."
             return
         }
 
         let deletedDate = block.startDate
+        let deletedBlockID = block.id
 
         do {
             try appEnvironment.scheduleRepository.deleteBlock(block, in: modelContext)
+            Task {
+                await appEnvironment.cancelReminder(forBlockID: deletedBlockID, using: modelContext)
+            }
             onDelete?(deletedDate)
             dismiss()
         } catch {
             errorMessage = "Unable to delete this time block right now."
             assertionFailure("Failed to delete time block: \(error)")
         }
+    }
+
+    private func applyDefaultDurationIfNeeded() {
+        guard !isEditing, !hasAppliedDefaultDuration else {
+            return
+        }
+
+        durationMinutes = max(preferences.first?.defaultBlockDurationMinutes ?? durationMinutes, 15)
+        hasAppliedDefaultDuration = true
+    }
+
+    private func fetchBlock(id: UUID) -> TimeBlock? {
+        let descriptor = FetchDescriptor<TimeBlock>(
+            predicate: #Predicate<TimeBlock> { block in
+                block.id == id
+            }
+        )
+        return try? modelContext.fetch(descriptor).first
+    }
+
+    private func normalizeDraftChecklistItems() {
+        var normalizedItems: [DraftChecklistItem] = []
+
+        for item in draftChecklistItems {
+            let trimmedTitle = item.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedTitle.isEmpty else {
+                continue
+            }
+
+            normalizedItems.append(
+                DraftChecklistItem(
+                    id: item.id,
+                    title: trimmedTitle,
+                    isCompleted: item.isCompleted
+                )
+            )
+        }
+
+        draftChecklistItems = normalizedItems
     }
 }
 
@@ -512,6 +699,7 @@ private struct TimeBlockChecklistItemRow: View {
     let onToggle: () -> Void
     let onDelete: () -> Void
     let onCommitTitle: () -> Void
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         HStack(spacing: 10) {
@@ -526,7 +714,13 @@ private struct TimeBlockChecklistItemRow: View {
                 .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundStyle(isCompleted ? Theme.secondaryText : Theme.primaryText)
                 .strikethrough(isCompleted)
+                .focused($isFocused)
                 .onSubmit(onCommitTitle)
+                .onChange(of: isFocused) { wasFocused, isFocused in
+                    if wasFocused && !isFocused {
+                        onCommitTitle()
+                    }
+                }
 
             Spacer(minLength: 8)
 
@@ -543,5 +737,6 @@ private struct TimeBlockChecklistItemRow: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(isCompleted ? .green.opacity(0.08) : Color.primary.opacity(0.04))
         )
+        .onDisappear(perform: onCommitTitle)
     }
 }

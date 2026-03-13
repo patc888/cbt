@@ -11,27 +11,41 @@ struct TimeAppearanceSettingsView: View {
     
     var body: some View {
         TimeSettingsSection(title: "Appearance") {
-            // 1. App Theme (Light/Dark/System)
-            TimeSegmentedToggle(
-                selection: Binding(
-                    get: { preferences?.appTheme ?? .system },
-                    set: { newValue in
-                        onUpdate { $0.appTheme = newValue }
-                        // Sync to UserDefaults for static Theme access if needed
-                        UserDefaults.standard.set(newValue.rawValue, forKey: "userTheme")
-                    }
-                ),
-                options: AppTheme.allCases,
-                titleKey: \.rawValue,
-                namespace: appearanceNamespace
-            )
-            .padding(.bottom, 8)
-            
-            // 2. Accent Color
+            TimeSettingsRow(
+                icon: "circle.lefthalf.filled",
+                iconColor: Theme.primaryPurple,
+                title: "App Theme",
+                subtitle: "System, Light, or Dark"
+            ) {
+                TimeSegmentedToggle(
+                    selection: Binding(
+                        get: { preferences?.appTheme ?? .system },
+                        set: { newValue in
+                            onUpdate { $0.appTheme = newValue }
+                            UserDefaults.standard.set(newValue.rawValue, forKey: "userTheme")
+                        }
+                    ),
+                    options: AppTheme.allCases,
+                    titleKey: \.rawValue,
+                    namespace: appearanceNamespace
+                )
+                .frame(maxWidth: 220)
+            }
+
+            Divider()
+                .padding(.vertical, 4)
+
             accentColorPicker
-            
-            // 3. Full Color Theme Toggle
-            TimeSettingsRow(title: "Full Color Theme") {
+
+            Divider()
+                .padding(.vertical, 4)
+
+            TimeSettingsRow(
+                icon: "sparkles",
+                iconColor: Theme.primaryPurple,
+                title: "Background Style",
+                subtitle: "Use the full aurora background"
+            ) {
                 TimeSegmentedToggle(
                     isOn: Binding(
                         get: { preferences?.isImmersive ?? true },
@@ -44,7 +58,9 @@ struct TimeAppearanceSettingsView: View {
                 )
             }
 
-            // 4. Show Completed (Kept as requested)
+            Divider()
+                .padding(.vertical, 4)
+
             TimeSettingsRow(
                 icon: "checkmark.circle",
                 iconColor: Theme.primaryPurple,
@@ -61,9 +77,16 @@ struct TimeAppearanceSettingsView: View {
                     namespace: completedNamespace
                 )
             }
-            
-            // 5. Haptic Feedback
-            TimeSettingsRow(title: "Haptic Feedback") {
+
+            Divider()
+                .padding(.vertical, 4)
+
+            TimeSettingsRow(
+                icon: "hand.tap.fill",
+                iconColor: Theme.primaryPurple,
+                title: "Haptics",
+                subtitle: "Tap feedback for supported actions"
+            ) {
                 TimeSegmentedToggle(
                     isOn: Binding(
                         get: { preferences?.hapticsEnabled ?? true },
@@ -80,9 +103,22 @@ struct TimeAppearanceSettingsView: View {
     
     private var accentColorPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Accent Color")
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundStyle(Theme.primaryText)
+            HStack(spacing: 10) {
+                Image(systemName: "paintpalette.fill")
+                    .foregroundStyle(Theme.primaryPurple)
+                    .font(.system(size: 18))
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Accent Color")
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundStyle(Theme.primaryText)
+
+                    Text("Applied across highlights and controls")
+                        .font(.system(size: 12, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {

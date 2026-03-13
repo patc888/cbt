@@ -4,20 +4,17 @@ import SwiftData
 struct RootView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 #endif
     @Query private var preferences: [AppPreferences]
 
-    @AppStorage("userTheme") private var userTheme: String = "System"
-    @AppStorage("appColorTheme") private var appColorTheme: String = "Purple"
-    @AppStorage("appThemeImmersive") private var appThemeImmersive: Bool = true
-
     var body: some View {
         @Bindable var appState = appEnvironment.appState
 
         ZStack(alignment: .top) {
-            Color.clear // AuroraBackground is now handled by feature views and sheets
+            Color.clear
 
             Group {
                 if usesCompactTabs {
@@ -43,7 +40,7 @@ struct RootView: View {
                             Label(section.title, systemImage: section.systemImage)
                                 .tag(section)
                         }
-                        .navigationTitle("Time")
+                        .navigationTitle("Time Blocking")
 #if os(macOS)
                         .navigationSplitViewColumnWidth(min: 220, ideal: 240)
 #endif
@@ -55,23 +52,23 @@ struct RootView: View {
                 }
             }
 
-            // Custom Top Shell - Donor Style
-            HStack(alignment: .center) {
-                Button(action: {
+            HStack(alignment: .center, spacing: 12) {
+                Button {
                     appEnvironment.appState.showSettings()
-                }) {
+                } label: {
                     Image(systemName: "gearshape.fill")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(Theme.primaryPurple)
-                        .padding(10)
+                        .frame(width: 36, height: 36)
                         .contentShape(Circle())
-                        .background(Theme.primaryPurple.opacity(0.12))
+                        .background(Theme.primaryPurple.opacity(0.1))
                         .clipShape(Circle())
                 }
+                .accessibilityLabel("Open settings")
                 .padding(.leading, 16)
-                
+
                 Spacer()
-                
+
                 VStack(spacing: 2) {
                     Text(appState.selectedSection.title)
                         .font(.system(size: Theme.fontSizeSection, weight: .bold, design: .rounded))
@@ -83,37 +80,28 @@ struct RootView: View {
                             .foregroundStyle(Theme.primaryPurple)
                     }
                 }
-                
+
                 Spacer()
-                
-                HStack(spacing: 8) {
-                    if appState.selectedSection != .dashboard {
-                        Button(action: {
-                            appState.isPresentingAddModal = true
-                        }) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(Theme.primaryPurple)
-                                .padding(10)
-                                .contentShape(Circle())
-                                .background(Theme.primaryPurple.opacity(0.12))
-                                .clipShape(Circle())
-                        }
-                    }
-                    
-                    Button(action: {
-                        appEnvironment.appState.showPremium()
-                    }) {
-                        Image(systemName: "sparkles")
+
+                if appState.selectedSection == .schedule {
+                    Button {
+                        appState.isPresentingAddModal = true
+                    } label: {
+                        Image(systemName: "plus")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(Theme.primaryPurple)
-                            .padding(10)
+                            .frame(width: 36, height: 36)
                             .contentShape(Circle())
-                            .background(Theme.primaryPurple.opacity(0.12))
+                            .background(Theme.primaryPurple.opacity(0.1))
                             .clipShape(Circle())
                     }
+                    .accessibilityLabel("Add block")
+                    .padding(.trailing, 16)
+                } else {
+                    Color.clear
+                        .frame(width: 36, height: 36)
+                        .padding(.trailing, 16)
                 }
-                .padding(.trailing, 16)
             }
             .frame(height: 64)
             .padding(.top, 4)
@@ -122,7 +110,9 @@ struct RootView: View {
                 Divider().opacity(0.1)
             }
         }
+#if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
+#endif
         .sheet(item: $appState.presentedSheet) { sheet in
             switch sheet {
             case .settings:
@@ -135,6 +125,16 @@ struct RootView: View {
         }
         .task {
             appEnvironment.prepareIfNeeded(using: modelContext)
+            await appEnvironment.resyncNotifications(using: modelContext)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else {
+                return
+            }
+
+            Task {
+                await appEnvironment.resyncNotifications(using: modelContext)
+            }
         }
         .preferredColorScheme(preferences.first?.appTheme?.colorScheme)
     }

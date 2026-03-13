@@ -5,6 +5,102 @@ import Testing
 
 struct TimeBlockingTests {
     @Test
+    func scheduleMonthSupportBuildsSixWeekGridFromSelectedMonth() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+        calendar.firstWeekday = Weekday.monday.rawValue
+        let date = try #require(calendar.date(from: DateComponents(year: 2026, month: 3, day: 18)))
+
+        let dates = ScheduleMonthSupport.gridDates(for: date, calendar: calendar)
+
+        #expect(dates.count == 42)
+        #expect(dates.first == calendar.date(from: DateComponents(year: 2026, month: 2, day: 23)))
+        #expect(dates.last == calendar.date(from: DateComponents(year: 2026, month: 4, day: 5)))
+        #expect(calendar.isDate(dates[10], equalTo: date, toGranularity: .month))
+    }
+
+    @Test
+    func scheduleMonthSummaryAggregatesOnlyDaysInDisplayedMonth() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+
+        let monthDayOne = try #require(calendar.date(from: DateComponents(year: 2026, month: 3, day: 10, hour: 9)))
+        let monthDayTwo = try #require(calendar.date(from: DateComponents(year: 2026, month: 3, day: 12, hour: 10)))
+        let paddedDay = try #require(calendar.date(from: DateComponents(year: 2026, month: 4, day: 1, hour: 8)))
+
+        let plannedBlock = TimeBlock(
+            title: "Focus",
+            startDate: monthDayOne,
+            endDate: monthDayOne.addingTimeInterval(3_600),
+            category: .focus,
+            status: .planned
+        )
+        let mixedPlannedBlock = TimeBlock(
+            title: "Wrap",
+            startDate: monthDayTwo,
+            endDate: monthDayTwo.addingTimeInterval(1_800),
+            category: .routine,
+            status: .planned
+        )
+        let mixedCompletedBlock = TimeBlock(
+            title: "Done",
+            startDate: monthDayTwo.addingTimeInterval(2_400),
+            endDate: monthDayTwo.addingTimeInterval(6_000),
+            category: .admin,
+            status: .completed
+        )
+        let paddedBlock = TimeBlock(
+            title: "Padding",
+            startDate: paddedDay,
+            endDate: paddedDay.addingTimeInterval(7_200),
+            category: .custom,
+            status: .planned
+        )
+
+        let days = [
+            MonthlyPlanningDay(
+                date: monthDayOne,
+                snapshot: ScheduleDaySnapshot(
+                    blocks: [plannedBlock],
+                    completedCount: 0,
+                    plannedCount: 1,
+                    scheduledMinutes: 60
+                ),
+                isInDisplayedMonth: true
+            ),
+            MonthlyPlanningDay(
+                date: monthDayTwo,
+                snapshot: ScheduleDaySnapshot(
+                    blocks: [mixedPlannedBlock, mixedCompletedBlock],
+                    completedCount: 1,
+                    plannedCount: 1,
+                    scheduledMinutes: 90
+                ),
+                isInDisplayedMonth: true
+            ),
+            MonthlyPlanningDay(
+                date: paddedDay,
+                snapshot: ScheduleDaySnapshot(
+                    blocks: [paddedBlock],
+                    completedCount: 0,
+                    plannedCount: 1,
+                    scheduledMinutes: 120
+                ),
+                isInDisplayedMonth: false
+            )
+        ]
+
+        let summary = ScheduleMonthSummary(days: days, calendar: calendar)
+
+        #expect(summary.plannedCount == 2)
+        #expect(summary.completedCount == 1)
+        #expect(summary.scheduledMinutes == 150)
+        #expect(summary.activeDayCount == 2)
+        #expect(summary.hasBlocks)
+        #expect(summary.busiestDayLabel != "Rest")
+    }
+
+    @Test
     func scheduleRepositoryBuildsDaySnapshotWithoutProfileState() {
         let now = Date(timeIntervalSince1970: 1_000_000)
         let plannedBlock = TimeBlock(
@@ -439,7 +535,9 @@ struct TimeBlockingTests {
         modelContext.insert(template)
         try modelContext.save()
 
-        _ = try repository.generateBlocksIfNeeded(for: date, in: modelContext, calendar: calendar)
+        let originalGeneratedBlock = try #require(
+            repository.generateBlocksIfNeeded(for: date, in: modelContext, calendar: calendar).first
+        )
         _ = try repository.createBlock(
             title: "Manual Planning",
             notes: nil,
@@ -482,6 +580,96 @@ struct TimeBlockingTests {
         #expect(blocks.filter { $0.template != nil }.count == 1)
         #expect(blocks.contains { $0.title == "Manual Planning" && $0.template == nil })
         #expect(blocks.contains { $0.title == "Updated Focus" && $0.template?.id == template.id })
+        #expect(blocks.allSatisfy { $0.id != originalGeneratedBlock.id || $0.template == nil })
+    }
+
+    @Test
+    func scheduleRepositoryRegeneratePreservesCompletedGeneratedBlocksAndManualBlocks() throws {
+        let persistenceController = PersistenceController(inMemory: true)
+        let modelContext = ModelContext(persistenceController.container)
+        let calendar = Calendar(identifier: .gregorian)
+        let repository = ScheduleRepository()
+        let date = Date(timeIntervalSince1970: 1_700_000_000)
+        let weekdayMask = 1 << (calendar.component(.weekday, from: date) - 1)
+        let morningTemplate = ScheduleTemplate(
+            name: "Morning Focus",
+            notes: "Deep work",
+            defaultStartHour: 9,
+            defaultDurationMinutes: 90,
+            weekdayMask: weekdayMask,
+            category: .focus,
+            sortOrder: 0
+        )
+        let lunchTemplate = ScheduleTemplate(
+            name: "Lunch",
+            notes: "Break",
+            defaultStartHour: 12,
+            defaultDurationMinutes: 60,
+            weekdayMask: weekdayMask,
+            category: .personal,
+            sortOrder: 1
+        )
+
+        modelContext.insert(morningTemplate)
+        modelContext.insert(lunchTemplate)
+        try modelContext.save()
+
+        let generatedBlocks = try repository.generateBlocksIfNeeded(
+            for: date,
+            in: modelContext,
+            calendar: calendar
+        )
+        let completedGeneratedBlock = try #require(
+            generatedBlocks.first { $0.template?.id == lunchTemplate.id }
+        )
+
+        try repository.setBlockStatus(
+            completedGeneratedBlock,
+            to: .completed,
+            in: modelContext
+        )
+        _ = try repository.createBlock(
+            title: "Manual Planning",
+            notes: nil,
+            date: date,
+            startTime: calendar.date(bySettingHour: 15, minute: 0, second: 0, of: date) ?? date,
+            durationMinutes: 30,
+            category: .admin,
+            in: modelContext,
+            calendar: calendar
+        )
+
+        try repository.updateTemplate(
+            morningTemplate,
+            name: "Updated Focus",
+            notes: "Fresh template",
+            defaultStartTime: calendar.date(bySettingHour: 10, minute: 0, second: 0, of: date) ?? date,
+            durationMinutes: 60,
+            weekdayMask: weekdayMask,
+            category: .focus,
+            in: modelContext,
+            calendar: calendar
+        )
+
+        let regeneratedBlocks = try repository.regenerateTemplateBlocks(
+            for: date,
+            in: modelContext,
+            calendar: calendar
+        )
+        let blocks = try modelContext.fetch(
+            FetchDescriptor<TimeBlock>(
+                sortBy: [
+                    SortDescriptor(\.startDate),
+                    SortDescriptor(\.sortOrder)
+                ]
+            )
+        )
+
+        #expect(regeneratedBlocks.count == 1)
+        #expect(blocks.count == 3)
+        #expect(blocks.contains { $0.title == "Updated Focus" && $0.template?.id == morningTemplate.id })
+        #expect(blocks.contains { $0.id == completedGeneratedBlock.id && $0.status == .completed })
+        #expect(blocks.contains { $0.title == "Manual Planning" && $0.template == nil })
     }
 
     @Test

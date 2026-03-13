@@ -1,6 +1,23 @@
 import Foundation
 import SwiftData
 
+enum ScheduleRepositoryError: LocalizedError {
+    case emptyTemplateName
+    case invalidTemplateWeekdays
+    case emptyBlockTitle
+
+    var errorDescription: String? {
+        switch self {
+        case .emptyTemplateName:
+            return "Template name cannot be empty."
+        case .invalidTemplateWeekdays:
+            return "Select at least one weekday for this template."
+        case .emptyBlockTitle:
+            return "Block title cannot be empty."
+        }
+    }
+}
+
 struct ScheduleDaySnapshot {
     let blocks: [TimeBlock]
     let completedCount: Int
@@ -70,16 +87,25 @@ struct ScheduleRepository {
         calendar: Calendar = .current
     ) throws -> ScheduleTemplate {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sanitizedWeekdayMask = sanitizeWeekdayMask(weekdayMask)
         let trimmedNotes = notes?.trimmingCharacters(in: .whitespacesAndNewlines)
         let resolvedHour = calendar.component(.hour, from: defaultStartTime)
         let nextSortOrder = try nextTemplateSortOrder(in: modelContext)
+
+        guard !trimmedName.isEmpty else {
+            throw ScheduleRepositoryError.emptyTemplateName
+        }
+
+        guard sanitizedWeekdayMask != 0 else {
+            throw ScheduleRepositoryError.invalidTemplateWeekdays
+        }
 
         let template = ScheduleTemplate(
             name: trimmedName,
             notes: trimmedNotes?.isEmpty == true ? nil : trimmedNotes,
             defaultStartHour: min(max(resolvedHour, 0), 23),
             defaultDurationMinutes: max(durationMinutes, 15),
-            weekdayMask: weekdayMask,
+            weekdayMask: sanitizedWeekdayMask,
             category: category,
             sortOrder: nextSortOrder,
             createdAt: .now,
@@ -103,14 +129,23 @@ struct ScheduleRepository {
         calendar: Calendar = .current
     ) throws {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sanitizedWeekdayMask = sanitizeWeekdayMask(weekdayMask)
         let trimmedNotes = notes?.trimmingCharacters(in: .whitespacesAndNewlines)
         let resolvedHour = calendar.component(.hour, from: defaultStartTime)
+
+        guard !trimmedName.isEmpty else {
+            throw ScheduleRepositoryError.emptyTemplateName
+        }
+
+        guard sanitizedWeekdayMask != 0 else {
+            throw ScheduleRepositoryError.invalidTemplateWeekdays
+        }
 
         template.name = trimmedName
         template.notes = trimmedNotes?.isEmpty == true ? nil : trimmedNotes
         template.defaultStartHour = min(max(resolvedHour, 0), 23)
         template.defaultDurationMinutes = max(durationMinutes, 15)
-        template.weekdayMask = weekdayMask
+        template.weekdayMask = sanitizedWeekdayMask
         template.category = category
         template.updatedAt = .now
 
@@ -145,6 +180,10 @@ struct ScheduleRepository {
         let resolvedDurationMinutes = max(durationMinutes, 1)
         let startDate = merge(date: date, time: startTime, calendar: calendar)
         let endDate = calendar.date(byAdding: .minute, value: resolvedDurationMinutes, to: startDate) ?? startDate
+
+        guard !trimmedTitle.isEmpty else {
+            throw ScheduleRepositoryError.emptyBlockTitle
+        }
 
         let block = TimeBlock(
             title: trimmedTitle,
@@ -202,6 +241,10 @@ struct ScheduleRepository {
             block.startDate != startDate ||
             block.endDate != endDate ||
             block.category != category
+
+        guard !trimmedTitle.isEmpty else {
+            throw ScheduleRepositoryError.emptyBlockTitle
+        }
 
         if hasManualScheduleChanges {
             detachGeneratedBlockIfNeeded(block)
@@ -310,6 +353,20 @@ struct ScheduleRepository {
         try modelContext.save()
     }
 
+    func setBlockStatus(
+        _ block: TimeBlock,
+        to status: TimeBlockStatus,
+        in modelContext: ModelContext
+    ) throws {
+        guard block.status != status else {
+            return
+        }
+
+        block.status = status
+        block.updatedAt = .now
+        try modelContext.save()
+    }
+
     func daySnapshot(
         for date: Date,
         from blocks: [TimeBlock],
@@ -328,6 +385,21 @@ struct ScheduleRepository {
             plannedCount: filteredBlocks.filter { $0.status == .planned }.count,
             scheduledMinutes: scheduledMinutes(for: filteredBlocks)
         )
+    }
+
+    func overlappingPlannedBlockIDs(
+        on date: Date,
+        from blocks: [TimeBlock],
+        calendar: Calendar = .current
+    ) -> Set<UUID> {
+        let dayBlocks = daySnapshot(
+            for: date,
+            from: blocks,
+            includeCompleted: false,
+            calendar: calendar
+        ).blocks
+
+        return overlappingPlannedBlockIDs(in: dayBlocks)
     }
 
     func daySnapshot(
@@ -488,20 +560,116 @@ struct ScheduleRepository {
         in modelContext: ModelContext,
         calendar: Calendar = .current
     ) throws -> [TimeBlock] {
-        let generatedBlocks = try generatedBlocksEligibleForRegeneration(
+        let matchingTemplates = try templates(for: date, in: modelContext, calendar: calendar)
+        let existingBlocks = try dayBlocks(
             on: date,
+            includeCompleted: true,
             in: modelContext,
             calendar: calendar
         )
-        if !generatedBlocks.isEmpty {
-            for block in generatedBlocks {
-                modelContext.delete(block)
-            }
+        let generatedBlocks = existingBlocks.filter { block in
+            block.template != nil && block.status != .completed
+        }
+        let deletedBlockIDs = Set(generatedBlocks.map(\.id))
+        let retainedGeneratedTemplateIDs = Set<UUID>(
+            existingBlocks.compactMap { block in
+                guard !deletedBlockIDs.contains(block.id) else {
+                    return nil
+                }
 
+                return block.template?.id
+            }
+        )
+
+        var nextSortOrder = existingBlocks
+            .filter { !deletedBlockIDs.contains($0.id) }
+            .map(\.sortOrder)
+            .max() ?? -1
+        var regeneratedBlocks: [TimeBlock] = []
+
+        for template in matchingTemplates where !retainedGeneratedTemplateIDs.contains(template.id) {
+            nextSortOrder += 1
+            let block = makeBlock(
+                from: template,
+                for: date,
+                sortOrder: nextSortOrder,
+                calendar: calendar
+            )
+            modelContext.insert(block)
+            regeneratedBlocks.append(block)
+        }
+
+        for block in generatedBlocks {
+            modelContext.delete(block)
+        }
+
+        if !generatedBlocks.isEmpty || !regeneratedBlocks.isEmpty {
             try modelContext.save()
         }
 
-        return try generateBlocksIfNeeded(for: date, in: modelContext, calendar: calendar)
+        return regeneratedBlocks
+    }
+
+    @discardableResult
+    func resolveConflicts(
+        on date: Date,
+        in modelContext: ModelContext,
+        calendar: Calendar = .current
+    ) throws -> [TimeBlock] {
+        let plannedBlocks = try dayBlocks(
+            on: date,
+            includeCompleted: false,
+            in: modelContext,
+            calendar: calendar
+        ).filter { $0.status == .planned }
+         .sorted(by: compareBlocks)
+
+        guard !plannedBlocks.isEmpty else {
+            return []
+        }
+
+        var resolvedBlocks: [TimeBlock] = []
+        var previousBlock: TimeBlock?
+
+        for block in plannedBlocks {
+            guard let earlierBlock = previousBlock else {
+                previousBlock = block
+                continue
+            }
+
+            if block.startDate < earlierBlock.endDate {
+                let originalStartDate = block.startDate
+                let originalEndDate = block.endDate
+                let duration = max(originalEndDate.timeIntervalSince(originalStartDate), 60)
+                let shiftedStartDate = earlierBlock.endDate
+                let shiftedEndDate = shiftedStartDate.addingTimeInterval(duration)
+                let movedToDifferentDay = !calendar.isDate(originalStartDate, inSameDayAs: shiftedStartDate)
+
+                detachGeneratedBlockIfNeeded(block)
+                block.startDate = shiftedStartDate
+                block.endDate = shiftedEndDate
+                block.updatedAt = .now
+
+                if movedToDifferentDay {
+                    block.sortOrder = try nextSortOrder(
+                        on: shiftedStartDate,
+                        excluding: block,
+                        in: modelContext,
+                        calendar: calendar
+                    )
+                }
+
+                resolvedBlocks.append(block)
+            }
+
+            previousBlock = block
+        }
+
+        if !resolvedBlocks.isEmpty {
+            try modelContext.save()
+        }
+
+        return resolvedBlocks
     }
 
     private func compareBlocks(_ lhs: TimeBlock, _ rhs: TimeBlock) -> Bool {
@@ -596,6 +764,10 @@ struct ScheduleRepository {
         return trimmedNotes?.isEmpty == true ? nil : trimmedNotes
     }
 
+    private func sanitizeWeekdayMask(_ weekdayMask: Int) -> Int {
+        weekdayMask & 0b1111111
+    }
+
     private func merge(date: Date, time: Date, calendar: Calendar) -> Date {
         let dayComponents = calendar.dateComponents([.year, .month, .day], from: date)
         let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
@@ -627,6 +799,31 @@ struct ScheduleRepository {
             let duration = block.endDate.timeIntervalSince(block.startDate)
             return partialResult + max(Int(duration / 60), 0)
         }
+    }
+
+    private func overlappingPlannedBlockIDs(in blocks: [TimeBlock]) -> Set<UUID> {
+        let sortedBlocks = blocks
+            .filter { $0.status == .planned }
+            .sorted(by: compareBlocks)
+        guard sortedBlocks.count > 1 else {
+            return []
+        }
+
+        var overlappingBlockIDs: Set<UUID> = []
+        var previousBlock = sortedBlocks[0]
+
+        for block in sortedBlocks.dropFirst() {
+            if block.startDate < previousBlock.endDate {
+                overlappingBlockIDs.insert(previousBlock.id)
+                overlappingBlockIDs.insert(block.id)
+            }
+
+            if block.endDate > previousBlock.endDate {
+                previousBlock = block
+            }
+        }
+
+        return overlappingBlockIDs
     }
 
     private func dayBlocks(
