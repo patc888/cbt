@@ -5,56 +5,47 @@ struct RootView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
-#if os(iOS)
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-#endif
     @Query private var preferences: [AppPreferences]
 
     var body: some View {
         @Bindable var appState = appEnvironment.appState
 
         ZStack(alignment: .top) {
-            Color.clear
-
-            Group {
-                if usesCompactTabs {
-                    TabView(selection: $appState.selectedSection) {
-                        ForEach(AppSection.allCases) { section in
-                            NavigationStack {
-                                detailView(for: section)
-                            }
-                            .tabItem {
-                                Label(section.title, systemImage: section.systemImage)
-                            }
-                            .tag(section)
-                        }
-                    }
-                } else {
-                    let selectedSection = Binding<AppSection?>(
-                        get: { appState.selectedSection },
-                        set: { if let value = $0 { appState.selectedSection = value } }
-                    )
-
-                    NavigationSplitView {
-                        List(AppSection.allCases, selection: selectedSection) { section in
-                            Label(section.title, systemImage: section.systemImage)
-                                .tag(section)
-                        }
-                        .navigationTitle("Time Blocking")
-#if os(macOS)
-                        .navigationSplitViewColumnWidth(min: 220, ideal: 240)
-#endif
-                    } detail: {
-                        NavigationStack {
-                            detailView(for: appState.selectedSection)
-                        }
-                    }
-                }
+            NavigationStack {
+                ScheduleView()
             }
 
             HStack(alignment: .center, spacing: 12) {
                 Button {
-                    appEnvironment.appState.showSettings()
+                    appState.showDashboard()
+                } label: {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Theme.primaryPurple)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Circle())
+                        .background(Theme.primaryPurple.opacity(0.1))
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel("Open stats")
+                .padding(.leading, 16)
+
+                Spacer()
+
+                VStack(spacing: 2) {
+                    Text("Schedule")
+                        .font(.system(size: Theme.fontSizeSection, weight: .bold, design: .rounded))
+                        .foregroundStyle(Theme.primaryText)
+
+                    Text(appState.selectedDate.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Theme.primaryPurple)
+                }
+
+                Spacer()
+
+                Button {
+                    appState.showSettings()
                 } label: {
                     Image(systemName: "gearshape.fill")
                         .font(.system(size: 15, weight: .bold))
@@ -65,43 +56,7 @@ struct RootView: View {
                         .clipShape(Circle())
                 }
                 .accessibilityLabel("Open settings")
-                .padding(.leading, 16)
-
-                Spacer()
-
-                VStack(spacing: 2) {
-                    Text(appState.selectedSection.title)
-                        .font(.system(size: Theme.fontSizeSection, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
-                    
-                    if appState.selectedSection == .schedule {
-                        Text(appState.selectedDate.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Theme.primaryPurple)
-                    }
-                }
-
-                Spacer()
-
-                if appState.selectedSection == .schedule {
-                    Button {
-                        appState.isPresentingAddModal = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(Theme.primaryPurple)
-                            .frame(width: 36, height: 36)
-                            .contentShape(Circle())
-                            .background(Theme.primaryPurple.opacity(0.1))
-                            .clipShape(Circle())
-                    }
-                    .accessibilityLabel("Add block")
-                    .padding(.trailing, 16)
-                } else {
-                    Color.clear
-                        .frame(width: 36, height: 36)
-                        .padding(.trailing, 16)
-                }
+                .padding(.trailing, 16)
             }
             .frame(height: 64)
             .padding(.top, 4)
@@ -109,18 +64,68 @@ struct RootView: View {
             .overlay(alignment: .bottom) {
                 Divider().opacity(0.1)
             }
+
+            VStack {
+                Spacer()
+
+                HStack {
+                    floatingActionButton(
+                        title: "Add Block",
+                        systemImage: "plus",
+                        alignment: .leading
+                    ) {
+                        appState.isPresentingAddModal = true
+                    }
+
+                    Spacer()
+
+                    floatingActionButton(
+                        title: "Routines",
+                        systemImage: "square.on.square",
+                        alignment: .trailing
+                    ) {
+                        appState.showTemplates()
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 28)
+            }
         }
 #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
 #endif
         .sheet(item: $appState.presentedSheet) { sheet in
             switch sheet {
+            case .dashboard:
+                secondarySurface(
+                    title: "Stats",
+                    accessibilityLabel: "Close stats"
+                ) {
+                    DashboardView()
+                }
             case .settings:
                 NavigationStack {
                     SettingsView()
                 }
+            case .templates:
+                secondarySurface(
+                    title: "Routines",
+                    accessibilityLabel: "Close routines"
+                ) {
+                    TemplatesView()
+                }
             case .premium:
                 TimeSubscriptionView()
+            }
+        }
+        .onChange(of: appState.selectedSection) { _, newSection in
+            switch newSection {
+            case .schedule:
+                break
+            case .dashboard:
+                appState.showDashboard()
+            case .templates:
+                appState.showTemplates()
             }
         }
         .task {
@@ -139,23 +144,67 @@ struct RootView: View {
         .preferredColorScheme(preferences.first?.appTheme?.colorScheme)
     }
 
-    private var usesCompactTabs: Bool {
-#if os(iOS)
-        horizontalSizeClass == .compact
-#else
-        false
-#endif
+    private func floatingActionButton(
+        title: String,
+        systemImage: String,
+        alignment: Alignment,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 14)
+                .background(
+                    Capsule()
+                        .fill(Theme.primaryPurple)
+                )
+                .shadow(color: Theme.primaryPurple.opacity(0.28), radius: 14, x: 0, y: 8)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: alignment)
     }
 
-    @ViewBuilder
-    private func detailView(for section: AppSection) -> some View {
-        switch section {
-        case .dashboard:
-            DashboardView()
-        case .schedule:
-            ScheduleView()
-        case .templates:
-            TemplatesView()
+    private func secondarySurface<Content: View>(
+        title: String,
+        accessibilityLabel: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        ZStack(alignment: .top) {
+            content()
+
+            HStack {
+                Spacer()
+
+                VStack(spacing: 2) {
+                    Text(title)
+                        .font(.system(size: Theme.fontSizeSection, weight: .bold, design: .rounded))
+                        .foregroundStyle(Theme.primaryText)
+                }
+
+                Spacer()
+
+                Button {
+                    appEnvironment.appState.showScheduleHome()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Theme.primaryPurple)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Circle())
+                        .background(Theme.primaryPurple.opacity(0.1))
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel(accessibilityLabel)
+                .padding(.trailing, 16)
+            }
+            .frame(height: 64)
+            .padding(.top, 4)
+            .background(.ultraThinMaterial.opacity(0.6))
+            .overlay(alignment: .bottom) {
+                Divider().opacity(0.1)
+            }
         }
     }
 }

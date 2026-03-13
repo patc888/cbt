@@ -158,7 +158,7 @@ struct AddTimeBlockView: View {
                                     }
 
                                     VStack(alignment: .leading, spacing: 8) {
-                                        Text("Notes")
+                                        Text("Brain Dump")
                                             .font(.system(size: 13, weight: .bold, design: .rounded))
                                             .foregroundStyle(Theme.secondaryText)
                                             .padding(.leading, 4)
@@ -177,10 +177,14 @@ struct AddTimeBlockView: View {
                                             #if os(iOS)
                                             .scrollContentBackground(.hidden)
                                             #endif
+
+                                        Text("Capture loose notes here while planning this block.")
+                                            .font(.system(size: 12, design: .rounded))
+                                            .foregroundStyle(Theme.secondaryText)
                                     }
 
                                     if !isEditing {
-                                        Text("Use Templates for routines you want regenerated later. Manual blocks are for one-off plans and personal adjustments.")
+                                        Text("Use Routines for plans you want regenerated later. Manual blocks are for one-off plans and personal adjustments.")
                                             .font(.system(size: 12, design: .rounded))
                                             .foregroundStyle(Theme.secondaryText)
                                     }

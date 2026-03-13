@@ -18,13 +18,13 @@ struct TemplatesView: View {
                     TimeCard {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack(alignment: .top, spacing: 12) {
-                                TimeSectionHeader("Templates", subtitle: "Reusable blocks for the weekdays you choose")
+                                TimeSectionHeader("Routines", subtitle: "Reusable blocks for the weekdays you choose")
 
                                 if !templates.isEmpty {
                                     Button {
                                         isPresentingTemplateEditor = true
                                     } label: {
-                                        Label("New Template", systemImage: "plus")
+                                        Label("New Routine", systemImage: "plus")
                                             .font(.system(size: 13, weight: .bold, design: .rounded))
                                     }
                                     .buttonStyle(.borderedProminent)
@@ -35,12 +35,12 @@ struct TemplatesView: View {
 
                             if templates.isEmpty {
                                 EmptyStateView(
-                                    title: "No Templates Yet",
+                                    title: "No Routines Yet",
                                     systemImage: "square.on.square",
-                                    message: "Create a template for routines you want to regenerate into future days.",
-                                    eyebrow: "Templates"
+                                    message: "Create a routine for blocks you want to regenerate into future days.",
+                                    eyebrow: "Routines"
                                 ) {
-                                    Button("Create Template") {
+                                    Button("Create Routine") {
                                         isPresentingTemplateEditor = true
                                     }
                                     .buttonStyle(.borderedProminent)
@@ -100,7 +100,7 @@ struct TemplatesView: View {
                                 }
                             }
                             
-                            Text("Templates create planned blocks when you refresh a matching day in Schedule.")
+                            Text("Routines create planned blocks when you refresh a matching day in Schedule.")
                                 .font(.system(size: 13, design: .rounded))
                                 .foregroundStyle(Theme.secondaryText)
                         }
@@ -182,12 +182,12 @@ private struct TemplateEditorView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     TimeCard {
                         TimeSectionHeader(
-                            template == nil ? "New Template" : "Edit Template",
+                            template == nil ? "New Routine" : "Edit Routine",
                             subtitle: "Reusable defaults for blocks you want the app to generate later"
                         )
 
                         VStack(alignment: .leading, spacing: 14) {
-                            TextField("Template Name", text: $name)
+                            TextField("Routine Name", text: $name)
 
                             Picker("Start Time", selection: $defaultStartTime) {
                                 ForEach(0..<24, id: \.self) { hour in
@@ -241,7 +241,7 @@ private struct TemplateEditorView: View {
                                     .frame(minHeight: 120)
                             }
 
-                            Text("Templates do not create a block immediately. They become planned blocks later when a matching day is generated.")
+                            Text("Routines do not create a block immediately. They become planned blocks later when a matching day is generated.")
                                 .font(.system(size: 12, design: .rounded))
                                 .foregroundStyle(Theme.secondaryText)
                         }
@@ -255,7 +255,7 @@ private struct TemplateEditorView: View {
                     }
 
                     if template != nil {
-                        Button("Delete Template", role: .destructive) {
+                        Button("Delete Routine", role: .destructive) {
                             isShowingDeleteConfirmation = true
                         }
                         .padding(.horizontal)
@@ -263,7 +263,7 @@ private struct TemplateEditorView: View {
                 }
                 .padding()
             }
-            .navigationTitle(template == nil ? "New Template" : "Edit Template")
+            .navigationTitle(template == nil ? "New Routine" : "Edit Routine")
             .timeInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

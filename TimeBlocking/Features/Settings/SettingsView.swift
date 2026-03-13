@@ -48,7 +48,7 @@ struct SettingsView: View {
                 resetAllData()
             }
         } message: {
-            Text("This will delete all your schedule blocks and templates. This action cannot be undone.")
+            Text("This will delete all your schedule blocks and routines. This action cannot be undone.")
         }
         .task {
             await refreshNotificationAccessState()

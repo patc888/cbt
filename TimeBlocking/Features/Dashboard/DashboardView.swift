@@ -90,16 +90,16 @@ struct DashboardView: View {
                                 EmptyStateView(
                                     title: "No Plan Yet",
                                     systemImage: "calendar.badge.plus",
-                                    message: "Add a block in Schedule or create templates for routines you want to reuse.",
+                                    message: "Add a block in Schedule, or create routines for plans you want to regenerate later.",
                                     eyebrow: "Get Started"
                                 ) {
-                                    Button("Open Schedule") {
-                                        appEnvironment.appState.selectedSection = .schedule
+                                    Button("Add Block") {
+                                        appEnvironment.appState.showAddBlock()
                                     }
                                     .buttonStyle(.borderedProminent)
 
-                                    Button("Open Templates") {
-                                        appEnvironment.appState.selectedSection = .templates
+                                    Button("Open Routines") {
+                                        appEnvironment.appState.showTemplates()
                                     }
                                     .buttonStyle(.bordered)
                                 }

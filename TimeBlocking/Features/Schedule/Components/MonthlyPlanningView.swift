@@ -6,6 +6,7 @@ struct MonthlyPlanningView: View {
     let days: [MonthlyPlanningDay]
     let summary: ScheduleMonthSummary
     let calendar: Calendar
+    let onSelectDay: (Date) -> Void
     let onShiftMonth: (Int) -> Void
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -78,7 +79,8 @@ struct MonthlyPlanningView: View {
                         day: day,
                         maxScheduledMinutes: maxScheduledMinutes,
                         calendar: calendar,
-                        cellHeight: cellHeight
+                        cellHeight: cellHeight,
+                        onSelectDay: onSelectDay
                     )
                 }
             }
@@ -101,6 +103,7 @@ private struct MonthlyPlanningDayCell: View {
     let maxScheduledMinutes: Int
     let calendar: Calendar
     let cellHeight: CGFloat
+    let onSelectDay: (Date) -> Void
 
     private var isSelected: Bool {
         calendar.isDate(day.date, inSameDayAs: selectedDate)
@@ -129,6 +132,7 @@ private struct MonthlyPlanningDayCell: View {
     var body: some View {
         Button {
             selectedDate = day.date
+            onSelectDay(day.date)
         } label: {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .center, spacing: 2) {

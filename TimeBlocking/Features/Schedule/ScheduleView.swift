@@ -529,7 +529,7 @@ struct ScheduleView: View {
                     Button {
                         regenerateSelectedDay()
                     } label: {
-                        Label(isRegenerating ? "Refreshing..." : "Refresh", systemImage: "arrow.clockwise")
+                        Label(isRegenerating ? "Regenerating..." : "Regenerate", systemImage: "arrow.clockwise")
                             .font(.system(size: 13, weight: .bold, design: .rounded))
                     }
                     .buttonStyle(.borderedProminent)
@@ -564,8 +564,8 @@ struct ScheduleView: View {
                         title: "No Blocks Yet",
                         systemImage: "calendar.badge.plus",
                         message: hasTemplates
-                            ? "Add a one-off block for this date, or refresh the day to pull in matching templates."
-                            : "Add a one-off block for this date, or create a template first if it should repeat.",
+                            ? "Add a one-off block for this date, or regenerate the day to pull in matching routines."
+                            : "Add a one-off block for this date, or open Routines first if it should repeat.",
                         eyebrow: "Schedule"
                     ) {
                         Button("Add Block") {
@@ -574,8 +574,8 @@ struct ScheduleView: View {
                         .buttonStyle(.borderedProminent)
 
                         if !hasTemplates {
-                            Button("Open Templates") {
-                                appEnvironment.appState.selectedSection = .templates
+                            Button("Open Routines") {
+                                appEnvironment.appState.showTemplates()
                             }
                             .buttonStyle(.bordered)
                         }
@@ -671,8 +671,8 @@ struct ScheduleView: View {
                         title: "No Blocks This Week",
                         systemImage: "calendar.badge.plus",
                         message: hasTemplates
-                            ? "Switch weeks, add a one-off block, or open a day and refresh it to pull in matching templates."
-                            : "Add a block to any day in this week, or create templates first if the schedule should repeat.",
+                            ? "Switch weeks, add a one-off block, or open a day and regenerate it to pull in matching routines."
+                            : "Add a block to any day in this week, or open Routines first if the schedule should repeat.",
                         eyebrow: "Weekly Planning"
                     ) {
                         Button("Add Block") {
@@ -681,8 +681,8 @@ struct ScheduleView: View {
                         .buttonStyle(.borderedProminent)
 
                         if !hasTemplates {
-                            Button("Open Templates") {
-                                appEnvironment.appState.selectedSection = .templates
+                            Button("Open Routines") {
+                                appEnvironment.appState.showTemplates()
                             }
                             .buttonStyle(.bordered)
                         }
@@ -718,6 +718,10 @@ struct ScheduleView: View {
                     days: selectedMonthDays,
                     summary: selectedMonthSummary,
                     calendar: calendar,
+                    onSelectDay: { date in
+                        appEnvironment.appState.selectedDate = date
+                        scheduleMode = .day
+                    },
                     onShiftMonth: { offset in
                         shiftSelectedMonth(by: offset)
                     }
@@ -816,8 +820,8 @@ struct ScheduleView: View {
         do {
             guard hasTemplates else {
                 showFeedback(
-                    title: "No templates yet",
-                    message: "Create a template first, then regenerate this day when you want routine blocks added.",
+                    title: "No routines yet",
+                    message: "Create a routine first, then regenerate this day when you want repeating blocks added.",
                     systemImage: "square.on.square",
                     tint: Theme.primaryPurple
                 )
@@ -836,8 +840,8 @@ struct ScheduleView: View {
             showFeedback(
                 title: regeneratedBlocks.isEmpty ? "Nothing to regenerate" : "Day regenerated",
                 message: regeneratedBlocks.isEmpty
-                    ? "No templates match \(appEnvironment.appState.selectedDate.formatted(.dateTime.weekday(.wide))) yet."
-                    : "Template-backed planned blocks were refreshed for the selected day.",
+                    ? "No routines match \(appEnvironment.appState.selectedDate.formatted(.dateTime.weekday(.wide))) yet."
+                    : "Routine-backed planned blocks were refreshed for the selected day.",
                 systemImage: regeneratedBlocks.isEmpty ? "calendar.badge.exclamationmark" : "arrow.clockwise.circle.fill",
                 tint: regeneratedBlocks.isEmpty ? .orange : Theme.primaryPurple
             )

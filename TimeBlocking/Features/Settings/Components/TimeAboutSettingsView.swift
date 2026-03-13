@@ -23,7 +23,7 @@ struct TimeAboutSettingsView: View {
                 icon: "checkmark.seal",
                 iconColor: Theme.primaryPurple,
                 title: "V1 Focus",
-                subtitle: "Scheduling, templates, reminders, and widgets"
+                subtitle: "Scheduling, routines, reminders, and widgets"
             )
 
             Button(role: .destructive, action: onReset) {
