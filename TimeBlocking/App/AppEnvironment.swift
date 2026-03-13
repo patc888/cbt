@@ -2,6 +2,11 @@ import Foundation
 import Observation
 import SwiftData
 
+enum AppBootstrapState: String {
+    case empty
+    case sample
+}
+
 @MainActor
 @Observable
 final class AppEnvironment {
@@ -14,6 +19,7 @@ final class AppEnvironment {
     let subscriptionStore: TimeSubscriptionStore
     let appState: TimeAppState
 
+    private let bootstrapStateKey = "timeblocking.bootstrap-state"
     private var hasPreparedPersistentState = false
 
     init(
@@ -47,7 +53,7 @@ final class AppEnvironment {
 
         do {
             let preferences = try preferencesStore.fetchOrCreate(in: modelContext)
-            try seedSampleDataIfNeeded(using: preferences, modelContext: modelContext)
+            try seedSampleDataOnFirstLaunchIfNeeded(using: preferences, modelContext: modelContext)
             refreshWidgets(using: modelContext)
             hasPreparedPersistentState = true
             Task {
@@ -55,6 +61,31 @@ final class AppEnvironment {
             }
         } catch {
             assertionFailure("Failed to prepare app foundation: \(error)")
+        }
+    }
+
+    func resetAllDataToEmpty(using modelContext: ModelContext) throws {
+        let preferences = try preferencesStore.fetchOrCreate(in: modelContext)
+        try deleteAllScheduleData(in: modelContext)
+        applyDefaultPreferences(to: preferences)
+        try preferencesStore.save(preferences, in: modelContext)
+        storeBootstrapState(.empty)
+        refreshWidgets(using: modelContext)
+
+        Task {
+            await resyncNotifications(using: modelContext, preferences: preferences)
+        }
+    }
+
+    func resetAllDataToSample(using modelContext: ModelContext) throws {
+        let preferences = try preferencesStore.fetchOrCreate(in: modelContext)
+        try deleteAllScheduleData(in: modelContext)
+        try seedSampleData(using: preferences, modelContext: modelContext)
+        storeBootstrapState(.sample)
+        refreshWidgets(using: modelContext)
+
+        Task {
+            await resyncNotifications(using: modelContext, preferences: preferences)
         }
     }
 
@@ -118,7 +149,7 @@ final class AppEnvironment {
         }
     }
 
-    private func seedSampleDataIfNeeded(
+    private func seedSampleDataOnFirstLaunchIfNeeded(
         using preferences: AppPreferences,
         modelContext: ModelContext,
         calendar: Calendar = .current
@@ -127,80 +158,12 @@ final class AppEnvironment {
             return
         }
 
-        applySamplePreferences(to: preferences)
-        try preferencesStore.save(preferences, in: modelContext)
-
-        let weekdayMask = weekdayMask(for: [.monday, .tuesday, .wednesday, .thursday, .friday])
-        let day = calendar.startOfDay(for: .now)
-
-        _ = try scheduleRepository.createTemplate(
-            name: "Morning Planning",
-            notes: "Quick review of priorities and the day's schedule.",
-            defaultStartTime: time(hour: 8, minute: 0, on: day, calendar: calendar),
-            durationMinutes: 30,
-            weekdayMask: weekdayMask,
-            category: .routine,
-            in: modelContext,
-            calendar: calendar
-        )
-        _ = try scheduleRepository.createTemplate(
-            name: "Focus Work",
-            notes: "Example template: generated blocks like this come from reusable routines.",
-            defaultStartTime: time(hour: 9, minute: 0, on: day, calendar: calendar),
-            durationMinutes: 120,
-            weekdayMask: weekdayMask,
-            category: .focus,
-            in: modelContext,
-            calendar: calendar
-        )
-        _ = try scheduleRepository.createTemplate(
-            name: "Lunch Break",
-            notes: "A reusable midday break to keep the schedule readable.",
-            defaultStartTime: time(hour: 12, minute: 30, on: day, calendar: calendar),
-            durationMinutes: 60,
-            weekdayMask: weekdayMask,
-            category: .personal,
-            in: modelContext,
-            calendar: calendar
-        )
-        _ = try scheduleRepository.createTemplate(
-            name: "Evening Wrap-Up",
-            notes: "Use templates to close the day and prepare tomorrow's plan.",
-            defaultStartTime: time(hour: 16, minute: 30, on: day, calendar: calendar),
-            durationMinutes: 30,
-            weekdayMask: weekdayMask,
-            category: .admin,
-            in: modelContext,
-            calendar: calendar
-        )
-
-        let errandsBlock = try scheduleRepository.createBlock(
-            title: "Errands",
-            notes: "Example manual block: add one-off tasks that should not come from a template.",
-            date: day,
-            startTime: time(hour: 17, minute: 30, on: day, calendar: calendar),
-            durationMinutes: 45,
-            category: .personal,
-            in: modelContext,
-            calendar: calendar
-        )
-
-        for (index, title) in [
-            "Pick up essentials",
-            "Drop off return",
-            "Review tomorrow's first task"
-        ].enumerated() {
-            modelContext.insert(
-                BlockChecklistItem(
-                    title: title,
-                    sortOrder: index,
-                    timeBlock: errandsBlock
-                )
-            )
+        guard bootstrapState == nil else {
+            return
         }
-        try modelContext.save()
 
-        try scheduleRepository.generateBlocksIfNeeded(for: day, in: modelContext, calendar: calendar)
+        try seedSampleData(using: preferences, modelContext: modelContext, calendar: calendar)
+        storeBootstrapState(.sample)
     }
 
     private func isEffectivelyEmpty(modelContext: ModelContext) throws -> Bool {
@@ -215,11 +178,118 @@ final class AppEnvironment {
         return !hasTemplates && !hasBlocks
     }
 
+    private func seedSampleData(
+        using preferences: AppPreferences,
+        modelContext: ModelContext,
+        calendar: Calendar = .current
+    ) throws {
+        applySamplePreferences(to: preferences)
+        try preferencesStore.save(preferences, in: modelContext)
+
+        let today = calendar.startOfDay(for: .now)
+        let weekdayMask = weekdayMask(for: [.monday, .tuesday, .wednesday, .thursday, .friday])
+
+        _ = try scheduleRepository.createTemplate(
+            name: "Morning Planning",
+            notes: "Reusable weekday routine that can be regenerated onto future days.",
+            defaultStartTime: time(hour: 8, minute: 30, on: today, calendar: calendar),
+            durationMinutes: 30,
+            weekdayMask: weekdayMask,
+            category: .routine,
+            in: modelContext,
+            calendar: calendar
+        )
+
+        try scheduleRepository.generateBlocksIfNeeded(for: today, in: modelContext, calendar: calendar)
+
+        _ = try scheduleRepository.createBlock(
+            title: "Focus Sprint: Project Proposal",
+            notes: "A realistic focused work block you can drag to another time if the day changes.",
+            date: today,
+            startTime: time(hour: 9, minute: 30, on: today, calendar: calendar),
+            durationMinutes: 90,
+            category: .focus,
+            in: modelContext,
+            calendar: calendar
+        )
+
+        let prepBlock = try scheduleRepository.createBlock(
+            title: "Prep for Team Check-In",
+            notes: "Example block with a checklist so the day view demonstrates step-by-step progress.",
+            date: today,
+            startTime: time(hour: 11, minute: 30, on: today, calendar: calendar),
+            durationMinutes: 30,
+            category: .admin,
+            checklistItemTitles: [
+                "Review agenda",
+                "Update blockers",
+                "Capture next actions"
+            ],
+            in: modelContext,
+            calendar: calendar
+        )
+
+        if let firstChecklistItem = prepBlock.checklistItems?.sorted(by: { $0.sortOrder < $1.sortOrder }).first {
+            firstChecklistItem.isCompleted = true
+            firstChecklistItem.updatedAt = .now
+        }
+
+        let walkBlock = try scheduleRepository.createBlock(
+            title: "Lunch Walk",
+            notes: "Completed example block to show progress and finished work in the schedule.",
+            date: today,
+            startTime: time(hour: 13, minute: 0, on: today, calendar: calendar),
+            durationMinutes: 30,
+            category: .personal,
+            in: modelContext,
+            calendar: calendar
+        )
+        try scheduleRepository.setBlockStatus(walkBlock, to: .completed, in: modelContext)
+    }
+
+    private func deleteAllScheduleData(in modelContext: ModelContext) throws {
+        try modelContext.delete(model: TimeBlock.self)
+        try modelContext.delete(model: ScheduleTemplate.self)
+        try modelContext.delete(model: BlockChecklistItem.self)
+        try modelContext.save()
+    }
+
+    private func applyDefaultPreferences(to preferences: AppPreferences) {
+        preferences.defaultBlockDurationMinutes = 60
+        preferences.dayStartHour = 6
+        preferences.firstWeekday = .monday
+        preferences.notificationsEnabled = false
+        preferences.notificationLeadTimeMinutes = 0
+        preferences.showsCompletedBlocks = true
+        preferences.appTheme = .system
+        preferences.selectedColorTheme = .purple
+        preferences.isImmersive = true
+        preferences.hapticsEnabled = true
+    }
+
     private func applySamplePreferences(to preferences: AppPreferences) {
+        preferences.notificationsEnabled = false
+        preferences.notificationLeadTimeMinutes = 0
         preferences.defaultBlockDurationMinutes = 45
         preferences.dayStartHour = 7
         preferences.firstWeekday = .monday
         preferences.showsCompletedBlocks = false
+        preferences.appTheme = .system
+        preferences.selectedColorTheme = .purple
+        preferences.isImmersive = true
+        preferences.hapticsEnabled = true
+    }
+
+    private var bootstrapState: AppBootstrapState? {
+        guard let rawValue = UserDefaults.standard.string(forKey: bootstrapStateKey) else {
+            return nil
+        }
+
+        return AppBootstrapState(rawValue: rawValue)
+    }
+
+    private func storeBootstrapState(_ state: AppBootstrapState) {
+        UserDefaults.standard.set(state.rawValue, forKey: bootstrapStateKey)
     }
 
     private func weekdayMask(for weekdays: [Weekday]) -> Int {

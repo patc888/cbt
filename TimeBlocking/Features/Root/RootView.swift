@@ -65,35 +65,19 @@ struct RootView: View {
                 Divider().opacity(0.1)
             }
 
-            VStack {
-                Spacer()
-
-                HStack {
-                    floatingActionButton(
-                        title: "Add Block",
-                        systemImage: "plus",
-                        alignment: .leading
-                    ) {
-                        appState.isPresentingAddModal = true
-                    }
-
-                    Spacer()
-
-                    floatingActionButton(
-                        title: "Routines",
-                        systemImage: "square.on.square",
-                        alignment: .trailing
-                    ) {
-                        appState.showTemplates()
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 28)
-            }
         }
 #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
 #endif
+        .overlay(alignment: .bottomTrailing) {
+            floatingActionButton(
+                systemImage: "plus"
+            ) {
+                appState.isPresentingAddModal = true
+            }
+            .padding(.trailing, 24)
+            .padding(.bottom, 24)
+        }
         .sheet(item: $appState.presentedSheet) { sheet in
             switch sheet {
             case .dashboard:
@@ -145,25 +129,21 @@ struct RootView: View {
     }
 
     private func floatingActionButton(
-        title: String,
         systemImage: String,
-        alignment: Alignment,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+            Image(systemName: systemImage)
+                .font(.system(size: 24, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 14)
+                .frame(width: 64, height: 64)
                 .background(
-                    Capsule()
-                        .fill(Theme.primaryPurple)
+                    Circle()
+                        .fill(Theme.primaryPurple.gradient)
+                        .shadow(color: Theme.primaryPurple.opacity(0.4), radius: 12, x: 0, y: 6)
                 )
-                .shadow(color: Theme.primaryPurple.opacity(0.28), radius: 14, x: 0, y: 8)
         }
         .buttonStyle(.plain)
-        .frame(maxWidth: .infinity, alignment: alignment)
     }
 
     private func secondarySurface<Content: View>(

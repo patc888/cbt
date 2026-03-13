@@ -125,6 +125,7 @@ struct DayTimelineView: View {
     private let labelColumnWidth: CGFloat = 40
     private let snapMinutes = 15
     private let minimumBlockHeight: CGFloat = 44
+    private let minimumBlockDurationMinutes: Double = 15
     private let timelineVerticalPadding: CGFloat = 18
     private let structuralCardHeight: CGFloat = 52
     private let structuralCardSpacing: CGFloat = 10
@@ -245,6 +246,7 @@ struct DayTimelineView: View {
                         DayTimelineBlockCard(
                             block: block,
                             displayedStartDate: displayedStartDate(for: block),
+                            blockHeight: blockHeight(for: block),
                             conflictSummary: blockConflictsByID[block.id],
                             isChecklistExpanded: expandedChecklistBlockIDs.contains(block.id),
                             isDragging: dragSession?.blockID == block.id,
@@ -308,6 +310,7 @@ struct DayTimelineView: View {
                     DayTimelineBlockCard(
                         block: wakeUpItem,
                         displayedStartDate: wakeUpItem.startDate,
+                        blockHeight: structuralCardHeight,
                         conflictSummary: nil,
                         isChecklistExpanded: false,
                         isDragging: false,
@@ -331,6 +334,7 @@ struct DayTimelineView: View {
                     DayTimelineBlockCard(
                         block: sleepItem,
                         displayedStartDate: sleepItem.startDate,
+                        blockHeight: structuralCardHeight,
                         conflictSummary: nil,
                         isChecklistExpanded: false,
                         isDragging: false,
@@ -360,12 +364,15 @@ struct DayTimelineView: View {
     }
 
     private func blockHeight(for block: DayTimelineBlockSnapshot) -> CGFloat {
-        let durationMinutes = max(block.endDate.timeIntervalSince(block.startDate) / 60, 15)
-        return max(CGFloat(durationMinutes / 60) * hourHeight, minimumBlockHeight) + checklistExpansionHeight(for: block)
+        let durationMinutes = max(block.endDate.timeIntervalSince(block.startDate) / 60, minimumBlockDurationMinutes)
+        return max(CGFloat(durationMinutes / 60) * hourHeight, minimumBlockHeight)
     }
 
     private func eventHeight(for event: TimeCalendarEvent) -> CGFloat {
-        let clippedDuration = max(displayedEndDate(for: event).timeIntervalSince(displayedStartDate(for: event)) / 60, 15)
+        let clippedDuration = max(
+            displayedEndDate(for: event).timeIntervalSince(displayedStartDate(for: event)) / 60,
+            minimumBlockDurationMinutes
+        )
         return max(CGFloat(clippedDuration / 60) * hourHeight, 40)
     }
 
@@ -388,20 +395,6 @@ struct DayTimelineView: View {
 
     private func displayedEndDate(for event: TimeCalendarEvent) -> Date {
         min(event.endDate, timelineBounds.rangeEnd)
-    }
-
-    private func checklistExpansionHeight(for block: DayTimelineBlockSnapshot) -> CGFloat {
-        guard expandedChecklistBlockIDs.contains(block.id) else {
-            return 0
-        }
-
-        let checklistCount = block.checklistItems.count
-        guard checklistCount > 0 else {
-            return 0
-        }
-
-        let visibleRowCount = min(checklistCount, 4)
-        return CGFloat(visibleRowCount) * 34 + 18
     }
 
     private func dragGesture(for block: DayTimelineBlockSnapshot) -> some Gesture {
@@ -606,6 +599,7 @@ private struct TimelineBlockDragSession {
 private struct DayTimelineBlockCard: View {
     let block: DayTimelineBlockSnapshot
     let displayedStartDate: Date
+    let blockHeight: CGFloat
     let conflictSummary: ScheduleBlockConflictSummary?
     let isChecklistExpanded: Bool
     let isDragging: Bool
@@ -617,6 +611,8 @@ private struct DayTimelineBlockCard: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var fillProgress: CGFloat = 0
     @State private var bounceScale: CGFloat = 1.0
+    @State private var checkScale: CGFloat = 1.0
+    @State private var glowOpacity: CGFloat = 0
     @State private var isAnimating = false
 
     private var isCompleted: Bool {
@@ -624,32 +620,46 @@ private struct DayTimelineBlockCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: isChecklistExpanded ? 12 : 6) {
-            header
+        HStack(alignment: .top, spacing: usesCompactLayout ? 10 : 12) {
+            durationRail
 
-            if !sortedChecklistItems.isEmpty && isChecklistExpanded {
-                checklistSummaryButton
-            }
+            VStack(alignment: .leading, spacing: isChecklistExpanded && showsChecklistControls ? 12 : 8) {
+                header
 
-            if isChecklistExpanded && !sortedChecklistItems.isEmpty {
-                expandedChecklist
+                if showsChecklistControls {
+                    checklistSummaryButton
+                }
+
+                if visibleChecklistRowLimit > 0 {
+                    expandedChecklist
+                }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.leading, usesCompactLayout ? 8 : 10)
+        .padding(.trailing, usesCompactLayout ? 10 : 12)
+        .padding(.vertical, usesCompactLayout ? 8 : 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(backgroundFill)
         .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(borderColor, lineWidth: conflictSummary == nil ? 1.25 : 1.5)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(borderColor, lineWidth: conflictSummary == nil ? 1 : 1.35)
         }
-        .overlay(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 2, style: .continuous)
-                .fill(isCompleted ? Color.clear : tintColor.opacity(0.9))
-                .frame(width: 4)
-                .padding(.vertical, 10)
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            tintColor.opacity(glowOpacity * 0.22),
+                            tintColor.opacity(0),
+                            Color.green.opacity(glowOpacity * 0.18)
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .opacity(Double(glowOpacity))
         }
-        .shadow(color: tintColor.opacity(isDragging ? 0.18 : 0.08), radius: isDragging ? 22 : 6, x: 0, y: isDragging ? 12 : 3)
+        .shadow(color: tintColor.opacity(isDragging ? 0.2 : 0.06), radius: isDragging ? 20 : 10, x: 0, y: isDragging ? 10 : 4)
         .scaleEffect(isDragging ? 1.015 : bounceScale)
         .animation(.spring(response: 0.28, dampingFraction: 0.8), value: isDragging)
         .animation(.spring(response: 0.28, dampingFraction: 0.8), value: isChecklistExpanded)
@@ -663,42 +673,41 @@ private struct DayTimelineBlockCard: View {
         sortedChecklistItems.filter(\.isCompleted).count
     }
 
+    private var usesCompactLayout: Bool {
+        blockHeight < 72
+    }
+
+    private var showsChecklistControls: Bool {
+        !sortedChecklistItems.isEmpty && blockHeight >= 96
+    }
+
+    private var visibleChecklistRowLimit: Int {
+        guard isChecklistExpanded, showsChecklistControls else {
+            return 0
+        }
+
+        let availableHeight = max(blockHeight - 78, 0)
+        let fittedRows = Int(floor((availableHeight - 18) / 34))
+        return max(0, min(sortedChecklistItems.count, min(fittedRows, 4)))
+    }
+
+    private var hiddenChecklistItemCount: Int {
+        max(sortedChecklistItems.count - visibleChecklistRowLimit, 0)
+    }
+
     private var header: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Button(action: handleComplete) {
-                ZStack {
-                    Circle()
-                        .stroke(
-                            isCompleted ? Color.green : tintColor.opacity(0.35),
-                            lineWidth: 2
-                        )
-                        .frame(width: 26, height: 26)
-
-                    if isCompleted || fillProgress > 0.9 {
-                        Circle()
-                            .fill(Color.green)
-                            .frame(width: 26, height: 26)
-
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 11, weight: .black))
-                            .foregroundStyle(.white)
-                    }
-                }
-            }
-            .buttonStyle(.plain)
-            .disabled(isAnimating)
-            .accessibilityLabel(block.status == .completed ? "Mark item as planned" : "Mark item as completed")
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
+        HStack(alignment: .top, spacing: usesCompactLayout ? 8 : 10) {
+            VStack(alignment: .leading, spacing: usesCompactLayout ? 4 : 6) {
+                HStack(alignment: .top, spacing: 6) {
                     categoryIcon
 
                     Text(block.title)
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .font(.system(size: usesCompactLayout ? 12 : 13, weight: .bold, design: .rounded))
                         .foregroundStyle(isCompleted ? secondaryTextColor : primaryTextColor)
                         .strikethrough(isCompleted, color: secondaryTextColor)
                         .opacity(isCompleted ? 0.82 : 1)
-                        .lineLimit(2)
+                        .lineLimit(usesCompactLayout ? 1 : 2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                     if block.isTemplateBacked {
                         Image(systemName: "sparkles")
@@ -709,8 +718,9 @@ private struct DayTimelineBlockCard: View {
 
                 HStack(spacing: 8) {
                     Text(timeRangeText)
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .font(.system(size: usesCompactLayout ? 10 : 11, weight: .semibold, design: .rounded))
                         .foregroundStyle(secondaryTextColor)
+                        .lineLimit(1)
 
                     if isCompleted {
                         Text("Done")
@@ -725,37 +735,137 @@ private struct DayTimelineBlockCard: View {
                     }
 
                     if let conflictSummary, !isDragging {
-                        Text(conflictSummary.badgeText)
-                            .font(.system(size: 10, weight: .bold, design: .rounded))
-                            .foregroundStyle(conflictAccentColor)
+                        infoPill(
+                            text: conflictSummary.badgeText,
+                            foreground: conflictAccentColor,
+                            background: conflictAccentColor.opacity(0.12)
+                        )
+                    }
+
+                    if !sortedChecklistItems.isEmpty && !isChecklistExpanded {
+                        infoPill(
+                            text: "\(checklistCompletionCount)/\(sortedChecklistItems.count)",
+                            foreground: secondaryTextColor,
+                            background: Color.primary.opacity(0.05)
+                        )
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer(minLength: 0)
+            VStack(alignment: .trailing, spacing: 8) {
+                if isDragging {
+                    Text(displayedStartDate.formatted(date: .omitted, time: .shortened))
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundStyle(tintColor)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(dragPillBackground)
+                        .clipShape(Capsule())
+                }
 
-            if isDragging {
-                Text(displayedStartDate.formatted(date: .omitted, time: .shortened))
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundStyle(tintColor)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.96))
-                    .clipShape(Capsule())
+                Spacer(minLength: 0)
+
+                completionButton
             }
+        }
+    }
+
+    private var durationRail: some View {
+        ZStack(alignment: .top) {
+            RoundedRectangle(cornerRadius: railCornerRadius, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: railGradientColors,
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+
+            VStack(spacing: usesCompactLayout ? 6 : 8) {
+                Text(durationBadgeText)
+                    .font(.system(size: usesCompactLayout ? 9 : 10, weight: .black, design: .rounded))
+                    .foregroundStyle(.white.opacity(isCompleted ? 0.92 : 1))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+
+                if !usesCompactLayout {
+                    Capsule()
+                        .fill(Color.white.opacity(isCompleted ? 0.22 : 0.34))
+                        .frame(width: 18, height: 3)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.top, usesCompactLayout ? 7 : 9)
+            .padding(.horizontal, 4)
+            .padding(.bottom, 8)
+        }
+        .frame(width: railWidth)
+        .overlay(alignment: .top) {
+            Circle()
+                .fill(Color.white.opacity(isCompleted ? 0.16 : 0.28))
+                .frame(width: usesCompactLayout ? 18 : 20, height: usesCompactLayout ? 18 : 20)
+                .overlay {
+                    Image(systemName: iconSystemName)
+                        .font(.system(size: usesCompactLayout ? 8 : 9, weight: .black))
+                        .foregroundStyle(.white.opacity(isCompleted ? 0.8 : 0.96))
+                }
+                .padding(.top, usesCompactLayout ? 6 : 7)
         }
     }
 
     private var categoryIcon: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(tintColor.opacity(isCompleted ? 0.3 : 1.0))
-                .frame(width: 22, height: 22)
+                .fill(tintColor.opacity(isCompleted ? 0.14 : 0.12))
+                .frame(width: usesCompactLayout ? 20 : 22, height: usesCompactLayout ? 20 : 22)
 
             Image(systemName: iconSystemName)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(isCompleted ? Color.white.opacity(0.6) : Color.white)
+                .font(.system(size: usesCompactLayout ? 10 : 11, weight: .bold))
+                .foregroundStyle(isCompleted ? secondaryTextColor.opacity(0.7) : tintColor)
         }
+    }
+
+    private var completionButton: some View {
+        Button(action: handleComplete) {
+            ZStack {
+                Circle()
+                    .fill(
+                        isCompleted || fillProgress > 0.88
+                            ? Color.green
+                            : completionButtonFill
+                    )
+                    .frame(width: completionControlSize, height: completionControlSize)
+
+                Circle()
+                    .stroke(
+                        isCompleted || fillProgress > 0.88
+                            ? Color.green.opacity(0.18)
+                            : tintColor.opacity(0.32),
+                        lineWidth: 1.6
+                    )
+                    .frame(width: completionControlSize, height: completionControlSize)
+
+                Image(systemName: isCompleted || fillProgress > 0.88 ? "checkmark" : "circle")
+                    .font(.system(size: usesCompactLayout ? 12 : 13, weight: .black))
+                    .foregroundStyle(
+                        isCompleted || fillProgress > 0.88
+                            ? Color.white
+                            : tintColor.opacity(0.9)
+                    )
+            }
+            .scaleEffect(checkScale)
+            .shadow(
+                color: (isCompleted ? Color.green : tintColor).opacity(fillProgress > 0.88 || isCompleted ? 0.22 : 0.08),
+                radius: fillProgress > 0.88 || isCompleted ? 12 : 4,
+                x: 0,
+                y: 4
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isAnimating)
+        .accessibilityLabel(block.status == .completed ? "Mark item as planned" : "Mark item as completed")
     }
 
     private var checklistSummaryButton: some View {
@@ -779,7 +889,7 @@ private struct DayTimelineBlockCard: View {
 
     private var expandedChecklist: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(sortedChecklistItems.prefix(4)) { item in
+            ForEach(sortedChecklistItems.prefix(visibleChecklistRowLimit)) { item in
                 Button {
                     onToggleChecklistItem(item.id)
                 } label: {
@@ -807,8 +917,8 @@ private struct DayTimelineBlockCard: View {
                 .accessibilityLabel(item.isCompleted ? "Mark checklist item incomplete" : "Mark checklist item complete")
             }
 
-            if sortedChecklistItems.count > 4 {
-                Text("+\(sortedChecklistItems.count - 4) more in edit view")
+            if hiddenChecklistItemCount > 0 {
+                Text("+\(hiddenChecklistItemCount) more in edit view")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundStyle(secondaryTextColor)
             }
@@ -852,16 +962,26 @@ private struct DayTimelineBlockCard: View {
 
     private var backgroundFill: some View {
         ZStack(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(
                     isCompleted
-                    ? (colorScheme == .dark ? Color.white.opacity(0.03) : Color.gray.opacity(0.04))
-                    : (colorScheme == .light ? .white : Color(.secondarySystemGroupedBackground))
+                    ? (colorScheme == .dark ? Color.white.opacity(0.035) : Color.white.opacity(0.74))
+                    : (colorScheme == .light ? Color.white.opacity(0.9) : Color(white: 0.12).opacity(0.92))
                 )
-            
+
             if fillProgress > 0 {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(tintColor.opacity(0.12))
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                tintColor.opacity(0.02),
+                                tintColor.opacity(0.12),
+                                Color.green.opacity(0.08)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                     .scaleEffect(x: fillProgress, anchor: .leading)
             }
         }
@@ -872,29 +992,33 @@ private struct DayTimelineBlockCard: View {
             onToggleCompletion()
             return
         }
-        
+
         guard !isAnimating else { return }
-        
+
         isAnimating = true
         HapticManager.shared.success()
-        
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-            bounceScale = 1.05
+
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.62)) {
+            bounceScale = 1.02
+            checkScale = 1.16
+            glowOpacity = 1
         }
-        withAnimation(.easeInOut(duration: 0.5)) {
+        withAnimation(.easeInOut(duration: 0.42)) {
             fillProgress = 1.0
         }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
+            withAnimation(.spring(response: 0.26, dampingFraction: 0.72)) {
                 bounceScale = 1.0
+                checkScale = 1.0
             }
         }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.52) {
             onToggleCompletion()
             isAnimating = false
             fillProgress = 0
+            glowOpacity = 0
         }
     }
 
@@ -931,17 +1055,84 @@ private struct DayTimelineBlockCard: View {
 
     private var borderColor: Color {
         if isDragging {
-            return Color.white.opacity(0.4)
+            return Color.white.opacity(0.46)
         }
 
         if conflictSummary != nil {
-            return conflictAccentColor.opacity(0.8)
+            return conflictAccentColor.opacity(0.52)
         }
 
         if isCompleted {
-            return Color.primary.opacity(0.04)
+            return Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.06)
         }
 
-        return tintColor.opacity(0.18)
+        return tintColor.opacity(colorScheme == .dark ? 0.2 : 0.14)
+    }
+
+    private var railWidth: CGFloat {
+        usesCompactLayout ? 28 : 32
+    }
+
+    private var railCornerRadius: CGFloat {
+        usesCompactLayout ? 14 : 16
+    }
+
+    private var completionControlSize: CGFloat {
+        usesCompactLayout ? 30 : 34
+    }
+
+    private var durationBadgeText: String {
+        let minutes = max(Int(round(block.endDate.timeIntervalSince(block.startDate) / 60)), 15)
+        if minutes < 60 {
+            return "\(minutes)m"
+        }
+
+        let hours = minutes / 60
+        let remainder = minutes % 60
+        if remainder == 0 {
+            return "\(hours)h"
+        }
+
+        return "\(hours)h\n\(remainder)m"
+    }
+
+    private var railGradientColors: [Color] {
+        if isCompleted {
+            return [
+                Color.green.opacity(0.9),
+                tintColor.opacity(0.68)
+            ]
+        }
+
+        return [
+            tintColor,
+            tintColor.opacity(colorScheme == .dark ? 0.62 : 0.82)
+        ]
+    }
+
+    private var completionButtonFill: Color {
+        colorScheme == .light ? Color.white.opacity(0.96) : Color.black.opacity(0.16)
+    }
+
+    private var dragPillBackground: some View {
+        Group {
+            if colorScheme == .light {
+                Color.white.opacity(0.96)
+            } else {
+                Color.black.opacity(0.22)
+            }
+        }
+    }
+
+    private func infoPill(text: String, foreground: Color, background: Color) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .bold, design: .rounded))
+            .foregroundStyle(foreground)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(
+                Capsule()
+                    .fill(background)
+            )
     }
 }

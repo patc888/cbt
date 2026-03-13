@@ -11,29 +11,59 @@ struct TimeAboutSettingsView: View {
     
     var body: some View {
         TimeSettingsSection(title: "About") {
-            TimeSettingsRow(icon: "info.circle", iconColor: Theme.primaryPurple, title: "Version") {
-                Text(appVersionDisplay)
-                    .timeSettingsValueStyle()
-            }
-
-            Divider()
-                .padding(.vertical, 4)
-
-            TimeSettingsRow(
-                icon: "checkmark.seal",
-                iconColor: Theme.primaryPurple,
-                title: "V1 Focus",
-                subtitle: "Scheduling, routines, reminders, and widgets"
-            )
-
-            Button(role: .destructive, action: onReset) {
-                HStack {
-                    Image(systemName: "trash")
-                    Text("Reset All Data")
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
+            VStack(alignment: .leading, spacing: 12) {
+                TimeSettingsRow(icon: "info.circle", title: "Version") {
+                    Text(appVersionDisplay)
+                        .timeSettingsValueStyle()
                 }
+                
+                Divider()
+                
+                Button(action: { openURL("https://xeo.com/TimeBlocking/support") }) {
+                    TimeSettingsRow(icon: "questionmark.circle", title: "Help Center") {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                }
+                .buttonStyle(.plain)
+                
+                Divider()
+                
+                Button(action: { openURL("https://xeo.com/TimeBlocking/privacy") }) {
+                    TimeSettingsRow(icon: "lock.shield", title: "Privacy Policy") {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                }
+                .buttonStyle(.plain)
+                
+                Divider()
+                
+                Button(action: {
+                    HapticManager.shared.mediumImpact()
+                    onReset()
+                }) {
+                    TimeSettingsRow(icon: "trash", iconColor: Theme.errorRed, title: "Reset All Data", subtitle: "Clear your schedule and preferences") {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                }
+                .buttonStyle(.plain)
             }
-            .padding(.top, 4)
+        }
+    }
+    
+    private func openURL(_ urlString: String) {
+        if let url = URL(string: urlString) {
+            HapticManager.shared.lightImpact()
+            #if os(iOS)
+            UIApplication.shared.open(url)
+            #elseif os(macOS)
+            NSWorkspace.shared.open(url)
+            #endif
         }
     }
 }

@@ -18,7 +18,7 @@ struct SettingsView: View {
     }
 
     @Environment(\.dismiss) private var dismiss
-    @State private var showingResetAlert = false
+    @State private var showingResetOptions = false
     @State private var notificationAccessState: TimeNotificationManager.AccessState = .notDetermined
 
     var body: some View {
@@ -42,13 +42,16 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
 #endif
-        .alert("Reset All Data", isPresented: $showingResetAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("Reset", role: .destructive) {
-                resetAllData()
+        .confirmationDialog("Reset Data", isPresented: $showingResetOptions, titleVisibility: .visible) {
+            Button("Reset to Empty", role: .destructive) {
+                resetAllDataToEmpty()
             }
+            Button("Reset to Sample Data", role: .destructive) {
+                resetAllDataToSample()
+            }
+            Button("Cancel", role: .cancel) { }
         } message: {
-            Text("This will delete all your schedule blocks and routines. This action cannot be undone.")
+            Text("Choose whether to clear everything to a blank app or wipe current data and restore the sample schedule.")
         }
         .task {
             await refreshNotificationAccessState()
@@ -71,13 +74,14 @@ struct SettingsView: View {
     private var mainContent: some View {
         VStack(spacing: 20) {
             HStack {
+                Spacer()
                 Text("Settings")
-                    .font(.system(size: Theme.fontSizeTitle, weight: .bold, design: .rounded))
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
             }
             .padding(.top, 12)
-            .padding(.bottom, 8)
+            .padding(.bottom, 4)
 
             if appPreferences == nil {
                 TimeSettingsSection(title: "Setup") {
@@ -108,6 +112,9 @@ struct SettingsView: View {
                     onUpdate: updatePreferences
                 )
 
+                WhatIsTimeBlockingCard()
+                    .padding(.top, 8)
+
                 TimeNotificationsSettingsView(
                     preferences: appPreferences,
                     accessState: notificationAccessState,
@@ -119,7 +126,7 @@ struct SettingsView: View {
 
                 TimeAboutSettingsView {
                     HapticManager.shared.mediumImpact()
-                    showingResetAlert = true
+                    showingResetOptions = true
                 }
             }
         }
@@ -132,12 +139,11 @@ struct SettingsView: View {
             HapticManager.shared.lightImpact()
             dismiss()
         }) {
-            Image(systemName: "xmark")
-                .font(.system(size: 15, weight: .bold))
+            Image(systemName: "chevron.right")
+                .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(Theme.primaryPurple)
-                .frame(width: 32, height: 32)
-                .background(Theme.primaryPurple.opacity(0.1))
-                .clipShape(Circle())
+                .padding(8)
+                .contentShape(Rectangle())
         }
         .padding(.trailing, 20)
         .padding(.top, 12)
@@ -189,28 +195,21 @@ struct SettingsView: View {
 #endif
     }
 
-    private func resetAllData() {
+    private func resetAllDataToEmpty() {
         HapticManager.shared.lightImpact()
         do {
-            try modelContext.delete(model: TimeBlock.self)
-            try modelContext.delete(model: ScheduleTemplate.self)
-            try modelContext.delete(model: BlockChecklistItem.self)
-            
-            if let prefs = appPreferences {
-                prefs.defaultBlockDurationMinutes = 60
-                prefs.dayStartHour = 6
-                prefs.firstWeekday = .monday
-                prefs.notificationsEnabled = false
-                prefs.notificationLeadTimeMinutes = 0
-                prefs.showsCompletedBlocks = true
-            }
-            
-            try modelContext.save()
-            Task {
-                await appEnvironment.resyncNotifications(using: modelContext)
-            }
+            try appEnvironment.resetAllDataToEmpty(using: modelContext)
         } catch {
             print("Error resetting data: \(error)")
+        }
+    }
+
+    private func resetAllDataToSample() {
+        HapticManager.shared.lightImpact()
+        do {
+            try appEnvironment.resetAllDataToSample(using: modelContext)
+        } catch {
+            print("Error resetting data to sample: \(error)")
         }
     }
 }

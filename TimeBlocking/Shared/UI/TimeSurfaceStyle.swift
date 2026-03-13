@@ -69,6 +69,11 @@ enum Theme {
     static let fontSizeBody: CGFloat = 16
     static let fontSizeSmall: CGFloat = 13
     
+    // Status Colors (from Weight Tracker)
+    static var successGreen: Color { Color(hex: "34C759") }
+    static var warningOrange: Color { Color(hex: "FF9F0A") }
+    static var errorRed: Color { Color(hex: "FF453A") }
+    
     // Corner Radius
     static let cornerRadiusMedium: CGFloat = 12
     static let cornerRadiusLarge: CGFloat = 18
@@ -80,6 +85,23 @@ enum Theme {
     
     static func toggleBackgroundColor(for scheme: ColorScheme) -> Color {
         return scheme == .dark ? Color.white.opacity(0.12) : Color.gray.opacity(0.08)
+    }
+    
+    // Card Backgrounds
+    static var cardBackground: Color {
+        #if os(iOS)
+        return Color(uiColor: .secondarySystemGroupedBackground)
+        #else
+        return Color(nsColor: .controlBackgroundColor)
+        #endif
+    }
+    
+    static var secondaryCardBackground: Color {
+        #if os(iOS)
+        return Color(uiColor: .tertiarySystemGroupedBackground)
+        #else
+        return Color(nsColor: .windowBackgroundColor)
+        #endif
     }
 }
 
@@ -331,35 +353,55 @@ struct TimeProUpgradeCard: View {
 }
 
 struct TimeMetricTile: View {
+    @Environment(\.colorScheme) var colorScheme
     let title: String
     let value: String
     let systemImage: String
+    var unit: String? = nil
+    var iconColor: Color? = nil
 
     var body: some View {
-        TimeCard {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: systemImage)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.primaryPurple)
-                        .padding(8)
-                        .background(Theme.primaryPurple.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    
-                    Spacer()
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(value)
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
-                    
-                    Text(title)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(iconColor ?? Theme.primaryText)
+                
+                Text(title)
+                    .font(.system(size: 11, weight: .heavy))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .tracking(1.0)
+                    .foregroundStyle(Theme.primaryText)
+            }
+            .textCase(.uppercase)
+            
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundColor(Theme.primaryText)
+                    .minimumScaleFactor(0.4)
+                    .lineLimit(1)
+                
+                if let unit {
+                    Text(unit)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(Theme.secondaryText)
+                        .padding(.leading, 1)
                 }
             }
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(colorScheme == .dark ? Color(white: 0.12) : .white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.primary.opacity(0.04), lineWidth: 1.5)
+                )
+        )
+        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.2 : 0.05), radius: 4, x: 0, y: 2)
     }
 }
 
