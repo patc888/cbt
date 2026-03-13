@@ -9,11 +9,12 @@ struct PersistenceController {
     static let schema = Schema(
         [
             TimeBlock.self,
+            BrainDumpItem.self,
             BlockChecklistItem.self,
             ScheduleTemplate.self,
             AppPreferences.self,
         ],
-        version: .init(3, 0, 0)
+        version: .init(4, 0, 0)
     )
 
     static let shared = PersistenceController()

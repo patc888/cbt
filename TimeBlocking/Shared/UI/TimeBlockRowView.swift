@@ -17,7 +17,12 @@ struct TimeBlockRowView: View {
     let onDragChanged: ((CGPoint) -> Void)?
     let onDragEnded: ((CGPoint) -> Void)?
 
+    @State private var fillProgress: CGFloat = 0
+    @State private var isAnimating = false
+    @State private var showConfetti = false
+    @State private var bounceScale: CGFloat = 1.0
     @State private var hasStartedDragGesture = false
+    @Namespace private var animation
 
     init(
         block: TimeBlock,
@@ -45,59 +50,146 @@ struct TimeBlockRowView: View {
         self.onDragEnded = onDragEnded
     }
 
+    private var accentColor: Color {
+        switch block.category {
+        case .focus: return Theme.primaryPurple
+        case .personal: return Color(hex: "F59E0B")
+        case .admin: return Color(hex: "0EA5E9")
+        case .routine: return Color(hex: "10B981")
+        case .custom: return Color(hex: "64748B")
+        }
+    }
+
+    private var categoryIcon: String {
+        switch block.category {
+        case .focus: return "scope"
+        case .personal: return "figure.walk"
+        case .admin: return "tray.full.fill"
+        case .routine: return "repeat"
+        case .custom: return "square.grid.2x2.fill"
+        }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: sortedChecklistItems.isEmpty || !isChecklistExpanded ? 0 : 12) {
-            HStack(alignment: .top, spacing: 12) {
-                Button {
-                    toggleCompletion()
-                } label: {
-                    Image(systemName: statusSymbol)
-                        .font(.title3)
-                        .foregroundStyle(statusColor)
-                        .frame(width: 28, height: 28)
+        let isCompleted = block.status == .completed
+
+        ZStack {
+            VStack(alignment: .leading, spacing: sortedChecklistItems.isEmpty || !isChecklistExpanded ? 0 : 16) {
+                HStack(spacing: 16) {
+                    // Icon Tile (Chores Style)
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(accentColor.opacity(isCompleted ? 0.3 : 1.0))
+                            .frame(width: 52, height: 52)
+                        
+                        Image(systemName: categoryIcon)
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundColor(isCompleted ? .white.opacity(0.6) : .white)
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text(block.title)
+                                .font(.system(size: 17, weight: .bold, design: .rounded))
+                                .foregroundStyle(isCompleted || fillProgress > 0.8 ? .secondary : .primary)
+                                .lineLimit(1)
+                                .strikethrough(isCompleted || fillProgress > 0.8)
+                                .opacity(isCompleted || fillProgress > 0.8 ? 0.6 : 1.0)
+                            
+                            if block.isPinned {
+                                Image(systemName: "pin.fill")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+
+                        HStack(spacing: 6) {
+                            Text(timeRangeText)
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundStyle(Theme.secondaryText)
+                            
+                            if let conflictSummary {
+                                Text("•")
+                                    .foregroundStyle(Theme.secondaryText.opacity(0.5))
+                                Text(conflictSummary.badgeText)
+                                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+                    }
+
+                    Spacer(minLength: 0)
+
+                    // Completion Control / Drag Handle Area
+                    HStack(spacing: 12) {
+                        if supportsDrag && !isCompleted {
+                            dragHandle
+                        }
+
+                        Button {
+                            handleComplete()
+                        } label: {
+                            ZStack {
+                                if isCompleted || fillProgress > 0.9 {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 28, weight: .black))
+                                        .foregroundColor(.green)
+                                        .matchedGeometryEffect(id: "status", in: animation)
+                                        .transition(.scale.combined(with: .opacity))
+                                } else {
+                                    Circle()
+                                        .stroke(accentColor.opacity(0.4), lineWidth: 2)
+                                        .frame(width: 28, height: 28)
+                                        .overlay(
+                                            Image(systemName: "plus")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundColor(accentColor.opacity(0.8))
+                                        )
+                                        .matchedGeometryEffect(id: "status", in: animation)
+                                }
+                            }
+                            .scaleEffect(fillProgress > 0.9 ? 1.15 : 1.0)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isAnimating)
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(block.status == .completed ? "Mark block as planned" : "Mark block as completed")
 
-                TimeBlockRowDetailsView(
-                    block: block,
-                    conflictSummary: conflictSummary,
-                    isChecklistExpanded: isChecklistExpanded,
-                    onToggleChecklistExpansion: onToggleChecklistExpansion
-                )
-
-                Spacer(minLength: 0)
-
-                if supportsDrag {
-                    dragHandle
+                if !sortedChecklistItems.isEmpty && isChecklistExpanded {
+                    inlineChecklist
                 }
             }
-
-            if !sortedChecklistItems.isEmpty && isChecklistExpanded {
-                inlineChecklist
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background {
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(
+                            isCompleted
+                            ? (colorScheme == .dark ? Color.white.opacity(0.03) : Color.gray.opacity(0.04))
+                            : (colorScheme == .light ? Color.white : Color(.secondarySystemGroupedBackground))
+                        )
+                    
+                    if fillProgress > 0 {
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .fill(accentColor.opacity(0.12))
+                            .scaleEffect(x: fillProgress, anchor: .leading)
+                    }
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(isCompleted ? Color.primary.opacity(0.04) : accentColor.opacity(0.1), lineWidth: 1.5)
+            }
+            .scaleEffect(bounceScale)
+            .opacity(isDragging ? 0.3 : 1)
+            
+            if showConfetti {
+                ConfettiView()
+                    .allowsHitTesting(false)
             }
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 12)
-        .background {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(
-                    isDragging
-                        ? Theme.primaryPurple.opacity(0.08)
-                        : (colorScheme == .light ? Color.black.opacity(0.015) : Color.white.opacity(0.03))
-                )
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(
-                    isDragging ? Theme.primaryPurple.opacity(0.2) : Color.primary.opacity(0.06),
-                    lineWidth: 1
-                )
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .opacity(isDragging ? 0.26 : 1)
-        .scaleEffect(isDragging ? 0.985 : 1)
-        .contentShape(Rectangle())
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(block.isPinned ? "Unpin" : "Pin") {
                 block.isPinned.toggle()
@@ -126,9 +218,7 @@ struct TimeBlockRowView: View {
                 toggleCompletion()
             }
         }
-        .animation(.spring(response: 0.28, dampingFraction: 0.82), value: isDragging)
-        .animation(.spring(response: 0.28, dampingFraction: 0.82), value: emphasizesDragAffordance)
-        .animation(.spring(response: 0.24, dampingFraction: 0.86), value: isChecklistExpanded)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isCompleted)
     }
 
     private var sortedChecklistItems: [BlockChecklistItem] {
@@ -150,76 +240,44 @@ struct TimeBlockRowView: View {
     }
 
     private var inlineChecklist: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Divider()
-                .padding(.leading, 40)
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(sortedChecklistItems) { item in
+                Button {
+                    toggleChecklistItem(item)
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(item.isCompleted ? .green : Theme.secondaryText)
 
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(sortedChecklistItems) { item in
-                    Button {
-                        toggleChecklistItem(item)
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(item.isCompleted ? .green : Theme.secondaryText)
+                        Text(item.title)
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundStyle(item.isCompleted ? Theme.secondaryText : Theme.primaryText)
+                            .strikethrough(item.isCompleted)
+                            .lineLimit(2)
 
-                            Text(item.title)
-                                .font(.system(size: 13, weight: .medium, design: .rounded))
-                                .foregroundStyle(item.isCompleted ? Theme.secondaryText : Theme.primaryText)
-                                .strikethrough(item.isCompleted)
-                                .lineLimit(2)
-
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(item.isCompleted ? .green.opacity(0.08) : Color.primary.opacity(0.04))
-                        )
+                        Spacer(minLength: 0)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(item.isCompleted ? "Mark checklist item incomplete" : "Mark checklist item complete")
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(item.isCompleted ? .green.opacity(0.06) : Color.primary.opacity(0.03))
+                    )
                 }
+                .buttonStyle(.plain)
             }
-            .padding(.leading, 40)
         }
+        .padding(.leading, 0)
     }
 
     private var dragHandle: some View {
-        HStack(spacing: 6) {
-            Image(systemName: isDragging ? "arrow.up.and.down.and.arrow.left.and.right" : "circle.grid.2x2.fill")
-                .font(.system(size: 12, weight: .bold))
-
-            Text(isDragging ? "Moving" : "Move")
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-        }
-        .foregroundStyle(isDragging ? .white : Theme.primaryPurple)
-        .padding(.horizontal, 10)
-        .frame(height: 34)
-        .background(
-            Capsule(style: .continuous)
-                .fill(
-                    isDragging
-                        ? Theme.primaryPurple
-                        : Theme.primaryPurple.opacity(emphasizesDragAffordance ? 0.18 : 0.12)
-                )
-        )
-        .overlay {
-            Capsule(style: .continuous)
-                .strokeBorder(Theme.primaryPurple.opacity(isDragging ? 0.24 : (emphasizesDragAffordance ? 0.2 : 0.14)), lineWidth: 1)
-        }
-        .shadow(
-            color: emphasizesDragAffordance && !isDragging ? Theme.primaryPurple.opacity(0.12) : .clear,
-            radius: 10,
-            x: 0,
-            y: 6
-        )
-        .contentShape(Capsule())
-        .highPriorityGesture(dragGesture)
-        .accessibilityLabel("Drag to move block to another day")
-        .accessibilityHint("Hold and drag this control to one of the day targets.")
+        Image(systemName: "line.3.horizontal")
+            .font(.system(size: 14, weight: .bold))
+            .foregroundStyle(Theme.secondaryText.opacity(0.5))
+            .frame(width: 32, height: 32)
+            .contentShape(Rectangle())
+            .highPriorityGesture(dragGesture)
     }
 
     private var dragGesture: some Gesture {
@@ -249,25 +307,44 @@ struct TimeBlockRowView: View {
         }
     }
 
-    private var statusSymbol: String {
-        switch block.status {
-        case .planned:
-            "circle"
-        case .completed:
-            "checkmark.circle.fill"
-        case .cancelled:
-            "minus.circle"
+    private func handleComplete() {
+        if block.status == .completed {
+            toggleCompletion()
+            return
         }
-    }
-
-    private var statusColor: Color {
-        switch block.status {
-        case .planned:
-            .secondary
-        case .completed:
-            .green
-        case .cancelled:
-            .red
+        
+        guard !isAnimating else { return }
+        
+        isAnimating = true
+        HapticManager.shared.success()
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            bounceScale = 1.05
+        }
+        withAnimation(.easeInOut(duration: 0.5)) {
+            fillProgress = 1.0
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                bounceScale = 1.0
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            withAnimation {
+                showConfetti = true
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            toggleCompletion()
+            isAnimating = false
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                showConfetti = false
+                fillProgress = 0
+            }
         }
     }
 
@@ -303,72 +380,11 @@ struct TimeBlockRowView: View {
         item.updatedAt = .now
         block.updatedAt = .now
         saveChanges()
+        if item.isCompleted {
+            HapticManager.shared.lightImpact()
+        }
     }
-}
-
-struct TimeBlockDragPreviewView: View {
-    let block: TimeBlock
-    let destinationDate: Date?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: block.template == nil ? "calendar.badge.clock" : "square.stack.3d.up.fill")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 34, height: 34)
-                    .background(Circle().fill(Theme.primaryPurple))
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(block.title)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
-                        .lineLimit(2)
-
-                    Text(timeRangeText)
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(Theme.secondaryText)
-
-                    Label(block.category.title, systemImage: "tag")
-                        .font(.caption)
-                        .foregroundStyle(Theme.secondaryText)
-                }
-
-                Spacer(minLength: 0)
-            }
-
-            if let destinationDate {
-                HStack(spacing: 8) {
-                    Label(destinationDate.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()), systemImage: "arrow.down.circle.fill")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryPurple)
-
-                    Spacer(minLength: 0)
-                }
-            } else {
-                Text(block.template == nil ? "Drop onto a day to move this block." : "Drop onto a day to move this block. Moving it will make it manual.")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText)
-            }
-        }
-        .padding(16)
-        .frame(width: 280, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay {
-                    RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge, style: .continuous)
-                        .fill(Color.white.opacity(0.86))
-                        .opacity(0.72)
-                }
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge, style: .continuous)
-                .strokeBorder(Theme.primaryPurple.opacity(0.18), lineWidth: 1)
-        }
-        .shadow(color: Theme.primaryPurple.opacity(0.18), radius: 22, x: 0, y: 14)
-    }
-
+    
     private var timeRangeText: String {
         let start = block.startDate.formatted(date: .omitted, time: .shortened)
         let end = block.endDate.formatted(date: .omitted, time: .shortened)
@@ -376,68 +392,3 @@ struct TimeBlockDragPreviewView: View {
     }
 }
 
-private struct TimeBlockRowDetailsView: View {
-    let block: TimeBlock
-    let conflictSummary: ScheduleBlockConflictSummary?
-    let isChecklistExpanded: Bool
-    let onToggleChecklistExpansion: (() -> Void)?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(block.title)
-                    .font(.headline)
-                    .foregroundStyle(block.status == .cancelled ? .secondary : .primary)
-                    .strikethrough(block.status == .completed)
-
-                if block.isPinned {
-                    Image(systemName: "pin.fill")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                }
-            }
-
-            Text(timeRangeText)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            Label(block.category.title, systemImage: "tag")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            if let conflictSummary {
-                Label(conflictSummary.detailText, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-            }
-
-            let checklistItems = block.checklistItems ?? []
-            if !checklistItems.isEmpty {
-                if let onToggleChecklistExpansion {
-                    Button(action: onToggleChecklistExpansion) {
-                        HStack(spacing: 6) {
-                            Label("\(checklistItems.filter(\.isCompleted).count)/\(checklistItems.count) checklist items", systemImage: "checklist")
-                                .font(.caption)
-
-                            Image(systemName: isChecklistExpanded ? "chevron.up" : "chevron.down")
-                                .font(.system(size: 10, weight: .bold))
-                        }
-                        .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(isChecklistExpanded ? "Collapse checklist" : "Expand checklist")
-                } else {
-                    Label("\(checklistItems.filter(\.isCompleted).count)/\(checklistItems.count) checklist items", systemImage: "checklist")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
-
-    private var timeRangeText: String {
-        let start = block.startDate.formatted(date: .omitted, time: .shortened)
-        let end = block.endDate.formatted(date: .omitted, time: .shortened)
-        return "\(start) - \(end)"
-    }
-}

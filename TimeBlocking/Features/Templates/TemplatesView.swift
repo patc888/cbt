@@ -2,6 +2,33 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+struct TemplateEditorDraft: Identifiable {
+    let id: UUID
+    let name: String
+    let notes: String
+    let defaultStartTime: Date
+    let durationMinutes: Int
+    let weekdayMask: Int
+    let category: TimeBlockCategory
+
+    init(
+        name: String,
+        notes: String,
+        defaultStartTime: Date,
+        durationMinutes: Int,
+        weekdayMask: Int,
+        category: TimeBlockCategory
+    ) {
+        self.id = UUID()
+        self.name = name
+        self.notes = notes
+        self.defaultStartTime = defaultStartTime
+        self.durationMinutes = durationMinutes
+        self.weekdayMask = weekdayMask
+        self.category = category
+    }
+}
+
 struct TemplatesView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @Query(sort: \ScheduleTemplate.sortOrder) private var templates: [ScheduleTemplate]
@@ -147,7 +174,7 @@ struct TemplatesView: View {
     }
 }
 
-private struct TemplateEditorView: View {
+struct TemplateEditorView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -162,18 +189,21 @@ private struct TemplateEditorView: View {
     @State private var isShowingDeleteConfirmation = false
 
     private let template: ScheduleTemplate?
+    private let onSave: (() -> Void)?
 
-    init(template: ScheduleTemplate? = nil) {
+    init(template: ScheduleTemplate? = nil, initialDraft: TemplateEditorDraft? = nil, onSave: (() -> Void)? = nil) {
         let calendar = Calendar.current
         let defaultDate = calendar.date(bySettingHour: template?.defaultStartHour ?? 8, minute: 0, second: 0, of: .now) ?? .now
+        let resolvedDraft = initialDraft
 
-        _name = State(initialValue: template?.name ?? "")
-        _notes = State(initialValue: template?.notes ?? "")
-        _defaultStartTime = State(initialValue: defaultDate)
-        _durationMinutes = State(initialValue: max(template?.defaultDurationMinutes ?? 60, 15))
-        _weekdayMask = State(initialValue: template?.weekdayMask ?? 0)
-        _category = State(initialValue: template?.category ?? .routine)
+        _name = State(initialValue: template?.name ?? resolvedDraft?.name ?? "")
+        _notes = State(initialValue: template?.notes ?? resolvedDraft?.notes ?? "")
+        _defaultStartTime = State(initialValue: resolvedDraft?.defaultStartTime ?? defaultDate)
+        _durationMinutes = State(initialValue: max(template?.defaultDurationMinutes ?? resolvedDraft?.durationMinutes ?? 60, 15))
+        _weekdayMask = State(initialValue: template?.weekdayMask ?? resolvedDraft?.weekdayMask ?? 0)
+        _category = State(initialValue: template?.category ?? resolvedDraft?.category ?? .routine)
         self.template = template
+        self.onSave = onSave
     }
 
     var body: some View {
@@ -343,6 +373,7 @@ private struct TemplateEditorView: View {
                 )
             }
 
+            onSave?()
             dismiss()
         } catch {
             errorMessage = "Unable to save this template right now."

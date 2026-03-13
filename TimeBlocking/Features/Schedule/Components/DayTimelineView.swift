@@ -1,21 +1,133 @@
 import SwiftUI
+import SwiftData
+
+enum DayTimelineBuiltInItemKind: String, CaseIterable, Identifiable {
+    case wakeUp
+    case sleep
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .wakeUp:
+            "Wake Up"
+        case .sleep:
+            "Sleep"
+        }
+    }
+
+    var detailLabel: String {
+        switch self {
+        case .wakeUp:
+            "Start of day"
+        case .sleep:
+            "End of day"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .wakeUp:
+            "sunrise.fill"
+        case .sleep:
+            "moon.stars.fill"
+        }
+    }
+}
+
+struct DayTimelineChecklistItemSnapshot: Identifiable {
+    let id: UUID
+    let title: String
+    let isCompleted: Bool
+}
+
+struct DayTimelineBlockSnapshot: Identifiable {
+    let id: UUID
+    let title: String
+    let startDate: Date
+    let endDate: Date
+    let category: TimeBlockCategory
+    let status: TimeBlockStatus
+    let isTemplateBacked: Bool
+    let checklistItems: [DayTimelineChecklistItemSnapshot]
+    let builtInKind: DayTimelineBuiltInItemKind?
+
+    init(block: TimeBlock) {
+        id = block.id
+        title = block.title
+        startDate = block.startDate
+        endDate = block.endDate
+        category = block.category
+        status = block.status
+        isTemplateBacked = block.template != nil
+        builtInKind = nil
+        checklistItems = (block.checklistItems ?? [])
+            .sorted { lhs, rhs in
+                if lhs.sortOrder == rhs.sortOrder {
+                    return lhs.createdAt < rhs.createdAt
+                }
+
+                return lhs.sortOrder < rhs.sortOrder
+            }
+            .map { item in
+                DayTimelineChecklistItemSnapshot(
+                    id: item.id,
+                    title: item.title,
+                    isCompleted: item.isCompleted
+                )
+            }
+    }
+
+    init(
+        builtInKind: DayTimelineBuiltInItemKind,
+        startDate: Date,
+        endDate: Date,
+        status: TimeBlockStatus
+    ) {
+        id = builtInKind == .wakeUp
+            ? UUID(uuidString: "00000000-0000-0000-0000-000000000001") ?? UUID()
+            : UUID(uuidString: "00000000-0000-0000-0000-000000000002") ?? UUID()
+        title = builtInKind.title
+        self.startDate = startDate
+        self.endDate = endDate
+        category = .routine
+        self.status = status
+        isTemplateBacked = false
+        checklistItems = []
+        self.builtInKind = builtInKind
+    }
+
+    var isBuiltInStructuralItem: Bool {
+        builtInKind != nil
+    }
+}
 
 struct DayTimelineView: View {
     let date: Date
-    let blocks: [TimeBlock]
+    let blocks: [DayTimelineBlockSnapshot]
+    let structuralItems: [DayTimelineBlockSnapshot]
     let calendarEvents: [TimeCalendarEvent]
     let blockConflictsByID: [UUID: ScheduleBlockConflictSummary]
+    let expandedChecklistBlockIDs: Set<UUID>
     let dayStartHour: Int
     let calendar: Calendar
-    let onEdit: (TimeBlock) -> Void
-    let onMoveBlock: (TimeBlock, Date) -> Void
+    let onEdit: (UUID) -> Void
+    let onToggleCompletion: (UUID) -> Void
+    let onToggleStructuralItemCompletion: (DayTimelineBuiltInItemKind) -> Void
+    let onToggleChecklistExpansion: (UUID) -> Void
+    let onToggleChecklistItem: (UUID, UUID) -> Void
+    let onMoveBlock: (UUID, Date) -> Void
+    let onCreateBlock: (Date) -> Void
 
     @State private var dragSession: TimelineBlockDragSession?
 
     private let hourHeight: CGFloat = 74
-    private let labelColumnWidth: CGFloat = 48
+    private let labelColumnWidth: CGFloat = 40
     private let snapMinutes = 15
-    private let minimumBlockHeight: CGFloat = 54
+    private let minimumBlockHeight: CGFloat = 44
+    private let timelineVerticalPadding: CGFloat = 18
+    private let structuralCardHeight: CGFloat = 52
+    private let structuralCardSpacing: CGFloat = 10
 
     private var allDayCalendarEvents: [TimeCalendarEvent] {
         calendarEvents.filter(\.isAllDay)
@@ -59,28 +171,20 @@ struct DayTimelineView: View {
         CGFloat(max(timelineBounds.endHour - timelineBounds.startHour, 1)) * hourHeight
     }
 
+    private var timelineContentTopInset: CGFloat {
+        timelineVerticalPadding + structuralCardHeight + structuralCardSpacing
+    }
+
+    private var timelineContentBottomInset: CGFloat {
+        timelineVerticalPadding + structuralCardHeight + structuralCardSpacing
+    }
+
+    private var timelineFrameHeight: CGFloat {
+        timelineContentTopInset + timelineHeight + timelineContentBottomInset
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .center, spacing: 8) {
-                Label("Day Timeline", systemImage: "timeline.selection")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.primaryText)
-
-                Spacer(minLength: 0)
-
-                Text("15 min snap")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.primaryPurple)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Theme.primaryPurple.opacity(0.12))
-                    .clipShape(Capsule())
-            }
-
-            Text("Drag a block vertically to reschedule it within the selected day. Duration stays fixed. Apple Calendar events are read-only.")
-                .font(.system(size: 12, weight: .medium, design: .rounded))
-                .foregroundStyle(Theme.secondaryText)
-
+        VStack(alignment: .leading, spacing: 10) {
             if !allDayCalendarEvents.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
@@ -94,21 +198,6 @@ struct DayTimelineView: View {
 
             GeometryReader { proxy in
                 ZStack(alignment: .topLeading) {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Theme.primaryPurple.opacity(0.08),
-                                    Theme.primaryPurple.opacity(0.03)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .strokeBorder(Theme.primaryPurple.opacity(0.12), lineWidth: 1)
-
                     VStack(spacing: 0) {
                         ForEach(hourMarks, id: \.self) { hour in
                             HStack(alignment: .top, spacing: 0) {
@@ -124,11 +213,18 @@ struct DayTimelineView: View {
                             .frame(height: hourHeight, alignment: .top)
                         }
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 18)
+                    .padding(.horizontal, 8)
+                    .padding(.top, timelineContentTopInset)
+
+                    Rectangle()
+                        .fill(Color.clear)
+                        .contentShape(Rectangle())
+                        .gesture(longPressCreationGesture(in: proxy))
+
+                    timelineStructuralItems
 
                     ForEach(timedCalendarEvents) { event in
-                        let eventWidth = max(proxy.size.width - labelColumnWidth - 42, 140)
+                        let eventWidth = max(proxy.size.width - labelColumnWidth - 26, 140)
                         let visibleStartDate = displayedStartDate(for: event)
 
                         CalendarTimelineEventCard(
@@ -138,34 +234,122 @@ struct DayTimelineView: View {
                         )
                         .frame(width: eventWidth, height: eventHeight(for: event))
                         .position(
-                            x: labelColumnWidth + 22 + (eventWidth / 2),
-                            y: 18 + yOffset(for: visibleStartDate) + (eventHeight(for: event) / 2)
+                            x: labelColumnWidth + 10 + (eventWidth / 2),
+                            y: timelineContentTopInset + yOffset(for: visibleStartDate) + (eventHeight(for: event) / 2)
                         )
                         .zIndex(0)
                     }
 
                     ForEach(blocks) { block in
-                        let blockWidth = max(proxy.size.width - labelColumnWidth - 26, 150)
+                        let blockWidth = max(proxy.size.width - labelColumnWidth - 14, 150)
                         DayTimelineBlockCard(
                             block: block,
                             displayedStartDate: displayedStartDate(for: block),
                             conflictSummary: blockConflictsByID[block.id],
-                            isDragging: dragSession?.blockID == block.id
+                            isChecklistExpanded: expandedChecklistBlockIDs.contains(block.id),
+                            isDragging: dragSession?.blockID == block.id,
+                            onEdit: {
+                                onEdit(block.id)
+                            },
+                            onToggleCompletion: {
+                                onToggleCompletion(block.id)
+                            },
+                            onToggleChecklistExpansion: {
+                                onToggleChecklistExpansion(block.id)
+                            },
+                            onToggleChecklistItem: { itemID in
+                                onToggleChecklistItem(block.id, itemID)
+                            }
                         )
                         .frame(width: blockWidth, height: blockHeight(for: block))
                         .position(
-                            x: labelColumnWidth + 14 + (blockWidth / 2),
-                            y: 18 + yOffset(for: displayedStartDate(for: block)) + (blockHeight(for: block) / 2)
+                            x: labelColumnWidth + 6 + (blockWidth / 2),
+                            y: timelineContentTopInset + yOffset(for: displayedStartDate(for: block)) + (blockHeight(for: block) / 2)
                         )
                         .zIndex(dragSession?.blockID == block.id ? 20 : 1)
-                        .highPriorityGesture(dragGesture(for: block))
+                        .highPriorityGesture(
+                            dragGesture(for: block),
+                            including: block.status == .planned && !block.isBuiltInStructuralItem ? .gesture : .subviews
+                        )
                         .onTapGesture {
-                            onEdit(block)
+                            guard !block.isBuiltInStructuralItem else {
+                                return
+                            }
+
+                            onEdit(block.id)
                         }
                     }
                 }
             }
-            .frame(height: timelineHeight + 36)
+            .frame(height: timelineFrameHeight)
+        }
+    }
+
+    private func longPressCreationGesture(in proxy: GeometryProxy) -> some Gesture {
+        LongPressGesture(minimumDuration: 0.4)
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .local))
+            .onEnded { value in
+                guard case .second(true, let drag?) = value,
+                      let pressedDate = startDate(forBackgroundPressAt: drag.location, in: proxy.size) else {
+                    return
+                }
+
+                HapticManager.shared.mediumImpact()
+                onCreateBlock(pressedDate)
+            }
+    }
+
+    private var timelineStructuralItems: some View {
+        GeometryReader { proxy in
+            let cardWidth = max(proxy.size.width - labelColumnWidth - 14, 150)
+
+            ZStack(alignment: .topLeading) {
+                if let wakeUpItem = structuralItems.first(where: { $0.builtInKind == .wakeUp }) {
+                    DayTimelineBlockCard(
+                        block: wakeUpItem,
+                        displayedStartDate: wakeUpItem.startDate,
+                        conflictSummary: nil,
+                        isChecklistExpanded: false,
+                        isDragging: false,
+                        onEdit: nil,
+                        onToggleCompletion: {
+                            if let builtInKind = wakeUpItem.builtInKind {
+                                onToggleStructuralItemCompletion(builtInKind)
+                            }
+                        },
+                        onToggleChecklistExpansion: nil,
+                        onToggleChecklistItem: { _ in }
+                    )
+                    .frame(width: cardWidth, height: structuralCardHeight)
+                    .position(
+                        x: labelColumnWidth + 6 + (cardWidth / 2),
+                        y: timelineVerticalPadding + (structuralCardHeight / 2)
+                    )
+                }
+
+                if let sleepItem = structuralItems.first(where: { $0.builtInKind == .sleep }) {
+                    DayTimelineBlockCard(
+                        block: sleepItem,
+                        displayedStartDate: sleepItem.startDate,
+                        conflictSummary: nil,
+                        isChecklistExpanded: false,
+                        isDragging: false,
+                        onEdit: nil,
+                        onToggleCompletion: {
+                            if let builtInKind = sleepItem.builtInKind {
+                                onToggleStructuralItemCompletion(builtInKind)
+                            }
+                        },
+                        onToggleChecklistExpansion: nil,
+                        onToggleChecklistItem: { _ in }
+                    )
+                    .frame(width: cardWidth, height: structuralCardHeight)
+                    .position(
+                        x: labelColumnWidth + 6 + (cardWidth / 2),
+                        y: timelineContentTopInset + timelineHeight + structuralCardSpacing + (structuralCardHeight / 2)
+                    )
+                }
+            }
         }
     }
 
@@ -175,9 +359,9 @@ struct DayTimelineView: View {
         return sampleDate.formatted(.dateTime.hour(.defaultDigits(amPM: .abbreviated)))
     }
 
-    private func blockHeight(for block: TimeBlock) -> CGFloat {
+    private func blockHeight(for block: DayTimelineBlockSnapshot) -> CGFloat {
         let durationMinutes = max(block.endDate.timeIntervalSince(block.startDate) / 60, 15)
-        return max(CGFloat(durationMinutes / 60) * hourHeight, minimumBlockHeight)
+        return max(CGFloat(durationMinutes / 60) * hourHeight, minimumBlockHeight) + checklistExpansionHeight(for: block)
     }
 
     private func eventHeight(for event: TimeCalendarEvent) -> CGFloat {
@@ -190,7 +374,7 @@ struct DayTimelineView: View {
         return CGFloat(minutes / 60) * hourHeight
     }
 
-    private func displayedStartDate(for block: TimeBlock) -> Date {
+    private func displayedStartDate(for block: DayTimelineBlockSnapshot) -> Date {
         if dragSession?.blockID == block.id {
             return dragSession?.proposedStartDate ?? block.startDate
         }
@@ -206,7 +390,21 @@ struct DayTimelineView: View {
         min(event.endDate, timelineBounds.rangeEnd)
     }
 
-    private func dragGesture(for block: TimeBlock) -> some Gesture {
+    private func checklistExpansionHeight(for block: DayTimelineBlockSnapshot) -> CGFloat {
+        guard expandedChecklistBlockIDs.contains(block.id) else {
+            return 0
+        }
+
+        let checklistCount = block.checklistItems.count
+        guard checklistCount > 0 else {
+            return 0
+        }
+
+        let visibleRowCount = min(checklistCount, 4)
+        return CGFloat(visibleRowCount) * 34 + 18
+    }
+
+    private func dragGesture(for block: DayTimelineBlockSnapshot) -> some Gesture {
         DragGesture(minimumDistance: 3)
             .onChanged { value in
                 let duration = block.endDate.timeIntervalSince(block.startDate)
@@ -247,7 +445,7 @@ struct DayTimelineView: View {
                     return
                 }
 
-                onMoveBlock(block, proposedStartDate)
+                onMoveBlock(block.id, proposedStartDate)
             }
     }
 
@@ -277,6 +475,28 @@ struct DayTimelineView: View {
         }
 
         return unsnappedDate
+    }
+
+    private func startDate(forBackgroundPressAt location: CGPoint, in size: CGSize) -> Date? {
+        let timelineMinX = labelColumnWidth
+        let timelineMaxX = size.width
+        let timelineMinY = timelineContentTopInset
+        let timelineMaxY = timelineContentTopInset + timelineHeight
+
+        guard location.x >= timelineMinX,
+              location.x <= timelineMaxX,
+              location.y >= timelineMinY,
+              location.y <= timelineMaxY else {
+            return nil
+        }
+
+        let offsetY = location.y - timelineContentTopInset
+        let minuteOffset = Int((offsetY / hourHeight) * 60)
+        let snappedMinuteOffset = Int((Double(minuteOffset) / Double(snapMinutes)).rounded()) * snapMinutes
+        let candidateDate = timelineBounds.rangeStart.addingTimeInterval(Double(snappedMinuteOffset * 60))
+        let latestStartDate = timelineBounds.endOfDay.addingTimeInterval(-15 * 60)
+
+        return min(max(candidateDate, timelineBounds.startOfDay), latestStartDate)
     }
 }
 
@@ -384,81 +604,222 @@ private struct TimelineBlockDragSession {
 }
 
 private struct DayTimelineBlockCard: View {
-    let block: TimeBlock
+    let block: DayTimelineBlockSnapshot
     let displayedStartDate: Date
     let conflictSummary: ScheduleBlockConflictSummary?
+    let isChecklistExpanded: Bool
     let isDragging: Bool
+    let onEdit: (() -> Void)?
+    let onToggleCompletion: () -> Void
+    let onToggleChecklistExpansion: (() -> Void)?
+    let onToggleChecklistItem: (UUID) -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var fillProgress: CGFloat = 0
+    @State private var bounceScale: CGFloat = 1.0
+    @State private var isAnimating = false
+
+    private var isCompleted: Bool {
+        block.status == .completed
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(block.title)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
+        VStack(alignment: .leading, spacing: isChecklistExpanded ? 12 : 6) {
+            header
+
+            if !sortedChecklistItems.isEmpty && isChecklistExpanded {
+                checklistSummaryButton
+            }
+
+            if isChecklistExpanded && !sortedChecklistItems.isEmpty {
+                expandedChecklist
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(backgroundFill)
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(borderColor, lineWidth: conflictSummary == nil ? 1.25 : 1.5)
+        }
+        .overlay(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(isCompleted ? Color.clear : tintColor.opacity(0.9))
+                .frame(width: 4)
+                .padding(.vertical, 10)
+        }
+        .shadow(color: tintColor.opacity(isDragging ? 0.18 : 0.08), radius: isDragging ? 22 : 6, x: 0, y: isDragging ? 12 : 3)
+        .scaleEffect(isDragging ? 1.015 : bounceScale)
+        .animation(.spring(response: 0.28, dampingFraction: 0.8), value: isDragging)
+        .animation(.spring(response: 0.28, dampingFraction: 0.8), value: isChecklistExpanded)
+    }
+
+    private var sortedChecklistItems: [DayTimelineChecklistItemSnapshot] {
+        block.checklistItems
+    }
+
+    private var checklistCompletionCount: Int {
+        sortedChecklistItems.filter(\.isCompleted).count
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Button(action: handleComplete) {
+                ZStack {
+                    Circle()
+                        .stroke(
+                            isCompleted ? Color.green : tintColor.opacity(0.35),
+                            lineWidth: 2
+                        )
+                        .frame(width: 26, height: 26)
+
+                    if isCompleted || fillProgress > 0.9 {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 26, height: 26)
+
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 11, weight: .black))
+                            .foregroundStyle(.white)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(isAnimating)
+            .accessibilityLabel(block.status == .completed ? "Mark item as planned" : "Mark item as completed")
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    categoryIcon
+
+                    Text(block.title)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(isCompleted ? secondaryTextColor : primaryTextColor)
+                        .strikethrough(isCompleted, color: secondaryTextColor)
+                        .opacity(isCompleted ? 0.82 : 1)
+                        .lineLimit(2)
+
+                    if block.isTemplateBacked {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(isCompleted ? secondaryTextColor.opacity(0.75) : secondaryTextColor)
+                    }
+                }
+
+                HStack(spacing: 8) {
+                    Text(timeRangeText)
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(secondaryTextColor)
+
+                    if isCompleted {
+                        Text("Done")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.green)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(
+                                Capsule()
+                                    .fill(Color.green.opacity(0.12))
+                            )
+                    }
+
+                    if let conflictSummary, !isDragging {
+                        Text(conflictSummary.badgeText)
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundStyle(conflictAccentColor)
+                    }
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            if isDragging {
+                Text(displayedStartDate.formatted(date: .omitted, time: .shortened))
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(tintColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.96))
+                    .clipShape(Capsule())
+            }
+        }
+    }
+
+    private var categoryIcon: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(tintColor.opacity(isCompleted ? 0.3 : 1.0))
+                .frame(width: 22, height: 22)
+
+            Image(systemName: iconSystemName)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(isCompleted ? Color.white.opacity(0.6) : Color.white)
+        }
+    }
+
+    private var checklistSummaryButton: some View {
+        Button(action: onToggleChecklistExpansion ?? {}) {
+            HStack(spacing: 8) {
+                Text("\(checklistCompletionCount)/\(sortedChecklistItems.count) checklist items")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(secondaryTextColor)
 
                 Spacer(minLength: 0)
 
-                Image(systemName: isDragging ? "arrow.up.and.down" : "line.3.horizontal")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.84))
-
-                if block.template != nil {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.84))
-                }
-            }
-
-            Text(timeRangeText)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.9))
-
-            HStack(spacing: 8) {
-                Label(block.category.title, systemImage: "tag")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.82))
-
-                if isDragging {
-                    Spacer(minLength: 0)
-
-                    Text(displayedStartDate.formatted(date: .omitted, time: .shortened))
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(tintColor)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.94))
-                        .clipShape(Capsule())
-                } else if let conflictSummary {
-                    Spacer(minLength: 0)
-
-                    Label(conflictSummary.badgeText, systemImage: "exclamationmark.triangle.fill")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundStyle(conflictAccentColor)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.94))
-                        .clipShape(Capsule())
-                }
+                Image(systemName: isChecklistExpanded ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(secondaryTextColor)
             }
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(tintGradient)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(borderColor, lineWidth: conflictSummary == nil ? 1 : 1.5)
+        .buttonStyle(.plain)
+        .disabled(onToggleChecklistExpansion == nil)
+        .accessibilityLabel(isChecklistExpanded ? "Collapse checklist" : "Expand checklist")
+    }
+
+    private var expandedChecklist: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(sortedChecklistItems.prefix(4)) { item in
+                Button {
+                    onToggleChecklistItem(item.id)
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(item.isCompleted ? .green : secondaryTextColor)
+
+                        Text(item.title)
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .foregroundStyle(item.isCompleted ? secondaryTextColor : primaryTextColor)
+                            .strikethrough(item.isCompleted)
+                            .lineLimit(2)
+
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(item.isCompleted ? .green.opacity(0.06) : Color.primary.opacity(0.03))
+                    )
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(item.isCompleted ? "Mark checklist item incomplete" : "Mark checklist item complete")
+            }
+
+            if sortedChecklistItems.count > 4 {
+                Text("+\(sortedChecklistItems.count - 4) more in edit view")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(secondaryTextColor)
+            }
         }
-        .shadow(color: tintColor.opacity(isDragging ? 0.26 : 0.16), radius: isDragging ? 18 : 10, x: 0, y: isDragging ? 12 : 6)
-        .scaleEffect(isDragging ? 1.02 : 1)
-        .opacity(isDragging ? 0.98 : 1)
-        .animation(.spring(response: 0.24, dampingFraction: 0.84), value: isDragging)
     }
 
     private var timeRangeText: String {
+        if let builtInKind = block.builtInKind {
+            return builtInKind.detailLabel
+        }
+
         let endDate = displayedStartDate.addingTimeInterval(block.endDate.timeIntervalSince(block.startDate))
         let start = displayedStartDate.formatted(date: .omitted, time: .shortened)
         let end = endDate.formatted(date: .omitted, time: .shortened)
@@ -466,26 +827,102 @@ private struct DayTimelineBlockCard: View {
     }
 
     private var tintColor: Color {
+        if let builtInKind = block.builtInKind {
+            switch builtInKind {
+            case .wakeUp:
+                return Color(hex: "F59E0B")
+            case .sleep:
+                return Theme.primaryPurple
+            }
+        }
+
         switch block.category {
         case .focus:
-            Theme.primaryPurple
+            return Theme.primaryPurple
         case .personal:
-            Color(hex: "F59E0B")
+            return Color(hex: "F59E0B")
         case .admin:
-            Color(hex: "0EA5E9")
+            return Color(hex: "0EA5E9")
         case .routine:
-            Color(hex: "10B981")
+            return Color(hex: "10B981")
         case .custom:
-            Color(hex: "64748B")
+            return Color(hex: "64748B")
         }
     }
 
-    private var tintGradient: LinearGradient {
-        LinearGradient(
-            colors: [tintColor, tintColor.opacity(0.84)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+    private var backgroundFill: some View {
+        ZStack(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(
+                    isCompleted
+                    ? (colorScheme == .dark ? Color.white.opacity(0.03) : Color.gray.opacity(0.04))
+                    : (colorScheme == .light ? .white : Color(.secondarySystemGroupedBackground))
+                )
+            
+            if fillProgress > 0 {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(tintColor.opacity(0.12))
+                    .scaleEffect(x: fillProgress, anchor: .leading)
+            }
+        }
+    }
+
+    private func handleComplete() {
+        if isCompleted {
+            onToggleCompletion()
+            return
+        }
+        
+        guard !isAnimating else { return }
+        
+        isAnimating = true
+        HapticManager.shared.success()
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            bounceScale = 1.05
+        }
+        withAnimation(.easeInOut(duration: 0.5)) {
+            fillProgress = 1.0
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                bounceScale = 1.0
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            onToggleCompletion()
+            isAnimating = false
+            fillProgress = 0
+        }
+    }
+
+    private var iconSystemName: String {
+        if let builtInKind = block.builtInKind {
+            return builtInKind.systemImage
+        }
+
+        switch block.category {
+        case .focus:
+            return "scope"
+        case .personal:
+            return "figure.walk"
+        case .admin:
+            return "tray.full.fill"
+        case .routine:
+            return "repeat"
+        case .custom:
+            return "square.grid.2x2.fill"
+        }
+    }
+
+    private var primaryTextColor: Color {
+        Theme.primaryText
+    }
+
+    private var secondaryTextColor: Color {
+        Theme.secondaryText
     }
 
     private var conflictAccentColor: Color {
@@ -498,9 +935,13 @@ private struct DayTimelineBlockCard: View {
         }
 
         if conflictSummary != nil {
-            return Color.white.opacity(0.86)
+            return conflictAccentColor.opacity(0.8)
         }
 
-        return Color.white.opacity(0.18)
+        if isCompleted {
+            return Color.primary.opacity(0.04)
+        }
+
+        return tintColor.opacity(0.18)
     }
 }

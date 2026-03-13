@@ -31,8 +31,8 @@ struct MonthlyPlanningView: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .top, spacing: 12) {
                 TimeSectionHeader(
-                    "Monthly Planning",
-                    subtitle: summary.monthLabel
+                    "Month Overview",
+                    subtitle: "\(summary.monthLabel) • Tap a date to edit it in Day"
                 )
 
                 Spacer(minLength: 0)
@@ -59,7 +59,7 @@ struct MonthlyPlanningView: View {
                 .tint(Theme.primaryPurple)
             }
 
-            Text("Tap a day to move into detailed planning.")
+            Text("Month is navigation-only. Pick a date, then make changes on the Day canvas.")
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(Theme.secondaryText)
 
