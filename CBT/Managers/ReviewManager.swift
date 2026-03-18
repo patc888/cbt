@@ -1,8 +1,12 @@
 import StoreKit
 import SwiftUI
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 @MainActor
-class ReviewManager: ObservableObject {
+class ReviewManager {
     static let shared = ReviewManager()
     
     private let minimumActionsBeforeReview = 5
@@ -34,11 +38,18 @@ class ReviewManager: ObservableObject {
     }
     
     private func requestReview(version: String) {
+        #if canImport(UIKit)
         if let scene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
             SKStoreReviewController.requestReview(in: scene)
             UserDefaults.standard.set(version, forKey: lastVersionKey)
             // Reset count if you want to prompt again in future versions after more usage
             UserDefaults.standard.set(0, forKey: userDefaultsKey)
         }
+        #else
+        SKStoreReviewController.requestReview()
+        UserDefaults.standard.set(version, forKey: lastVersionKey)
+        UserDefaults.standard.set(0, forKey: userDefaultsKey)
+        #endif
     }
 }
+

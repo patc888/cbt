@@ -73,7 +73,9 @@ struct JournalEntryDetailView: View {
         }
         .background(ThemedBackground().ignoresSafeArea())
         .navigationTitle("Journal Entry")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             ToolbarItem(placement: .destructiveAction) {
                 Button {

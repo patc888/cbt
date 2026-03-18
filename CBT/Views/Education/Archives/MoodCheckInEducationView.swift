@@ -4,6 +4,7 @@ struct MoodCheckInEducationView: View {
     var hideBackground: Bool = false
     var hideTitle: Bool = false
     @State private var showingFlow = false
+    @State private var attemptingFlow = false
     
     var body: some View {
         CBTEducationLayout(title: "Mood Check-In", hideBackground: hideBackground, hideTitle: hideTitle) {
@@ -43,7 +44,7 @@ struct MoodCheckInEducationView: View {
                         
                         Button {
                             HapticManager.shared.mediumImpact()
-                            showingFlow = true
+                            attemptingFlow = true
                         } label: {
                             Text("Log My Mood")
                                 .font(DSTypography.body)
@@ -61,6 +62,9 @@ struct MoodCheckInEducationView: View {
         }
         .sheet(isPresented: $showingFlow) {
             MoodCheckinView()
+        }
+        .withUsageGate(isAttemptingAction: $attemptingFlow) {
+            showingFlow = true
         }
     }
 }

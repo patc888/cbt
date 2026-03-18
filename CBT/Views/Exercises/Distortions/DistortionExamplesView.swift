@@ -152,7 +152,9 @@ struct DistortionExamplesView: View {
         }
         .background(ThemedBackground().ignoresSafeArea())
         .navigationTitle("Distortion Examples")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .onAppear {
             if currentExample == nil {
                 setRandomExample()

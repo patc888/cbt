@@ -15,7 +15,7 @@ struct AffirmationCardView: View {
         ZStack {
             // Opaque Base Layer
             RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .fill(Color(.systemBackground))
+                .fill(DSTheme.cardBackground)
                 .shadow(
                     color: (themeManager?.selectedColor ?? .accentColor).opacity(colorScheme == .dark ? 0.2 : 0.15),
                     radius: 20,

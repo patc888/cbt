@@ -92,7 +92,9 @@ struct AdvancedRemindersView: View {
                             selection: moodTimeBinding,
                             displayedComponents: .hourAndMinute
                         )
+                        #if os(iOS)
                         .datePickerStyle(.wheel)
+                        #endif
                         .labelsHidden()
                         .transition(.opacity.combined(with: .move(edge: .top)))
                         .padding(.horizontal, 16)
@@ -136,7 +138,9 @@ struct AdvancedRemindersView: View {
                             selection: reflectionTimeBinding,
                             displayedComponents: .hourAndMinute
                         )
+                        #if os(iOS)
                         .datePickerStyle(.wheel)
+                        #endif
                         .labelsHidden()
                         .transition(.opacity.combined(with: .move(edge: .top)))
                         .padding(.horizontal, 16)
@@ -175,7 +179,9 @@ struct AdvancedRemindersView: View {
                             selection: quietStartBinding,
                             displayedComponents: .hourAndMinute
                         )
+                        #if os(iOS)
                         .datePickerStyle(.wheel)
+                        #endif
                         .labelsHidden()
                         .transition(.opacity.combined(with: .move(edge: .top)))
                         .padding(.horizontal, 16)
@@ -202,7 +208,9 @@ struct AdvancedRemindersView: View {
                             selection: quietEndBinding,
                             displayedComponents: .hourAndMinute
                         )
+                        #if os(iOS)
                         .datePickerStyle(.wheel)
+                        #endif
                         .labelsHidden()
                         .transition(.opacity.combined(with: .move(edge: .top)))
                         .padding(.horizontal, 16)

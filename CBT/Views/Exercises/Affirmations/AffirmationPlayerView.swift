@@ -128,8 +128,10 @@ struct AffirmationPlayerView: View {
                     .padding(.bottom, LayoutMetrics.floatingToolbarBottomInset + 12)
             }
         }
-        .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("Affirmations")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
         .onChange(of: showingFavorites) { _, _ in
             currentIndex = 0
             triggerSelectionHaptic()

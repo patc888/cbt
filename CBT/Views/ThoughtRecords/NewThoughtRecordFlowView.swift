@@ -65,7 +65,9 @@ struct NewThoughtRecordFlowView: View {
                         step3View.tag(3)
                         step4View.tag(4)
                     }
+                    #if os(iOS)
                     .tabViewStyle(.page(indexDisplayMode: .never))
+                    #endif
                     .animation(.easeInOut, value: currentStep)
                     
                     // Bottom Navigation
@@ -107,7 +109,9 @@ struct NewThoughtRecordFlowView: View {
                 }
             }
             .navigationTitle("New Thought Record")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -115,6 +119,7 @@ struct NewThoughtRecordFlowView: View {
                     }
                 }
             }
+            #if os(iOS)
             .fullScreenCover(isPresented: $showBreathing) {
                 NavigationStack {
                     BreathingResetView(
@@ -129,6 +134,22 @@ struct NewThoughtRecordFlowView: View {
                     )
                 }
             }
+            #else
+            .sheet(isPresented: $showBreathing) {
+                NavigationStack {
+                    BreathingResetView(
+                        durationSeconds: 60,
+                        pattern: .box,
+                        autoStart: true,
+                        showsDismissControl: true,
+                        showControls: true,
+                        hideBackground: false,
+                        onComplete: nil,
+                        onDismiss: { showBreathing = false }
+                    )
+                }
+            }
+            #endif
         }
     }
     

@@ -46,12 +46,18 @@ struct TimelineRow: View {
         .accessibilityLabel("\(String(describing: item.kind).capitalized) entry: \(item.title). \(item.subtitle ?? "")")
     }
 
-    private var iconName: String {
+    @ViewBuilder
+    private var iconViewInner: some View {
         switch item.kind {
-        case .mood: return "face.smiling"
-        case .thought: return "brain"
-        case .exercise: return "figure.mind.and.body"
-        case .journal: return "book.pages"
+        case .mood:
+            if case .mood(let entry) = item.route, let validColor = MoodColor(rawValue: entry.moodScore) {
+                validColor.iconView
+            } else {
+                Image(systemName: "face.smiling")
+            }
+        case .thought: Image(systemName: "brain")
+        case .exercise: Image(systemName: "figure.mind.and.body")
+        case .journal: Image(systemName: "book.pages")
         }
     }
 
@@ -68,10 +74,10 @@ struct TimelineRow: View {
         ZStack {
             Circle()
                 .fill(iconColor.opacity(0.15))
-                .frame(width: 40, height: 40)
+                .frame(width: 48, height: 48)
 
-            Image(systemName: iconName)
-                .font(.system(size: 20))
+            iconViewInner
+                .font(.system(size: 24))
                 .foregroundColor(iconColor)
         }
     }

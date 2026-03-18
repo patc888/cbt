@@ -75,8 +75,10 @@ struct InsightsView: View {
             }
         }
         .navigationTitle("")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
+        #endif
         .task {
             await recalculateData()
         }

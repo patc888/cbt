@@ -155,7 +155,9 @@ struct BreathingResetView: View {
             }
         }
         .modifier(EmbeddedFlowBottomInset(embeddedInFlow: embeddedInFlow))
+        #if os(iOS)
         .navigationBarHidden(true) // Using custom header for premium feel
+        #endif
         .onChange(of: selectedDuration) { _, newValue in
             engine.setDuration(seconds: newValue)
         }

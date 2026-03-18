@@ -12,6 +12,7 @@ struct MoodListView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
     @State private var showingNewEntry = false
+    @State private var attemptingNewEntry = false
     
     var body: some View {
         ZStack {
@@ -32,7 +33,7 @@ struct MoodListView: View {
                         .padding(.horizontal)
                     
                     Button {
-                        showingNewEntry = true
+                        attemptingNewEntry = true
                     } label: {
                         Text("Add Check-in")
                             .bold()
@@ -78,7 +79,7 @@ struct MoodListView: View {
                 Spacer()
                 Button {
                     HapticManager.shared.lightImpact()
-                    showingNewEntry = true
+                    attemptingNewEntry = true
                 } label: {
                     Text("+ Mood")
                         .font(.system(size: 13, weight: .bold, design: .rounded))
@@ -96,6 +97,9 @@ struct MoodListView: View {
         }
         .sheet(isPresented: $showingNewEntry) {
             MoodCheckinView()
+        }
+        .withUsageGate(isAttemptingAction: $attemptingNewEntry) {
+            showingNewEntry = true
         }
     }
     
@@ -118,10 +122,16 @@ fileprivate struct MoodEntryRow: View {
                 ZStack {
                     Circle()
                         .fill(themeManager.selectedColor.opacity(0.14))
-                        .frame(width: 40, height: 40)
-                    Image(systemName: "face.smiling")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(themeManager.selectedColor)
+                        .frame(width: 48, height: 48)
+                    Group {
+                        if let validColor = MoodColor(rawValue: entry.moodScore) {
+                            validColor.iconView
+                        } else {
+                            Image(systemName: "face.smiling")
+                        }
+                    }
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(themeManager.selectedColor)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {

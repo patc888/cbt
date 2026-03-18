@@ -67,7 +67,11 @@ struct CBTLearnPagerView: View {
                     ProfessionalHelpEducationView(hideBackground: true, hideTitle: true).tag(13)
                     CBTFurtherReadingView(hideBackground: true, hideTitle: true).tag(14)
                 }
+                #if os(macOS)
+                .tabViewStyle(.automatic)
+                #else
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                #endif
                 .onChange(of: currentPage) { _, _ in
                     HapticManager.shared.trigger(.selection)
                 }
@@ -96,12 +100,22 @@ struct CBTLearnPagerView: View {
             }
         }
         .navigationTitle("")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
+            #if os(macOS)
+            ToolbarItem(placement: .automatic) {
+                DismissButton(style: .chevron)
+            }
+            #else
             ToolbarItem(placement: .navigationBarTrailing) {
                 DismissButton(style: .chevron)
             }
+            #endif
         }
+        #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
+        #endif
     }
 }

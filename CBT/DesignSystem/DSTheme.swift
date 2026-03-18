@@ -9,9 +9,9 @@ struct DSTheme {
     static let cardBackground = Color(UIColor.systemBackground)
     static let elevatedFill = Color(UIColor.tertiarySystemFill)
     #elseif canImport(AppKit)
-    static let background = Color(nsColor: .windowBackgroundColor)
-    static let cardBackground = Color(nsColor: .controlBackgroundColor)
-    static let elevatedFill = Color(nsColor: .quaternaryLabelColor).opacity(0.14)
+    static let background = Color(NSColor.windowBackgroundColor)
+    static let cardBackground = Color(NSColor.controlBackgroundColor)
+    static let elevatedFill = Color(NSColor.quaternaryLabelColor).opacity(0.14)
     #else
     static let background = Color.secondary.opacity(0.1)
     static let cardBackground = Color.primary.opacity(0.05)

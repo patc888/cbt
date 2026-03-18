@@ -4,6 +4,7 @@ struct BalancedThoughtEducationView: View {
     var hideBackground: Bool = false
     var hideTitle: Bool = false
     @State private var showingFlow = false
+    @State private var attemptingFlow = false
     
     var body: some View {
         CBTEducationLayout(title: "Balanced Perspectives", hideBackground: hideBackground, hideTitle: hideTitle) {
@@ -42,7 +43,7 @@ struct BalancedThoughtEducationView: View {
                         
                         Button {
                             HapticManager.shared.mediumImpact()
-                            showingFlow = true
+                            attemptingFlow = true
                         } label: {
                             Text("Start Practice")
                                 .font(DSTypography.body)
@@ -60,6 +61,9 @@ struct BalancedThoughtEducationView: View {
         }
         .sheet(isPresented: $showingFlow) {
             NewThoughtRecordFlowView()
+        }
+        .withUsageGate(isAttemptingAction: $attemptingFlow) {
+            showingFlow = true
         }
     }
 }

@@ -74,7 +74,11 @@ struct SubscriptionSettingsView: View {
     private var subscriptionIcon: some View {
         Group {
             #if canImport(UIKit)
-            if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
+            if let brandingImage = UIImage(named: "AppBrandingIcon") {
+                 Image(uiImage: brandingImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
                let primaryIcon = icons["CFBundlePrimaryIcon"] as? [String: Any],
                let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String],
                let lastIcon = iconFiles.last,
@@ -90,7 +94,13 @@ struct SubscriptionSettingsView: View {
                 AppIconView(size: 60)
             }
             #else
-            AppIconView(size: 60)
+            if let brandingImage = NSImage(named: "AppBrandingIcon") {
+                Image(nsImage: brandingImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else {
+                AppIconView(size: 60)
+            }
             #endif
         }
     }

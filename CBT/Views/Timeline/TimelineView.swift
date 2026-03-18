@@ -11,6 +11,8 @@ struct TimelineView: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var showingAddMood = false
     @State private var showingAddThought = false
+    @State private var attemptingAddMood = false
+    @State private var attemptingAddThought = false
 
     private var groupedItems: [(key: Date, value: [TimelineItem])] {
         var items: [TimelineItem] = []
@@ -119,7 +121,7 @@ struct TimelineView: View {
                     VStack(spacing: 12) {
                         Button {
                             HapticManager.shared.lightImpact()
-                            showingAddMood = true
+                            attemptingAddMood = true
                         } label: {
                             Label("Log Mood", systemImage: "face.smiling")
                                 .font(.system(.subheadline, design: .rounded).weight(.bold))
@@ -133,7 +135,7 @@ struct TimelineView: View {
 
                         Button {
                             HapticManager.shared.lightImpact()
-                            showingAddThought = true
+                            attemptingAddThought = true
                         } label: {
                             Label("New Thought Record", systemImage: "brain")
                                 .font(.system(.subheadline, design: .rounded).weight(.bold))
@@ -191,16 +193,18 @@ struct TimelineView: View {
             }
         }
         .navigationTitle("")
+        #if os(iOS) && !targetEnvironment(macCatalyst)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
+        #endif
         .safeAreaInset(edge: .top) {
             HStack {
                 Spacer()
                 quickActionButton(title: "+ Mood", color: themeManager.selectedColor) {
-                    showingAddMood = true
+                    attemptingAddMood = true
                 }
                 quickActionButton(title: "+ Thought", color: themeManager.secondaryColor) {
-                    showingAddThought = true
+                    attemptingAddThought = true
                 }
             }
             .padding(.horizontal, 16)
@@ -211,6 +215,12 @@ struct TimelineView: View {
         }
         .sheet(isPresented: $showingAddThought) {
             NewThoughtRecordFlowView()
+        }
+        .withUsageGate(isAttemptingAction: $attemptingAddMood) {
+            showingAddMood = true
+        }
+        .withUsageGate(isAttemptingAction: $attemptingAddThought) {
+            showingAddThought = true
         }
         .navigationDestination(for: TimelineRoute.self) { route in
             switch route {

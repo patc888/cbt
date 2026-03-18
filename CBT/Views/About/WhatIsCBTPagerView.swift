@@ -39,7 +39,11 @@ struct WhatIsCBTPagerView: View {
                     FurtherReadingEducationPage().tag(CBTPage.furtherReading.rawValue)
                     ConclusionEducationPage().tag(CBTPage.conclusion.rawValue)
                 }
+                #if os(macOS)
+                .tabViewStyle(.automatic)
+                #else
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                #endif
                 .onChange(of: currentPage) { _, _ in
                     HapticManager.shared.trigger(.selection)
                 }
