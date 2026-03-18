@@ -3,6 +3,7 @@ import SwiftUI
 struct MoodSuggestionsView: View {
     let onNext: () -> Void
     @State private var showingThoughtRecord = false
+    @State private var showingBreathing = false
     
     var body: some View {
         VStack(spacing: 32) {
@@ -19,7 +20,7 @@ struct MoodSuggestionsView: View {
                     title: "Breathing Reset",
                     icon: "wind"
                 ) {
-                    BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
+                    showingBreathing = true
                 }
                 
                 SuggestionButton(
@@ -52,6 +53,20 @@ struct MoodSuggestionsView: View {
         }
         .sheet(isPresented: $showingThoughtRecord) {
             NewThoughtRecordFlowView()
+        }
+        .fullScreenCover(isPresented: $showingBreathing) {
+            NavigationStack {
+                BreathingResetView(
+                    durationSeconds: 60,
+                    pattern: .box,
+                    autoStart: true,
+                    showsDismissControl: true,
+                    showControls: true,
+                    hideBackground: false,
+                    onComplete: nil,
+                    onDismiss: { showingBreathing = false }
+                )
+            }
         }
     }
 }

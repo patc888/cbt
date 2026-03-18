@@ -10,6 +10,8 @@ struct NewMoodEntryView: View {
     @State private var newEmotion: String = ""
     @State private var notes: String = ""
     
+    @State private var showBreathing = false
+    
     init(initialMoodScore: Int? = nil) {
         if let score = initialMoodScore {
             _moodScore = State(initialValue: score)
@@ -48,7 +50,7 @@ struct NewMoodEntryView: View {
                                         .foregroundStyle(DSTheme.primaryText)
 
                                     Button("Start Breathing Reset") {
-                                        BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
+                                        showBreathing = true
                                     }
                                     .buttonStyle(DSPrimaryButtonStyle())
                                 }
@@ -140,6 +142,20 @@ struct NewMoodEntryView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
                         .bold()
+                }
+            }
+            .fullScreenCover(isPresented: $showBreathing) {
+                NavigationStack {
+                    BreathingResetView(
+                        durationSeconds: 60,
+                        pattern: .box,
+                        autoStart: true,
+                        showsDismissControl: true,
+                        showControls: true,
+                        hideBackground: false,
+                        onComplete: nil,
+                        onDismiss: { showBreathing = false }
+                    )
                 }
             }
         }

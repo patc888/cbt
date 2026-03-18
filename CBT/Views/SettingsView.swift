@@ -52,7 +52,7 @@ struct SettingsView: View {
 #endif
         .sheet(isPresented: $showingDebug) {
             NavigationStack {
-                Text("Debug Placeholder (Chores debug views were stripped)")
+                Text("Debug Placeholder")
                     .navigationTitle("Debug")
                     #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
@@ -121,15 +121,15 @@ struct SettingsView: View {
     }
 
     private var mainContent: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 28) {
             HStack {
-                Spacer()
                 Text("Settings")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(DSTypography.pageTitle)
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
             }
-            .padding(.top, 12)
+            .padding(.horizontal, 22)
+            .padding(.top, 36)
             .padding(.bottom, 4)
             
 
@@ -249,7 +249,7 @@ struct SettingsView: View {
                     .padding(.horizontal, 20)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 18)
         .padding(.bottom, 32)
     }
 
@@ -271,7 +271,7 @@ struct SettingsView: View {
             dismiss()
         }) {
             Image(systemName: "chevron.right")
-                .font(.system(size: 18, weight: .bold))
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(themeManager.selectedColor)
                 .padding(8)
                 .contentShape(Rectangle())

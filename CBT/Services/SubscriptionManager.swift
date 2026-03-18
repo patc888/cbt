@@ -14,9 +14,9 @@ class SubscriptionManager: ObservableObject {
     
     // Abstracting StoreKit details to support the stub requirement
     private let productIdentifiersForSale: [String] = [
-        "com.xeo.WeightTracker.premium.monthly",
-        "com.xeo.WeightTracker.premium.yearly",
-        "com.xeo.MeliWeightTracker.premium.lifetime"
+        "com.xeo.CBT.premium.monthly",
+        "com.xeo.CBT.premium.yearly",
+        "com.xeo.CBT.premium.lifetime"
     ]
     
     enum SubscriptionStatus {

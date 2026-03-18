@@ -16,14 +16,16 @@ struct SubscriptionConfig: Codable, Equatable {
         let billingFrequency: String
         let badge: String?
         let isRecommended: Bool
+        let hasFreeTrial: Bool
         
-        init(id: String, label: String, price: String, billingFrequency: String, badge: String? = nil, isRecommended: Bool = false) {
+        init(id: String, label: String, price: String, billingFrequency: String, badge: String? = nil, isRecommended: Bool = false, hasFreeTrial: Bool = false) {
             self.id = id
             self.label = label
             self.price = price
             self.billingFrequency = billingFrequency
             self.badge = badge
             self.isRecommended = isRecommended
+            self.hasFreeTrial = hasFreeTrial
         }
     }
     
@@ -43,24 +45,24 @@ struct SubscriptionConfig: Codable, Equatable {
 
 extension SubscriptionConfig {
     static let mock = SubscriptionConfig(
-        title: String(localized: "Full Access"),
-        subtitle: String(localized: "One subscription for all your devices with unlimited access."),
+        title: "Full Access",
+        subtitle: "One subscription for all your devices with unlimited access.",
         plans: [
-            SubscriptionPlan(id: "com.xeo.CBT.premium.yearly", label: String(localized: "Yearly"), price: "$11.99/year", billingFrequency: String(localized: "Billed at $11.99/yr after trial"), badge: String(localized: "50% OFF"), isRecommended: true),
-            SubscriptionPlan(id: "com.xeo.CBT.premium.monthly", label: String(localized: "Monthly"), price: "$1.99/month", billingFrequency: String(localized: "Billed at $1.99/month"))
+            SubscriptionPlan(id: "com.xeo.CBT.premium.yearly", label: "Yearly", price: "$11.99", billingFrequency: "/year", badge: "50% OFF", isRecommended: true, hasFreeTrial: true),
+            SubscriptionPlan(id: "com.xeo.CBT.premium.monthly", label: "Monthly", price: "$1.99", billingFrequency: "/month")
         ],
-        oneTimeOption: SubscriptionPlan(id: "com.xeo.CBT.premium.lifetime", label: String(localized: "Lifetime"), price: "$39.99", billingFrequency: String(localized: "one-time payment")),
+        oneTimeOption: SubscriptionPlan(id: "com.xeo.CBT.premium.lifetime", label: "Lifetime", price: "$39.99", billingFrequency: "one-time payment"),
         features: [
-            SubscriptionFeature(icon: "list.bullet.clipboard", title: String(localized: "Unlimited Entries"), description: String(localized: "Log as often as you like without any restrictions.")),
-            SubscriptionFeature(icon: "chart.line.uptrend.xyaxis", title: String(localized: "Advanced Analytics"), description: String(localized: "Get detailed predictions and advanced trends.")),
-            SubscriptionFeature(icon: "icloud.fill", title: String(localized: "Multi-Device Sync"), description: String(localized: "Your data stays in sync across iPhone, iPad, and Mac via iCloud.")),
-            SubscriptionFeature(icon: "target", title: String(localized: "Maintenance Mode"), description: String(localized: "Special tracking modes for when you've reached your goals."))
+            SubscriptionFeature(icon: "list.bullet.clipboard", title: "Unlimited Entries", description: "Log as often as you like and track your thoughts without any restrictions."),
+            SubscriptionFeature(icon: "chart.line.uptrend.xyaxis", title: "Advanced Analytics", description: "Discover deep insights into your mental well-being with trend analysis."),
+            SubscriptionFeature(icon: "icloud.fill", title: "iCloud Sync", description: "Your data stays in sync securely across your iPhone, iPad, and Mac."),
+            SubscriptionFeature(icon: "target", title: "Goal Focused", description: "Stay on track with specialized maintenance modes to support your progress.")
         ],
-        ctaTitle: String(localized: "Continue"),
+        ctaTitle: "Continue",
         secondaryActions: [
-            SecondaryAction(title: String(localized: "Restore"), actionID: "restore"),
-            SecondaryAction(title: String(localized: "Terms of Use"), actionID: "terms"),
-            SecondaryAction(title: String(localized: "Privacy Policy"), actionID: "privacy")
+            SecondaryAction(title: "Restore", actionID: "restore"),
+            SecondaryAction(title: "Terms of Use", actionID: "terms"),
+            SecondaryAction(title: "Privacy Policy", actionID: "privacy")
         ]
     )
 }

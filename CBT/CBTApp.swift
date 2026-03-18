@@ -85,9 +85,17 @@ struct CBTApp: App {
         case .loading:
             DataRepairLoadingView()
         case .ready(let container):
-            ContentView()
-                .id(resetID)
-                .modelContainer(container)
+            ZStack {
+                ContentView()
+                    .id(resetID)
+                    .modelContainer(container)
+                
+                if securityManager.isLocked {
+                    LockView()
+                        .transition(.opacity)
+                        .zIndex(100)
+                }
+            }
         case .repair:
             DataRepairView(
                 onRetry: {

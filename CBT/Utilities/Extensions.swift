@@ -5,13 +5,13 @@ struct CardStyleModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .background(Theme.cardBackground)
-            .cornerRadius(Theme.cornerRadiusXLarge)
+            .background(DSTheme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.large, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge)
+                RoundedRectangle(cornerRadius: DSCornerRadius.large, style: .continuous)
                     .strokeBorder(
-                        Theme.isImmersive ? Color.clear : Color.primary.opacity(0.05),
-                        lineWidth: 0.5
+                        Theme.isImmersive ? Color.clear : DSTheme.separator.opacity(0.18),
+                        lineWidth: 0.8
                     )
             )
             .cardShadow(colorScheme: colorScheme)
@@ -19,7 +19,7 @@ struct CardStyleModifier: ViewModifier {
 }
 
 extension View {
-    func weightTrackerCardShadow(
+    func cbtCardShadow(
         colorScheme: ColorScheme,
         opacity: Double = Theme.shadowOpacity,
         radius: CGFloat = Theme.shadowRadius,
@@ -46,6 +46,26 @@ extension View {
 
     func cardStyle() -> some View {
         modifier(CardStyleModifier())
+    }
+
+    func dsContentLayout(maxWidth: CGFloat = 800, horizontalPadding: CGFloat = DSSpacing.large) -> some View {
+        frame(maxWidth: maxWidth)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, horizontalPadding)
+    }
+
+    func cbtInputSurface(minHeight: CGFloat? = nil) -> some View {
+        self
+            .padding(DSSpacing.medium)
+            .if(minHeight != nil) { view in
+                view.frame(minHeight: minHeight!)
+            }
+            .background(DSTheme.elevatedFill)
+            .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous)
+                    .stroke(DSTheme.separator.opacity(0.18), lineWidth: 1)
+            )
     }
 
     func responsiveMaxWidth(maxWidth: CGFloat? = 800) -> some View {

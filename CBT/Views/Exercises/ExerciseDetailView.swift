@@ -50,9 +50,8 @@ struct ExerciseDetailView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ZStack(alignment: .top) {
-                ThemedBackground().ignoresSafeArea()
+        ZStack(alignment: .top) {
+            ThemedBackground().ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     // Progress Header
@@ -147,7 +146,6 @@ struct ExerciseDetailView: View {
                 NotificationCenter.default.post(name: .exerciseFlowDidExit, object: nil)
                 timerManager.stop()
             }
-        }
     }
     
     // MARK: - Flow Views

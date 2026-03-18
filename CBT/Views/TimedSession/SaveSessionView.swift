@@ -5,7 +5,6 @@ struct SaveSessionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
-    @Environment(\.colorScheme) private var colorScheme
 
     let summary: SessionSummary
     var onSaveComplete: (() -> Void)?
@@ -30,9 +29,9 @@ struct SaveSessionView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
+            DSSheetContainer(maxContentWidth: 680) {
                 ScrollView {
-                    VStack(spacing: DSSpacing.large) {
+                    VStack(alignment: .leading, spacing: DSSpacing.large) {
 
                     // Duration Badge
                     HStack(spacing: DSSpacing.small) {
@@ -53,8 +52,6 @@ struct SaveSessionView: View {
                                 .clipShape(Capsule())
                         }
                     }
-                    .padding(.horizontal, DSSpacing.large)
-                    .padding(.top, DSSpacing.medium)
 
                     // Title
                     DSCardContainer {
@@ -66,9 +63,10 @@ struct SaveSessionView: View {
                             TextField("Session Title", text: $editableTitle)
                                 .font(.system(size: 17, weight: .semibold, design: .rounded))
                                 .foregroundStyle(DSTheme.primaryText)
+                                .textFieldStyle(.plain)
+                                .cbtInputSurface()
                         }
                     }
-                    .padding(.horizontal, DSSpacing.large)
 
                     // What You Did
                     DSCardContainer {
@@ -105,7 +103,6 @@ struct SaveSessionView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, DSSpacing.large)
 
                     // Notes
                     DSCardContainer {
@@ -119,9 +116,9 @@ struct SaveSessionView: View {
                                 .frame(minHeight: 80)
                                 .scrollContentBackground(.hidden)
                                 .foregroundStyle(DSTheme.primaryText)
+                                .cbtInputSurface()
                         }
                     }
-                    .padding(.horizontal, DSSpacing.large)
 
                     // Tags
                     VStack(alignment: .leading, spacing: DSSpacing.small) {
@@ -129,7 +126,6 @@ struct SaveSessionView: View {
                             .font(DSTypography.cardTitle)
                             .foregroundStyle(accent)
                             .tracking(1)
-                            .padding(.horizontal, DSSpacing.large)
 
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: DSSpacing.small) {
@@ -153,40 +149,29 @@ struct SaveSessionView: View {
                                     .buttonStyle(.plain)
                                 }
                             }
-                            .padding(.horizontal, DSSpacing.large)
                         }
                     }
 
-                    Spacer().frame(height: DSSpacing.xLarge)
+                    Spacer().frame(height: DSSpacing.small)
                     }
                 }
-                .background(DSTheme.background.ignoresSafeArea())
 
-                // Bottom bar – Save in same position as exercise Next button
-                HStack {
-                    Spacer().frame(width: 60)
+                HStack(spacing: DSSpacing.medium) {
                     Spacer()
                     Button {
                         saveEntry()
                     } label: {
-                        Text("Save")
-                            .bold()
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(accent)
-                            .clipShape(Capsule())
-                            .padding()
+                        Text("Save Session")
                     }
+                    .buttonStyle(DSPrimaryButtonStyle())
                     .disabled(editableTitle.trimmingCharacters(in: .whitespaces).isEmpty)
                     .accessibilityLabel("Save session")
                 }
-                .background(Theme.cardBackground.ignoresSafeArea(edges: .bottom))
+                .padding(.top, DSSpacing.small)
             }
             .safeAreaInset(edge: .bottom) {
                 Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
             }
-            .background(DSTheme.background.ignoresSafeArea())
             .navigationTitle("Save Session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// App settings model — ported from Chores for CBT without specific Chores household rules
+/// App settings model for CBT
 @Model
 final class UserSettings {
     var uuid: UUID?

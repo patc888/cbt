@@ -30,8 +30,10 @@ struct DSSectionHeader<Trailing: View>: View {
         HStack(alignment: .firstTextBaseline, spacing: DSSpacing.medium) {
             VStack(alignment: .leading, spacing: DSSpacing.xSmall) {
                 Text(title)
-                    .font(DSTypography.sectionTitle)
-                    .foregroundStyle(DSTheme.primaryText)
+                    .font(DSTypography.sectionHeader)
+                    .foregroundStyle(DSTheme.secondaryText)
+                    .textCase(.uppercase)
+                    .tracking(0.5)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
 
@@ -66,6 +68,62 @@ struct DSCardContainer<Content: View>: View {
                 x: 0,
                 y: colorScheme == .dark ? 5 : 0
             )
+    }
+}
+
+struct DSListRow<Trailing: View>: View {
+    let icon: String?
+    let iconColor: Color?
+    let title: String
+    let subtitle: String?
+    let trailing: Trailing
+
+    init(
+        icon: String? = nil,
+        iconColor: Color? = nil,
+        title: String,
+        subtitle: String? = nil,
+        @ViewBuilder trailing: () -> Trailing
+    ) {
+        self.icon = icon
+        self.iconColor = iconColor
+        self.title = title
+        self.subtitle = subtitle
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: DSSpacing.medium) {
+            if let icon {
+                ZStack {
+                    Circle()
+                        .fill((iconColor ?? DSTheme.secondaryText).opacity(0.18))
+                    Image(systemName: icon)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(iconColor ?? DSTheme.secondaryText)
+                }
+                .frame(width: 32, height: 32)
+                .accessibilityHidden(true)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(DSTypography.listLabel)
+                    .foregroundStyle(DSTheme.primaryText)
+
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(DSTypography.caption)
+                        .foregroundStyle(DSTheme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            trailing
+                .foregroundStyle(DSTheme.secondaryText)
+        }
+        .frame(minHeight: 44)
     }
 }
 

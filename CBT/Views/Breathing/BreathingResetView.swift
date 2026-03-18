@@ -86,22 +86,42 @@ struct BreathingResetView: View {
                 
                 Spacer()
                 
-                // Save to Journal button (shown only when complete and not in exercise flow)
-                if engine.state.isComplete && onComplete == nil {
-                    Button {
-                        HapticManager.shared.lightImpact()
-                        prepareSaveSession()
-                    } label: {
-                        Label("Save to Journal", systemImage: "square.and.pencil")
-                            .font(.system(.subheadline, design: .rounded).weight(.bold))
-                            .foregroundStyle(accent)
-                            .padding(.horizontal, DSSpacing.xLarge)
-                            .padding(.vertical, DSSpacing.medium)
-                            .background(accent.opacity(0.12))
-                            .clipShape(Capsule())
+                // Completion Controls
+                if engine.state.isComplete && !embeddedInFlow {
+                    HStack(spacing: DSSpacing.medium) {
+                        Button {
+                            HapticManager.shared.lightImpact()
+                            onComplete?()
+                            dismiss()
+                        } label: {
+                            Text("Done")
+                                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, DSSpacing.xLarge)
+                                .padding(.vertical, DSSpacing.medium)
+                                .background(accent)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Finish session")
+
+                        Button {
+                            HapticManager.shared.lightImpact()
+                            prepareSaveSession()
+                        } label: {
+                            Label("Journal", systemImage: "square.and.pencil")
+                                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                                .foregroundStyle(accent)
+                                .padding(.horizontal, DSSpacing.xLarge)
+                                .padding(.vertical, DSSpacing.medium)
+                                .background(accent.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Save to journal")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Save this session to your journal")
+                    .padding(.horizontal, 20)
+                    .responsiveMaxWidth()
                     .padding(.bottom, DSSpacing.medium)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
@@ -143,13 +163,7 @@ struct BreathingResetView: View {
             handlePhaseChange(from: oldValue, to: newValue)
         }
         .onChange(of: engine.state.isComplete) { _, newValue in
-            if newValue, let onComplete {
-                // Delay briefly so user sees the completed orb state
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    onComplete()
-                    if !embeddedInFlow { dismiss() }
-                }
-            }
+            // Manual dismissal via buttons instead of auto-advance
         }
         .onAppear {
             guard autoStart, !hasAutoStarted else { return }

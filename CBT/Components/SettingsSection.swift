@@ -10,17 +10,15 @@ struct SettingsSection<Content: View>: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: title.isEmpty ? 0 : 16) {
+        VStack(alignment: .leading, spacing: title.isEmpty ? 0 : 10) {
             if !title.isEmpty {
-                Text(title)
-                    .font(.system(size: 25, weight: .bold, design: .rounded))
-                    .foregroundColor(Theme.primaryText)
+                DSSectionHeader(title: title)
             }
             
             content()
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DSSpacing.large)
+        .padding(.vertical, DSSpacing.large)
         .cardStyle()
     }
 }

@@ -6,19 +6,22 @@ struct TopHeadlineView: View {
     var alignment: HorizontalAlignment = .center
 
     var body: some View {
-        VStack(alignment: alignment, spacing: 3) {
+        VStack(alignment: alignment, spacing: DSSpacing.xSmall) {
             Text(title)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundStyle(Theme.primaryText)
+                .font(DSTypography.pageTitle)
+                .foregroundStyle(DSTheme.primaryText)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
 
             if let subtitle, !subtitle.isEmpty {
                 Text(subtitle)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText)
+                    .font(DSTypography.caption)
+                    .foregroundStyle(DSTheme.secondaryText)
+                    .multilineTextAlignment(alignment == .center ? .center : .leading)
             }
         }
         .frame(maxWidth: alignment == .center ? .infinity : nil)
-        .padding(.top, 20)
-        .padding(.bottom, 0)
+        .padding(.top, DSSpacing.large)
+        .padding(.bottom, DSSpacing.xSmall)
     }
 }

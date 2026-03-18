@@ -167,6 +167,6 @@ struct MiniStatCard: View {
                         .stroke(borderColor, lineWidth: 1.5)
                 )
         )
-        .weightTrackerCardShadow(colorScheme: colorScheme, opacity: colorScheme == .dark ? (state == .neutral ? 0.02 : 0.05) : 0, radius: colorScheme == .dark ? 4 : 0, y: colorScheme == .dark ? 2 : 0)
+        .cbtCardShadow(colorScheme: colorScheme, opacity: colorScheme == .dark ? (state == .neutral ? 0.02 : 0.05) : 0, radius: colorScheme == .dark ? 4 : 0, y: colorScheme == .dark ? 2 : 0)
     }
 }

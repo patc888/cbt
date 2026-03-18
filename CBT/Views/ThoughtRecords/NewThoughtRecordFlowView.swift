@@ -29,6 +29,10 @@ struct NewThoughtRecordFlowView: View {
     
     @State private var currentStep = 0
     private let totalSteps = 5
+    private let feelingPresets = ["Anxious", "Sad", "Angry", "Overwhelmed", "Embarrassed", "Guilty", "Lonely", "Frustrated"]
+    private let distortionPresets = ["All-or-Nothing Thinking", "Mind Reading", "Catastrophizing", "Overgeneralization", "Emotional Reasoning", "Labeling", "Should Statements"]
+    
+    @State private var showBreathing = false
     
     private var canSave: Bool {
         !situation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
@@ -41,12 +45,18 @@ struct NewThoughtRecordFlowView: View {
                 ThemedBackground().ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    
-                    // Progress Header
-                    ProgressView(value: Double(currentStep + 1), total: Double(totalSteps))
-                        .tint(themeManager.selectedColor)
-                        .padding()
-                        .accessibilityLabel("Step \(currentStep + 1) of \(totalSteps)")
+                    VStack(alignment: .leading, spacing: DSSpacing.small) {
+                        Text("Step \(currentStep + 1) of \(totalSteps)")
+                            .font(DSTypography.caption)
+                            .foregroundStyle(DSTheme.secondaryText)
+
+                        ProgressView(value: Double(currentStep + 1), total: Double(totalSteps))
+                            .tint(themeManager.selectedColor)
+                            .accessibilityLabel("Step \(currentStep + 1) of \(totalSteps)")
+                    }
+                    .padding(.horizontal, DSSpacing.large)
+                    .padding(.top, DSSpacing.large)
+                    .padding(.bottom, DSSpacing.small)
                     
                     TabView(selection: $currentStep) {
                         step0View.tag(0)
@@ -59,51 +69,41 @@ struct NewThoughtRecordFlowView: View {
                     .animation(.easeInOut, value: currentStep)
                     
                     // Bottom Navigation
-                    HStack {
+                    HStack(spacing: DSSpacing.medium) {
                         if currentStep > 0 {
                             Button("Back") {
                                 withAnimation {
                                     currentStep -= 1
                                 }
                             }
-                            .foregroundColor(themeManager.selectedColor)
-                            .padding()
+                            .buttonStyle(DSSecondaryButtonStyle())
                             .accessibilityLabel("Go back to previous step")
-                        } else {
-                            Spacer().frame(width: 60)
                         }
                         
                         Spacer()
                         
                         if currentStep < totalSteps - 1 {
+                            let canProceed = currentStep != 0 || canSave
                             Button("Next") {
                                 withAnimation {
                                     currentStep += 1
                                 }
                             }
-                            .bold()
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(themeManager.selectedColor)
-                            .clipShape(Capsule())
-                            .padding()
+                            .buttonStyle(DSPrimaryButtonStyle())
+                            .disabled(!canProceed)
                             .accessibilityLabel("Go to next step")
                         } else {
                             Button("Save") {
                                 saveRecord()
                             }
-                            .bold()
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(canSave ? themeManager.selectedColor : Color.gray)
-                            .clipShape(Capsule())
-                            .padding()
+                            .buttonStyle(DSPrimaryButtonStyle())
                             .disabled(!canSave)
                         }
                     }
-                    .background(Theme.cardBackground.ignoresSafeArea(edges: .bottom))
+                    .padding(.horizontal, DSSpacing.large)
+                    .padding(.top, DSSpacing.small)
+                    .padding(.bottom, DSSpacing.large)
+                    .background(DSTheme.cardBackground.ignoresSafeArea(edges: .bottom))
                 }
             }
             .navigationTitle("New Thought Record")
@@ -113,6 +113,20 @@ struct NewThoughtRecordFlowView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                }
+            }
+            .fullScreenCover(isPresented: $showBreathing) {
+                NavigationStack {
+                    BreathingResetView(
+                        durationSeconds: 60,
+                        pattern: .box,
+                        autoStart: true,
+                        showsDismissControl: true,
+                        showControls: true,
+                        hideBackground: false,
+                        onComplete: nil,
+                        onDismiss: { showBreathing = false }
+                    )
                 }
             }
         }
@@ -128,17 +142,12 @@ struct NewThoughtRecordFlowView: View {
                         .font(.headline)
                         .foregroundStyle(Theme.primaryText)
                     Text("What happened? Who were you with? Where were you?")
-                        .font(.caption)
-                        .foregroundStyle(Theme.secondaryText)
+                        .font(DSTypography.caption)
+                        .foregroundStyle(DSTheme.secondaryText)
                     TextEditor(text: $situation)
                         .frame(minHeight: 80)
                         .scrollContentBackground(.hidden)
-                        .background(Theme.cardBackground)
-                        .cornerRadius(Theme.cornerRadiusSmall)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
-                                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
-                        )
+                        .cbtInputSurface()
                 }
                 .padding(.vertical, 4)
                 
@@ -153,17 +162,12 @@ struct NewThoughtRecordFlowView: View {
                         )
                     }
                     Text("What went through your mind right before you felt this way?")
-                        .font(.caption)
-                        .foregroundStyle(Theme.secondaryText)
+                        .font(DSTypography.caption)
+                        .foregroundStyle(DSTheme.secondaryText)
                     TextEditor(text: $automaticThought)
                         .frame(minHeight: 80)
                         .scrollContentBackground(.hidden)
-                        .background(Theme.cardBackground)
-                        .cornerRadius(Theme.cornerRadiusSmall)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
-                                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
-                        )
+                        .cbtInputSurface()
                 }
                 .padding(.vertical, 4)
             }
@@ -181,6 +185,8 @@ struct NewThoughtRecordFlowView: View {
                     
                     HStack {
                         TextField("e.g. Anxious, Sad...", text: $currentEmotion)
+                            .textFieldStyle(.plain)
+                            .cbtInputSurface()
                             .onSubmit { addEmotion() }
                             .accessibilityLabel("New emotion")
                         Button(action: addEmotion) {
@@ -189,6 +195,14 @@ struct NewThoughtRecordFlowView: View {
                         }
                         .accessibilityLabel("Add emotion")
                     }
+
+                    presetChips(
+                        title: "Common feelings",
+                        items: feelingPresets,
+                        selections: emotions,
+                        accessibilityPrefix: "Feeling",
+                        toggle: toggleEmotion
+                    )
                     
                     if !emotions.isEmpty {
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -235,7 +249,7 @@ struct NewThoughtRecordFlowView: View {
                                 .foregroundStyle(DSTheme.primaryText)
 
                             Button("Start Breathing Reset") {
-                                BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
+                                showBreathing = true
                             }
                             .buttonStyle(DSPrimaryButtonStyle())
                         }
@@ -266,6 +280,8 @@ struct NewThoughtRecordFlowView: View {
                     
                     HStack {
                         TextField("Add distortion...", text: $currentDistortion)
+                            .textFieldStyle(.plain)
+                            .cbtInputSurface()
                             .onSubmit { addDistortion() }
                             .accessibilityLabel("New distortion")
                         Button(action: addDistortion) {
@@ -274,6 +290,14 @@ struct NewThoughtRecordFlowView: View {
                         }
                         .accessibilityLabel("Add distortion")
                     }
+
+                    presetChips(
+                        title: "Common thinking traps",
+                        items: distortionPresets,
+                        selections: distortions,
+                        accessibilityPrefix: "Thinking trap",
+                        toggle: toggleDistortion
+                    )
                     
                     if !distortions.isEmpty {
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -317,17 +341,12 @@ struct NewThoughtRecordFlowView: View {
                         )
                     }
                     Text("What facts support your automatic thought?")
-                        .font(.caption)
-                        .foregroundStyle(Theme.secondaryText)
+                        .font(DSTypography.caption)
+                        .foregroundStyle(DSTheme.secondaryText)
                     TextEditor(text: $evidenceFor)
                         .frame(minHeight: 80)
                         .scrollContentBackground(.hidden)
-                        .background(Theme.cardBackground)
-                        .cornerRadius(Theme.cornerRadiusSmall)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
-                                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
-                        )
+                        .cbtInputSurface()
                 }
                 .padding(.vertical, 4)
                 
@@ -342,17 +361,12 @@ struct NewThoughtRecordFlowView: View {
                         )
                     }
                     Text("What facts do not support your automatic thought?")
-                        .font(.caption)
-                        .foregroundStyle(Theme.secondaryText)
+                        .font(DSTypography.caption)
+                        .foregroundStyle(DSTheme.secondaryText)
                     TextEditor(text: $evidenceAgainst)
                         .frame(minHeight: 80)
                         .scrollContentBackground(.hidden)
-                        .background(Theme.cardBackground)
-                        .cornerRadius(Theme.cornerRadiusSmall)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
-                                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
-                        )
+                        .cbtInputSurface()
                 }
                 .padding(.vertical, 4)
             }
@@ -374,17 +388,12 @@ struct NewThoughtRecordFlowView: View {
                         )
                     }
                     Text("Based on the evidence, what is a more balanced way to look at this?")
-                        .font(.caption)
-                        .foregroundStyle(Theme.secondaryText)
+                        .font(DSTypography.caption)
+                        .foregroundStyle(DSTheme.secondaryText)
                     TextEditor(text: $balancedThought)
                         .frame(minHeight: 100)
                         .scrollContentBackground(.hidden)
-                        .background(Theme.cardBackground)
-                        .cornerRadius(Theme.cornerRadiusSmall)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
-                                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
-                        )
+                        .cbtInputSurface()
                 }
                 .padding(.vertical, 4)
                 
@@ -410,7 +419,7 @@ struct NewThoughtRecordFlowView: View {
     
     private func addEmotion() {
         let clean = currentEmotion.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !clean.isEmpty, !emotions.contains(clean) {
+        if !clean.isEmpty, !contains(clean, in: emotions) {
             emotions.append(clean)
         }
         currentEmotion = ""
@@ -418,10 +427,35 @@ struct NewThoughtRecordFlowView: View {
     
     private func addDistortion() {
         let clean = currentDistortion.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !clean.isEmpty, !distortions.contains(clean) {
+        if !clean.isEmpty, !contains(clean, in: distortions) {
             distortions.append(clean)
         }
         currentDistortion = ""
+    }
+
+    private func toggleEmotion(_ emotion: String) {
+        toggleItem(emotion, in: &emotions)
+    }
+    
+    private func toggleDistortion(_ distortion: String) {
+        toggleItem(distortion, in: &distortions)
+    }
+    
+    private func toggleItem(_ item: String, in items: inout [String]) {
+        if let index = items.firstIndex(where: { matches($0, item) }) {
+            items.remove(at: index)
+        } else {
+            items.append(item)
+        }
+    }
+    
+    private func contains(_ item: String, in items: [String]) -> Bool {
+        items.contains(where: { matches($0, item) })
+    }
+    
+    private func matches(_ lhs: String, _ rhs: String) -> Bool {
+        lhs.trimmingCharacters(in: .whitespacesAndNewlines)
+            .localizedCaseInsensitiveCompare(rhs.trimmingCharacters(in: .whitespacesAndNewlines)) == .orderedSame
     }
     
     private func saveRecord() {
@@ -442,6 +476,38 @@ struct NewThoughtRecordFlowView: View {
             dismiss()
         } catch {
             print("Failed to save thought record: \(error)")
+        }
+    }
+
+    @ViewBuilder
+    private func presetChips(
+        title: String,
+        items: [String],
+        selections: [String],
+        accessibilityPrefix: String,
+        toggle: @escaping (String) -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(DSTypography.caption)
+                .foregroundStyle(DSTheme.secondaryText)
+            
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 8, alignment: .leading)], alignment: .leading, spacing: 8) {
+                ForEach(items, id: \.self) { item in
+                    let isSelected = contains(item, in: selections)
+                    
+                    Button {
+                        toggle(item)
+                    } label: {
+                        EmotionChip(title: item, isSelected: isSelected)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(accessibilityPrefix): \(item)")
+                    .accessibilityHint(isSelected ? "Double tap to remove" : "Double tap to add")
+                    .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+                }
+            }
         }
     }
 }

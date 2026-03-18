@@ -127,7 +127,9 @@ struct HomeView: View {
                             trailingSymbol: "wind",
                             completionState: completionSnapshot.state(for: .breathingReset)
                         ) {
-                            BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
+                            BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true) {
+                                markItemAsDone(.breathingReset)
+                            }
                         }
 
 
@@ -273,7 +275,7 @@ struct HomeView: View {
             moodCheckIn: moodDays.contains(selectedDay) ? .completed : .incomplete,
             thoughtRecord: thoughtRecordDays.contains(selectedDay) ? .completed : .incomplete,
             exercises: exerciseDays.contains(selectedDay) ? .completed : .incomplete,
-            breathingReset: breathingDays.contains(selectedDay) ? .completed : .incomplete,
+            breathingReset: (breathingDays.contains(selectedDay) || manualForDay.contains(.breathingReset)) ? .completed : .incomplete,
             tipOfTheDay: manualForDay.contains(.tipOfTheDay) ? .completed : .notTracked
         )
     }

@@ -2,14 +2,16 @@ import SwiftUI
 
 struct TagChip: View {
     let title: String
+    var isSelected: Bool = false
+    @Environment(ThemeManager.self) private var themeManager
     
     var body: some View {
         Text(title)
-            .font(.system(size: 12, weight: .medium, design: .rounded))
+            .font(.callout.weight(.medium))
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Theme.toggleBackgroundColor(for: .light)) // Or a dedicated card color
-            .foregroundStyle(Theme.primaryText)
+            .background(isSelected ? themeManager.selectedColor.opacity(0.16) : Theme.toggleBackgroundColor(for: .light))
+            .foregroundStyle(isSelected ? themeManager.selectedColor : Theme.primaryText)
             .clipShape(Capsule())
     }
 }
@@ -17,8 +19,9 @@ struct TagChip: View {
 // Backward-compatible wrapper for existing call sites.
 struct EmotionChip: View {
     let title: String
+    var isSelected: Bool = false
 
     var body: some View {
-        TagChip(title: title)
+        TagChip(title: title, isSelected: isSelected)
     }
 }

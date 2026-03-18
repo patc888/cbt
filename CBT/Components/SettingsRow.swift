@@ -22,31 +22,7 @@ struct SettingsRow<Content: View>: View {
     }
     
     var body: some View {
-        HStack {
-            if let icon = icon {
-                if let iconColor = iconColor {
-                    Image(systemName: icon)
-                        .foregroundStyle(iconColor)
-                        .font(.system(size: 18))
-                        .frame(width: 24)
-                        .accessibilityHidden(true)
-                }
-            }
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                    .foregroundStyle(Theme.primaryText)
-                
-                if let subtitle = subtitle {
-                    Text(subtitle)
-                        .font(.system(size: 12, design: .rounded))
-                        .foregroundStyle(Theme.secondaryText)
-                }
-            }
-            
-            Spacer()
-            
+        DSListRow(icon: icon, iconColor: iconColor, title: title, subtitle: subtitle) {
             content()
                 .layoutPriority(1)
         }

@@ -11,41 +11,86 @@ struct SecuritySettingsView: View {
     
     @State private var showingPrivacyInfo = false
     
+    @AppStorage("autoLockDelay") private var autoLockDelay: String = "Immediately"
+    @AppStorage("hideAppSwitcher") private var hideAppSwitcher: Bool = false
+    
+    private let lockOptions = ["Immediately", "1m", "5m"]
+    
     var body: some View {
-        SettingsSection(title: "Security") {
-            VStack(spacing: 0) {
-                SettingsRow(icon: "faceid", iconColor: themeManager.primaryColor, title: "Lock app with Face ID or passcode") {
-                    SegmentedToggle(
-                        isOn: Binding(
-                            get: { settings.appLockEnabled ?? false },
-                            set: { newValue in
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    settings.appLockEnabled = newValue
-                                    try? modelContext.save()
+        VStack(alignment: .leading, spacing: 12) {
+            SettingsSection(title: "Security") {
+                VStack(spacing: 16) {
+                    SettingsRow(
+                        icon: "lock.fill",
+                        iconColor: themeManager.selectedColor,
+                        title: "App Lock"
+                    ) {
+                        SegmentedToggle(
+                            isOn: Binding(
+                                get: { settings.appLockEnabled ?? false },
+                                set: { newValue in
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        settings.appLockEnabled = newValue
+                                        try? modelContext.save()
+                                    }
                                 }
-                            }
-                        ),
-                        namespace: appLockNamespace
-                    )
-                }
-                
-                Button(action: {
-                    HapticManager.shared.lightImpact()
-                    showingPrivacyInfo = true
-                }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "info.circle.fill")
-                            .font(.system(size: 14))
-                        Text("Why your data is private")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                        Spacer()
+                            ),
+                            namespace: appLockNamespace
+                        )
                     }
-                    .foregroundStyle(themeManager.primaryColor)
-                    .padding(.top, 12)
-                    .padding(.leading, 32) // Align with text
+
+                    if settings.appLockEnabled == true {
+                        SettingsRow(
+                            icon: "clock.fill",
+                            iconColor: themeManager.selectedColor,
+                            title: "Auto-Lock"
+                        ) {
+                            SegmentedToggle(
+                                selection: $autoLockDelay,
+                                options: lockOptions,
+                                fontSize: 9,
+                                useMinWidth: true,
+                                minWidth: 64
+                            ) { option in
+                                Text(option)
+                            }
+                        }
+
+                        SettingsRow(
+                            icon: "eye.slash.fill",
+                            iconColor: themeManager.selectedColor,
+                            title: "Hide in App Switcher"
+                        ) {
+                            SegmentedToggle(isOn: $hideAppSwitcher)
+                        }
+                    }
                 }
-                .buttonStyle(PlainButtonStyle())
             }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Your records are private.")
+                    .font(DSTypography.caption.bold())
+                Text("Data is encrypted and synced only to your private iCloud. No trackers, no data sharing.")
+                    .font(DSTypography.caption)
+            }
+            .foregroundStyle(Theme.secondaryText)
+            .padding(.horizontal, 20)
+            
+            Button(action: {
+                HapticManager.shared.lightImpact()
+                showingPrivacyInfo = true
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 14))
+                    Text("Privacy Details")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                    Spacer()
+                }
+                .foregroundStyle(themeManager.selectedColor)
+                .padding(.leading, 20) // Align with text
+            }
+            .buttonStyle(PlainButtonStyle())
         }
         .sheet(isPresented: $showingPrivacyInfo) {
             PrivacyInfoPopup()
