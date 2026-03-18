@@ -1,5 +1,9 @@
 import SwiftUI
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 struct ThemeCardBackground: View {
     @Environment(\.colorScheme) private var colorScheme
 
@@ -15,11 +19,16 @@ struct ThemeCardBackground: View {
             if colorScheme == .light {
                 Color.white
             } else {
+                #if canImport(UIKit)
                 Color(uiColor: .tertiarySystemBackground)
+                #else
+                Color.secondary.opacity(0.1)
+                #endif
             }
         }
     }
 }
+
 
 struct AuroraBackground: View {
     @Environment(\.colorScheme) private var colorScheme

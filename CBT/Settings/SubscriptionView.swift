@@ -2,6 +2,14 @@ import SwiftUI
 import StoreKit
 import SwiftData
 
+#if canImport(AppKit)
+import AppKit
+#endif
+
+#if canImport(UIKit)
+import UIKit
+#endif
+
 struct SubscriptionView: View {
     // MARK: - Environment & State
     @Environment(\.dismiss) private var dismiss
@@ -23,6 +31,26 @@ struct SubscriptionView: View {
     private var useTwoUpLayout: Bool {
         // Regular width and not large accessibility sizes
         horizontalSizeClass == .regular && dynamicTypeSize < .accessibility1
+    }
+
+    private var systemBackgroundColor: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .systemBackground)
+        #elseif canImport(AppKit)
+        Color(nsColor: .windowBackgroundColor)
+        #else
+        Color.white
+        #endif
+    }
+
+    private var secondaryLabelColor: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .systemGray)
+        #elseif canImport(AppKit)
+        Color(nsColor: .secondaryLabelColor)
+        #else
+        Color.secondary
+        #endif
     }
     
     // MARK: - Init
@@ -78,11 +106,11 @@ struct SubscriptionView: View {
     var body: some View {
         ZStack {
             // Modal container surface (adapts to Theme)
-            Group {
+            SwiftUI.Group {
                 if themeManager.isImmersive {
                     AuroraBackground(activeColorTheme: themeManager.selectedTheme)
                 } else {
-                    Color(uiColor: .systemBackground)
+                    systemBackgroundColor
                 }
             }
             .ignoresSafeArea()
@@ -237,7 +265,7 @@ struct SubscriptionView: View {
         .padding(.all, 28)
         .background(
             RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .fill(themeManager.isImmersive ? Color(uiColor: .systemBackground).opacity(colorScheme == .dark ? 0.05 : 0.6) : Color(uiColor: .systemBackground))
+                .fill(themeManager.isImmersive ? systemBackgroundColor.opacity(colorScheme == .dark ? 0.05 : 0.6) : systemBackgroundColor)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 32, style: .continuous)
@@ -257,8 +285,8 @@ struct SubscriptionView: View {
         .frame(maxWidth: horizontalSizeClass == .regular ? 640 : .infinity)
         .background(
             Rectangle()
-                .fill(themeManager.isImmersive ? (colorScheme == .light ? Color(uiColor: .systemBackground) : Color.clear) : (colorScheme == .light ? Color(uiColor: .systemBackground) : Color(uiColor: .systemBackground)))
-                .background(themeManager.isImmersive ? (colorScheme == .light ? AnyShapeStyle(Color(uiColor: .systemBackground)) : AnyShapeStyle(.ultraThinMaterial)) : AnyShapeStyle(Color.clear))
+                .fill(themeManager.isImmersive ? (colorScheme == .light ? systemBackgroundColor : Color.clear) : systemBackgroundColor)
+                .background(themeManager.isImmersive ? (colorScheme == .light ? AnyShapeStyle(systemBackgroundColor) : AnyShapeStyle(.ultraThinMaterial)) : AnyShapeStyle(Color.clear))
                 .ignoresSafeArea()
         )
         .frame(maxWidth: .infinity)
@@ -316,7 +344,7 @@ struct SubscriptionView: View {
                 Button(action: { handleSecondaryAction(action.actionID) }) {
                     Text(action.title)
                         .font(.system(.footnote, design: .rounded, weight: .bold))
-                        .foregroundStyle(Color(uiColor: .systemGray))
+                        .foregroundStyle(secondaryLabelColor)
                 }
                 .buttonStyle(.plain)
                 
@@ -372,13 +400,21 @@ struct SubscriptionView: View {
             }
         } else if actionID == "terms" {
             if let url = URL(string: "https://xeo.com/CBT/terms.html") {
-                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+                openURL(url)
             }
         } else if actionID == "privacy" {
             if let url = URL(string: "https://xeo.com/CBT/privacy-policy.html") {
-                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+                openURL(url)
             }
         }
+    }
+
+    private func openURL(_ url: URL) {
+        #if canImport(UIKit)
+        UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        #elseif canImport(AppKit)
+        NSWorkspace.shared.open(url)
+        #endif
     }
 }
 
@@ -392,6 +428,16 @@ struct StoreProductCardView: View {
     
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
+
+    private var systemBackgroundColor: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .systemBackground)
+        #elseif canImport(AppKit)
+        Color(nsColor: .windowBackgroundColor)
+        #else
+        Color.white
+        #endif
+    }
     
     var body: some View {
         Button(action: {
@@ -434,7 +480,7 @@ struct StoreProductCardView: View {
             )
             .background(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(themeManager.isImmersive ? Color(uiColor: .systemBackground).opacity(colorScheme == .dark ? 0.05 : 0.6) : Color(uiColor: .systemBackground))
+                    .fill(themeManager.isImmersive ? systemBackgroundColor.opacity(colorScheme == .dark ? 0.05 : 0.6) : systemBackgroundColor)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)

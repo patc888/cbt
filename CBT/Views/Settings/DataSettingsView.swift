@@ -6,6 +6,24 @@ import UIKit
 #endif
 import UniformTypeIdentifiers
 
+struct JSONExportDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+    var fileURL: URL
+
+    init(fileURL: URL) {
+        self.fileURL = fileURL
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        self.fileURL = URL(fileURLWithPath: "/")
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        let data = try Data(contentsOf: fileURL)
+        return FileWrapper(regularFileWithContents: data)
+    }
+}
+
 struct DataSettingsView: View {
     var body: some View {
         ScrollView {
@@ -19,7 +37,9 @@ struct DataSettingsView: View {
             .frame(maxWidth: .infinity)
         }
         .navigationTitle("Data")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 }
 
@@ -68,8 +88,8 @@ struct AdvancedDataSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
 
-    @State private var exportFileURL: URL?
-    @State private var showingShareSheet = false
+    @State private var exportDocument: JSONExportDocument?
+    @State private var showingFileExporter = false
     @State private var showingExportInfo = false
     @State private var showingDeleteDialog = false
     @State private var showingDeleteConfirmation = false
@@ -174,7 +194,9 @@ struct AdvancedDataSettingsView: View {
             }
         }
         .navigationTitle("Advanced Data")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .confirmationDialog("Delete all data?", isPresented: $showingDeleteDialog, titleVisibility: .visible) {
             Button("Delete All Data", role: .destructive) {
                 deleteMode = .deleteOnly
@@ -224,13 +246,18 @@ struct AdvancedDataSettingsView: View {
                 errorMessage = "Could not select file: \(error.localizedDescription)"
             }
         }
-        #if canImport(UIKit)
-        .sheet(isPresented: $showingShareSheet) {
-            if let exportFileURL {
-                ActivityViewController(items: [exportFileURL])
+        .fileExporter(
+            isPresented: $showingFileExporter,
+            document: exportDocument,
+            contentType: .json,
+            defaultFilename: "CBT_Backup.json"
+        ) { result in
+            switch result {
+            case .success: break
+            case .failure(let error):
+                errorMessage = "Failed to export data: \(error.localizedDescription)"
             }
         }
-        #endif
         .sheet(isPresented: $showingExportInfo) {
             FeatureModalPresenter {
                 DSFeatureModal(
@@ -296,10 +323,8 @@ struct AdvancedDataSettingsView: View {
     private func exportData() {
         do {
             let fileURL = try dataExportService.exportDataFileURL(from: modelContext)
-            exportFileURL = fileURL
-            #if canImport(UIKit)
-            showingShareSheet = true
-            #endif
+            exportDocument = JSONExportDocument(fileURL: fileURL)
+            showingFileExporter = true
         } catch {
             errorMessage = "Could not export data. \(error.localizedDescription)"
         }
@@ -361,14 +386,4 @@ struct AdvancedDataSettingsView: View {
 }
 
 
-#if canImport(UIKit)
-private struct ActivityViewController: UIViewControllerRepresentable {
-    let items: [Any]
 
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}
-#endif

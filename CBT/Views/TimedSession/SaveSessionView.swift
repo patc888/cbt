@@ -173,7 +173,19 @@ struct SaveSessionView: View {
                 Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
             }
             .navigationTitle("Save Session")
+            #if os(iOS) && !targetEnvironment(macCatalyst)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
+            #if os(macOS)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        HapticManager.shared.lightImpact()
+                        dismiss()
+                    }
+                }
+            }
+            #else
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cancel") {
@@ -182,6 +194,7 @@ struct SaveSessionView: View {
                     }
                 }
             }
+            #endif
         }
     }
 

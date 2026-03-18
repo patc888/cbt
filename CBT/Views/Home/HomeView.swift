@@ -13,6 +13,8 @@ struct HomeView: View {
     @State private var selectedDate = Date()
     @State private var showingNewMoodEntry = false
     @State private var showingNewThoughtRecord = false
+    @State private var attemptingNewMoodEntry = false
+    @State private var attemptingNewThoughtRecord = false
     @State private var showingTipModal = false
     @State private var showingQuickAdd = false
     @State private var selectedMoodForFlow: MoodColor? = nil
@@ -100,7 +102,7 @@ struct HomeView: View {
                                 .padding(.top, 12)
                             }
                         } action: {
-                            showingNewMoodEntry = true
+                            attemptingNewMoodEntry = true
                         }
 
                         PlanCard(
@@ -109,7 +111,7 @@ struct HomeView: View {
                             trailingSymbol: "brain",
                             completionState: completionSnapshot.state(for: .thoughtRecord)
                         ) {
-                            showingNewThoughtRecord = true
+                            attemptingNewThoughtRecord = true
                         }
 
                         PlanCard(
@@ -153,8 +155,10 @@ struct HomeView: View {
             }
         }
         .navigationTitle("")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
+        #endif
         .focusable()
         .onKeyPress(".") {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -165,8 +169,14 @@ struct HomeView: View {
         .sheet(isPresented: $showingNewMoodEntry, onDismiss: { selectedMoodForFlow = nil }) {
             MoodCheckinView(initialMood: selectedMoodForFlow)
         }
+        .withUsageGate(isAttemptingAction: $attemptingNewMoodEntry) {
+            showingNewMoodEntry = true
+        }
         .sheet(isPresented: $showingNewThoughtRecord) {
             NewThoughtRecordFlowView()
+        }
+        .withUsageGate(isAttemptingAction: $attemptingNewThoughtRecord) {
+            showingNewThoughtRecord = true
         }
         .sheet(isPresented: $showingTipModal, onDismiss: { markItemAsDone(.tipOfTheDay) }) {
             FeatureModalPresenter {
@@ -197,10 +207,10 @@ struct HomeView: View {
         }
         .confirmationDialog("Quick Add", isPresented: $showingQuickAdd, titleVisibility: .visible) {
             Button("Mood Check-In") {
-                showingNewMoodEntry = true
+                attemptingNewMoodEntry = true
             }
             Button("Thought Record") {
-                showingNewThoughtRecord = true
+                attemptingNewThoughtRecord = true
             }
             Button("Breathing Reset") {
                 BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)

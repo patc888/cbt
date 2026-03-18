@@ -144,6 +144,7 @@ struct NewMoodEntryView: View {
                         .bold()
                 }
             }
+            #if os(iOS)
             .fullScreenCover(isPresented: $showBreathing) {
                 NavigationStack {
                     BreathingResetView(
@@ -158,6 +159,22 @@ struct NewMoodEntryView: View {
                     )
                 }
             }
+            #else
+            .sheet(isPresented: $showBreathing) {
+                NavigationStack {
+                    BreathingResetView(
+                        durationSeconds: 60,
+                        pattern: .box,
+                        autoStart: true,
+                        showsDismissControl: true,
+                        showControls: true,
+                        hideBackground: false,
+                        onComplete: nil,
+                        onDismiss: { showBreathing = false }
+                    )
+                }
+            }
+            #endif
         }
     }
     

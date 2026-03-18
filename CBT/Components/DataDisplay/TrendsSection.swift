@@ -21,6 +21,22 @@ struct TrendsSection: View {
         themeManager?.selectedColor ?? .accentColor
     }
 
+    private var cardBackgroundColor: Color {
+        #if os(macOS)
+        Color(nsColor: .windowBackgroundColor)
+        #else
+        Color(uiColor: .systemBackground)
+        #endif
+    }
+
+    private var cardBorderColor: Color {
+        #if os(macOS)
+        Color(nsColor: .separatorColor)
+        #else
+        Color(uiColor: .separator)
+        #endif
+    }
+
     private var clampedGoalValue: Int {
         min(10, max(1, moodGoalValue))
     }
@@ -165,11 +181,11 @@ struct TrendsSection: View {
             }
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(cardBackgroundColor)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color(.separator).opacity(0.2), lineWidth: 1)
+                .stroke(cardBorderColor.opacity(0.2), lineWidth: 1)
         )
         .padding(.horizontal)
         .tint(tintColor)

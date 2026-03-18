@@ -1,6 +1,10 @@
 import SwiftUI
 import SwiftData
 
+#if os(macOS)
+import AppKit
+#endif
+
 struct MoodCheckinView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -64,7 +68,9 @@ struct MoodCheckinView: View {
                         )
                         .tag(isLowMood ? 6 : 5)
                     }
+                    #if os(iOS)
                     .tabViewStyle(.page(indexDisplayMode: .never))
+                    #endif
                     // Disable swiping so they use buttons to proceed
                     .animation(.spring(response: 0.4, dampingFraction: 0.8), value: currentStep)
                 }
@@ -78,6 +84,7 @@ struct MoodCheckinView: View {
                     Button("Cancel") { dismiss() }
                 }
                 if currentStep > 0 {
+                    #if os(iOS)
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button {
                             withAnimation {
@@ -88,6 +95,18 @@ struct MoodCheckinView: View {
                         }
                         .accessibilityLabel("Previous step")
                     }
+                    #else
+                    ToolbarItem {
+                        Button {
+                            withAnimation {
+                                previousStep()
+                            }
+                        } label: {
+                            Image(systemName: "chevron.left")
+                        }
+                        .accessibilityLabel("Previous step")
+                    }
+                    #endif
                 }
             }
         }
@@ -181,21 +200,108 @@ enum MoodColor: Int, CaseIterable {
     
     func color(with themeColor: Color) -> Color {
         switch self {
-        case .veryLow: return themeColor.opacity(0.3)
-        case .low: return themeColor.opacity(0.45)
+        case .veryLow:
+            #if os(macOS) || targetEnvironment(macCatalyst)
+            // macOS can make low-opacity monochrome SF Symbols look "blank".
+            return themeColor.opacity(0.55)
+            #else
+            return themeColor.opacity(0.3)
+            #endif
+        case .low:
+            #if os(macOS) || targetEnvironment(macCatalyst)
+            return themeColor.opacity(0.65)
+            #else
+            return themeColor.opacity(0.45)
+            #endif
         case .neutral: return themeColor.opacity(0.6)
         case .good: return themeColor.opacity(0.8)
         case .great: return themeColor
         }
     }
     
+    @ViewBuilder
+    var iconView: some View {
+        ZStack {
+            switch self {
+            case .veryLow:
+                #if os(macOS) || targetEnvironment(macCatalyst)
+                Image(systemName: MoodColor.frownSymbolName(isFilled: false))
+                    .font(.system(size: 20).weight(.black))
+                    .scaleEffect(1.75)
+                    .offset(y: -1)
+                #else
+                Text("\u{2639}\u{FE0E}")
+                    .font(.system(size: 20).weight(.black))
+                    .scaleEffect(1.75)
+                    .offset(y: -1)
+                #endif
+            case .low:
+                #if os(macOS) || targetEnvironment(macCatalyst)
+                Image(systemName: MoodColor.frownSymbolName(isFilled: true))
+                    .font(.system(size: 20).weight(.black))
+                    .scaleEffect(1.75)
+                    .offset(y: -1)
+                #else
+                Text("\u{2639}\u{FE0E}")
+                    .font(.system(size: 20).weight(.black))
+                    .scaleEffect(1.75)
+                    .offset(y: -1)
+                #endif
+            case .neutral:
+                Image(systemName: "face.smiling")
+            case .good:
+                Image(systemName: "face.smiling")
+            case .great:
+                Image(systemName: "face.smiling.fill")
+            }
+        }
+    }
+
+    private static func frownSymbolName(isFilled: Bool) -> String {
+        // SF Symbols face variants differ across OS versions / SF Symbols packs.
+        // Use availability checks so we don't end up with blank icons.
+        let outlineCandidates: [String] = [
+            "face.dashed",
+            "face.meh",
+            "face.sad",
+            "face.frowning",
+            "face.frown",
+            "face.smiling.inverse",
+            "face.angry",
+        ]
+
+        let filledCandidates: [String] = [
+            "face.dashed.fill",
+            "face.meh.fill",
+            "face.sad.fill",
+            "face.frowning.fill",
+            "face.frown.fill",
+            "face.smiling.inverse.fill",
+            "face.angry.fill",
+        ]
+
+        let candidates = isFilled ? filledCandidates : outlineCandidates
+
+        return candidates.first(where: { isSFIconAvailable($0) })
+            ?? (isFilled ? "face.smiling.fill" : "face.smiling")
+    }
+
+    private static func isSFIconAvailable(_ name: String) -> Bool {
+        #if os(macOS)
+        return NSImage(systemSymbolName: name, accessibilityDescription: nil) != nil
+        #else
+        return UIImage(systemName: name) != nil
+        #endif
+    }
+
+    // Maintained for backward compatibility if needed elsewhere
     var symbol: String {
         switch self {
-        case .veryLow: return "face.dashed.fill"
-        case .low: return "face.dashed"
+        case .veryLow: return "face.smiling"
+        case .low: return "face.smiling.fill"
         case .neutral: return "face.smiling"
-        case .good: return "face.smiling.fill"
-        case .great: return "face.smiling.inverse"
+        case .good: return "face.smiling"
+        case .great: return "face.smiling.fill"
         }
     }
     

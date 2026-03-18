@@ -27,6 +27,7 @@ struct FloatingBottomToolbar: View {
 
     @State private var isExpanded: Bool = false
     @State private var showingMoodEntry: Bool = false
+    @State private var attemptingNewMoodEntry: Bool = false
     @State private var selectedMood: MoodColor? = nil
 
     private var visibleTabs: [FloatingTab] {
@@ -98,7 +99,7 @@ struct FloatingBottomToolbar: View {
                             Button {
                                 HapticManager.shared.selection()
                                 selectedMood = mood
-                                showingMoodEntry = true
+                                attemptingNewMoodEntry = true
                                 if reduceMotion {
                                     isExpanded = false
                                 } else {
@@ -110,11 +111,11 @@ struct FloatingBottomToolbar: View {
                                 ZStack {
                                     Circle()
                                         .fill(mood.color(with: themeManager.selectedColor))
-                                        .frame(width: 48, height: 48)
+                                        .frame(width: 56, height: 56)
                                         .shadow(color: themeManager.selectedColor.opacity(0.3), radius: 4, x: 0, y: 2)
                                     
-                                    Image(systemName: mood.symbol)
-                                        .font(.system(size: 20, weight: .semibold))
+                                    mood.iconView
+                                        .font(.system(size: 24, weight: .semibold))
                                         .foregroundStyle(.white)
                                 }
                             }
@@ -164,6 +165,9 @@ struct FloatingBottomToolbar: View {
         }
         .sheet(isPresented: $showingMoodEntry, onDismiss: { selectedMood = nil }) {
             MoodCheckinView(initialMood: selectedMood)
+        }
+        .withUsageGate(isAttemptingAction: $attemptingNewMoodEntry) {
+            showingMoodEntry = true
         }
     }
 }

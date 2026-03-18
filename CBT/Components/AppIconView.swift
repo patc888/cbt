@@ -25,13 +25,19 @@ struct AppIconView: View {
     @ViewBuilder
     private var actualIconOrFallback: some View {
         #if canImport(UIKit)
-        if let image = getBundleIcon() {
+        if let image = UIImage(named: "AppBrandingIcon") {
             Image(uiImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: size, height: size)
                 .clipShape(RoundedRectangle(cornerRadius: size * 0.225))
-        } else if let image = UIImage(named: "AppIcon") ?? UIImage(named: "SubscriptionIcon") {
+        } else if let image = getBundleIcon() {
+            Image(uiImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: size, height: size)
+                .clipShape(RoundedRectangle(cornerRadius: size * 0.225))
+        } else if let image = UIImage(named: "AppIcon 2") ?? UIImage(named: "AppIcon") ?? UIImage(named: "SubscriptionIcon") {
             Image(uiImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -41,7 +47,13 @@ struct AppIconView: View {
             codeDrawnIcon
         }
         #else
-        if let nsImage = NSImage(named: "AppIcon") ?? NSImage(named: "SubscriptionIcon") {
+        if let nsImage = NSImage(named: "AppBrandingIcon") {
+            Image(nsImage: nsImage)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: size, height: size)
+                .clipShape(RoundedRectangle(cornerRadius: size * 0.225))
+        } else if let nsImage = NSImage(named: "AppIcon 2") ?? NSImage(named: "AppIcon") ?? NSImage(named: "SubscriptionIcon") {
             Image(nsImage: nsImage)
                 .resizable()
                 .aspectRatio(contentMode: .fit)

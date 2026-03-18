@@ -14,19 +14,31 @@ struct RootTabView: View {
                     HomeView(selectedTab: $selectedTab)
                 }
                 .tag(FloatingTab.home)
+                #if os(iOS) && !targetEnvironment(macCatalyst)
                 .toolbar(.hidden, for: .tabBar)
+                #elseif os(iOS)
+                .toolbar(.hidden, for: .tabBar)
+                #endif
 
                 NavigationStack {
                     InsightsView()
                 }
                 .tag(FloatingTab.insights)
+                #if os(iOS) && !targetEnvironment(macCatalyst)
                 .toolbar(.hidden, for: .tabBar)
+                #elseif os(iOS)
+                .toolbar(.hidden, for: .tabBar)
+                #endif
 
                 NavigationStack {
                     ExercisesView()
                 }
                 .tag(FloatingTab.exercises)
+                #if os(iOS) && !targetEnvironment(macCatalyst)
                 .toolbar(.hidden, for: .tabBar)
+                #elseif os(iOS)
+                .toolbar(.hidden, for: .tabBar)
+                #endif
 
                 NavigationStack {
                     JournalView()
@@ -52,13 +64,21 @@ struct RootTabView: View {
                         }
                 }
                 .tag(FloatingTab.journal)
+                #if os(iOS) && !targetEnvironment(macCatalyst)
                 .toolbar(.hidden, for: .tabBar)
+                #elseif os(iOS)
+                .toolbar(.hidden, for: .tabBar)
+                #endif
 
                 NavigationStack {
                     SettingsView(showsDismissControl: false)
                 }
                 .tag(FloatingTab.settings)
+                #if os(iOS) && !targetEnvironment(macCatalyst)
                 .toolbar(.hidden, for: .tabBar)
+                #elseif os(iOS)
+                .toolbar(.hidden, for: .tabBar)
+                #endif
             }
             .tint(themeManager.selectedColor)
 

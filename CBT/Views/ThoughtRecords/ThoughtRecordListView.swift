@@ -12,6 +12,7 @@ struct ThoughtRecordListView: View {
     
     @Environment(\.colorScheme) private var colorScheme
     @State private var showingNewRecord = false
+    @State private var attemptingNewRecord = false
     
     var body: some View {
         ZStack {
@@ -32,7 +33,7 @@ struct ThoughtRecordListView: View {
                         .padding(.horizontal)
                     
                     Button {
-                        showingNewRecord = true
+                        attemptingNewRecord = true
                     } label: {
                         Text("Add Thought Record")
                             .bold()
@@ -78,7 +79,7 @@ struct ThoughtRecordListView: View {
                 Spacer()
                 Button {
                     HapticManager.shared.lightImpact()
-                    showingNewRecord = true
+                    attemptingNewRecord = true
                 } label: {
                     Text("+ Thought")
                         .font(.system(size: 13, weight: .bold, design: .rounded))
@@ -96,6 +97,9 @@ struct ThoughtRecordListView: View {
         }
         .sheet(isPresented: $showingNewRecord) {
             NewThoughtRecordFlowView()
+        }
+        .withUsageGate(isAttemptingAction: $attemptingNewRecord) {
+            showingNewRecord = true
         }
     }
     

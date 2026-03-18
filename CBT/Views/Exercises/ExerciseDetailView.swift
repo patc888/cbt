@@ -80,7 +80,9 @@ struct ExerciseDetailView: View {
                                 .tag(stepTag(forIndex: index))
                         }
                     }
+                    #if os(iOS)
                     .tabViewStyle(.page(indexDisplayMode: .never))
+                    #endif
                     .animation(.easeInOut, value: currentStep)
                     
                     // Bottom Navigation
@@ -130,7 +132,9 @@ struct ExerciseDetailView: View {
                 }
             }
             .navigationTitle(exercise.title)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .onAppear {
                 NotificationCenter.default.post(name: .exerciseFlowDidEnter, object: nil)
                 timerManager.onComplete = { summary in

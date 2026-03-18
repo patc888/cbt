@@ -4,6 +4,7 @@ struct ThoughtRecordEducationView: View {
     var hideBackground: Bool = false
     var hideTitle: Bool = false
     @State private var showingFlow = false
+    @State private var attemptingFlow = false
     
     var body: some View {
         CBTEducationLayout(title: "Thought Records", hideBackground: hideBackground, hideTitle: hideTitle) {
@@ -44,7 +45,7 @@ struct ThoughtRecordEducationView: View {
                         
                         Button {
                             HapticManager.shared.mediumImpact()
-                            showingFlow = true
+                            attemptingFlow = true
                         } label: {
                             Text("Start Thought Record")
                                 .font(DSTypography.body)
@@ -63,6 +64,9 @@ struct ThoughtRecordEducationView: View {
         .sheet(isPresented: $showingFlow) {
             NewThoughtRecordFlowView()
         }
+        .withUsageGate(isAttemptingAction: $attemptingFlow) {
+            showingFlow = true
+        }
     }
 }
 
@@ -70,6 +74,7 @@ struct EvidenceEducationView: View {
     var hideBackground: Bool = false
     var hideTitle: Bool = false
     @State private var showingFlow = false
+    @State private var attemptingFlow = false
     
     var body: some View {
         CBTEducationLayout(title: "Evidence for & Against", hideBackground: hideBackground, hideTitle: hideTitle) {
@@ -109,7 +114,7 @@ struct EvidenceEducationView: View {
                         
                         Button {
                             HapticManager.shared.mediumImpact()
-                            showingFlow = true
+                            attemptingFlow = true
                         } label: {
                             Text("Start Practice")
                                 .font(DSTypography.body)
@@ -127,6 +132,9 @@ struct EvidenceEducationView: View {
         }
         .sheet(isPresented: $showingFlow) {
             NewThoughtRecordFlowView()
+        }
+        .withUsageGate(isAttemptingAction: $attemptingFlow) {
+            showingFlow = true
         }
     }
 }

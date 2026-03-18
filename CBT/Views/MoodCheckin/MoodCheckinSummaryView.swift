@@ -25,10 +25,10 @@ struct MoodCheckinSummaryView: View {
                                 ZStack {
                                     Circle()
                                         .fill(mood.color(with: themeManager.selectedColor).opacity(0.15))
-                                        .frame(width: 80, height: 80)
+                                        .frame(width: 96, height: 96)
                                     
-                                    Image(systemName: mood.symbol)
-                                        .font(.system(size: 32))
+                                    mood.iconView
+                                        .font(.system(size: 48))
                                         .foregroundStyle(mood.color(with: themeManager.selectedColor))
                                 }
                                 

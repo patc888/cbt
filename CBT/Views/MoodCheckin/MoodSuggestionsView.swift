@@ -3,6 +3,7 @@ import SwiftUI
 struct MoodSuggestionsView: View {
     let onNext: () -> Void
     @State private var showingThoughtRecord = false
+    @State private var attemptingThoughtRecord = false
     @State private var showingBreathing = false
     
     var body: some View {
@@ -27,7 +28,7 @@ struct MoodSuggestionsView: View {
                     title: "Write a Thought Record",
                     icon: "brain.head.profile"
                 ) {
-                    showingThoughtRecord = true
+                    attemptingThoughtRecord = true
                 }
                 
                 SuggestionButton(
@@ -54,6 +55,10 @@ struct MoodSuggestionsView: View {
         .sheet(isPresented: $showingThoughtRecord) {
             NewThoughtRecordFlowView()
         }
+        .withUsageGate(isAttemptingAction: $attemptingThoughtRecord) {
+            showingThoughtRecord = true
+        }
+        #if os(iOS)
         .fullScreenCover(isPresented: $showingBreathing) {
             NavigationStack {
                 BreathingResetView(
@@ -68,6 +73,22 @@ struct MoodSuggestionsView: View {
                 )
             }
         }
+        #else
+        .sheet(isPresented: $showingBreathing) {
+            NavigationStack {
+                BreathingResetView(
+                    durationSeconds: 60,
+                    pattern: .box,
+                    autoStart: true,
+                    showsDismissControl: true,
+                    showControls: true,
+                    hideBackground: false,
+                    onComplete: nil,
+                    onDismiss: { showingBreathing = false }
+                )
+            }
+        }
+        #endif
     }
 }
 

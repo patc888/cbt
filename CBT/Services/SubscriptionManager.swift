@@ -66,14 +66,11 @@ class SubscriptionManager: ObservableObject {
     }
     
     func purchase(_ productId: String) async -> Bool {
-        guard let product = availableProducts.first(where: { $0.id == productId }) else {
-            return await purchaseByID(productId)
-        }
-        
         isLoading = true
         errorMessage = nil
         
         do {
+            let product = try await product(for: productId)
             let result = try await product.purchase()
             
             switch result {
@@ -101,19 +98,6 @@ class SubscriptionManager: ObservableObject {
             }
             return false
         }
-    }
-
-    private func purchaseByID(_ productId: String) async -> Bool {
-        // Fallback or debug mode purchase
-        await MainActor.run { 
-            self.isLoading = true
-        }
-        try? await Task.sleep(nanoseconds: 1_000_000_000)
-        await MainActor.run {
-            self.subscriptionStatus = .subscribed
-            self.isLoading = false
-        }
-        return true
     }
     
     func restorePurchases() async {
@@ -166,9 +150,32 @@ class SubscriptionManager: ObservableObject {
 
     enum StoreError: Error {
         case failedVerification
+        case productUnavailable
     }
     
     var isPremium: Bool {
         subscriptionStatus == .subscribed
+    }
+
+    private func product(for productId: String) async throws -> Product {
+        if let product = availableProducts.first(where: { $0.id == productId }) {
+            return product
+        }
+
+        let fetchedProducts = try await Product.products(for: [productId])
+        guard let product = fetchedProducts.first else {
+            throw StoreError.productUnavailable
+        }
+
+        if !availableProducts.contains(where: { $0.id == product.id }) {
+            availableProducts.append(product)
+            availableProducts.sort { p1, p2 in
+                let index1 = productIdentifiersForSale.firstIndex(of: p1.id) ?? 999
+                let index2 = productIdentifiersForSale.firstIndex(of: p2.id) ?? 999
+                return index1 < index2
+            }
+        }
+
+        return product
     }
 }

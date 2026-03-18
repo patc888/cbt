@@ -62,12 +62,11 @@ private struct MoodCircleButton: View {
         }) {
             ZStack {
                 Circle()
-                    .fill(mood.color(with: themeManager.selectedColor).opacity(isSelected ? 0.2 : 0.1))
-                    .frame(width: isSelected ? 72 : 56, height: isSelected ? 72 : 56)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isSelected)
+                    .fill(mood.color(with: themeManager.selectedColor).opacity(isSelected ? 0.25 : 0.1))
+                    .frame(width: 72, height: 72)
                 
-                Image(systemName: mood.symbol)
-                    .font(.system(size: isSelected ? 32 : 24))
+                mood.iconView
+                    .font(.system(size: 44))
                     .foregroundStyle(mood.color(with: themeManager.selectedColor))
             }
         }

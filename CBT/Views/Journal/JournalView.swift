@@ -93,7 +93,9 @@ struct JournalView: View {
             }
         }
         .navigationTitle("")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
+        #endif
     }
 }
