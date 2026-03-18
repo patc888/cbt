@@ -31,9 +31,7 @@ struct DSSectionHeader<Trailing: View>: View {
             VStack(alignment: .leading, spacing: DSSpacing.xSmall) {
                 Text(title)
                     .font(DSTypography.sectionHeader)
-                    .foregroundStyle(DSTheme.secondaryText)
-                    .textCase(.uppercase)
-                    .tracking(0.5)
+                    .foregroundStyle(DSTheme.primaryText)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
 
@@ -95,15 +93,11 @@ struct DSListRow<Trailing: View>: View {
     var body: some View {
         HStack(alignment: .center, spacing: DSSpacing.medium) {
             if let icon {
-                ZStack {
-                    Circle()
-                        .fill((iconColor ?? DSTheme.secondaryText).opacity(0.18))
-                    Image(systemName: icon)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(iconColor ?? DSTheme.secondaryText)
-                }
-                .frame(width: 32, height: 32)
-                .accessibilityHidden(true)
+                Image(systemName: icon)
+                    .font(.system(size: 18))
+                    .foregroundStyle(iconColor ?? DSTheme.secondaryText)
+                    .frame(width: 24)
+                    .accessibilityHidden(true)
             }
 
             VStack(alignment: .leading, spacing: 2) {

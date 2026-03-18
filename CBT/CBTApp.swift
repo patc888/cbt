@@ -160,7 +160,8 @@ struct CBTApp: App {
 
         let configuration = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .automatic
         )
 
         return try ModelContainer(for: schema, configurations: [configuration])

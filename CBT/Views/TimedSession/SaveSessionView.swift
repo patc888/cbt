@@ -218,6 +218,7 @@ struct SaveSessionView: View {
         do {
             try modelContext.save()
             HapticManager.shared.success()
+            ReviewManager.shared.logSignificantAction()
             saved = true
             dismiss()
             onSaveComplete?()

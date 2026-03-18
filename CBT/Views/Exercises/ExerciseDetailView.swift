@@ -404,6 +404,7 @@ struct ExerciseDetailView: View {
         
         do {
             try modelContext.save()
+            ReviewManager.shared.logSignificantAction()
             // If timer was running, end it and offer save
             if timerManager.isRunning || timerManager.isPaused {
                 timerManager.endEarly()

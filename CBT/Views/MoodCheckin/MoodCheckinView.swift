@@ -141,6 +141,7 @@ struct MoodCheckinView: View {
                 intensity: Int(intensity)
             )
             HapticManager.shared.success()
+            ReviewManager.shared.logSignificantAction()
             dismiss()
         } catch {
             print("Failed to save mood entry: \(error)")

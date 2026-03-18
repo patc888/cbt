@@ -30,12 +30,23 @@ struct ExerciseCompletionExport: Codable {
     let notes: String?
 }
 
+struct JournalEntryExport: Codable {
+    let id: UUID
+    let createdAt: Date
+    let title: String
+    let body: String
+    let sourceKind: String?
+    let sourceID: String?
+    let durationSeconds: Int?
+}
+
 struct CBTDataExportPayload: Codable {
     let exportedAt: String
     let appVersion: String?
     let moodEntries: [MoodEntryExport]
     let thoughtRecords: [ThoughtRecordExport]
     let exerciseCompletions: [ExerciseCompletionExport]
+    let journalEntries: [JournalEntryExport]?
 }
 
 struct DataExportService {
@@ -67,6 +78,10 @@ struct DataExportService {
         let completionDescriptor = FetchDescriptor<ExerciseCompletion>(
             predicate: #Predicate<ExerciseCompletion> { !$0.isDeleted },
             sortBy: [SortDescriptor(\ExerciseCompletion.createdAt)]
+        )
+        let journalDescriptor = FetchDescriptor<JournalEntry>(
+            predicate: #Predicate<JournalEntry> { !$0.isDeleted },
+            sortBy: [SortDescriptor(\JournalEntry.createdAt)]
         )
 
         let moodEntries = try modelContext.fetch(moodDescriptor).map {
@@ -104,12 +119,25 @@ struct DataExportService {
             )
         }
 
+        let journalEntries = try modelContext.fetch(journalDescriptor).map {
+            JournalEntryExport(
+                id: $0.id,
+                createdAt: $0.createdAt,
+                title: $0.title,
+                body: $0.body,
+                sourceKind: $0.sourceKind,
+                sourceID: $0.sourceID,
+                durationSeconds: $0.durationSeconds
+            )
+        }
+
         return CBTDataExportPayload(
             exportedAt: Self.exportDateFormatter.string(from: Date()),
             appVersion: Self.appVersion,
             moodEntries: moodEntries,
             thoughtRecords: thoughtRecords,
-            exerciseCompletions: exerciseCompletions
+            exerciseCompletions: exerciseCompletions,
+            journalEntries: journalEntries
         )
     }
 

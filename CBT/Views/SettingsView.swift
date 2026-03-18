@@ -13,14 +13,7 @@ struct SettingsView: View {
     private var metrics: LayoutMetrics { LayoutMetrics.metrics(for: horizontalSizeClass) }
     
     @State private var showingSubscription = false
-    @State private var showingDebug = false
-    @State private var showingExportInfo = false
-    @State private var showingShareSheet = false
-    @State private var exportFileURL: URL?
-    
     @StateObject private var subscriptionManager = SubscriptionManager.shared
-    
-    private let dataExportService = DataExportService()
     
     var userSettings: UserSettings? { settings.first }
     var showsDismissControl: Bool = true
@@ -50,58 +43,15 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
 #endif
-        .sheet(isPresented: $showingDebug) {
-            NavigationStack {
-                Text("Debug Placeholder")
-                    .navigationTitle("Debug")
-                    #if os(iOS)
-                    .navigationBarTitleDisplayMode(.inline)
-                    #endif
-            }
-        }
-        .sheet(isPresented: $showingExportInfo) {
-            FeatureModalPresenter {
-                DSFeatureModal(
-                    title: "Export Your Data",
-                    subtitle: "Create a JSON file from your local entries that you can save or share.",
-                    bullets: [
-                        DSBullet(icon: "checkmark.circle", text: "Includes moods, thought records, and exercises"),
-                        DSBullet(icon: "lock.fill", text: "Generated locally on your device"),
-                        DSBullet(icon: "square.and.arrow.up", text: "You choose where to share or store it")
-                    ],
-                    primaryTitle: "Export",
-                    primaryAction: {
-                        HapticManager.shared.mediumImpact()
-                        showingExportInfo = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            exportData()
-                        }
-                    },
-                    secondaryTitle: "Cancel",
-                    secondaryAction: {
-                        HapticManager.shared.lightImpact()
-                        showingExportInfo = false
-                    },
-                    closeAction: {
-                        HapticManager.shared.lightImpact()
-                        showingExportInfo = false
-                    }
-                )
-            }
-        }
-        #if canImport(UIKit)
-        .sheet(isPresented: $showingShareSheet) {
-            if let exportFileURL {
-                ActivityViewController(items: [exportFileURL])
-            }
-        }
-        #endif
+
         .task {
-            let enabled = userSettings?.hapticsEnabled ?? true
-            if userSettings?.hapticsEnabled == nil {
-                userSettings?.hapticsEnabled = enabled
+            if settings.isEmpty {
+                let newSettings = UserSettings()
+                modelContext.insert(newSettings)
                 try? modelContext.save()
             }
+            
+            let enabled = userSettings?.hapticsEnabled ?? true
             HapticManager.shared.setEnabled(enabled)
             await subscriptionManager.loadProducts()
         }
@@ -121,16 +71,16 @@ struct SettingsView: View {
     }
 
     private var mainContent: some View {
-        VStack(spacing: 28) {
+        VStack(spacing: 16) {
             HStack {
                 Text("Settings")
-                    .font(DSTypography.pageTitle)
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 36)
-            .padding(.bottom, 4)
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            // Removed manual padding since VStack has spacing now
             
 
             
@@ -157,11 +107,13 @@ struct SettingsView: View {
                 )
             )
             
+            DataSettingsSection()
+
+
             if let settings = userSettings {
                 SecuritySettingsView(settings: settings)
-            }
 
-            DataSettingsSection()
+            }
 
             SettingsSection(title: "Tools") {
                 NavigationLink(destination: BreathingResetView()) {
@@ -201,68 +153,14 @@ struct SettingsView: View {
                 .cornerRadius(Theme.cornerRadiusMedium)
             }
             .buttonStyle(.plain)
-            .padding(.top, 8)
             
             AboutSettingsView()
             
-            VStack(alignment: .leading, spacing: 12) {
-                SettingsSection(title: "Advanced") {
-                    #if DEBUG
-                    Button {
-                        HapticManager.shared.lightImpact()
-                        showingDebug = true
-                    } label: {
-                        SettingsRow(icon: "ladybug", iconColor: themeManager.selectedColor, title: "Debug Tools") {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(Theme.secondaryText)
-                         }
-                    }
-                    .buttonStyle(.plain)
-                    #endif
-                    
-                    Button {
-                        HapticManager.shared.lightImpact()
-                        showingExportInfo = true
-                    } label: {
-                        SettingsRow(icon: "square.and.arrow.up", iconColor: themeManager.selectedColor, title: "Export Data") {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(Theme.secondaryText)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    
-                    NavigationLink(destination: DataResetOptionsView()) {
-                        SettingsRow(icon: "trash", iconColor: Theme.errorRed, title: "Reset All Data") {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(Theme.secondaryText)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-                
-                Text("This section contains data tools.")
-                    .font(.system(.caption, design: .rounded).weight(.medium))
-                    .foregroundStyle(Theme.secondaryText)
-                    .padding(.horizontal, 20)
-            }
+            PrivacyFooter()
+                .padding(.top, 16) // Combined with 16 spacing = 32 total
         }
-        .padding(.horizontal, 18)
+        .padding(.horizontal, 16)
         .padding(.bottom, 32)
-    }
-
-    private func exportData() {
-        do {
-            let fileURL = try dataExportService.exportDataFileURL(from: modelContext)
-            exportFileURL = fileURL
-            #if canImport(UIKit)
-            showingShareSheet = true
-            #endif
-        } catch {
-            print("Error exporting data: \(error)")
-        }
     }
 
     private var navigationArrow: some View {
@@ -281,14 +179,26 @@ struct SettingsView: View {
     }
 }
 
-#if canImport(UIKit)
-private struct ActivityViewController: UIViewControllerRepresentable {
-    let items: [Any]
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+struct PrivacyFooter: View {
+    @Environment(ThemeManager.self) private var themeManager
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 8) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 14))
+                Text("Your Privacy Matters")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+            }
+            .foregroundStyle(themeManager.selectedColor)
+            
+            Text("Your entries are private. We never see your data.")
+                .font(.system(size: 12, design: .rounded))
+                .foregroundStyle(Theme.secondaryText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.bottom, 8)
     }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
-#endif
+
+

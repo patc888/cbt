@@ -15,7 +15,7 @@ struct MoodColorSelector: View {
                 .multilineTextAlignment(.center)
             
             HStack(spacing: 16) {
-                ForEach(MoodColor.allCases, id: \.self) { mood in
+                ForEach(MoodColor.allCases.reversed(), id: \.self) { mood in
                     MoodCircleButton(mood: mood, isSelected: selectedColor == mood) {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                             selectedColor = mood

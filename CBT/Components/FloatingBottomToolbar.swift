@@ -94,7 +94,7 @@ struct FloatingBottomToolbar: View {
 
                 VStack(spacing: 12) {
                     if isExpanded {
-                        ForEach(MoodColor.allCases.reversed(), id: \.self) { mood in
+                        ForEach(MoodColor.allCases, id: \.self) { mood in
                             Button {
                                 HapticManager.shared.selection()
                                 selectedMood = mood

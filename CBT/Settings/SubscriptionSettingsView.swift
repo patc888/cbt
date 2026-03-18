@@ -51,8 +51,6 @@ struct SubscriptionSettingsView: View {
                 .padding(.vertical, 8)
             }
         }
-        .padding(.top, 4)
-        .padding(.bottom, 2)
         .contentShape(Rectangle())
         .onTapGesture {
             if !isPremium {

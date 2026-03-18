@@ -2,43 +2,10 @@ import SwiftUI
 import SwiftData
 
 struct AboutSettingsView: View {
-    @State private var showingShareApp = false
-
     var body: some View {
         SettingsSection(title: "About") {
             versionRow
             
-            Button(action: {
-                HapticManager.shared.lightImpact()
-                showingShareApp = true
-            }) {
-                SettingsRow(icon: "square.and.arrow.up", iconColor: Theme.primaryColor, title: "Share this App") {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.secondaryText)
-                }
-            }
-            .buttonStyle(PlainButtonStyle())
-            .sheet(isPresented: $showingShareApp) {
-                #if canImport(UIKit)
-                ActivityViewController(items: ["I've been using Cognitive Behavioral Therapy+ to master my mind — check it out!", URL(string: "https://xeo.com/CBT/")!])
-                    .presentationDetents([.medium])
-                #else
-                Text("Sharing via Mac Share menu.")
-                #endif
-            }
-            
-            Button(action: {
-                openURL("https://apps.apple.com/app/id6755934302-placeholder?action=write-review")
-            }) {
-                SettingsRow(icon: "star.bubble", iconColor: Theme.primaryColor, title: "Review this App") {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.secondaryText)
-                }
-            }
-            .buttonStyle(PlainButtonStyle())
-
             Button(action: {
                 openURL("https://xeo.com/CBT/support.html")
             }) {
@@ -65,6 +32,15 @@ struct AboutSettingsView: View {
                 openURL("https://xeo.com/CBT/terms.html") 
             }) {
                 SettingsRow(icon: "doc.text", iconColor: Theme.primaryColor, title: "Terms of Use") {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            NavigationLink(destination: DataResetOptionsView()) {
+                SettingsRow(icon: "trash", iconColor: Theme.errorRed, title: "Reset All Data") {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Theme.secondaryText)

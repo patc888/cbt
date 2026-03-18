@@ -10,15 +10,15 @@ struct SettingsSection<Content: View>: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: title.isEmpty ? 0 : 10) {
+        VStack(alignment: .leading, spacing: title.isEmpty ? 0 : 16) {
             if !title.isEmpty {
                 DSSectionHeader(title: title)
             }
             
             content()
         }
-        .padding(.horizontal, DSSpacing.large)
-        .padding(.vertical, DSSpacing.large)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
         .cardStyle()
     }
 }

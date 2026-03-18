@@ -32,6 +32,49 @@ struct SubscriptionView: View {
         _selectedPlanID = State(initialValue: "com.xeo.CBT.premium.yearly")
     }
     
+    private var displayConfig: SubscriptionConfig {
+        // Map real products onto our config metadata
+        let updatedPlans = config.plans.map { plan in
+            if let product = subscriptionManager.availableProducts.first(where: { $0.id == plan.id }) {
+                return SubscriptionConfig.SubscriptionPlan(
+                    id: plan.id,
+                    label: plan.label,
+                    price: product.displayPrice,
+                    billingFrequency: plan.billingFrequency,
+                    badge: plan.badge,
+                    isRecommended: plan.isRecommended,
+                    hasFreeTrial: plan.hasFreeTrial
+                )
+            }
+            return plan
+        }
+        
+        let updatedOneTime = config.oneTimeOption.flatMap { option in
+            if let product = subscriptionManager.availableProducts.first(where: { $0.id == option.id }) {
+                return SubscriptionConfig.SubscriptionPlan(
+                    id: option.id,
+                    label: option.label,
+                    price: product.displayPrice,
+                    billingFrequency: option.billingFrequency,
+                    badge: option.badge,
+                    isRecommended: option.isRecommended,
+                    hasFreeTrial: option.hasFreeTrial
+                )
+            }
+            return option
+        }
+        
+        return SubscriptionConfig(
+            title: config.title,
+            subtitle: config.subtitle,
+            plans: updatedPlans,
+            oneTimeOption: updatedOneTime,
+            features: config.features,
+            ctaTitle: config.ctaTitle,
+            secondaryActions: config.secondaryActions
+        )
+    }
+    
     var body: some View {
         ZStack {
             // Modal container surface (adapts to Theme)
@@ -94,12 +137,12 @@ struct SubscriptionView: View {
                 .cornerRadius(22)
             
             VStack(spacing: 6) {
-                Text(config.title)
+                Text(displayConfig.title)
                     .font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
                 
-                Text(config.subtitle)
+                Text(displayConfig.subtitle)
                     .font(.system(.subheadline, design: .rounded, weight: .medium))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
@@ -116,31 +159,31 @@ struct SubscriptionView: View {
                 ProgressView("Loading plans...")
                     .padding()
             } else {
-                // Products layout (using config plans since availableProducts might be empty in stub mode)
+                // Products layout (using displayConfig plans since they might have refreshed prices)
                 VStack(spacing: 16) {
                     if useTwoUpLayout {
                         // Regular width layout: 2-up for first two plans, full-width for others
                         VStack(spacing: 16) {
                             HStack(spacing: 16) {
-                                if config.plans.count > 0 {
+                                if displayConfig.plans.count > 0 {
                                     StoreProductCardView(
-                                        plan: config.plans[0],
-                                        isSelected: selectedPlanID == config.plans[0].id,
+                                        plan: displayConfig.plans[0],
+                                        isSelected: selectedPlanID == displayConfig.plans[0].id,
                                         isFullWidth: false,
-                                        action: { selectedPlanID = config.plans[0].id }
+                                        action: { selectedPlanID = displayConfig.plans[0].id }
                                     )
                                 }
-                                if config.plans.count > 1 {
+                                if displayConfig.plans.count > 1 {
                                     StoreProductCardView(
-                                        plan: config.plans[1],
-                                        isSelected: selectedPlanID == config.plans[1].id,
+                                        plan: displayConfig.plans[1],
+                                        isSelected: selectedPlanID == displayConfig.plans[1].id,
                                         isFullWidth: false,
-                                        action: { selectedPlanID = config.plans[1].id }
+                                        action: { selectedPlanID = displayConfig.plans[1].id }
                                     )
                                 }
                             }
                             
-                            if let lifetime = config.oneTimeOption {
+                            if let lifetime = displayConfig.oneTimeOption {
                                 StoreProductCardView(
                                     plan: lifetime,
                                     isSelected: selectedPlanID == lifetime.id,
@@ -153,24 +196,24 @@ struct SubscriptionView: View {
                         // Compact layout: First two side-by-side, others below
                         VStack(spacing: 12) {
                             HStack(spacing: 12) {
-                                if config.plans.count > 0 {
+                                if displayConfig.plans.count > 0 {
                                     StoreProductCardView(
-                                        plan: config.plans[0],
-                                        isSelected: selectedPlanID == config.plans[0].id,
+                                        plan: displayConfig.plans[0],
+                                        isSelected: selectedPlanID == displayConfig.plans[0].id,
                                         isFullWidth: false,
-                                        action: { selectedPlanID = config.plans[0].id }
+                                        action: { selectedPlanID = displayConfig.plans[0].id }
                                     )
                                 }
-                                if config.plans.count > 1 {
+                                if displayConfig.plans.count > 1 {
                                     StoreProductCardView(
-                                        plan: config.plans[1],
-                                        isSelected: selectedPlanID == config.plans[1].id,
+                                        plan: displayConfig.plans[1],
+                                        isSelected: selectedPlanID == displayConfig.plans[1].id,
                                         isFullWidth: false,
-                                        action: { selectedPlanID = config.plans[1].id }
+                                        action: { selectedPlanID = displayConfig.plans[1].id }
                                     )
                                 }
                             }
-                            if let lifetime = config.oneTimeOption {
+                            if let lifetime = displayConfig.oneTimeOption {
                                 StoreProductCardView(
                                     plan: lifetime,
                                     isSelected: selectedPlanID == lifetime.id,
@@ -187,7 +230,7 @@ struct SubscriptionView: View {
     
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: 18) {
-            ForEach(config.features) { feature in
+            ForEach(displayConfig.features) { feature in
                 FeatureRowView(feature: feature)
             }
         }
@@ -245,7 +288,7 @@ struct SubscriptionView: View {
             .disabled(selectedPlanID == nil || isPurchasing)
             
             if let planID = selectedPlanID,
-               let plan = (config.plans + [config.oneTimeOption].compactMap { $0 }).first(where: { $0.id == planID }),
+               let plan = (displayConfig.plans + [displayConfig.oneTimeOption].compactMap { $0 }).first(where: { $0.id == planID }),
                plan.hasFreeTrial {
                 Text("Then \(plan.price)\(plan.billingFrequency). Cancel anytime before trial ends.")
                     .font(.system(.caption, design: .rounded, weight: .medium))
@@ -256,20 +299,20 @@ struct SubscriptionView: View {
     
     private func buttonCTAText() -> String {
         guard let planID = selectedPlanID,
-              let plan = (config.plans + [config.oneTimeOption].compactMap { $0 }).first(where: { $0.id == planID }) else {
-            return config.ctaTitle
+              let plan = (displayConfig.plans + [displayConfig.oneTimeOption].compactMap { $0 }).first(where: { $0.id == planID }) else {
+            return displayConfig.ctaTitle
         }
         
         if plan.hasFreeTrial {
             return "Start 7-Day Free Trial"
         }
         
-        return config.ctaTitle
+        return displayConfig.ctaTitle
     }
     
     private var footerActionsRow: some View {
         HStack {
-            ForEach(config.secondaryActions) { action in
+            ForEach(displayConfig.secondaryActions) { action in
                 Button(action: { handleSecondaryAction(action.actionID) }) {
                     Text(action.title)
                         .font(.system(.footnote, design: .rounded, weight: .bold))
@@ -277,7 +320,7 @@ struct SubscriptionView: View {
                 }
                 .buttonStyle(.plain)
                 
-                if action.id != config.secondaryActions.last?.id {
+                if action.id != displayConfig.secondaryActions.last?.id {
                     Spacer()
                 }
             }

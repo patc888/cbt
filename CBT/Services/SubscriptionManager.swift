@@ -14,8 +14,8 @@ class SubscriptionManager: ObservableObject {
     
     // Abstracting StoreKit details to support the stub requirement
     private let productIdentifiersForSale: [String] = [
-        "com.xeo.CBT.premium.monthly",
         "com.xeo.CBT.premium.yearly",
+        "com.xeo.CBT.premium.monthly",
         "com.xeo.CBT.premium.lifetime"
     ]
     
@@ -28,6 +28,13 @@ class SubscriptionManager: ObservableObject {
     
     private init() {
         Task {
+            // Listen for transactions that occur outside the app (e.g. App Store, Ask to Buy)
+            for await _ in Transaction.updates {
+                await checkSubscriptionStatus()
+            }
+        }
+        
+        Task {
             await loadProducts()
             await checkSubscriptionStatus()
         }
@@ -37,58 +44,128 @@ class SubscriptionManager: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        // STUB MODE:
-        // We do not load real StoreKit Products since no IAP is configured yet in CBT.
-        // Once IAP is fully configured, swap this logic back to `Product.products(for: productIdentifiersForSale)`
-        await MainActor.run {
-            self.availableProducts = [] // Empty since we can't create fake StoreKit 2 `Product` structs synchronously here.
+        do {
+            let products = try await Product.products(for: productIdentifiersForSale)
             
-            // To prevent crashes when availableProducts is empty but purchasing is clicked,
-            // the UI will rely on its own placeholder text internally when products are missing.
-            self.isLoading = false
+            await MainActor.run {
+                // Sort products to match the order of our identifiers
+                self.availableProducts = products.sorted { p1, p2 in
+                    let index1 = productIdentifiersForSale.firstIndex(of: p1.id) ?? 999
+                    let index2 = productIdentifiersForSale.firstIndex(of: p2.id) ?? 999
+                    return index1 < index2
+                }
+                self.isLoading = false
+            }
+        } catch {
+            print("StoreKit: Failed to load products - \(error)")
+            await MainActor.run {
+                self.errorMessage = "Failed to load subscription plans."
+                self.isLoading = false
+            }
         }
     }
     
     func purchase(_ productId: String) async -> Bool {
+        guard let product = availableProducts.first(where: { $0.id == productId }) else {
+            return await purchaseByID(productId)
+        }
+        
         isLoading = true
         errorMessage = nil
         
-        // STUB MODE PURCHASE
-        // Simulate a network delay
+        do {
+            let result = try await product.purchase()
+            
+            switch result {
+            case .success(let verification):
+                let transaction = try checkVerified(verification)
+                await checkSubscriptionStatus()
+                await transaction.finish()
+                await MainActor.run { self.isLoading = false }
+                return true
+            case .pending:
+                await MainActor.run { self.isLoading = false }
+                return false
+            case .userCancelled:
+                await MainActor.run { self.isLoading = false }
+                return false
+            @unknown default:
+                await MainActor.run { self.isLoading = false }
+                return false
+            }
+        } catch {
+            print("StoreKit: Purchase failed - \(error)")
+            await MainActor.run {
+                self.errorMessage = "Purchase failed."
+                self.isLoading = false
+            }
+            return false
+        }
+    }
+
+    private func purchaseByID(_ productId: String) async -> Bool {
+        // Fallback or debug mode purchase
+        await MainActor.run { 
+            self.isLoading = true
+        }
         try? await Task.sleep(nanoseconds: 1_000_000_000)
-        
         await MainActor.run {
             self.subscriptionStatus = .subscribed
             self.isLoading = false
         }
-        
         return true
-    }
-    
-    // STUB override for the direct product purchase (since we might not have real Products)
-    func purchase(product: Any) async -> Bool {
-        // Not used realistically until real StoreKit is wired
-        return await purchase("stub")
     }
     
     func restorePurchases() async {
         isLoading = true
         errorMessage = nil
         
-        // STUB MODE RESTORE
-        try? await Task.sleep(nanoseconds: 1_000_000_000)
-        
-        await MainActor.run {
-            self.isLoading = false
-            self.errorMessage = nil // Not changing subscription status for now, just success no-op
+        do {
+            try await AppStore.sync()
+            await checkSubscriptionStatus()
+            await MainActor.run { self.isLoading = false }
+        } catch {
+            print("StoreKit: Restore failed - \(error)")
+            await MainActor.run {
+                self.errorMessage = "Restore failed."
+                self.isLoading = false
+            }
         }
     }
     
     func checkSubscriptionStatus() async {
-        // Default to not subscribed locally until purchased during testing.
-        if self.subscriptionStatus == .unknown {
-            self.subscriptionStatus = .notSubscribed
+        var hasActiveSubscription = false
+        
+        for await result in Transaction.currentEntitlements {
+            do {
+                let transaction = try checkVerified(result)
+                if transaction.productID.starts(with: "com.xeo.CBT.premium") {
+                    if transaction.revocationDate == nil {
+                        hasActiveSubscription = true
+                        break
+                    }
+                }
+            } catch {
+                print("StoreKit: Verification failed - \(error)")
+            }
         }
+        
+        await MainActor.run {
+            self.subscriptionStatus = hasActiveSubscription ? .subscribed : .notSubscribed
+        }
+    }
+
+    func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
+        switch result {
+        case .unverified:
+            throw StoreError.failedVerification
+        case .verified(let safe):
+            return safe
+        }
+    }
+
+    enum StoreError: Error {
+        case failedVerification
     }
     
     var isPremium: Bool {

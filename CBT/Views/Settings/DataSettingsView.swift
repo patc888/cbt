@@ -4,6 +4,7 @@ import SwiftData
 #if canImport(UIKit)
 import UIKit
 #endif
+import UniformTypeIdentifiers
 
 struct DataSettingsView: View {
     var body: some View {
@@ -72,10 +73,14 @@ struct AdvancedDataSettingsView: View {
     @State private var showingExportInfo = false
     @State private var showingDeleteDialog = false
     @State private var showingDeleteConfirmation = false
+    @State private var showingFileImporter = false
+    @State private var showingImportInfo = false
     @State private var deleteMode: DeleteMode = .deleteOnly
     @State private var errorMessage: String?
+    @State private var showImportSuccess = false
 
     private let dataExportService = DataExportService()
+    private let dataImportService = DataImportService()
 
     var body: some View {
         ZStack {
@@ -96,6 +101,22 @@ struct AdvancedDataSettingsView: View {
                             .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundColor(themeManager.primaryColor)
                         }
+
+                        SettingsRow(
+                            icon: "square.and.arrow.down",
+                            iconColor: themeManager.primaryColor,
+                            title: "Import Backup (JSON)"
+                        ) {
+                            Button("Import") {
+                                HapticManager.shared.lightImpact()
+                                showingImportInfo = true
+                            }
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundColor(themeManager.primaryColor)
+                        }
+
+                        Divider()
+                            .padding(.vertical, 8)
 
                         SettingsRow(
                             icon: "tablecells",
@@ -185,6 +206,24 @@ struct AdvancedDataSettingsView: View {
         } message: {
             Text(errorMessage ?? "An unknown error occurred.")
         }
+        .alert("Success", isPresented: $showImportSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Data imported successfully.")
+        }
+        .fileImporter(
+            isPresented: $showingFileImporter,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first else { return }
+                importData(from: url)
+            case .failure(let error):
+                errorMessage = "Could not select file: \(error.localizedDescription)"
+            }
+        }
         #if canImport(UIKit)
         .sheet(isPresented: $showingShareSheet) {
             if let exportFileURL {
@@ -222,6 +261,36 @@ struct AdvancedDataSettingsView: View {
                 )
             }
         }
+        .sheet(isPresented: $showingImportInfo) {
+            FeatureModalPresenter {
+                DSFeatureModal(
+                    title: "Import Your Data",
+                    subtitle: "Restore your records from a previously exported JSON backup file.",
+                    bullets: [
+                        DSBullet(icon: "doc.text.fill", text: "Select a .json file exported from this app"),
+                        DSBullet(icon: "plus.circle.fill", text: "New entries will be added to your device"),
+                        DSBullet(icon: "arrow.2.squarepath", text: "Duplicates will be automatically skipped")
+                    ],
+                    primaryTitle: "Select File",
+                    primaryAction: {
+                        HapticManager.shared.mediumImpact()
+                        showingImportInfo = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            showingFileImporter = true
+                        }
+                    },
+                    secondaryTitle: "Cancel",
+                    secondaryAction: {
+                        HapticManager.shared.lightImpact()
+                        showingImportInfo = false
+                    },
+                    closeAction: {
+                        HapticManager.shared.lightImpact()
+                        showingImportInfo = false
+                    }
+                )
+            }
+        }
     }
 
     private func exportData() {
@@ -233,6 +302,25 @@ struct AdvancedDataSettingsView: View {
             #endif
         } catch {
             errorMessage = "Could not export data. \(error.localizedDescription)"
+        }
+    }
+
+    private func importData(from url: URL) {
+        do {
+            // Start accessing the security-scoped resource
+            guard url.startAccessingSecurityScopedResource() else {
+                errorMessage = "Could not access the selected file."
+                return
+            }
+            
+            // Defers the call to stopAccessingSecurityScopedResource
+            defer { url.stopAccessingSecurityScopedResource() }
+            
+            try dataImportService.importData(from: url, into: modelContext)
+            HapticManager.shared.success()
+            showImportSuccess = true
+        } catch {
+            errorMessage = "Import failed: \(error.localizedDescription)"
         }
     }
 
