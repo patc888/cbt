@@ -13,17 +13,17 @@ extension Notification.Name {
 
 @Observable
 final class DataResetManager {
-    static let shared = DataResetManager()
-    private static let logger = Logger(
+    nonisolated static let shared = DataResetManager()
+    private nonisolated(unsafe) static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "CBT",
         category: "DataReset"
     )
 
-    var defaultStoreURL: URL {
+    nonisolated var defaultStoreURL: URL {
         ModelConfiguration().url
     }
 
-    var fallbackStoreURL: URL {
+    nonisolated var fallbackStoreURL: URL {
         defaultStoreURL
             .deletingLastPathComponent()
             .appendingPathComponent("local-recovery.store")
@@ -89,7 +89,7 @@ final class DataResetManager {
     }
 
     @discardableResult
-    func quarantineDefaultStoreForRepair() throws -> URL? {
+    nonisolated func quarantineDefaultStoreForRepair() throws -> URL? {
         let files = try relatedStoreFiles(for: defaultStoreURL)
         guard !files.isEmpty else { return nil }
 
@@ -115,11 +115,11 @@ final class DataResetManager {
         return quarantineDirectory
     }
 
-    func removeFallbackStoreFiles() throws {
+    nonisolated func removeFallbackStoreFiles() throws {
         try removeStoreFiles(at: fallbackStoreURL)
     }
 
-    private func removeStoreFiles(at storeURL: URL) throws {
+    private nonisolated func removeStoreFiles(at storeURL: URL) throws {
         let files = try relatedStoreFiles(for: storeURL)
         for file in files {
             if FileManager.default.fileExists(atPath: file.path) {
@@ -128,7 +128,7 @@ final class DataResetManager {
         }
     }
 
-    private func relatedStoreFiles(for storeURL: URL) throws -> [URL] {
+    private nonisolated func relatedStoreFiles(for storeURL: URL) throws -> [URL] {
         let storeDirectory = storeURL.deletingLastPathComponent()
         guard FileManager.default.fileExists(atPath: storeDirectory.path) else {
             return []
@@ -142,14 +142,14 @@ final class DataResetManager {
         return files.filter { $0.lastPathComponent.hasPrefix(storeURL.lastPathComponent) }
     }
 
-    private func logFileOperationFailure(_ error: Error, action: String) {
+    private nonisolated func logFileOperationFailure(_ error: Error, action: String) {
         let nsError = error as NSError
         Self.logger.error(
             "Store file operation failed action=\(action, privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public)"
         )
     }
 
-    private static func recoveryFolderName(from date: Date) -> String {
+    private nonisolated static func recoveryFolderName(from date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd-HH-mm-ss"
         return "repair-\(formatter.string(from: date))"

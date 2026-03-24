@@ -81,9 +81,6 @@ final class BreathingEngine: ObservableObject {
 
     private func startTimer() {
         timer?.invalidate()
-        // Use 0.1s interval for smoother transitions if needed, but 1s is fine for totalSeconds.
-        // Actually, let's use 0.1s to allow for sub-second phase durations (like 4-7-8 if they were sub-second, though they are usually ints).
-        // But the user might want precision.
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.tick()

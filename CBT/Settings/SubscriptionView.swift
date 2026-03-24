@@ -143,6 +143,7 @@ struct SubscriptionView: View {
         .animation(.spring(response: 0.5, dampingFraction: 0.85), value: selectedPlanID)
         .preferredColorScheme(themeManager.appTheme.colorScheme)
         .onAppear {
+            subscriptionManager.startListeningIfNeeded()
             if subscriptionManager.availableProducts.isEmpty {
                 Task {
                     await subscriptionManager.loadProducts()

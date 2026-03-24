@@ -2,6 +2,7 @@ import Combine
 import LocalAuthentication
 import SwiftUI
 
+@MainActor
 class SecurityManager: ObservableObject {
     @Published var isLocked = false
     @Published var isBiometricsAvailable = false
@@ -30,21 +31,20 @@ class SecurityManager: ObservableObject {
         let context = LAContext()
         var error: NSError?
 
-        if context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
-            let reason = "Unlock CBT"
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+            self.isLocked = false
+            return
+        }
 
-            context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, _ in
-                DispatchQueue.main.async {
-                    if success {
-                        self.isLocked = false
-                    } else {
-                        self.isLocked = true
-                    }
+        let reason = "Unlock CBT"
+        context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, authError in
+            Task { @MainActor in
+                if success {
+                    self.isLocked = false
+                } else {
+                    // If user cancelled or failed, keep locked but don't crash
+                    self.isLocked = true
                 }
-            }
-        } else {
-            DispatchQueue.main.async {
-                self.isLocked = false
             }
         }
     }

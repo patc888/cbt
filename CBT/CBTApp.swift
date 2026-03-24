@@ -10,6 +10,11 @@ struct CBTApp: App {
         case repair
     }
 
+    private struct LoadingRequest {
+        let id = UUID()
+        let reason: String
+    }
+
     fileprivate enum BootstrapStage: String {
         case primary = "primary"
         case primaryRecovery = "primary-recovery"
@@ -20,11 +25,12 @@ struct CBTApp: App {
         case debugInjectedFailure(String)
     }
 
-    private static let logger = Logger(
+    private nonisolated(unsafe) static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "CBT",
         category: "AppBootstrap"
     )
 
+    @MainActor
     private static let schema = Schema([
         Item.self,
         UserSettings.self,
@@ -35,14 +41,18 @@ struct CBTApp: App {
     ])
 
     @State private var launchState: LaunchState
+    @State private var loadingRequest: LoadingRequest
     @State private var resetID = UUID()
     @State private var themeManager = ThemeManager()
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var securityManager = SecurityManager.shared
     @State private var hasCheckedLockOnLaunch = false
+    @State private var lastStartedBootstrapID: UUID?
 
     init() {
-        _launchState = State(initialValue: Self.bootstrap(reason: "app launch"))
+        let initialRequest = LoadingRequest(reason: "app launch")
+        _launchState = State(initialValue: .loading)
+        _loadingRequest = State(initialValue: initialRequest)
     }
 
     var body: some Scene {
@@ -59,8 +69,7 @@ struct CBTApp: App {
                 .onReceive(NotificationCenter.default.publisher(for: .didResetData)) { _ in
                     themeManager = ThemeManager()
                     securityManager.unlock()
-                    hasCheckedLockOnLaunch = false
-                    bootstrapIntoCurrentState(reason: "local reset")
+                    scheduleBootstrap(reason: "local reset")
                 }
         }
     }
@@ -84,6 +93,9 @@ struct CBTApp: App {
         switch launchState {
         case .loading:
             DataRepairLoadingView()
+                .task(id: loadingRequest.id) {
+                    await bootstrapIntoCurrentState(for: loadingRequest)
+                }
         case .ready(let container):
             ZStack {
                 ContentView()
@@ -99,10 +111,9 @@ struct CBTApp: App {
         case .repair:
             DataRepairView(
                 onRetry: {
-                    bootstrapIntoCurrentState(reason: "repair retry")
+                    scheduleBootstrap(reason: "repair retry")
                 },
                 onResetThisDevice: {
-                    launchState = .loading
                     DataResetManager.shared.performLocalWipe()
                 }
             )
@@ -110,15 +121,34 @@ struct CBTApp: App {
     }
 
     @MainActor
-    private func bootstrapIntoCurrentState(reason: String) {
+    private func scheduleBootstrap(reason: String) {
+        hasCheckedLockOnLaunch = false
         launchState = .loading
-        let nextState = Self.bootstrap(reason: reason)
+        loadingRequest = LoadingRequest(reason: reason)
+    }
+
+    @MainActor
+    private func bootstrapIntoCurrentState(for request: LoadingRequest) async {
+        guard lastStartedBootstrapID != request.id else { return }
+        lastStartedBootstrapID = request.id
+
+        let nextState = await Self.bootstrapAsync(reason: request.reason)
+
+        guard loadingRequest.id == request.id else { return }
         if case .ready = nextState {
             resetID = UUID()
         }
         launchState = nextState
     }
 
+    @MainActor
+    private static func bootstrapAsync(reason: String) async -> LaunchState {
+        await Task {
+            Self.bootstrap(reason: reason)
+        }.value
+    }
+
+    @MainActor
     private static func bootstrap(reason: String) -> LaunchState {
         do {
             return .ready(try makePrimaryContainer(stage: .primary))
@@ -155,6 +185,7 @@ struct CBTApp: App {
         }
     }
 
+    @MainActor
     private static func makePrimaryContainer(stage: BootstrapStage) throws -> ModelContainer {
         try DebugBootstrapControl.injectFailureIfNeeded(for: stage)
 
@@ -167,6 +198,7 @@ struct CBTApp: App {
         return try ModelContainer(for: schema, configurations: [configuration])
     }
 
+    @MainActor
     private static func makeFallbackContainer() throws -> ModelContainer {
         try DebugBootstrapControl.injectFailureIfNeeded(for: .fallback)
 
@@ -180,7 +212,7 @@ struct CBTApp: App {
         return try ModelContainer(for: schema, configurations: [configuration])
     }
 
-    private static func logBootstrapFailure(
+    private nonisolated static func logBootstrapFailure(
         _ error: Error,
         stage: BootstrapStage,
         reason: String
@@ -191,7 +223,7 @@ struct CBTApp: App {
         )
     }
 
-    private static func logHousekeepingFailure(_ error: Error, action: String) {
+    private nonisolated static func logHousekeepingFailure(_ error: Error, action: String) {
         let nsError = error as NSError
         logger.error(
             "Bootstrap recovery housekeeping failed action=\(action, privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public)"

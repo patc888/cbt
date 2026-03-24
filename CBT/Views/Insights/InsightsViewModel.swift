@@ -2,6 +2,32 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+// MARK: - Value-type snapshots for background processing
+// SwiftData @Model objects are not Sendable; we must extract values
+// on the caller's actor before entering a detached task.
+private struct MoodSnapshot: Sendable {
+    let createdAt: Date
+    let moodScore: Int
+    let emotions: [String]
+    let triggers: [String]
+}
+
+private struct ThoughtSnapshot: Sendable {
+    let createdAt: Date
+    let intensityBefore: Int
+    let intensityAfter: Int
+    let emotions: [String]
+    let distortions: [String]
+}
+
+private struct ExerciseSnapshot: Sendable {
+    let createdAt: Date
+}
+
+private struct JournalSnapshot: Sendable {
+    let createdAt: Date
+}
+
 @Observable
 final class InsightsViewModel {
     var isCalculating = true
@@ -47,6 +73,26 @@ final class InsightsViewModel {
         journalEntries: [JournalEntry],
         moodGoalValue: Int
     ) async {
+        // Snapshot model data on the caller's actor (main) so the
+        // detached task only touches plain value types.
+        let moods = moodEntries.map {
+            MoodSnapshot(createdAt: $0.createdAt, moodScore: $0.moodScore,
+                         emotions: $0.emotions, triggers: $0.triggers)
+        }
+        let thoughts = thoughtRecords.map {
+            ThoughtSnapshot(createdAt: $0.createdAt,
+                            intensityBefore: $0.intensityBefore,
+                            intensityAfter: $0.intensityAfter,
+                            emotions: $0.emotions,
+                            distortions: $0.distortions)
+        }
+        let exercises = exerciseCompletions.map {
+            ExerciseSnapshot(createdAt: $0.createdAt)
+        }
+        let journals = journalEntries.map {
+            JournalSnapshot(createdAt: $0.createdAt)
+        }
+
         let results = await Task.detached(priority: .userInitiated) {
             let calendar = Calendar.current
             let now = Date()
@@ -57,16 +103,15 @@ final class InsightsViewModel {
             let eightWeeksCutoff = calendar.date(byAdding: .weekOfYear, value: -8, to: now) ?? now
             
             // 2. Filter data for the primary time range
-            let filteredMoods = moodEntries.filter { $0.createdAt >= rangeCutoff }
-            let filteredThoughts = thoughtRecords.filter { $0.createdAt >= rangeCutoff }
-            let filteredExercises = exerciseCompletions.filter { $0.createdAt >= rangeCutoff }
+            let filteredMoods = moods.filter { $0.createdAt >= rangeCutoff }
+            let filteredThoughts = thoughts.filter { $0.createdAt >= rangeCutoff }
+            let filteredExercises = exercises.filter { $0.createdAt >= rangeCutoff }
             
             // 3. Active days
             let moodDays = filteredMoods.map { calendar.startOfDay(for: $0.createdAt) }
             let thoughtDays = filteredThoughts.map { calendar.startOfDay(for: $0.createdAt) }
             let exerciseDays = filteredExercises.map { calendar.startOfDay(for: $0.createdAt) }
-            // Assuming Journal entries count towards streaks, though maybe range active days skips them. Let's include them.
-            let journalDaysRange = journalEntries.filter { $0.createdAt >= rangeCutoff }.map { calendar.startOfDay(for: $0.createdAt) }
+            let journalDaysRange = journals.filter { $0.createdAt >= rangeCutoff }.map { calendar.startOfDay(for: $0.createdAt) }
             
             let activeDaysCount = Set(moodDays + thoughtDays + exerciseDays + journalDaysRange).count
             
@@ -126,12 +171,12 @@ final class InsightsViewModel {
             
             let topTriggers = triggerCounts.map { TriggerCount(name: $0.key.capitalized, count: $0.value) }
                 .sorted { $0.count > $1.count }.prefix(5).map { $0 }
-                
+
             let topDistortions = distortionCounts.map { DistortionCount(name: $0.key.capitalized, count: $0.value) }
                 .sorted { $0.count > $1.count }.prefix(5).map { $0 }
             
             // 8. Weekly Averages (last 8 weeks)
-            let eightWeeksMoods = moodEntries.filter { $0.createdAt >= eightWeeksCutoff }
+            let eightWeeksMoods = moods.filter { $0.createdAt >= eightWeeksCutoff }
             let weeklyGroups = Dictionary(grouping: eightWeeksMoods) { entry in
                 calendar.dateInterval(of: .weekOfYear, for: entry.createdAt)?.start ?? calendar.startOfDay(for: entry.createdAt)
             }
@@ -140,7 +185,7 @@ final class InsightsViewModel {
             }.sorted { $0.weekStart < $1.weekStart }
             
             // 9. Mood Volatility (last 30 days)
-            let thirtyDaysMoods = moodEntries.filter { $0.createdAt >= thirtyDaysCutoff }
+            let thirtyDaysMoods = moods.filter { $0.createdAt >= thirtyDaysCutoff }
             let thirtyDailyGroups = Dictionary(grouping: thirtyDaysMoods) { calendar.startOfDay(for: $0.createdAt) }
             let thirtyAveragePairs = thirtyDailyGroups.map { day, entries in
                 (date: day, avg: Double(entries.map(\.moodScore).reduce(0, +)) / Double(entries.count))
@@ -156,17 +201,27 @@ final class InsightsViewModel {
             }
             
             // 10. Streaks (across all time)
-            let allMoodDays = moodEntries.map { calendar.startOfDay(for: $0.createdAt) }
-            let allThoughtDays = thoughtRecords.map { calendar.startOfDay(for: $0.createdAt) }
-            let allExerciseDays = exerciseCompletions.map { calendar.startOfDay(for: $0.createdAt) }
-            let allJournalDays = journalEntries.map { calendar.startOfDay(for: $0.createdAt) }
+            let allMoodDays = moods.map { calendar.startOfDay(for: $0.createdAt) }
+            let allThoughtDays = thoughts.map { calendar.startOfDay(for: $0.createdAt) }
+            let allExerciseDays = exercises.map { calendar.startOfDay(for: $0.createdAt) }
+            let allJournalDays = journals.map { calendar.startOfDay(for: $0.createdAt) }
             
             let allActiveDates = Set(allMoodDays + allThoughtDays + allExerciseDays + allJournalDays).sorted()
             
             var cStreak = 0
             var lStreak = 0
             let today = calendar.startOfDay(for: now)
-            let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else {
+                return (
+                    activeDaysCount, dailyMoodAverages,
+                    averageMood, averageIntensityImprovement,
+                    consistencyGoalTarget, consistencyProgress,
+                    moodGoalProgress, thoughtGoalProgress,
+                    exerciseGoalTarget, exerciseProgress, milestonesCompleted,
+                    topEmotions, topTriggers, topDistortions,
+                    weeklyMoodAverages, volatility, 0, 0
+                )
+            }
             
             if !allActiveDates.isEmpty {
                 var currentChain = 1
@@ -188,22 +243,23 @@ final class InsightsViewModel {
                 
                 // Determine current streak
                 // If today or yesterday is the last active date, calculate backwards from the last active date
-                let lastActive = allActiveDates.last!
-                if lastActive >= yesterday {
-                    var rollingStreak = 1
-                    for i in (0..<(allActiveDates.count - 1)).reversed() {
-                        let curr = allActiveDates[i+1]
-                        let prev = allActiveDates[i]
-                        let daysDiff = calendar.dateComponents([.day], from: prev, to: curr).day ?? 0
-                        if daysDiff == 1 {
-                            rollingStreak += 1
-                        } else {
-                            break
+                if let lastActive = allActiveDates.last {
+                    if lastActive >= yesterday {
+                        var rollingStreak = 1
+                        for i in (0..<(allActiveDates.count - 1)).reversed() {
+                            let curr = allActiveDates[i+1]
+                            let prev = allActiveDates[i]
+                            let daysDiff = calendar.dateComponents([.day], from: prev, to: curr).day ?? 0
+                            if daysDiff == 1 {
+                                rollingStreak += 1
+                            } else {
+                                break
+                            }
                         }
+                        cStreak = rollingStreak
+                    } else {
+                        cStreak = 0 // broke the streak
                     }
-                    cStreak = rollingStreak
-                } else {
-                    cStreak = 0 // broke the streak
                 }
             }
             

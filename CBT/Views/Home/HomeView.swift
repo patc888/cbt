@@ -16,7 +16,6 @@ struct HomeView: View {
     @State private var attemptingNewMoodEntry = false
     @State private var attemptingNewThoughtRecord = false
     @State private var showingTipModal = false
-    @State private var showingQuickAdd = false
     @State private var selectedMoodForFlow: MoodColor? = nil
     @State private var manualCompletions: [Date: Set<DailyPlanItem>] = [:]
 
@@ -204,21 +203,6 @@ struct HomeView: View {
                     }
                 )
             }
-        }
-        .confirmationDialog("Quick Add", isPresented: $showingQuickAdd, titleVisibility: .visible) {
-            Button("Mood Check-In") {
-                attemptingNewMoodEntry = true
-            }
-            Button("Thought Record") {
-                attemptingNewThoughtRecord = true
-            }
-            Button("Breathing Reset") {
-                BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
-            }
-            Button("Exercise") {
-                selectedTab = .exercises
-            }
-            Button("Cancel", role: .cancel) {}
         }
     }
 

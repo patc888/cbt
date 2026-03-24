@@ -42,7 +42,6 @@ class ReviewManager {
         if let scene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
             SKStoreReviewController.requestReview(in: scene)
             UserDefaults.standard.set(version, forKey: lastVersionKey)
-            // Reset count if you want to prompt again in future versions after more usage
             UserDefaults.standard.set(0, forKey: userDefaultsKey)
         }
         #else

@@ -35,8 +35,6 @@ struct MoodSuggestionsView: View {
                     title: "Try a CBT Exercise",
                     icon: "list.bullet.rectangle.portrait"
                 ) {
-                    // In a full app, this might navigate to the exercises tab.
-                    // For now, we continue since exercises are in another area.
                     onNext()
                 }
             }

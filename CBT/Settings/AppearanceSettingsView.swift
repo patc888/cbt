@@ -17,6 +17,14 @@ struct AppearanceSettingsView: View {
     @State private var isIconExpanded = false
     @State private var errorString: String?
     @State private var showingError = false
+
+    private var supportsAlternateIcons: Bool {
+        #if canImport(UIKit)
+        UIApplication.shared.supportsAlternateIcons
+        #else
+        false
+        #endif
+    }
     
     var body: some View {
         SettingsSection(title: "Appearance") {
@@ -37,7 +45,9 @@ struct AppearanceSettingsView: View {
                 SegmentedToggle(isOn: $hapticsEnabled, namespace: hapticNamespace)
             }
             
-            appIconDisclosure
+            if supportsAlternateIcons {
+                appIconDisclosure
+            }
         }
         .alert("Error Changing Icon", isPresented: $showingError) {
             Button("OK", role: .cancel) {
@@ -101,6 +111,10 @@ struct AppearanceSettingsView: View {
         }
         .onAppear {
             #if canImport(UIKit)
+            guard supportsAlternateIcons else {
+                currentIcon = nil
+                return
+            }
             currentIcon = UIApplication.shared.alternateIconName
             #endif
         }
@@ -165,6 +179,9 @@ struct AppearanceSettingsView: View {
         return Button(action: {
             HapticManager.shared.lightImpact()
             #if canImport(UIKit)
+            guard supportsAlternateIcons else {
+                return
+            }
             UIApplication.shared.setAlternateIconName(icon.iconName) { error in
                 if let error = error {
                     DispatchQueue.main.async {

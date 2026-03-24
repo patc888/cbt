@@ -45,6 +45,8 @@ struct SettingsView: View {
 #endif
 
         .task {
+            subscriptionManager.startListeningIfNeeded()
+            
             if settings.isEmpty {
                 let newSettings = UserSettings()
                 modelContext.insert(newSettings)
@@ -53,7 +55,6 @@ struct SettingsView: View {
             
             let enabled = userSettings?.hapticsEnabled ?? true
             HapticManager.shared.setEnabled(enabled)
-            await subscriptionManager.loadProducts()
         }
         #if os(macOS)
         .sheet(isPresented: $showingSubscription) {
@@ -80,10 +81,7 @@ struct SettingsView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
-            // Removed manual padding since VStack has spacing now
-            
 
-            
             SubscriptionSettingsView(
                 subscriptionManager: subscriptionManager,
                 showingSubscription: $showingSubscription
@@ -157,7 +155,7 @@ struct SettingsView: View {
             AboutSettingsView()
             
             PrivacyFooter()
-                .padding(.top, 16) // Combined with 16 spacing = 32 total
+                .padding(.top, 16)
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 32)
@@ -200,5 +198,4 @@ struct PrivacyFooter: View {
         .padding(.bottom, 8)
     }
 }
-
 

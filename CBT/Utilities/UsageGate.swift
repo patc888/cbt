@@ -33,7 +33,6 @@ struct UsageGateModifier: ViewModifier {
     @Binding var isAttemptingAction: Bool
     let onProceed: () -> Void
     
-    @State private var showingLimitModal = false
     @State private var showingSubscription = false
     
     func body(content: Content) -> some View {
@@ -60,41 +59,9 @@ struct UsageGateModifier: ViewModifier {
                         
                         onProceed()
                     } else {
-                        showingLimitModal = true
+                        showingSubscription = true
                     }
                 }
-            }
-            .sheet(isPresented: $showingLimitModal) {
-                FeatureModalPresenter {
-                    DSFeatureModal(
-                        title: "Free Limit Reached",
-                        subtitle: "You've used your 10 free entries. Subscribe to Premium to continue creating new mood check-ins and thought records.",
-                        bullets: [
-                            DSBullet(icon: "lock.open.fill", text: "Unlimited Mood Check-ins"),
-                            DSBullet(icon: "brain.head.profile", text: "Unlimited Thought Records")
-                        ],
-                        primaryTitle: "View Premium Plans",
-                        primaryAction: {
-                            HapticManager.shared.lightImpact()
-                            showingLimitModal = false
-                            
-                            // Delay slightly to allow the modal to smoothly disappear before showing full screen subscription
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                showingSubscription = true
-                            }
-                        },
-                        secondaryTitle: "Maybe Later",
-                        secondaryAction: {
-                            HapticManager.shared.lightImpact()
-                            showingLimitModal = false
-                        },
-                        closeAction: {
-                            HapticManager.shared.lightImpact()
-                            showingLimitModal = false
-                        }
-                    )
-                }
-                .presentationDetents([.fraction(0.85), .large])
             }
         #if os(macOS)
             .sheet(isPresented: $showingSubscription) {

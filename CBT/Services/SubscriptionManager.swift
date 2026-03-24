@@ -26,17 +26,24 @@ class SubscriptionManager: ObservableObject {
         case expired
     }
     
-    private init() {
-        Task {
+    private var hasStartedListening = false
+
+    private init() {}
+
+    /// Call once after the app UI is ready.
+    func startListeningIfNeeded() {
+        guard !hasStartedListening else { return }
+        hasStartedListening = true
+
+        Task { [weak self] in
             // Listen for transactions that occur outside the app (e.g. App Store, Ask to Buy)
             for await _ in Transaction.updates {
-                await checkSubscriptionStatus()
+                await self?.checkSubscriptionStatus()
             }
         }
-        
-        Task {
-            await loadProducts()
-            await checkSubscriptionStatus()
+
+        Task { [weak self] in
+            await self?.checkSubscriptionStatus()
         }
     }
     
