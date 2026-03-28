@@ -57,7 +57,7 @@ struct SubscriptionView: View {
     init(config: SubscriptionConfig = .mock) {
         self.config = config
         // Default initialized plan
-        _selectedPlanID = State(initialValue: "com.xeo.CBT.premium.yearly")
+        _selectedPlanID = State(initialValue: "cbt.premium.yearly")
     }
     
     private var displayConfig: SubscriptionConfig {

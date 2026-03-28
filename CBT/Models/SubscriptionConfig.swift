@@ -48,10 +48,10 @@ extension SubscriptionConfig {
         title: "Full Access",
         subtitle: "One subscription for all your devices with unlimited access.",
         plans: [
-            SubscriptionPlan(id: "com.xeo.CBT.premium.yearly", label: "Yearly", price: "$11.99", billingFrequency: "/year", badge: "50% OFF", isRecommended: true, hasFreeTrial: true),
-            SubscriptionPlan(id: "com.xeo.CBT.premium.monthly", label: "Monthly", price: "$1.99", billingFrequency: "/month")
+            SubscriptionPlan(id: "cbt.premium.yearly", label: "Yearly", price: "$11.99", billingFrequency: "/year", badge: "50% OFF", isRecommended: true, hasFreeTrial: true),
+            SubscriptionPlan(id: "cbt.premium.monthly", label: "Monthly", price: "$1.99", billingFrequency: "/month")
         ],
-        oneTimeOption: SubscriptionPlan(id: "com.xeo.CBT.premium.lifetime", label: "Lifetime", price: "$39.99", billingFrequency: "one-time payment"),
+        oneTimeOption: SubscriptionPlan(id: "cbt.premium.lifetime", label: "Lifetime", price: "$39.99", billingFrequency: "one-time payment"),
         features: [
             SubscriptionFeature(icon: "list.bullet.clipboard", title: "Unlimited Entries", description: "Log as often as you like and track your thoughts without any restrictions."),
             SubscriptionFeature(icon: "chart.line.uptrend.xyaxis", title: "Advanced Analytics", description: "Discover deep insights into your mental well-being with trend analysis."),

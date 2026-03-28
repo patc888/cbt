@@ -14,9 +14,9 @@ class SubscriptionManager: ObservableObject {
     
     // Abstracting StoreKit details to support the stub requirement
     private let productIdentifiersForSale: [String] = [
-        "com.xeo.CBT.premium.yearly",
-        "com.xeo.CBT.premium.monthly",
-        "com.xeo.CBT.premium.lifetime"
+        "cbt.premium.yearly",
+        "cbt.premium.monthly",
+        "cbt.premium.lifetime"
     ]
     
     enum SubscriptionStatus {
@@ -130,7 +130,7 @@ class SubscriptionManager: ObservableObject {
         for await result in Transaction.currentEntitlements {
             do {
                 let transaction = try checkVerified(result)
-                if transaction.productID.starts(with: "com.xeo.CBT.premium") {
+                if transaction.productID.starts(with: "cbt.premium") {
                     if transaction.revocationDate == nil {
                         hasActiveSubscription = true
                         break
