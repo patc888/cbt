@@ -5,3 +5,15 @@ build_output.txt
 *.icns
 icon.iconset/
 .DS_Store
+
+# Auto-Purge: Advanced Build / DerivedData wildcards
+build/
+build-*/
+.build/
+.build-*/
+DerivedData/
+DerivedData-*/
+.derivedData/
+.derivedData-*/
+.DerivedData/
+.DerivedData-*/
