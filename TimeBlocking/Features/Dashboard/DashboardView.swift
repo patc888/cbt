@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import Charts
 
 struct DashboardView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
@@ -107,7 +108,29 @@ struct DashboardView: View {
                             } else {
                                 Divider()
 
-                                LazyVGrid(columns: metricColumns, spacing: Theme.paddingMedium) {
+                                // MARK: - Overview Main Stat
+                                VStack(spacing: 4) {
+                                    let rate = summary.totalBlocks > 0 
+                                        ? Int((Double(summary.daySnapshot.completedCount) / Double(summary.totalBlocks)) * 100) 
+                                        : 0
+                                    
+                                    Text("\(rate)%")
+                                        .font(.system(size: 52, weight: .black, design: .rounded))
+                                        .foregroundStyle(Theme.primaryText)
+                                        .contentTransition(.numericText())
+                                    
+                                    Text("\(summary.daySnapshot.completedCount) of \(summary.totalBlocks) Blocks Completed")
+                                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                                        .foregroundStyle(Theme.secondaryText)
+                                        .padding(.top, 4)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                
+                                DashboardInsightsView()
+
+                                // MARK: - Quick Stats Grid
+                                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                                     TimeMetricTile(
                                         title: "Planned Today",
                                         value: "\(summary.daySnapshot.plannedCount)",
@@ -116,24 +139,29 @@ struct DashboardView: View {
                                     TimeMetricTile(
                                         title: "Completed",
                                         value: "\(summary.daySnapshot.completedCount)",
-                                        systemImage: "checkmark.circle"
+                                        systemImage: "checkmark.circle",
+                                        iconColor: Theme.successGreen
                                     )
                                     TimeMetricTile(
                                         title: "Scheduled",
-                                        value: "\(summary.daySnapshot.scheduledMinutes) min",
-                                        systemImage: "timer"
+                                        value: "\(summary.daySnapshot.scheduledMinutes)",
+                                        systemImage: "timer",
+                                        unit: "min",
+                                        iconColor: Theme.secondaryPurple
                                     )
                                     TimeMetricTile(
                                         title: "Remaining",
-                                        value: "\(summary.remainingScheduledMinutes(after: now)) min",
-                                        systemImage: currentBlock == nil ? "forward.fill" : "play.circle.fill"
+                                        value: "\(summary.remainingScheduledMinutes(after: now))",
+                                        systemImage: currentBlock == nil ? "forward.fill" : "play.circle.fill",
+                                        unit: "min",
+                                        iconColor: Theme.warningOrange
                                     )
                                 }
 
                                 Text(completionText)
                                     .font(.system(size: 12, design: .rounded))
                                     .foregroundStyle(Theme.secondaryText)
-                                    .padding(.top, 4)
+                                    .padding(.top, 10)
                             }
                         }
                     }
@@ -216,3 +244,5 @@ struct DashboardView: View {
         .environment(AppEnvironment(persistenceController: .preview))
         .modelContainer(PersistenceController.preview.container)
 }
+
+

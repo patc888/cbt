@@ -46,6 +46,8 @@ enum Theme {
         #endif
     }
     
+    static var background: Color { backgroundColor }
+    
     static var secondaryBackground: AnyView {
         if isImmersive {
             return AnyView(AuroraBackground())
@@ -64,10 +66,10 @@ enum Theme {
     
     // Font Sizes
     static let fontSizeTitle: CGFloat = 28
-    static let fontSizeSection: CGFloat = 22
-    static let fontSizeSubsection: CGFloat = 18
-    static let fontSizeBody: CGFloat = 16
-    static let fontSizeSmall: CGFloat = 13
+    static let fontSizeSection: CGFloat = 24
+    static let fontSizeSubsection: CGFloat = 19
+    static let fontSizeBody: CGFloat = 17
+    static let fontSizeSmall: CGFloat = 14
     
     // Status Colors (from Weight Tracker)
     static var successGreen: Color { Color(hex: "34C759") }

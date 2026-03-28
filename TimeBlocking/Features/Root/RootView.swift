@@ -6,15 +6,15 @@ struct RootView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @Query private var preferences: [AppPreferences]
+    @StateObject private var securityManager = SecurityManager.shared
 
     var body: some View {
         @Bindable var appState = appEnvironment.appState
 
-        ZStack(alignment: .top) {
-            NavigationStack {
-                ScheduleView()
-            }
-
+        NavigationStack {
+            ScheduleView()
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
             HStack(alignment: .center, spacing: 12) {
                 Button {
                     appState.showDashboard()
@@ -32,15 +32,9 @@ struct RootView: View {
 
                 Spacer()
 
-                VStack(spacing: 2) {
-                    Text("Schedule")
-                        .font(.system(size: Theme.fontSizeSection, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
+                Spacer()
 
-                    Text(appState.selectedDate.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Theme.primaryPurple)
-                }
+                Spacer()
 
                 Spacer()
 
@@ -64,7 +58,6 @@ struct RootView: View {
             .overlay(alignment: .bottom) {
                 Divider().opacity(0.1)
             }
-
         }
 #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
@@ -76,7 +69,7 @@ struct RootView: View {
                 appState.isPresentingAddModal = true
             }
             .padding(.trailing, 24)
-            .padding(.bottom, 24)
+            .padding(.bottom, 36)
         }
         .sheet(item: $appState.presentedSheet) { sheet in
             switch sheet {
@@ -115,17 +108,35 @@ struct RootView: View {
         .task {
             appEnvironment.prepareIfNeeded(using: modelContext)
             await appEnvironment.resyncNotifications(using: modelContext)
-        }
-        .onChange(of: scenePhase) { _, newPhase in
-            guard newPhase == .active else {
-                return
+            
+            if preferences.first?.appLockEnabled ?? false {
+                securityManager.lock()
+                securityManager.authenticate()
             }
-
-            Task {
-                await appEnvironment.resyncNotifications(using: modelContext)
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            if newPhase == .active {
+                Task {
+                    await appEnvironment.resyncNotifications(using: modelContext)
+                }
+                
+                if preferences.first?.appLockEnabled ?? false {
+                    securityManager.authenticate()
+                }
+            } else if newPhase == .background || newPhase == .inactive {
+                if preferences.first?.appLockEnabled ?? false {
+                    securityManager.lock()
+                }
             }
         }
         .preferredColorScheme(preferences.first?.appTheme?.colorScheme)
+        .overlay {
+            if (preferences.first?.appLockEnabled ?? false) && securityManager.isLocked {
+                LockView()
+                    .transition(.opacity)
+                    .zIndex(100)
+            }
+        }
     }
 
     private func floatingActionButton(

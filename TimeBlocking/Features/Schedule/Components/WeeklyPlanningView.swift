@@ -10,6 +10,11 @@ struct WeeklyPlanningDay: Identifiable {
 }
 
 struct WeeklyPlanningView: View {
+    enum DisplayMode {
+        case overviewCard
+        case inlineReveal
+    }
+
     @Binding var selectedDate: Date
 
     let weekDays: [WeeklyPlanningDay]
@@ -17,6 +22,8 @@ struct WeeklyPlanningView: View {
     let onShiftWeek: (Int) -> Void
     let onSelectDay: (Date) -> Void
     let onShowMonth: () -> Void
+    var displayMode: DisplayMode = .overviewCard
+    var showsHeader: Bool = true
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -37,63 +44,69 @@ struct WeeklyPlanningView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .top, spacing: 12) {
-                TimeSectionHeader(
-                    "Week Overview",
-                    subtitle: "\(selectedWeekText) • Choose a day to edit below"
-                )
-
-                Spacer(minLength: 0)
-
-                HStack(spacing: 8) {
-                    Button("Month") {
-                        onShowMonth()
-                    }
-                    .buttonStyle(.bordered)
-
-                    Button {
-                        onShiftWeek(-1)
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 13, weight: .bold))
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.bordered)
-
-                    Button {
-                        onShiftWeek(1)
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .bold))
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.bordered)
-                }
-                .tint(Theme.primaryPurple)
+        VStack(alignment: .leading, spacing: displayMode == .inlineReveal ? 12 : 18) {
+            if showsHeader {
+                headerContent
             }
 
-            Text("Week is an overview layer. Tap a day to return to the single Day editing canvas.")
-                .font(.system(size: 12, weight: .medium, design: .rounded))
-                .foregroundStyle(Theme.secondaryText)
+            switch displayMode {
+            case .overviewCard:
+                overviewCardContent
+            case .inlineReveal:
+                inlineRevealContent
+            }
+        }
+    }
 
-            Group {
-                if isCompactLayout {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(alignment: .top, spacing: 12) {
-                            ForEach(weekDays) { day in
-                                WeeklyPlanningDayColumn(
-                                    selectedDate: $selectedDate,
-                                    day: day,
-                                    calendar: calendar,
-                                    onSelectDay: onSelectDay
-                                )
-                                .frame(width: 180)
-                            }
-                        }
-                        .padding(.horizontal, 2)
-                    }
-                } else {
+    @ViewBuilder
+    private var headerContent: some View {
+        HStack(alignment: .top, spacing: 12) {
+            TimeSectionHeader(
+                displayMode == .inlineReveal ? "This Week" : "Week Overview",
+                subtitle: displayMode == .inlineReveal
+                    ? "\(selectedWeekText) • Tap a day to jump the editor"
+                    : "\(selectedWeekText) • Choose a day to edit below"
+            )
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 8) {
+                Button("Month") {
+                    onShowMonth()
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+                    onShiftWeek(-1)
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 13, weight: .bold))
+                        .frame(width: 32, height: 32)
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+                    onShiftWeek(1)
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .bold))
+                        .frame(width: 32, height: 32)
+                }
+                .buttonStyle(.bordered)
+            }
+            .tint(Theme.primaryPurple)
+        }
+    }
+
+    @ViewBuilder
+    private var overviewCardContent: some View {
+        Text("Week is an overview layer. Tap a day to return to the single Day editing canvas.")
+            .font(.system(size: 12, weight: .medium, design: .rounded))
+            .foregroundStyle(Theme.secondaryText)
+
+        Group {
+            if isCompactLayout {
+                ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 12) {
                         ForEach(weekDays) { day in
                             WeeklyPlanningDayColumn(
@@ -102,10 +115,38 @@ struct WeeklyPlanningView: View {
                                 calendar: calendar,
                                 onSelectDay: onSelectDay
                             )
-                            .frame(maxWidth: .infinity, alignment: .top)
+                            .frame(width: 180)
                         }
                     }
+                    .padding(.horizontal, 2)
                 }
+            } else {
+                HStack(alignment: .top, spacing: 12) {
+                    ForEach(weekDays) { day in
+                        WeeklyPlanningDayColumn(
+                            selectedDate: $selectedDate,
+                            day: day,
+                            calendar: calendar,
+                            onSelectDay: onSelectDay
+                        )
+                        .frame(maxWidth: .infinity, alignment: .top)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var inlineRevealContent: some View {
+        HStack(spacing: isCompactLayout ? 6 : 10) {
+            ForEach(weekDays) { day in
+                WeeklyPlanningInlineDayChip(
+                    selectedDate: $selectedDate,
+                    day: day,
+                    calendar: calendar,
+                    onSelectDay: onSelectDay
+                )
+                .frame(maxWidth: .infinity, alignment: .top)
             }
         }
     }
@@ -253,5 +294,173 @@ private struct WeeklyPlanningDayColumn: View {
             .padding(.vertical, 6)
             .background(tint.opacity(0.08))
             .clipShape(Capsule())
+    }
+}
+
+private struct WeeklyPlanningInlineDayChip: View {
+    @Binding var selectedDate: Date
+
+    let day: WeeklyPlanningDay
+    let calendar: Calendar
+    let onSelectDay: (Date) -> Void
+
+    private var isSelected: Bool {
+        calendar.isDate(day.date, inSameDayAs: selectedDate)
+    }
+
+    private var isToday: Bool {
+        calendar.isDateInToday(day.date)
+    }
+
+    private var workloadBlocks: [TimeBlock] {
+        Array(day.snapshot.blocks.prefix(4))
+    }
+
+    var body: some View {
+        Button {
+            selectedDate = day.date
+            onSelectDay(day.date)
+        } label: {
+            VStack(spacing: 8) {
+                HStack(spacing: 4) {
+                    Spacer(minLength: 0)
+
+                    if isToday {
+                        Circle()
+                            .fill(isSelected ? .white.opacity(0.92) : Theme.primaryPurple)
+                            .frame(width: 6, height: 6)
+                    }
+                }
+                .frame(height: 6)
+
+                Text(day.date.formatted(.dateTime.weekday(.narrow)))
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundStyle(isSelected ? .white.opacity(0.84) : Theme.secondaryText)
+                    .lineLimit(1)
+
+                Text(day.date.formatted(.dateTime.day()))
+                    .font(.system(size: 19, weight: .bold, design: .rounded))
+                    .foregroundStyle(isSelected ? .white : Theme.primaryText)
+
+                workloadIndicatorRow
+
+                Text(summaryLabel)
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundStyle(isSelected ? .white.opacity(0.86) : Theme.secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .frame(maxWidth: .infinity, minHeight: 108, alignment: .top)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 10)
+            .background(backgroundShape)
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(borderColor, lineWidth: isSelected ? 1.5 : 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var backgroundShape: some View {
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .fill(isSelected ? Theme.primaryPurple : Color.primary.opacity(0.045))
+    }
+
+    private var borderColor: Color {
+        isSelected ? Theme.primaryPurple.opacity(0.24) : Color.primary.opacity(0.08)
+    }
+
+    private var summaryLabel: String {
+        if day.snapshot.scheduledMinutes > 0 {
+            return durationLabel
+        }
+
+        if day.snapshot.plannedCount > 0 {
+            return "\(day.snapshot.plannedCount) blk"
+        }
+
+        if day.calendarSummary.hasEvents {
+            return "\(day.calendarSummary.totalCount) evt"
+        }
+
+        return "Open"
+    }
+
+    private var durationLabel: String {
+        if day.snapshot.scheduledMinutes.isMultiple(of: 60), day.snapshot.scheduledMinutes >= 60 {
+            return "\(day.snapshot.scheduledMinutes / 60)h"
+        }
+
+        return "\(day.snapshot.scheduledMinutes)m"
+    }
+
+    private var workloadIndicatorRow: some View {
+        HStack(spacing: 3) {
+            if workloadBlocks.isEmpty && !day.calendarSummary.hasEvents && day.conflictCount == 0 {
+                Capsule()
+                    .fill(isSelected ? .white.opacity(0.18) : Color.primary.opacity(0.08))
+                    .frame(height: 5)
+            } else {
+                ForEach(workloadBlocks, id: \.id) { block in
+                    Capsule()
+                        .fill(block.category.weekOverviewTint.opacity(isSelected ? 0.9 : 0.72))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 5)
+                }
+
+                if day.calendarSummary.hasEvents {
+                    Circle()
+                        .fill(isSelected ? .white.opacity(0.92) : .blue)
+                        .frame(width: 6, height: 6)
+                }
+
+                if day.conflictCount > 0 {
+                    Circle()
+                        .fill(isSelected ? Color(hex: "FDE68A") : .orange)
+                        .frame(width: 6, height: 6)
+                }
+            }
+        }
+        .frame(height: 8)
+    }
+
+    private var accessibilityLabel: String {
+        let weekday = day.date.formatted(.dateTime.weekday(.wide))
+        let date = day.date.formatted(.dateTime.month(.wide).day())
+        return "\(weekday) \(date), \(summaryLabel)"
+    }
+}
+
+extension TimeBlockCategory {
+    var weekOverviewSymbolName: String {
+        switch self {
+        case .focus:
+            "scope"
+        case .personal:
+            "figure.walk"
+        case .admin:
+            "tray.full.fill"
+        case .routine:
+            "repeat"
+        case .custom:
+            "square.grid.2x2.fill"
+        }
+    }
+
+    var weekOverviewTint: Color {
+        switch self {
+        case .focus:
+            Theme.primaryPurple
+        case .personal:
+            Color(hex: "F59E0B")
+        case .admin:
+            Color(hex: "0EA5E9")
+        case .routine:
+            Color(hex: "10B981")
+        case .custom:
+            Color(hex: "64748B")
+        }
     }
 }

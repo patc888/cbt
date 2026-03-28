@@ -120,6 +120,7 @@ final class AppPreferences {
     var selectedColorTheme: AppColorTheme? = AppColorTheme.purple
     var isImmersive: Bool? = true
     var hapticsEnabled: Bool? = true
+    var appLockEnabled: Bool? = false
     var createdAt: Date = Date.now
     var updatedAt: Date = Date.now
 
@@ -135,6 +136,7 @@ final class AppPreferences {
         selectedColorTheme: AppColorTheme? = .purple,
         isImmersive: Bool? = true,
         hapticsEnabled: Bool? = true,
+        appLockEnabled: Bool? = false,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -149,6 +151,7 @@ final class AppPreferences {
         self.selectedColorTheme = selectedColorTheme
         self.isImmersive = isImmersive
         self.hapticsEnabled = hapticsEnabled
+        self.appLockEnabled = appLockEnabled
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

@@ -112,6 +112,10 @@ struct SettingsView: View {
                     onUpdate: updatePreferences
                 )
 
+                TimeSecuritySettingsView(
+                    preferences: appPreferences
+                )
+
                 WhatIsTimeBlockingCard()
                     .padding(.top, 8)
 

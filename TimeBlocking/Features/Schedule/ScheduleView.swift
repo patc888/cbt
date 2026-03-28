@@ -23,9 +23,12 @@ struct ScheduleView: View {
     @State private var recentlyCompletedBlockIDs: Set<UUID> = []
     @State private var completedBuiltInTimelineItemsByDay: [Date: Set<DayTimelineBuiltInItemKind>] = [:]
     @State private var overviewLayer: ScheduleOverviewLayer = .collapsed
-    @State private var overviewDragOffset: CGFloat = 0
+    @State private var topPullDistance: CGFloat = 0
+
 
     private let dragCoordinateSpaceName = "schedule-drag-surface"
+    private let scrollCoordinateSpaceName = "schedule-scroll"
+    private let weeklyRevealThreshold: CGFloat = 56
 
     private var firstWeekday: Int {
         preferences.first?.firstWeekday.rawValue ?? Weekday.monday.rawValue
@@ -201,60 +204,16 @@ struct ScheduleView: View {
     }
 
     private var contentHorizontalPadding: CGFloat {
-        horizontalSizeClass == .compact ? 8 : 24
+        horizontalSizeClass == .compact ? 16 : 24
     }
 
-    private var selectedWeekDates: [Date] {
-        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: appEnvironment.appState.selectedDate) else {
-            return [calendar.startOfDay(for: appEnvironment.appState.selectedDate)]
-        }
-
-        let startDate = calendar.startOfDay(for: weekInterval.start)
-        return (0..<7).compactMap { offset in
-            calendar.date(byAdding: .day, value: offset, to: startDate).map(calendar.startOfDay(for:))
+    private var weekStripDates: [Date] {
+        let today = calendar.startOfDay(for: .now)
+        return (-180...180).compactMap { offset in
+            calendar.date(byAdding: .day, value: offset, to: today).map(calendar.startOfDay(for:))
         }
     }
 
-    private var selectedWeekDays: [WeeklyPlanningDay] {
-        selectedWeekDates.map { date in
-            let snapshot = appEnvironment.scheduleRepository.daySnapshot(
-                for: date,
-                from: blocks,
-                includeCompleted: showsCompletedBlocks,
-                calendar: calendar
-            )
-            let calendarEvents = appEnvironment.timeCalendarManager.events(
-                on: date,
-                calendar: calendar
-            )
-            let planningGuidance = SchedulePlanningGuidanceSnapshot.build(
-                for: date,
-                blocks: snapshot.blocks,
-                overlappingBlockIDs: appEnvironment.scheduleRepository.overlappingPlannedBlockIDs(
-                    on: date,
-                    from: blocks,
-                    calendar: calendar
-                ),
-                calendarEvents: calendarEvents,
-                dayStartHour: dayStartHour,
-                calendar: calendar
-            )
-
-            return WeeklyPlanningDay(
-                date: date,
-                snapshot: snapshot,
-                calendarSummary: appEnvironment.timeCalendarManager.summary(
-                    for: date,
-                    calendar: calendar
-                ),
-                conflictCount: planningGuidance.conflictingBlockCount
-            )
-        }
-    }
-
-    private var selectedWeekSummary: ScheduleWeekSummary {
-        ScheduleWeekSummary(days: selectedWeekDays, calendar: calendar)
-    }
 
     private var selectedMonthStart: Date {
         ScheduleMonthSupport.startOfMonth(for: appEnvironment.appState.selectedDate, calendar: calendar)
@@ -284,39 +243,35 @@ struct ScheduleView: View {
     }
 
     private var visibleGenerationDates: [Date] {
-        switch overviewLayer {
-        case .collapsed:
-            return [calendar.startOfDay(for: appEnvironment.appState.selectedDate)]
-        case .week:
-            return selectedWeekDates
-        case .month:
-            return selectedMonthDates
-        }
+        return [calendar.startOfDay(for: appEnvironment.appState.selectedDate)]
     }
+
 
     private var visibleCalendarInterval: DateInterval? {
-        switch overviewLayer {
-        case .collapsed:
-            let start = calendar.startOfDay(for: appEnvironment.appState.selectedDate)
-            let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
-            return DateInterval(start: start, end: end)
-        case .week:
-            return calendar.dateInterval(of: .weekOfYear, for: appEnvironment.appState.selectedDate)
-        case .month:
+        if overviewLayer == .month {
             return nil
         }
+
+        if weeklyRevealProgress > 0.01 {
+            return calendar.dateInterval(of: .weekOfYear, for: appEnvironment.appState.selectedDate)
+        }
+
+        let start = calendar.startOfDay(for: appEnvironment.appState.selectedDate)
+        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
+        return DateInterval(start: start, end: end)
     }
 
-    private var selectedWeekHasCalendarEvents: Bool {
-        selectedWeekDays.contains { $0.calendarSummary.hasEvents }
+    private var weeklyRevealProgress: CGFloat {
+        overviewLayer == .week ? 1 : 0
     }
+
+    private var isWeekExpanded: Bool {
+        overviewLayer == .week
+    }
+
 
     private var showsSelectedDayContent: Bool {
         !daySnapshot.blocks.isEmpty || !dayCalendarEvents.isEmpty
-    }
-
-    private var showsSelectedWeekContent: Bool {
-        selectedWeekSummary.hasBlocks || selectedWeekHasCalendarEvents
     }
 
     private var calendarLoadTrigger: String {
@@ -414,33 +369,57 @@ struct ScheduleView: View {
 
     private var contentView: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                dateHeader
-                selectedDayUtilityRow
-                moveRibbon
-                if shouldShowMoveHint {
-                    MoveHintCallout()
-                        .transition(.move(edge: .top).combined(with: .opacity))
+            VStack(alignment: .leading, spacing: 0) {
+                Spacer(minLength: 0)
+                
+                VStack(spacing: 16) {
+                    dateHeader
+                    
+                    VStack(spacing: 16) {
+                        selectedDayUtilityRow
+                        moveRibbon
+                        if shouldShowMoveHint {
+                            MoveHintCallout()
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+                        sharedScheduleMessages
+                        calendarIntegrationStatus
+                        calendarLoadingStatus
+                        selectedDayContent
+                    }
+                    .padding(.horizontal, contentHorizontalPadding)
                 }
-                sharedScheduleMessages
-                calendarIntegrationStatus
-                calendarLoadingStatus
-                selectedDayContent
-                overviewSection
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, contentHorizontalPadding)
-            .padding(.bottom, 100)
+            .padding(.bottom, 120)
+            .background(alignment: .top) {
+                GeometryReader { proxy in
+                    Color.clear
+                        .preference(
+                            key: ScheduleScrollOffsetPreferenceKey.self,
+                            value: proxy.frame(in: .named(scrollCoordinateSpaceName)).minY
+                        )
+                }
+            }
         }
+        .coordinateSpace(name: scrollCoordinateSpaceName)
+        .onPreferenceChange(ScheduleScrollOffsetPreferenceKey.self) { offset in
+            topPullDistance = max(offset, 0)
+        }
+
     }
 
     private var dateHeader: some View {
-        DateStripHeaderView(
+        TimeHeaderView(
             selectedDate: selectedDate,
-            firstWeekday: firstWeekday,
-            dateHasItems: blocksExist(on:)
+            weekStripDates: weekStripDates,
+            calendar: calendar,
+            horizontalPadding: contentHorizontalPadding,
+            dateHasItems: { date in
+                appEnvironment.scheduleRepository.hasBlocks(on: date, in: blocks, calendar: calendar) ||
+                appEnvironment.timeCalendarManager.summary(for: date, calendar: calendar).hasEvents
+            }
         )
-        .padding(.top, 64)
+        .padding(.top, 8)
     }
 
     @ViewBuilder
@@ -535,10 +514,6 @@ struct ScheduleView: View {
         }
 
         completedBuiltInTimelineItemsByDay[selectedDay] = completedItems
-    }
-
-    private func blocksExist(on date: Date) -> Bool {
-        appEnvironment.scheduleRepository.hasBlocks(on: date, in: blocks)
     }
 
     @ViewBuilder
@@ -638,111 +613,6 @@ struct ScheduleView: View {
                 presentNewBlockEditor(startingAt: startDate)
             }
         )
-    }
-
-    private var overviewSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            overviewHandleCard
-
-            if overviewLayer == .week || overviewLayer == .month {
-                weeklyOverviewCard
-            }
-
-            if overviewLayer == .month {
-                monthlyOverviewCard
-            }
-        }
-    }
-
-    private var overviewHandleCard: some View {
-        TimeCard {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .center, spacing: 12) {
-                    Capsule()
-                        .fill(Theme.primaryPurple.opacity(0.22))
-                        .frame(width: 44, height: 6)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(overviewLayer == .collapsed ? "Pull for week overview" : "Overview layers")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundStyle(Theme.primaryText)
-
-                        Text(overviewDescription)
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
-                            .foregroundStyle(Theme.secondaryText)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    Button(overviewToggleTitle) {
-                        toggleOverviewLayer()
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(Theme.primaryPurple)
-                }
-
-                HStack(spacing: 8) {
-                    overviewPill("Day = edit", systemImage: "timeline.selection")
-                    overviewPill("Week = overview", systemImage: "rectangle.grid.1x2")
-                    overviewPill("Month = navigate", systemImage: "calendar")
-                }
-            }
-            .offset(y: overviewDragOffset)
-            .gesture(overviewRevealGesture)
-        }
-    }
-
-    private var weeklyOverviewCard: some View {
-        TimeCard {
-            VStack(alignment: .leading, spacing: 16) {
-                sharedScheduleMessages
-                calendarIntegrationStatus
-                calendarLoadingStatus
-
-                if !showsSelectedWeekContent {
-                    EmptyStateView(
-                        title: "No Blocks This Week",
-                        systemImage: "calendar.badge.plus",
-                        message: hasTemplates
-                            ? "Select a different week, or edit a day and regenerate it to pull in matching routines."
-                            : "Add from the Day canvas, then choose one-off, Brain Dump, or Routines from the Add Block flow.",
-                        eyebrow: "Week Overview"
-                    ) {
-                        Button("Edit Selected Day") {
-                            collapseToDay()
-                        }
-                        .buttonStyle(.borderedProminent)
-
-                        if !hasTemplates {
-                            Button("Add Block") {
-                                collapseToDay()
-                                presentNewBlockEditor(for: appEnvironment.appState.selectedDate)
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                    }
-                    .padding(.vertical, 20)
-                } else {
-                    WeeklyPlanningView(
-                        selectedDate: selectedDate,
-                        weekDays: selectedWeekDays,
-                        calendar: calendar,
-                        onShiftWeek: { offset in
-                            shiftSelectedWeek(by: offset)
-                        },
-                        onSelectDay: { date in
-                            appEnvironment.appState.selectedDate = date
-                            collapseToDay()
-                        },
-                        onShowMonth: {
-                            withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
-                                overviewLayer = .month
-                            }
-                        }
-                    )
-                }
-            }
-        }
     }
 
     private var monthlyOverviewCard: some View {
@@ -1248,58 +1118,6 @@ struct ScheduleView: View {
         return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: dayStart) ?? date
     }
 
-    private var overviewDescription: String {
-        switch overviewLayer {
-        case .collapsed:
-            return "Drag down here or tap Week to reveal a higher-level view without leaving the Day editor."
-        case .week:
-            return "Week gives context and day selection. Month stays one level above it for lighter navigation."
-        case .month:
-            return "Month is open for navigation. Choosing a date returns you to the Day editing canvas."
-        }
-    }
-
-    private var overviewToggleTitle: String {
-        switch overviewLayer {
-        case .collapsed:
-            return "Week"
-        case .week, .month:
-            return "Hide"
-        }
-    }
-
-    private var overviewRevealGesture: some Gesture {
-        DragGesture(minimumDistance: 10)
-            .onChanged { value in
-                overviewDragOffset = max(0, value.translation.height)
-            }
-            .onEnded { value in
-                defer { overviewDragOffset = 0 }
-
-                guard value.translation.height > 36 else {
-                    return
-                }
-
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
-                    if overviewLayer == .collapsed {
-                        overviewLayer = .week
-                    } else if overviewLayer == .week {
-                        overviewLayer = .month
-                    }
-                }
-            }
-    }
-
-    private func overviewPill(_ title: String, systemImage: String) -> some View {
-        Label(title, systemImage: systemImage)
-            .font(.system(size: 11, weight: .bold, design: .rounded))
-            .foregroundStyle(Theme.primaryPurple)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(Theme.primaryPurple.opacity(0.1))
-            .clipShape(Capsule())
-    }
-
     private func utilityPill(title: String, detail: String, systemImage: String) -> some View {
         Label {
             Text("\(title): \(detail)")
@@ -1374,38 +1192,15 @@ private enum ScheduleOverviewLayer {
     case month
 }
 
-private struct ScheduleWeekSummary {
-    let plannedCount: Int
-    let completedCount: Int
-    let scheduledMinutes: Int
-    let busiestDayLabel: String
-    let weekLabel: String
-    let hasBlocks: Bool
+private struct ScheduleScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
 
-    init(days: [WeeklyPlanningDay], calendar: Calendar) {
-        plannedCount = days.reduce(0) { $0 + $1.snapshot.plannedCount }
-        completedCount = days.reduce(0) { $0 + $1.snapshot.completedCount }
-        scheduledMinutes = days.reduce(0) { $0 + $1.snapshot.scheduledMinutes }
-        hasBlocks = days.contains { !$0.snapshot.blocks.isEmpty }
-
-        if let busiestDay = days.max(by: { $0.snapshot.scheduledMinutes < $1.snapshot.scheduledMinutes }),
-           busiestDay.snapshot.scheduledMinutes > 0 {
-            busiestDayLabel = busiestDay.date.formatted(.dateTime.weekday(.abbreviated))
-        } else {
-            busiestDayLabel = "Rest"
-        }
-
-        if let firstDate = days.first?.date, let lastDate = days.last?.date {
-            if calendar.isDate(firstDate, equalTo: lastDate, toGranularity: .month) {
-                weekLabel = "\(firstDate.formatted(.dateTime.month(.abbreviated))) \(firstDate.formatted(.dateTime.day()))-\(lastDate.formatted(.dateTime.day()))"
-            } else {
-                weekLabel = "\(firstDate.formatted(.dateTime.month(.abbreviated).day()))-\(lastDate.formatted(.dateTime.month(.abbreviated).day()))"
-            }
-        } else {
-            weekLabel = "This Week"
-        }
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
+
+
 
 private enum ScheduleMoveErrorTarget {
     case drag
