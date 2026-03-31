@@ -153,7 +153,7 @@ struct DataResetOptionsView: View {
     }
     
     private func performLocalWipe() {
-        DataResetManager.shared.performLocalWipe()
+        DataResetManager.shared.requestLocalWipe()
         dismiss()
     }
     
@@ -161,10 +161,11 @@ struct DataResetOptionsView: View {
         isProcessing = true
         errorMessage = nil
         do {
-            try await DataResetManager.shared.performGlobalWipe()
+            try await DataResetManager.shared.deleteCloudData()
             await MainActor.run {
                 isProcessing = false
                 showingCloudSheet = false
+                DataResetManager.shared.requestLocalWipe()
                 dismiss()
             }
         } catch {

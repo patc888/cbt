@@ -3,12 +3,12 @@ import SwiftData
 
 @Model
 final class MoodEntry: SoftDeletableRecord {
-    var id: UUID
-    var createdAt: Date
-    var moodScore: Int
-    var emotionsStorage: String
+    var id: UUID = UUID()
+    var createdAt: Date = Date()
+    var moodScore: Int = 5
+    var emotionsStorage: String = ""
     var notes: String?
-    var isDeleted: Bool
+    var isDeleted: Bool = false
     
     // Check-in V2 fields
     var intensity: Int?

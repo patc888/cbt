@@ -1,11 +1,9 @@
 import SwiftUI
-import SwiftData
 
 struct SubscriptionSettingsView: View {
     @ObservedObject var subscriptionManager: SubscriptionManager
     @Binding var showingSubscription: Bool
     @Environment(ThemeManager.self) private var themeManager
-    @Query private var settings: [UserSettings]
     
     private var isPremium: Bool {
         subscriptionManager.isPremium
@@ -16,7 +14,7 @@ struct SubscriptionSettingsView: View {
             if !isPremium {
                 ProUpgradeCard(
                     title: "Full Access",
-                    subtitle: "Unlimited entries, predictions, advanced trends, and iCloud sync.",
+                    subtitle: "Unlimited entries, predictions, and advanced trends.",
                     ctaTitle: "Update to Full Access",
                     footnote: nil,
                     isFullColorTheme: themeManager.isImmersive,

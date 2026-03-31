@@ -6,6 +6,7 @@ import SwiftUI
 import OSLog
 
 extension Notification.Name {
+    static let requestDataReset = Notification.Name("requestDataReset")
     static let didResetData = Notification.Name("didResetData")
     static let exerciseFlowDidEnter = Notification.Name("exerciseFlowDidEnter")
     static let exerciseFlowDidExit = Notification.Name("exerciseFlowDidExit")
@@ -14,60 +15,70 @@ extension Notification.Name {
 @Observable
 final class DataResetManager {
     nonisolated static let shared = DataResetManager()
-    private nonisolated(unsafe) static let logger = Logger(
+    private nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "CBT",
         category: "DataReset"
     )
 
-    nonisolated var defaultStoreURL: URL {
+    nonisolated static var defaultStoreURL: URL {
         ModelConfiguration().url
     }
 
-    nonisolated var fallbackStoreURL: URL {
+    nonisolated static var fallbackStoreURL: URL {
         defaultStoreURL
             .deletingLastPathComponent()
             .appendingPathComponent("local-recovery.store")
     }
 
+    nonisolated var defaultStoreURL: URL {
+        Self.defaultStoreURL
+    }
+
+    nonisolated var fallbackStoreURL: URL {
+        Self.fallbackStoreURL
+    }
+
+    func requestLocalWipe() {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .requestDataReset, object: nil)
+        }
+    }
+
     // 1. Clears AppStorage/UserDefaults
     // 2. Cancels scheduled local notifications
-    // 3. Wipes SwiftData default.store directly without triggering CloudKit sync closures
-    func performLocalWipe() {
+    // 3. Wipes SwiftData stores after the query-backed UI has been torn down
+    func performLocalWipeHousekeeping() async {
         // 1. Clear UserDefaults & AppStorage
         if let bundleID = Bundle.main.bundleIdentifier {
             UserDefaults.standard.removePersistentDomain(forName: bundleID)
             UserDefaults.standard.synchronize()
         }
-        
+
         // 2. Clear notifications
-        Task {
-            await ReminderManager.shared.cancelAllCBTReminders()
-            UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-            UNUserNotificationCenter.current().removeAllDeliveredNotifications()
-        }
-        
+        await ReminderManager.shared.cancelAllCBTReminders()
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+
         do {
-            try removeStoreFiles(at: defaultStoreURL)
-            try removeStoreFiles(at: fallbackStoreURL)
+            try Self.removeStoreFiles(at: Self.defaultStoreURL)
+            try Self.removeStoreFiles(at: Self.fallbackStoreURL)
         } catch {
             logFileOperationFailure(error, action: "local-wipe")
         }
-        
-        // 4. Broadcast reset so UI recreates its context
-        DispatchQueue.main.async {
+
+        await MainActor.run {
             NotificationCenter.default.post(name: .didResetData, object: nil)
         }
     }
 
-    // Deletes CloudKit synced database and then wipes local data
-    func performGlobalWipe() async throws {
+    func deleteCloudData() async throws {
         let container = CKContainer.default()
         let database = container.privateCloudDatabase
-        
+
         // The automatic SwiftData CloudKit zone name. 
         // SwiftData typically uses "com.apple.coredata.cloudkit.zone" for the default synced store.
         let zoneID = CKRecordZone.ID(zoneName: "com.apple.coredata.cloudkit.zone", ownerName: CKCurrentUserDefaultName)
-        
+
         do {
             // This permanently deletes the zone and all records within it in the user's private database.
             try await database.deleteRecordZone(withID: zoneID)
@@ -81,16 +92,17 @@ final class DataResetManager {
         } catch {
             throw error
         }
-        
-        // Trigger local wipe after cloud wipe attempt
-        await MainActor.run {
-            self.performLocalWipe()
-        }
     }
 
     @discardableResult
     nonisolated func quarantineDefaultStoreForRepair() throws -> URL? {
-        let files = try relatedStoreFiles(for: defaultStoreURL)
+        try Self.quarantineDefaultStoreForRepair()
+    }
+
+    @discardableResult
+    nonisolated static func quarantineDefaultStoreForRepair() throws -> URL? {
+        let fileManager = FileManager()
+        let files = try relatedStoreFiles(for: defaultStoreURL, using: fileManager)
         guard !files.isEmpty else { return nil }
 
         let quarantineDirectory = defaultStoreURL
@@ -98,14 +110,14 @@ final class DataResetManager {
             .appendingPathComponent("StoreRecovery", isDirectory: true)
             .appendingPathComponent(Self.recoveryFolderName(from: Date()), isDirectory: true)
 
-        try FileManager.default.createDirectory(
+        try fileManager.createDirectory(
             at: quarantineDirectory,
             withIntermediateDirectories: true,
             attributes: nil
         )
 
         for file in files {
-            try FileManager.default.moveItem(
+            try fileManager.moveItem(
                 at: file,
                 to: quarantineDirectory.appendingPathComponent(file.lastPathComponent)
             )
@@ -116,25 +128,30 @@ final class DataResetManager {
     }
 
     nonisolated func removeFallbackStoreFiles() throws {
+        try Self.removeFallbackStoreFiles()
+    }
+
+    nonisolated static func removeFallbackStoreFiles() throws {
         try removeStoreFiles(at: fallbackStoreURL)
     }
 
-    private nonisolated func removeStoreFiles(at storeURL: URL) throws {
-        let files = try relatedStoreFiles(for: storeURL)
+    private nonisolated static func removeStoreFiles(at storeURL: URL) throws {
+        let fileManager = FileManager()
+        let files = try relatedStoreFiles(for: storeURL, using: fileManager)
         for file in files {
-            if FileManager.default.fileExists(atPath: file.path) {
-                try FileManager.default.removeItem(at: file)
+            if fileManager.fileExists(atPath: file.path) {
+                try fileManager.removeItem(at: file)
             }
         }
     }
 
-    private nonisolated func relatedStoreFiles(for storeURL: URL) throws -> [URL] {
+    private nonisolated static func relatedStoreFiles(for storeURL: URL, using fileManager: FileManager) throws -> [URL] {
         let storeDirectory = storeURL.deletingLastPathComponent()
-        guard FileManager.default.fileExists(atPath: storeDirectory.path) else {
+        guard fileManager.fileExists(atPath: storeDirectory.path) else {
             return []
         }
 
-        let files = try FileManager.default.contentsOfDirectory(
+        let files = try fileManager.contentsOfDirectory(
             at: storeDirectory,
             includingPropertiesForKeys: nil
         )

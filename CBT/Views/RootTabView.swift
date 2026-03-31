@@ -5,13 +5,16 @@ struct RootTabView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var selectedTab: FloatingTab = .home
+    @State private var activatedTabs: Set<FloatingTab> = [.home]
     @StateObject private var breathing = BreathingPresenter.shared
     @State private var isInExerciseFlow = false
     var body: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $selectedTab) {
-                NavigationStack {
-                    HomeView(selectedTab: $selectedTab)
+                tabContent(for: .home) {
+                    NavigationStack {
+                        HomeView(selectedTab: $selectedTab)
+                    }
                 }
                 .tag(FloatingTab.home)
                 #if os(iOS) && !targetEnvironment(macCatalyst)
@@ -20,8 +23,10 @@ struct RootTabView: View {
                 .toolbar(.hidden, for: .tabBar)
                 #endif
 
-                NavigationStack {
-                    InsightsView()
+                tabContent(for: .insights) {
+                    NavigationStack {
+                        InsightsView()
+                    }
                 }
                 .tag(FloatingTab.insights)
                 #if os(iOS) && !targetEnvironment(macCatalyst)
@@ -30,8 +35,10 @@ struct RootTabView: View {
                 .toolbar(.hidden, for: .tabBar)
                 #endif
 
-                NavigationStack {
-                    ExercisesView()
+                tabContent(for: .exercises) {
+                    NavigationStack {
+                        ExercisesView()
+                    }
                 }
                 .tag(FloatingTab.exercises)
                 #if os(iOS) && !targetEnvironment(macCatalyst)
@@ -40,28 +47,30 @@ struct RootTabView: View {
                 .toolbar(.hidden, for: .tabBar)
                 #endif
 
-                NavigationStack {
-                    JournalView()
-                        .navigationDestination(for: TimelineRoute.self) { route in
-                            switch route {
-                            case .journal(let entry):
-                                JournalEntryDetailView(entry: entry)
-                            case .mood(let entry):
-                                MoodDetailView(entry: entry)
-                            case .thought(let record):
-                                ThoughtRecordDetailView(record: record)
-                            case .exercise(let exerciseID):
-                                if let exercise = ExerciseLibrary.shared.exercises.first(where: { $0.id == exerciseID }) {
-                                    ExerciseDetailView(exercise: exercise)
-                                } else {
-                                    ContentUnavailableView(
-                                        "Exercise Not Found",
-                                        systemImage: "exclamationmark.triangle",
-                                        description: Text("This exercise is no longer available.")
-                                    )
+                tabContent(for: .journal) {
+                    NavigationStack {
+                        JournalView()
+                            .navigationDestination(for: TimelineRoute.self) { route in
+                                switch route {
+                                case .journal(let entry):
+                                    JournalEntryDetailView(entry: entry)
+                                case .mood(let entry):
+                                    MoodDetailView(entry: entry)
+                                case .thought(let record):
+                                    ThoughtRecordDetailView(record: record)
+                                case .exercise(let exerciseID):
+                                    if let exercise = ExerciseLibrary.shared.exercises.first(where: { $0.id == exerciseID }) {
+                                        ExerciseDetailView(exercise: exercise)
+                                    } else {
+                                        ContentUnavailableView(
+                                            "Exercise Not Found",
+                                            systemImage: "exclamationmark.triangle",
+                                            description: Text("This exercise is no longer available.")
+                                        )
+                                    }
                                 }
                             }
-                        }
+                    }
                 }
                 .tag(FloatingTab.journal)
                 #if os(iOS) && !targetEnvironment(macCatalyst)
@@ -70,8 +79,10 @@ struct RootTabView: View {
                 .toolbar(.hidden, for: .tabBar)
                 #endif
 
-                NavigationStack {
-                    SettingsView(showsDismissControl: false)
+                tabContent(for: .settings) {
+                    NavigationStack {
+                        SettingsView(showsDismissControl: false)
+                    }
                 }
                 .tag(FloatingTab.settings)
                 #if os(iOS) && !targetEnvironment(macCatalyst)
@@ -91,6 +102,9 @@ struct RootTabView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .exerciseFlowDidExit)) { _ in
             isInExerciseFlow = false
+        }
+        .onChange(of: selectedTab) { _, newTab in
+            activatedTabs.insert(newTab)
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear {
@@ -142,5 +156,18 @@ struct RootTabView: View {
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
 #endif
+    }
+
+    @ViewBuilder
+    private func tabContent<Content: View>(
+        for tab: FloatingTab,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        if activatedTabs.contains(tab) {
+            content()
+        } else {
+            Color.clear
+                .accessibilityHidden(true)
+        }
     }
 }

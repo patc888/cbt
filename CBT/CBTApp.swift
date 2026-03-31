@@ -1,37 +1,40 @@
 import OSLog
+import Foundation
 import SwiftData
 import SwiftUI
 
 @main
 struct CBTApp: App {
-    private enum LaunchState {
+    private nonisolated static let bootstrapTimeoutSeconds: TimeInterval = 12
+
+    private enum LaunchState: Sendable {
         case loading
         case ready(ModelContainer)
         case repair
     }
 
-    private struct LoadingRequest {
+    private struct LoadingRequest: Sendable {
         let id = UUID()
         let reason: String
     }
 
-    fileprivate enum BootstrapStage: String {
-        case primary = "primary"
-        case primaryRecovery = "primary-recovery"
+    fileprivate enum BootstrapStage: String, Sendable {
+        case primary = "primary-local"
+        case primaryRecovery = "primary-local-recovery"
         case fallback = "fallback-local"
+        case inMemory = "fallback-memory"
     }
 
-    fileprivate enum BootstrapError: Error {
+    fileprivate enum BootstrapError: Error, Sendable {
         case debugInjectedFailure(String)
     }
 
-    private nonisolated(unsafe) static let logger = Logger(
+    private nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "CBT",
         category: "AppBootstrap"
     )
 
-    @MainActor
-    private static let schema = Schema([
+    private nonisolated static let schema = Schema([
         Item.self,
         UserSettings.self,
         MoodEntry.self,
@@ -48,6 +51,7 @@ struct CBTApp: App {
     @StateObject private var securityManager = SecurityManager.shared
     @State private var hasCheckedLockOnLaunch = false
     @State private var lastStartedBootstrapID: UUID?
+    @State private var isResetInProgress = false
 
     init() {
         let initialRequest = LoadingRequest(reason: "app launch")
@@ -61,30 +65,16 @@ struct CBTApp: App {
                 .environment(themeManager)
                 .preferredColorScheme(themeManager.appTheme.colorScheme)
                 .onChange(of: scenePhase) { _, newPhase in
-                    if newPhase == .active, !hasCheckedLockOnLaunch, case .ready(let container) = launchState {
-                        checkLockState(container: container)
-                        hasCheckedLockOnLaunch = true
-                    }
+                    scheduleLockCheckIfNeeded(for: newPhase)
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .didResetData)) { _ in
                     themeManager = ThemeManager()
                     securityManager.unlock()
                     scheduleBootstrap(reason: "local reset")
                 }
-        }
-    }
-
-    @MainActor
-    private func checkLockState(container: ModelContainer) {
-        let descriptor = FetchDescriptor<UserSettings>()
-        do {
-            let settings = try container.mainContext.fetch(descriptor).first
-            if settings?.appLockEnabled == true {
-                securityManager.lock()
-                securityManager.authenticate()
-            }
-        } catch {
-            Self.logger.error("Failed to fetch settings for lock check: \(error.localizedDescription, privacy: .public)")
+                .onReceive(NotificationCenter.default.publisher(for: .requestDataReset)) { _ in
+                    beginLocalResetFlow()
+                }
         }
     }
 
@@ -94,27 +84,19 @@ struct CBTApp: App {
         case .loading:
             DataRepairLoadingView()
                 .task(id: loadingRequest.id) {
+                    guard !isResetInProgress else { return }
                     await bootstrapIntoCurrentState(for: loadingRequest)
                 }
         case .ready(let container):
-            ZStack {
-                ContentView()
-                    .id(resetID)
-                    .modelContainer(container)
-                
-                if securityManager.isLocked {
-                    LockView()
-                        .transition(.opacity)
-                        .zIndex(100)
-                }
-            }
+            ReadyRootView(container: container, resetID: resetID)
+                .environmentObject(securityManager)
         case .repair:
             DataRepairView(
                 onRetry: {
                     scheduleBootstrap(reason: "repair retry")
                 },
                 onResetThisDevice: {
-                    DataResetManager.shared.performLocalWipe()
+                    DataResetManager.shared.requestLocalWipe()
                 }
             )
         }
@@ -123,8 +105,42 @@ struct CBTApp: App {
     @MainActor
     private func scheduleBootstrap(reason: String) {
         hasCheckedLockOnLaunch = false
+        isResetInProgress = false
         launchState = .loading
         loadingRequest = LoadingRequest(reason: reason)
+    }
+
+    @MainActor
+    private func scheduleLockCheckIfNeeded(for newPhase: ScenePhase) {
+        guard newPhase == .active else { return }
+        guard !hasCheckedLockOnLaunch else { return }
+        guard case .ready(let container) = launchState else { return }
+
+        hasCheckedLockOnLaunch = true
+
+        Task {
+            let isLockEnabled = await Self.loadAppLockEnabled(from: container)
+            guard isLockEnabled else { return }
+
+            await MainActor.run {
+                securityManager.lock()
+                securityManager.authenticate()
+            }
+        }
+    }
+
+    @MainActor
+    private func beginLocalResetFlow() {
+        hasCheckedLockOnLaunch = false
+        isResetInProgress = true
+        themeManager = ThemeManager()
+        securityManager.unlock()
+        launchState = .loading
+
+        Task {
+            await Task.yield()
+            await DataResetManager.shared.performLocalWipeHousekeeping()
+        }
     }
 
     @MainActor
@@ -134,6 +150,7 @@ struct CBTApp: App {
 
         let nextState = await Self.bootstrapAsync(reason: request.reason)
 
+        guard !Task.isCancelled else { return }
         guard loadingRequest.id == request.id else { return }
         if case .ready = nextState {
             resetID = UUID()
@@ -141,15 +158,40 @@ struct CBTApp: App {
         launchState = nextState
     }
 
-    @MainActor
-    private static func bootstrapAsync(reason: String) async -> LaunchState {
-        await Task {
-            Self.bootstrap(reason: reason)
+    private nonisolated static func bootstrapAsync(reason: String) async -> LaunchState {
+        await Task.detached(priority: .userInitiated) {
+            Self.bootstrapWithWatchdog(reason: reason)
         }.value
     }
 
-    @MainActor
-    private static func bootstrap(reason: String) -> LaunchState {
+    private nonisolated static func bootstrapWithWatchdog(reason: String) -> LaunchState {
+        let group = DispatchGroup()
+        let lock = NSLock()
+        var result: LaunchState?
+
+        group.enter()
+        DispatchQueue.global(qos: .userInitiated).async {
+            let state = Self.bootstrap(reason: reason)
+            lock.lock()
+            result = state
+            lock.unlock()
+            group.leave()
+        }
+
+        let timeout = DispatchTime.now() + Self.bootstrapTimeoutSeconds
+        guard group.wait(timeout: timeout) == .success else {
+            logger.error(
+                "Model bootstrap timed out after \(Self.bootstrapTimeoutSeconds, privacy: .public)s reason=\(reason, privacy: .public)"
+            )
+            return .repair
+        }
+
+        lock.lock()
+        defer { lock.unlock() }
+        return result ?? .repair
+    }
+
+    private nonisolated static func bootstrap(reason: String) -> LaunchState {
         do {
             return .ready(try makePrimaryContainer(stage: .primary))
         } catch {
@@ -157,7 +199,7 @@ struct CBTApp: App {
         }
 
         do {
-            if try DataResetManager.shared.quarantineDefaultStoreForRepair() != nil {
+            if try DataResetManager.quarantineDefaultStoreForRepair() != nil {
                 logger.notice("Quarantined the default store before retrying model bootstrap.")
             }
         } catch {
@@ -171,7 +213,7 @@ struct CBTApp: App {
         }
 
         do {
-            try DataResetManager.shared.removeFallbackStoreFiles()
+            try DataResetManager.removeFallbackStoreFiles()
         } catch {
             logHousekeepingFailure(error, action: "clear-fallback-store")
         }
@@ -181,31 +223,65 @@ struct CBTApp: App {
             return .ready(try makeFallbackContainer())
         } catch {
             logBootstrapFailure(error, stage: .fallback, reason: reason)
+        }
+
+        do {
+            logger.notice("Launching with an in-memory recovery store.")
+            return .ready(try makeInMemoryContainer())
+        } catch {
+            logBootstrapFailure(error, stage: .inMemory, reason: reason)
             return .repair
         }
     }
 
-    @MainActor
-    private static func makePrimaryContainer(stage: BootstrapStage) throws -> ModelContainer {
+    private nonisolated static func loadAppLockEnabled(from container: ModelContainer) async -> Bool {
+        await Task.detached(priority: .utility) {
+            let context = ModelContext(container)
+            let descriptor = FetchDescriptor<UserSettings>()
+
+            do {
+                return try context.fetch(descriptor).first?.appLockEnabled == true
+            } catch {
+                Self.logger.error("Failed to fetch settings for lock check: \(error.localizedDescription, privacy: .public)")
+                return false
+            }
+        }.value
+    }
+
+    private nonisolated static func makePrimaryContainer(stage: BootstrapStage) throws -> ModelContainer {
         try DebugBootstrapControl.injectFailureIfNeeded(for: stage)
 
+        // TODO: Reintroduce a CloudKit-backed launch path only after the
+        // startup bootstrap has been proven stable in App Review conditions.
         let configuration = ModelConfiguration(
+            "PrimaryLocalStore",
             schema: schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic
+            url: DataResetManager.defaultStoreURL,
+            cloudKitDatabase: .none
         )
 
         return try ModelContainer(for: schema, configurations: [configuration])
     }
 
-    @MainActor
-    private static func makeFallbackContainer() throws -> ModelContainer {
+    private nonisolated static func makeFallbackContainer() throws -> ModelContainer {
         try DebugBootstrapControl.injectFailureIfNeeded(for: .fallback)
 
         let configuration = ModelConfiguration(
             "LocalRecovery",
             schema: schema,
-            url: DataResetManager.shared.fallbackStoreURL,
+            url: DataResetManager.fallbackStoreURL,
+            cloudKitDatabase: .none
+        )
+
+        return try ModelContainer(for: schema, configurations: [configuration])
+    }
+
+    private nonisolated static func makeInMemoryContainer() throws -> ModelContainer {
+        try DebugBootstrapControl.injectFailureIfNeeded(for: .inMemory)
+
+        let configuration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: true,
             cloudKitDatabase: .none
         )
 
@@ -231,25 +307,57 @@ struct CBTApp: App {
     }
 }
 
+private struct ReadyRootView: View {
+    let container: ModelContainer
+    let resetID: UUID
+
+    @StateObject private var securityManager = SecurityManager.shared
+
+    var body: some View {
+        ZStack {
+            ContentView()
+                .id(resetID)
+
+            if securityManager.isLocked {
+                LockView()
+                    .transition(.opacity)
+                    .zIndex(100)
+            }
+        }
+        .modelContainer(container)
+    }
+}
+
 private enum DebugBootstrapControl {
     #if DEBUG
-    private static let launchArguments = ProcessInfo.processInfo.arguments
-    private static let failAllStores = launchArguments.contains("-debug-modelcontainer-fail-all")
-    private static var remainingPrimaryFailures = launchArguments.contains("-debug-modelcontainer-fail-primary-once") ? 1 : 0
+    private nonisolated static let launchArguments = ProcessInfo.processInfo.arguments
+    private nonisolated static let failAllStores = launchArguments.contains("-debug-modelcontainer-fail-all")
+    private nonisolated static let remainingPrimaryFailuresLock = NSLock()
+    private nonisolated(unsafe) static var remainingPrimaryFailures = launchArguments.contains("-debug-modelcontainer-fail-primary-once") ? 1 : 0
     #endif
 
-    static func injectFailureIfNeeded(for stage: CBTApp.BootstrapStage) throws {
+    nonisolated static func injectFailureIfNeeded(for stage: CBTApp.BootstrapStage) throws {
         #if DEBUG
         if failAllStores {
             throw CBTApp.BootstrapError.debugInjectedFailure(stage.rawValue)
         }
 
-        if stage == .primary, remainingPrimaryFailures > 0 {
-            remainingPrimaryFailures -= 1
+        if stage == .primary, consumePrimaryFailureIfNeeded() {
             throw CBTApp.BootstrapError.debugInjectedFailure(stage.rawValue)
         }
         #endif
     }
+
+    #if DEBUG
+    private nonisolated static func consumePrimaryFailureIfNeeded() -> Bool {
+        remainingPrimaryFailuresLock.lock()
+        defer { remainingPrimaryFailuresLock.unlock() }
+
+        guard remainingPrimaryFailures > 0 else { return false }
+        remainingPrimaryFailures -= 1
+        return true
+    }
+    #endif
 }
 
 private struct DataRepairLoadingView: View {

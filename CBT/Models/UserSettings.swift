@@ -4,14 +4,14 @@ import SwiftData
 /// App settings model for CBT
 @Model
 final class UserSettings {
-    var uuid: UUID?
+    var uuid: UUID? = UUID()
     
     /// Appearance Settings
-    var hapticsEnabled: Bool?
+    var hapticsEnabled: Bool? = true
     var currentIcon: String?
     
     /// Security Settings
-    var appLockEnabled: Bool?
+    var appLockEnabled: Bool? = false
     
     init(
         hapticsEnabled: Bool = true,

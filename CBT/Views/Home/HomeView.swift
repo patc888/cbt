@@ -103,6 +103,7 @@ struct HomeView: View {
                         } action: {
                             attemptingNewMoodEntry = true
                         }
+                        .accessibilityIdentifier("home-plan-mood-check-in")
 
                         PlanCard(
                             title: "Thought Record",
@@ -149,16 +150,18 @@ struct HomeView: View {
                 .responsiveMaxWidth()
                 .frame(maxWidth: .infinity)
             }
+            .accessibilityIdentifier("home-scroll-view")
             .safeAreaInset(edge: .bottom) {
                 Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("home-screen")
         .navigationTitle("")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
         #endif
-        .focusable()
         .onKeyPress(".") {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 toggleManualItems()

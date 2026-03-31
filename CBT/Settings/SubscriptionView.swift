@@ -1,6 +1,5 @@
 import SwiftUI
 import StoreKit
-import SwiftData
 
 #if canImport(AppKit)
 import AppKit
@@ -17,8 +16,6 @@ struct SubscriptionView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(ThemeManager.self) private var themeManager
-    @Environment(\.modelContext) private var modelContext
-    @Query private var settings: [UserSettings]
     @StateObject private var subscriptionManager = SubscriptionManager.shared
     
     // Configuration

@@ -1,7 +1,13 @@
+import OSLog
 import SwiftUI
 import SwiftData
 
 struct SettingsView: View {
+    private static let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "CBT",
+        category: "Settings"
+    )
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
@@ -43,14 +49,18 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
 #endif
-
-        .task {
+        .onAppear {
             subscriptionManager.startListeningIfNeeded()
             
             if settings.isEmpty {
                 let newSettings = UserSettings()
                 modelContext.insert(newSettings)
-                try? modelContext.save()
+                do {
+                    try modelContext.save()
+                } catch {
+                    Self.logger.error("Failed to create default settings: \(error.localizedDescription, privacy: .public)")
+                    modelContext.delete(newSettings)
+                }
             }
             
             let enabled = userSettings?.hapticsEnabled ?? true
@@ -198,4 +208,3 @@ struct PrivacyFooter: View {
         .padding(.bottom, 8)
     }
 }
-

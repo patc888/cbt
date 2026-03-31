@@ -3,11 +3,11 @@ import SwiftData
 
 @Model
 final class ExerciseCompletion: SoftDeletableRecord {
-    var id: UUID
-    var createdAt: Date
-    var exerciseID: String
+    var id: UUID = UUID()
+    var createdAt: Date = Date()
+    var exerciseID: String = ""
     var notes: String?
-    var isDeleted: Bool
+    var isDeleted: Bool = false
 
     init(
         id: UUID = UUID(),

@@ -3,14 +3,14 @@ import SwiftData
 
 @Model
 final class JournalEntry: SoftDeletableRecord {
-    var id: UUID
-    var createdAt: Date
-    var title: String
-    var body: String
+    var id: UUID = UUID()
+    var createdAt: Date = Date()
+    var title: String = ""
+    var body: String = ""
     var sourceKind: String?
     var sourceID: String?
     var durationSeconds: Int?
-    var isDeleted: Bool
+    var isDeleted: Bool = false
 
     init(
         id: UUID = UUID(),

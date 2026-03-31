@@ -3,18 +3,18 @@ import SwiftData
 
 @Model
 final class ThoughtRecord: SoftDeletableRecord {
-    var id: UUID
-    var createdAt: Date
-    var situation: String
-    var automaticThought: String
-    var emotionsStorage: String
-    var distortionsStorage: String
-    var evidenceFor: String
-    var evidenceAgainst: String
-    var balancedThought: String
-    var intensityBefore: Int
-    var intensityAfter: Int
-    var isDeleted: Bool
+    var id: UUID = UUID()
+    var createdAt: Date = Date()
+    var situation: String = ""
+    var automaticThought: String = ""
+    var emotionsStorage: String = ""
+    var distortionsStorage: String = ""
+    var evidenceFor: String = ""
+    var evidenceAgainst: String = ""
+    var balancedThought: String = ""
+    var intensityBefore: Int = 0
+    var intensityAfter: Int = 0
+    var isDeleted: Bool = false
 
     var emotions: [String] {
         get { StringArrayStorage.decode(emotionsStorage) }

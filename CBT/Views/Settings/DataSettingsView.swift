@@ -48,9 +48,14 @@ struct DataSettingsSection: View {
 
     var body: some View {
         SettingsSection(title: "Data") {
-            SettingsRow(icon: "icloud.fill", iconColor: themeManager.primaryColor, title: "iCloud Sync", subtitle: "Sync between iPhone, iPad, and Mac") {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(Theme.successGreen)
+            SettingsRow(
+                icon: "icloud.slash.fill",
+                iconColor: themeManager.primaryColor,
+                title: "iCloud Sync",
+                subtitle: "Temporarily unavailable while launch stability recovery is in place"
+            ) {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .foregroundColor(themeManager.primaryColor)
             }
             
             Divider()
@@ -384,6 +389,5 @@ struct AdvancedDataSettingsView: View {
         }
     }
 }
-
 
 
