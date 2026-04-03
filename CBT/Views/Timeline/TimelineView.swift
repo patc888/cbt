@@ -2,196 +2,35 @@ import SwiftUI
 import SwiftData
 
 struct TimelineView: View {
-    @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var moodEntries: [MoodEntry]
-    @Query(filter: #Predicate<ThoughtRecord> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
-    @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
-    @Query(filter: #Predicate<JournalEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var journalEntries: [JournalEntry]
-
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
     @State private var showingAddMood = false
     @State private var showingAddThought = false
     @State private var attemptingAddMood = false
     @State private var attemptingAddThought = false
-
-    private var groupedItems: [(key: Date, value: [TimelineItem])] {
-        var items: [TimelineItem] = []
-
-        for mood in moodEntries {
-            items.append(TimelineItem(
-                id: "mood-\(mood.id)",
-                kind: .mood,
-                date: mood.createdAt,
-                title: "Mood Check-in",
-                subtitle: mood.notes?.isEmpty == false ? mood.notes : "Score: \(mood.moodScore)/10",
-                chips: mood.emotions,
-                route: .mood(mood)
-            ))
-        }
-
-        for thought in thoughtRecords {
-            items.append(TimelineItem(
-                id: "thought-\(thought.id)",
-                kind: .thought,
-                date: thought.createdAt,
-                title: "Thought Record",
-                subtitle: thought.situation.isEmpty ? "No situation recorded" : thought.situation,
-                chips: thought.emotions + thought.distortions,
-                route: .thought(thought)
-            ))
-        }
-
-        for completion in exerciseCompletions {
-            let exercise = ExerciseLibrary.shared.exercises.first(where: { $0.id == completion.exerciseID })
-            let title = exercise?.title ?? "Exercise"
-            let route: TimelineRoute = .exercise(exerciseID: completion.exerciseID)
-
-            items.append(TimelineItem(
-                id: "ex-\(completion.id)",
-                kind: .exercise,
-                date: completion.createdAt,
-                title: title,
-                subtitle: completion.notes?.isEmpty == false ? completion.notes : nil,
-                chips: [],
-                route: route
-            ))
-        }
-
-        for journal in journalEntries {
-            let durationLabel: String? = {
-                guard let secs = journal.durationSeconds, secs > 0 else { return nil }
-                if secs < 60 { return "\(secs)s" }
-                let m = secs / 60
-                let r = secs % 60
-                return r > 0 ? "\(m)m \(r)s" : "\(m)m"
-            }()
-            
-            let subtitle: String = {
-                var parts: [String] = []
-                if let kind = journal.sourceKind {
-                    parts.append(SessionSourceKind(rawValue: kind)?.displayName ?? kind)
-                }
-                if let d = durationLabel {
-                    parts.append(d)
-                }
-                return parts.isEmpty ? nil : parts.joined(separator: " • ")
-            }() ?? ""
-
-            items.append(TimelineItem(
-                id: "journal-\(journal.id)",
-                kind: .journal,
-                date: journal.createdAt,
-                title: journal.title,
-                subtitle: subtitle.isEmpty ? nil : subtitle,
-                chips: [],
-                route: .journal(journal)
-            ))
-        }
-
-        items.sort { $0.date > $1.date }
-
-        let grouped = Dictionary(grouping: items) { Calendar.current.startOfDay(for: $0.date) }
-        return grouped.sorted { $0.key > $1.key }
-    }
+    @State private var isDashboardReady = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             ThemedBackground().ignoresSafeArea()
-
-            if groupedItems.isEmpty {
-                VStack(spacing: 20) {
+            
+            
+            if isDashboardReady {
+                TimelineDashboardContent(
+                    showingAddMood: $showingAddMood,
+                    showingAddThought: $showingAddThought,
+                    attemptingAddMood: $attemptingAddMood,
+                    attemptingAddThought: $attemptingAddThought
+                )
+            } else {
+                VStack {
                     TopHeadlineView(title: "Timeline")
                         .padding(.horizontal)
-
                     Spacer()
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 60))
-                        .foregroundStyle(Theme.secondaryText)
-
-                    Text("No Activity Yet")
-                        .font(.system(.title2, design: .rounded).weight(.bold))
-                        .foregroundStyle(Theme.primaryText)
-
-                    Text("Your timeline will show your mood check-ins, thought records, and completed exercises.")
-                        .font(.system(.subheadline, design: .rounded))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Theme.secondaryText)
-                        .padding(.horizontal)
-
-                    VStack(spacing: 12) {
-                        Button {
-                            HapticManager.shared.lightImpact()
-                            attemptingAddMood = true
-                        } label: {
-                            Label("Log Mood", systemImage: "face.smiling")
-                                .font(.system(.subheadline, design: .rounded).weight(.bold))
-                                .frame(maxWidth: 220)
-                                .padding(.vertical, 10)
-                                .foregroundStyle(.white)
-                                .background(themeManager.selectedColor)
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-
-                        Button {
-                            HapticManager.shared.lightImpact()
-                            attemptingAddThought = true
-                        } label: {
-                            Label("New Thought Record", systemImage: "brain")
-                                .font(.system(.subheadline, design: .rounded).weight(.bold))
-                                .frame(maxWidth: 220)
-                                .padding(.vertical, 10)
-                                .foregroundStyle(.white)
-                                .background(themeManager.secondaryColor)
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.top, 16)
-
-                    Spacer()
-                }
-                .responsiveMaxWidth()
-                .frame(maxWidth: .infinity)
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
-                        TopHeadlineView(title: "Timeline")
-
-                        ForEach(groupedItems, id: \.key) { date, items in
-                            Section {
-                                ForEach(items) { item in
-                                    if let route = item.route {
-                                        NavigationLink(value: route) {
-                                            TimelineRow(item: item)
-                                        }
-                                        .buttonStyle(.plain)
-                                    } else {
-                                        TimelineRow(item: item)
-                                    }
-                                }
-                            } header: {
-                                HStack {
-                                    Text(formatHeaderDate(date))
-                                        .font(.system(.caption, design: .rounded).weight(.bold))
-                                        .foregroundColor(Theme.secondaryText)
-                                    Spacer()
-                                }
-                                .padding(.vertical, 8)
-                                .padding(.horizontal, 4)
-                                .background(ThemedBackground())
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                    .responsiveMaxWidth()
-                    .frame(maxWidth: .infinity)
-                }
-                .safeAreaInset(edge: .bottom) {
-                    Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
                 }
             }
         }
+
+// moved to TimelineDashboardContent
         .navigationTitle("")
         #if os(iOS) && !targetEnvironment(macCatalyst)
         .navigationBarTitleDisplayMode(.inline)
@@ -200,10 +39,18 @@ struct TimelineView: View {
         .safeAreaInset(edge: .top) {
             HStack {
                 Spacer()
-                quickActionButton(title: "+ Mood", color: themeManager.selectedColor) {
+                ListActionPillButton(
+                    title: "+ Mood",
+                    color: themeManager.selectedColor,
+                    font: .system(.caption, design: .rounded).weight(.bold)
+                ) {
                     attemptingAddMood = true
                 }
-                quickActionButton(title: "+ Thought", color: themeManager.secondaryColor) {
+                ListActionPillButton(
+                    title: "+ Thought",
+                    color: themeManager.secondaryColor,
+                    font: .system(.caption, design: .rounded).weight(.bold)
+                ) {
                     attemptingAddThought = true
                 }
             }
@@ -229,7 +76,7 @@ struct TimelineView: View {
             case .thought(let record):
                 ThoughtRecordDetailView(record: record)
             case .exercise(let exerciseID):
-                if let exercise = ExerciseLibrary.shared.exercises.first(where: { $0.id == exerciseID }) {
+                if let exercise = ExerciseLibrary.shared.exercise(withID: exerciseID) {
                     ExerciseDetailView(exercise: exercise)
                 } else {
                     ContentUnavailableView(
@@ -242,23 +89,139 @@ struct TimelineView: View {
                 JournalEntryDetailView(entry: entry)
             }
         }
+        .task {
+            guard !isDashboardReady else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            isDashboardReady = true
+        }
+    }
+}
+
+// MARK: - Subviews
+
+struct TimelineDashboardContent: View {
+    @Binding var showingAddMood: Bool
+    @Binding var showingAddThought: Bool
+    @Binding var attemptingAddMood: Bool
+    @Binding var attemptingAddThought: Bool
+
+    @Environment(ThemeManager.self) private var themeManager
+    @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var moodEntries: [MoodEntry]
+    @Query(filter: #Predicate<ThoughtRecord> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
+    @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
+    @Query(filter: #Predicate<JournalEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var journalEntries: [JournalEntry]
+
+    private var groupedItems: [(key: Date, value: [TimelineItem])] {
+        var items: [TimelineItem] = []
+
+        for mood in moodEntries { items.append(.mood(mood)) }
+        for thought in thoughtRecords { items.append(.thought(thought)) }
+        for completion in exerciseCompletions { items.append(.exercise(completion)) }
+        for journal in journalEntries { items.append(.journal(journal)) }
+
+        items.sort { $0.date > $1.date }
+
+        let grouped = Dictionary(grouping: items) { Calendar.current.startOfDay(for: $0.date) }
+        return grouped.sorted { $0.key > $1.key }
     }
 
-    private func quickActionButton(title: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button {
-            HapticManager.shared.lightImpact()
-            action()
-        } label: {
-            Text(title)
-                .font(.system(.caption, design: .rounded).weight(.bold))
-                .foregroundColor(color)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Theme.cardBackground)
-                .clipShape(Capsule())
-                .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.05 : 0), radius: colorScheme == .dark ? 2 : 0)
+    var body: some View {
+        if groupedItems.isEmpty {
+            VStack(spacing: 20) {
+                TopHeadlineView(title: "Timeline")
+                    .padding(.horizontal)
+
+                Spacer()
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 60))
+                    .foregroundStyle(Theme.secondaryText)
+
+                Text("No Activity Yet")
+                    .font(.system(.title2, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.primaryText)
+
+                Text("Your timeline will show your mood check-ins, thought records, and completed exercises.")
+                    .font(.system(.subheadline, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Theme.secondaryText)
+                    .padding(.horizontal)
+
+                VStack(spacing: 12) {
+                    Button {
+                        HapticManager.shared.lightImpact()
+                        attemptingAddMood = true
+                    } label: {
+                        Label("Log Mood", systemImage: "face.smiling")
+                            .font(.system(.subheadline, design: .rounded).weight(.bold))
+                            .frame(maxWidth: 220)
+                            .padding(.vertical, 10)
+                            .foregroundStyle(.white)
+                            .background(themeManager.selectedColor)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        HapticManager.shared.lightImpact()
+                        attemptingAddThought = true
+                    } label: {
+                        Label("New Thought Record", systemImage: "brain")
+                            .font(.system(.subheadline, design: .rounded).weight(.bold))
+                            .frame(maxWidth: 220)
+                            .padding(.vertical, 10)
+                            .foregroundStyle(.white)
+                            .background(themeManager.secondaryColor)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.top, 16)
+
+                Spacer()
+            }
+            .responsiveMaxWidth()
+            .frame(maxWidth: .infinity)
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
+                    TopHeadlineView(title: "Timeline")
+
+                    ForEach(groupedItems, id: \.key) { date, items in
+                        Section {
+                            ForEach(items) { item in
+                                if let route = item.route {
+                                    NavigationLink(value: route) {
+                                        TimelineRow(item: item)
+                                    }
+                                    .buttonStyle(.plain)
+                                } else {
+                                    TimelineRow(item: item)
+                                }
+                            }
+                        } header: {
+                            HStack {
+                                Text(formatHeaderDate(date))
+                                    .font(.system(.caption, design: .rounded).weight(.bold))
+                                    .foregroundColor(Theme.secondaryText)
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 4)
+                            .background(ThemedBackground())
+                        }
+                    }
+                }
+                .padding(.horizontal)
+                .responsiveMaxWidth()
+                .frame(maxWidth: .infinity)
+            }
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
+            }
         }
-        .buttonStyle(.plain)
     }
 
     private func formatHeaderDate(_ date: Date) -> String {

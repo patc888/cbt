@@ -12,16 +12,21 @@ struct SettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
+    @State private var hasPreparedSettings = false
     
     @Query private var settings: [UserSettings]
     
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private var metrics: LayoutMetrics { LayoutMetrics.metrics(for: horizontalSizeClass) }
     
-    @State private var showingSubscription = false
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
-    
-    var userSettings: UserSettings? { settings.first }
+    var userSettings: UserSettings? {
+        settings.sorted { lhs, rhs in
+            let lhsKey = lhs.uuid?.uuidString ?? String(describing: lhs.persistentModelID)
+            let rhsKey = rhs.uuid?.uuidString ?? String(describing: rhs.persistentModelID)
+            return lhsKey < rhsKey
+        }
+        .first
+    }
     var showsDismissControl: Bool = true
     
     var body: some View {
@@ -49,33 +54,21 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
 #endif
-        .onAppear {
-            subscriptionManager.startListeningIfNeeded()
-            
-            if settings.isEmpty {
-                let newSettings = UserSettings()
-                modelContext.insert(newSettings)
-                do {
-                    try modelContext.save()
-                } catch {
-                    Self.logger.error("Failed to create default settings: \(error.localizedDescription, privacy: .public)")
-                    modelContext.delete(newSettings)
-                }
+        .task {
+            guard !hasPreparedSettings else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+
+            do {
+                _ = try UserSettings.fetchOrCreate(in: modelContext)
+            } catch {
+                Self.logger.error("Failed to reconcile user settings: \(error.localizedDescription, privacy: .public)")
             }
-            
+
             let enabled = userSettings?.hapticsEnabled ?? true
             HapticManager.shared.setEnabled(enabled)
+            hasPreparedSettings = true
         }
-        #if os(macOS)
-        .sheet(isPresented: $showingSubscription) {
-            SubscriptionView()
-                .frame(minWidth: 600, minHeight: 600)
-        }
-        #else
-        .fullScreenCover(isPresented: $showingSubscription) {
-            SubscriptionView()
-        }
-        #endif
         .onChange(of: userSettings?.hapticsEnabled ?? true) { _, enabled in
             HapticManager.shared.setEnabled(enabled)
         }
@@ -84,19 +77,13 @@ struct SettingsView: View {
     private var mainContent: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("Settings")
+                Text(String(localized: "Settings"))
                     .font(.system(size: 34, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
-
-            SubscriptionSettingsView(
-                subscriptionManager: subscriptionManager,
-                showingSubscription: $showingSubscription
-            )
-            
             AppearanceSettingsView(
                 userTheme: Bindable(themeManager).appTheme,
                 selectedTheme: Bindable(themeManager).selectedTheme,
@@ -123,13 +110,13 @@ struct SettingsView: View {
 
             }
 
-            SettingsSection(title: "Tools") {
+            SettingsSection(title: String(localized: "Tools")) {
                 NavigationLink(destination: BreathingResetView()) {
                     SettingsRow(
                         icon: "wind",
                         iconColor: themeManager.selectedColor,
-                        title: "Breathing Reset",
-                        subtitle: "Guided box breathing session"
+                        title: String(localized: "Breathing Reset"),
+                        subtitle: String(localized: "Guided box breathing session")
                     ) {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
@@ -144,10 +131,10 @@ struct SettingsView: View {
             NavigationLink(destination: WhatIsCBTPagerView()) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("What is CBT")
+                        Text(String(localized: "What is CBT"))
                             .font(.system(.title3, design: .rounded).weight(.bold))
                             .foregroundStyle(.white)
-                        Text("A quick interactive guide to Cognitive Behavioral Therapy")
+                        Text(String(localized: "A quick interactive guide to Cognitive Behavioral Therapy"))
                             .font(.system(.subheadline, design: .rounded))
                             .foregroundStyle(.white.opacity(0.8))
                     }
@@ -195,12 +182,12 @@ struct PrivacyFooter: View {
             HStack(spacing: 8) {
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: 14))
-                Text("Your Privacy Matters")
+                Text(String(localized: "Your Privacy Matters"))
                     .font(.system(size: 14, weight: .bold, design: .rounded))
             }
             .foregroundStyle(themeManager.selectedColor)
             
-            Text("Your entries are private. We never see your data.")
+            Text(String(localized: "Your entries are private. We never see your data."))
                 .font(.system(size: 12, design: .rounded))
                 .foregroundStyle(Theme.secondaryText)
         }

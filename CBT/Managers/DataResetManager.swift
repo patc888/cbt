@@ -12,6 +12,23 @@ extension Notification.Name {
     static let exerciseFlowDidExit = Notification.Name("exerciseFlowDidExit")
 }
 
+enum DataResetError: LocalizedError, Equatable {
+    case cloudSyncUnavailable
+    case iCloudAccountRequired
+    case networkUnavailable
+
+    var errorDescription: String? {
+        switch self {
+        case .cloudSyncUnavailable:
+            return "iCloud reset is currently unavailable because sync is turned off in this build."
+        case .iCloudAccountRequired:
+            return "Sign in to iCloud before trying to delete cloud data."
+        case .networkUnavailable:
+            return "A network connection is required to delete cloud data."
+        }
+    }
+}
+
 @Observable
 final class DataResetManager {
     nonisolated static let shared = DataResetManager()
@@ -19,6 +36,7 @@ final class DataResetManager {
         subsystem: Bundle.main.bundleIdentifier ?? "CBT",
         category: "DataReset"
     )
+    nonisolated static let isCloudSyncEnabled = false
 
     nonisolated static var defaultStoreURL: URL {
         ModelConfiguration().url
@@ -72,6 +90,10 @@ final class DataResetManager {
     }
 
     func deleteCloudData() async throws {
+        guard Self.isCloudSyncEnabled else {
+            throw DataResetError.cloudSyncUnavailable
+        }
+
         let container = CKContainer.default()
         let database = container.privateCloudDatabase
 
@@ -83,13 +105,14 @@ final class DataResetManager {
             // This permanently deletes the zone and all records within it in the user's private database.
             try await database.deleteRecordZone(withID: zoneID)
         } catch let error as CKError {
-            // If the zone doesn't exist, we can't delete it, which is fine for a reset.
-            if error.code == .zoneNotFound || error.code == .notAuthenticated || error.code == .networkUnavailable {
-                // Not an error we need to stop for
-            } else {
-                throw error
+            if let mappedError = Self.mapCloudDeleteError(error) {
+                throw mappedError
             }
         } catch {
+            if let mappedError = Self.mapCloudDeleteError(error) {
+                throw mappedError
+            }
+
             throw error
         }
     }
@@ -101,14 +124,39 @@ final class DataResetManager {
 
     @discardableResult
     nonisolated static func quarantineDefaultStoreForRepair() throws -> URL? {
-        let fileManager = FileManager()
-        let files = try relatedStoreFiles(for: defaultStoreURL, using: fileManager)
+        try quarantineStoreForRepair(at: defaultStoreURL)
+    }
+
+    nonisolated func removeFallbackStoreFiles() throws {
+        try Self.removeFallbackStoreFiles()
+    }
+
+    nonisolated static func removeFallbackStoreFiles() throws {
+        try removeStoreFiles(at: fallbackStoreURL)
+    }
+
+    nonisolated static func removeStoreFiles(at storeURL: URL, using fileManager: FileManager = .default) throws {
+        let files = try relatedStoreFiles(for: storeURL, using: fileManager)
+        for file in files {
+            if fileManager.fileExists(atPath: file.path) {
+                try fileManager.removeItem(at: file)
+            }
+        }
+    }
+
+    @discardableResult
+    nonisolated static func quarantineStoreForRepair(
+        at storeURL: URL,
+        using fileManager: FileManager = .default,
+        now: Date = Date()
+    ) throws -> URL? {
+        let files = try relatedStoreFiles(for: storeURL, using: fileManager)
         guard !files.isEmpty else { return nil }
 
-        let quarantineDirectory = defaultStoreURL
+        let quarantineDirectory = storeURL
             .deletingLastPathComponent()
             .appendingPathComponent("StoreRecovery", isDirectory: true)
-            .appendingPathComponent(Self.recoveryFolderName(from: Date()), isDirectory: true)
+            .appendingPathComponent(Self.recoveryFolderName(from: now), isDirectory: true)
 
         try fileManager.createDirectory(
             at: quarantineDirectory,
@@ -127,25 +175,7 @@ final class DataResetManager {
         return quarantineDirectory
     }
 
-    nonisolated func removeFallbackStoreFiles() throws {
-        try Self.removeFallbackStoreFiles()
-    }
-
-    nonisolated static func removeFallbackStoreFiles() throws {
-        try removeStoreFiles(at: fallbackStoreURL)
-    }
-
-    private nonisolated static func removeStoreFiles(at storeURL: URL) throws {
-        let fileManager = FileManager()
-        let files = try relatedStoreFiles(for: storeURL, using: fileManager)
-        for file in files {
-            if fileManager.fileExists(atPath: file.path) {
-                try fileManager.removeItem(at: file)
-            }
-        }
-    }
-
-    private nonisolated static func relatedStoreFiles(for storeURL: URL, using fileManager: FileManager) throws -> [URL] {
+    nonisolated static func relatedStoreFiles(for storeURL: URL, using fileManager: FileManager = .default) throws -> [URL] {
         let storeDirectory = storeURL.deletingLastPathComponent()
         guard fileManager.fileExists(atPath: storeDirectory.path) else {
             return []
@@ -156,7 +186,23 @@ final class DataResetManager {
             includingPropertiesForKeys: nil
         )
 
-        return files.filter { $0.lastPathComponent.hasPrefix(storeURL.lastPathComponent) }
+        let allowedFileNames = storeFileNames(for: storeURL)
+        return files.filter { allowedFileNames.contains($0.lastPathComponent) }
+    }
+
+    nonisolated static func mapCloudDeleteError(_ error: Error) -> Error? {
+        guard let error = error as? CKError else { return error }
+
+        switch error.code {
+        case .zoneNotFound:
+            return nil
+        case .notAuthenticated:
+            return DataResetError.iCloudAccountRequired
+        case .networkUnavailable, .networkFailure, .serviceUnavailable:
+            return DataResetError.networkUnavailable
+        default:
+            return error
+        }
     }
 
     private nonisolated func logFileOperationFailure(_ error: Error, action: String) {
@@ -170,5 +216,14 @@ final class DataResetManager {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd-HH-mm-ss"
         return "repair-\(formatter.string(from: date))"
+    }
+
+    private nonisolated static func storeFileNames(for storeURL: URL) -> Set<String> {
+        let storeName = storeURL.lastPathComponent
+        return [
+            storeName,
+            "\(storeName)-shm",
+            "\(storeName)-wal"
+        ]
     }
 }

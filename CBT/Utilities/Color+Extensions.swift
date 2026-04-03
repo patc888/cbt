@@ -1,5 +1,9 @@
 import SwiftUI
 
+#if os(macOS) && !targetEnvironment(macCatalyst)
+import AppKit
+#endif
+
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -25,4 +29,41 @@ extension Color {
             opacity: Double(a) / 255
         )
     }
+
+    #if os(macOS) && !targetEnvironment(macCatalyst)
+    init(resolvedNSColor nsColor: NSColor, appearance: NSAppearance? = NSApp?.effectiveAppearance) {
+        let resolvedColor: NSColor
+        if let appearance {
+            resolvedColor = nsColor.resolvedColor(with: appearance)
+        } else {
+            resolvedColor = nsColor
+        }
+
+        if let concreteColor = resolvedColor.usingColorSpace(.sRGB)
+            ?? resolvedColor.usingColorSpace(.deviceRGB) {
+            self.init(
+                .sRGB,
+                red: concreteColor.redComponent,
+                green: concreteColor.greenComponent,
+                blue: concreteColor.blueComponent,
+                opacity: concreteColor.alphaComponent
+            )
+            return
+        }
+
+        if let grayscaleColor = resolvedColor.usingColorSpace(.genericGray)
+            ?? resolvedColor.usingColorSpace(.deviceGray) {
+            self.init(
+                .sRGB,
+                red: grayscaleColor.whiteComponent,
+                green: grayscaleColor.whiteComponent,
+                blue: grayscaleColor.whiteComponent,
+                opacity: grayscaleColor.alphaComponent
+            )
+            return
+        }
+
+        self.init(.sRGB, red: 0, green: 0, blue: 0, opacity: resolvedColor.alphaComponent)
+    }
+    #endif
 }

@@ -1,15 +1,17 @@
 import Foundation
 import SwiftData
 
-struct MoodEntryExport: Codable {
+nonisolated struct MoodEntryExport: Codable, Sendable {
     let id: UUID
     let createdAt: Date
     let moodScore: Int
     let emotions: [String]
+    let triggers: [String]?
     let notes: String?
+    let intensity: Int?
 }
 
-struct ThoughtRecordExport: Codable {
+nonisolated struct ThoughtRecordExport: Codable, Sendable {
     let id: UUID
     let createdAt: Date
     let situation: String
@@ -23,14 +25,14 @@ struct ThoughtRecordExport: Codable {
     let intensityAfter: Int
 }
 
-struct ExerciseCompletionExport: Codable {
+nonisolated struct ExerciseCompletionExport: Codable, Sendable {
     let id: UUID
     let createdAt: Date
     let exerciseID: String
     let notes: String?
 }
 
-struct JournalEntryExport: Codable {
+nonisolated struct JournalEntryExport: Codable, Sendable {
     let id: UUID
     let createdAt: Date
     let title: String
@@ -40,7 +42,7 @@ struct JournalEntryExport: Codable {
     let durationSeconds: Int?
 }
 
-struct CBTDataExportPayload: Codable {
+nonisolated struct CBTDataExportPayload: Codable, Sendable {
     let exportedAt: String
     let appVersion: String?
     let moodEntries: [MoodEntryExport]
@@ -50,22 +52,26 @@ struct CBTDataExportPayload: Codable {
 }
 
 struct DataExportService {
+    @MainActor
+    func exportDataFileURL(from container: ModelContainer) async throws -> URL {
+        let modelContext = ModelContext(container)
+        return try exportDataFileURL(from: modelContext)
+    }
+
+    @MainActor
     func exportDataFileURL(from modelContext: ModelContext) throws -> URL {
         let payload = try makePayload(from: modelContext)
 
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-
-        let data = try encoder.encode(payload)
-
-        let filenameDate = Self.filenameDateFormatter.string(from: Date())
-        let filename = "CBT-Export-\(filenameDate).json"
+        let data = try makeEncodedData(from: payload)
+        let filenameDate = Self.makeFilenameDateString()
+        let filename = "CBT-Export-\(filenameDate)-\(UUID().uuidString).json"
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
         try data.write(to: fileURL, options: .atomic)
 
         return fileURL
     }
 
+    @MainActor
     private func makePayload(from modelContext: ModelContext) throws -> CBTDataExportPayload {
         let moodDescriptor = FetchDescriptor<MoodEntry>(
             predicate: #Predicate<MoodEntry> { !$0.isDeleted },
@@ -90,7 +96,9 @@ struct DataExportService {
                 createdAt: $0.createdAt,
                 moodScore: $0.moodScore,
                 emotions: $0.emotions,
-                notes: $0.notes
+                triggers: $0.triggers,
+                notes: $0.notes,
+                intensity: $0.intensity
             )
         }
 
@@ -132,7 +140,7 @@ struct DataExportService {
         }
 
         return CBTDataExportPayload(
-            exportedAt: Self.exportDateFormatter.string(from: Date()),
+            exportedAt: Self.makeExportDateString(),
             appVersion: Self.appVersion,
             moodEntries: moodEntries,
             thoughtRecords: thoughtRecords,
@@ -141,19 +149,26 @@ struct DataExportService {
         )
     }
 
-    private static let exportDateFormatter: ISO8601DateFormatter = {
+    @MainActor
+    private func makeEncodedData(from payload: CBTDataExportPayload) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return try encoder.encode(payload)
+    }
+
+    private nonisolated static func makeExportDateString() -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
+        return formatter.string(from: Date())
+    }
 
-    private static let filenameDateFormatter: DateFormatter = {
+    private nonisolated static func makeFilenameDateString() -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd-HH-mm-ss"
-        return formatter
-    }()
+        return formatter.string(from: Date())
+    }
 
-    private static var appVersion: String? {
+    private nonisolated static var appVersion: String? {
         let shortVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
 

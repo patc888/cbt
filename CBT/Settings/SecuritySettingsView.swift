@@ -4,6 +4,7 @@ import SwiftData
 struct SecuritySettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
+    @StateObject private var securityManager = SecurityManager.shared
     
     let settings: UserSettings
     @Namespace private var appLockNamespace
@@ -12,6 +13,7 @@ struct SecuritySettingsView: View {
     @State private var showingPrivacyInfo = false
     
     @AppStorage("autoLockDelay") private var autoLockDelay: String = "Immediately"
+    @AppStorage("appLockEnabled") private var appLockEnabledStorage: Bool = false
     @AppStorage("hideAppSwitcher") private var hideAppSwitcher: Bool = false
     
     private let lockOptions = ["Immediately", "1m", "5m"]
@@ -19,19 +21,28 @@ struct SecuritySettingsView: View {
     var body: some View {
         SettingsSection(title: "Security") {
             VStack(spacing: 0) {
-                SettingsRow(icon: "faceid", iconColor: themeManager.selectedColor, title: "Lock app with Face ID or passcode") {
+                SettingsRow(
+                    icon: "faceid",
+                    iconColor: themeManager.selectedColor,
+                    title: "Lock app with Face ID or passcode",
+                    subtitle: appLockSubtitle
+                ) {
                     SegmentedToggle(
                         isOn: Binding(
                             get: { settings.appLockEnabled ?? false },
                             set: { newValue in
+                                guard securityManager.isAppLockAvailable || !newValue else { return }
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                     settings.appLockEnabled = newValue
+                                    appLockEnabledStorage = newValue
                                     try? modelContext.save()
                                 }
                             }
                         ),
                         namespace: appLockNamespace
                     )
+                    .disabled(!securityManager.isAppLockAvailable)
+                    .opacity(securityManager.isAppLockAvailable ? 1 : 0.55)
                 }
                 
                 Button(action: {
@@ -58,8 +69,27 @@ struct SecuritySettingsView: View {
                 .presentationCornerRadius(Theme.cornerRadiusXLarge)
                 .presentationBackground { Theme.secondaryBackground }
         }
+        .onAppear {
+            securityManager.checkBiometrics()
+            disableUnsupportedAppLockIfNeeded()
+        }
+        .onChange(of: securityManager.isAppLockAvailable) { _, _ in
+            disableUnsupportedAppLockIfNeeded()
+        }
     }
 
+    private var appLockSubtitle: String? {
+        securityManager.isAppLockAvailable ? nil : securityManager.appLockAvailabilityMessage
+    }
+
+    private func disableUnsupportedAppLockIfNeeded() {
+        guard !securityManager.isAppLockAvailable else { return }
+        guard settings.appLockEnabled == true || appLockEnabledStorage else { return }
+
+        settings.appLockEnabled = false
+        appLockEnabledStorage = false
+        try? modelContext.save()
+    }
 }
 
 struct PrivacyInfoPopup: View {
@@ -92,8 +122,8 @@ struct PrivacyInfoPopup: View {
             
             VStack(alignment: .leading, spacing: 16) {
                 PrivacyPoint(icon: "nosign", text: "No trackers or 3rd party analytics")
-                PrivacyPoint(icon: "icloud.fill", text: "Securely synced via your private iCloud")
-                PrivacyPoint(icon: "lock.fill", text: "Everything stays on your device")
+                PrivacyPoint(icon: "internaldrive.fill", text: "Stored locally on this device while sync is unavailable")
+                PrivacyPoint(icon: "lock.fill", text: "Face ID or passcode protection is available on device")
                 PrivacyPoint(icon: "person.badge.shield.checkmark.fill", text: "We never sell or share your data")
             }
             .padding(.horizontal, 24)

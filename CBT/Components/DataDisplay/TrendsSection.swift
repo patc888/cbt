@@ -23,7 +23,7 @@ struct TrendsSection: View {
 
     private var cardBackgroundColor: Color {
         #if os(macOS)
-        Color(nsColor: .windowBackgroundColor)
+        Color(resolvedNSColor: .windowBackgroundColor)
         #else
         Color(uiColor: .systemBackground)
         #endif
@@ -31,7 +31,7 @@ struct TrendsSection: View {
 
     private var cardBorderColor: Color {
         #if os(macOS)
-        Color(nsColor: .separatorColor)
+        Color(resolvedNSColor: .separatorColor)
         #else
         Color(uiColor: .separator)
         #endif

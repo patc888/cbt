@@ -1,41 +1,30 @@
 import Foundation
 
-class ExerciseLibrary {
+final class ExerciseLibrary {
     static let shared = ExerciseLibrary()
-    
-    private(set) var exercises: [Exercise] = []
-    
-    private init() {
-        loadExercises()
+
+    let exercises: [Exercise]
+    private let exercisesByID: [String: Exercise]
+
+    private init(loader: ExerciseLoader = .shared) {
+        let loadedExercises = loader.exercises
+        self.exercises = loadedExercises
+        self.exercisesByID = Dictionary(uniqueKeysWithValues: loadedExercises.map { ($0.id, $0) })
     }
-    
-    private func loadExercises() {
-        guard let url = Bundle.main.url(forResource: "Exercises", withExtension: "json") else {
-            print("Failed to locate Exercises.json in bundle.")
-            return
-        }
-        
-        do {
-            let data = try Data(contentsOf: url)
-            let decoder = JSONDecoder()
-            exercises = try decoder.decode([Exercise].self, from: data)
-        } catch {
-            print("Failed to decode Exercises.json: \(error)")
-        }
+
+    func exercise(withID id: String) -> Exercise? {
+        exercisesByID[id]
     }
-    
+
     func exercises(forCategory category: String) -> [Exercise] {
-        return exercises.filter { $0.category == category }
+        exercises.filter { $0.category == category }
     }
-    
+
     func categories() -> [String] {
-        let allCategories = exercises.map { $0.category }
-        var uniqueCategories = [String]()
-        for cat in allCategories {
-            if !uniqueCategories.contains(cat) {
-                uniqueCategories.append(cat)
+        exercises.reduce(into: [String]()) { result, exercise in
+            if !result.contains(exercise.category) {
+                result.append(exercise.category)
             }
         }
-        return uniqueCategories
     }
 }

@@ -48,19 +48,6 @@ struct DataSettingsSection: View {
 
     var body: some View {
         SettingsSection(title: "Data") {
-            SettingsRow(
-                icon: "icloud.slash.fill",
-                iconColor: themeManager.primaryColor,
-                title: "iCloud Sync",
-                subtitle: "Temporarily unavailable while launch stability recovery is in place"
-            ) {
-                Image(systemName: "exclamationmark.circle.fill")
-                    .foregroundColor(themeManager.primaryColor)
-            }
-            
-            Divider()
-                .padding(.vertical, 8)
-                
             NavigationLink(destination: AdvancedDataSettingsView()) {
                 SettingsRow(
                     icon: "gearshape.2.fill",
@@ -84,6 +71,20 @@ struct AdvancedDataSettingsView: View {
         case deleteAndCancelReminders
     }
 
+    private enum BackupOperation {
+        case exporting
+        case importing
+
+        var statusText: String {
+            switch self {
+            case .exporting:
+                return "Preparing JSON backup..."
+            case .importing:
+                return "Importing backup..."
+            }
+        }
+    }
+
     @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
     private var moodEntries: [MoodEntry]
 
@@ -103,6 +104,7 @@ struct AdvancedDataSettingsView: View {
     @State private var deleteMode: DeleteMode = .deleteOnly
     @State private var errorMessage: String?
     @State private var showImportSuccess = false
+    @State private var activeBackupOperation: BackupOperation?
 
     private let dataExportService = DataExportService()
     private let dataImportService = DataImportService()
@@ -123,6 +125,7 @@ struct AdvancedDataSettingsView: View {
                                 HapticManager.shared.lightImpact()
                                 showingExportInfo = true
                             }
+                            .disabled(activeBackupOperation != nil)
                             .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundColor(themeManager.primaryColor)
                         }
@@ -136,8 +139,24 @@ struct AdvancedDataSettingsView: View {
                                 HapticManager.shared.lightImpact()
                                 showingImportInfo = true
                             }
+                            .disabled(activeBackupOperation != nil)
                             .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundColor(themeManager.primaryColor)
+                        }
+
+                        if let activeBackupOperation {
+                            HStack(spacing: 10) {
+                                ProgressView()
+                                    .controlSize(.small)
+
+                                Text(activeBackupOperation.statusText)
+                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                                    .foregroundStyle(Theme.secondaryText)
+
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.top, 4)
                         }
 
                         Divider()
@@ -236,7 +255,7 @@ struct AdvancedDataSettingsView: View {
         .alert("Success", isPresented: $showImportSuccess) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Data imported successfully.")
+            Text("Backup restored successfully.")
         }
         .fileImporter(
             isPresented: $showingFileImporter,
@@ -246,7 +265,9 @@ struct AdvancedDataSettingsView: View {
             switch result {
             case .success(let urls):
                 guard let url = urls.first else { return }
-                importData(from: url)
+                Task {
+                    await importData(from: url)
+                }
             case .failure(let error):
                 errorMessage = "Could not select file: \(error.localizedDescription)"
             }
@@ -278,7 +299,9 @@ struct AdvancedDataSettingsView: View {
                         HapticManager.shared.mediumImpact()
                         showingExportInfo = false
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            exportData()
+                            Task {
+                                await exportData()
+                            }
                         }
                     },
                     secondaryTitle: "Cancel",
@@ -300,8 +323,8 @@ struct AdvancedDataSettingsView: View {
                     subtitle: "Restore your records from a previously exported JSON backup file.",
                     bullets: [
                         DSBullet(icon: "doc.text.fill", text: "Select a .json file exported from this app"),
-                        DSBullet(icon: "plus.circle.fill", text: "New entries will be added to your device"),
-                        DSBullet(icon: "arrow.2.squarepath", text: "Duplicates will be automatically skipped")
+                        DSBullet(icon: "plus.circle.fill", text: "Missing entries will be added to your device"),
+                        DSBullet(icon: "arrow.2.squarepath", text: "Matching records will be replaced with the backup version")
                     ],
                     primaryTitle: "Select File",
                     primaryAction: {
@@ -325,33 +348,46 @@ struct AdvancedDataSettingsView: View {
         }
     }
 
-    private func exportData() {
+    @MainActor
+    private func exportData() async {
+        guard activeBackupOperation == nil else { return }
+        activeBackupOperation = .exporting
+
         do {
-            let fileURL = try dataExportService.exportDataFileURL(from: modelContext)
+            let fileURL = try await dataExportService.exportDataFileURL(from: modelContext.container)
             exportDocument = JSONExportDocument(fileURL: fileURL)
             showingFileExporter = true
         } catch {
             errorMessage = "Could not export data. \(error.localizedDescription)"
         }
+
+        activeBackupOperation = nil
     }
 
-    private func importData(from url: URL) {
+    @MainActor
+    private func importData(from url: URL) async {
+        guard activeBackupOperation == nil else { return }
+
         do {
             // Start accessing the security-scoped resource
             guard url.startAccessingSecurityScopedResource() else {
                 errorMessage = "Could not access the selected file."
                 return
             }
-            
+
             // Defers the call to stopAccessingSecurityScopedResource
             defer { url.stopAccessingSecurityScopedResource() }
-            
-            try dataImportService.importData(from: url, into: modelContext)
+
+            activeBackupOperation = .importing
+
+            try await dataImportService.importData(from: url, into: modelContext.container)
             HapticManager.shared.success()
             showImportSuccess = true
         } catch {
             errorMessage = "Import failed: \(error.localizedDescription)"
         }
+
+        activeBackupOperation = nil
     }
 
     private func deleteAllData(mode: DeleteMode) {
@@ -389,5 +425,3 @@ struct AdvancedDataSettingsView: View {
         }
     }
 }
-
-

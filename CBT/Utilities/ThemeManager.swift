@@ -62,7 +62,7 @@ final class ThemeManager {
 
     var backgroundColor: Color {
         #if os(macOS)
-        Color(nsColor: .windowBackgroundColor)
+        Color(resolvedNSColor: .windowBackgroundColor)
         #else
         Color(UIColor.secondarySystemBackground)
         #endif
@@ -71,13 +71,13 @@ final class ThemeManager {
     var tertiaryBackground: Color {
         if isImmersive {
             #if os(macOS)
-            return Color(nsColor: .controlBackgroundColor)
+            return Color(resolvedNSColor: .controlBackgroundColor)
             #else
             return Color(.secondarySystemBackground)
             #endif
         }
         #if os(macOS)
-        return Color(nsColor: .textBackgroundColor)
+        return Color(resolvedNSColor: .textBackgroundColor)
         #else
         return Color(.tertiarySystemBackground)
         #endif

@@ -28,7 +28,7 @@ struct MoodSuggestionsView: View {
                     title: "Write a Thought Record",
                     icon: "brain.head.profile"
                 ) {
-                    attemptingThoughtRecord = true
+                    showingThoughtRecord = true
                 }
                 
                 SuggestionButton(
@@ -52,9 +52,6 @@ struct MoodSuggestionsView: View {
         }
         .sheet(isPresented: $showingThoughtRecord) {
             NewThoughtRecordFlowView()
-        }
-        .withUsageGate(isAttemptingAction: $attemptingThoughtRecord) {
-            showingThoughtRecord = true
         }
         #if os(iOS)
         .fullScreenCover(isPresented: $showingBreathing) {

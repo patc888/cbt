@@ -94,6 +94,35 @@ struct CBTDataStore {
         return entry
     }
 
+    @discardableResult
+    func insertJournalEntry(
+        summary: SessionSummary,
+        title: String,
+        bodyText: String,
+        notes: String,
+        tags: Set<String>
+    ) throws -> JournalEntry {
+        let normalizedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        var contentSections = [bodyText]
+
+        if !normalizedNotes.isEmpty {
+            contentSections.append("--- Notes ---\n\(normalizedNotes)")
+        }
+
+        if !tags.isEmpty {
+            contentSections.append("Tags: \(tags.sorted().joined(separator: ", "))")
+        }
+
+        return try insertJournalEntry(
+            createdAt: summary.endedAt,
+            title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+            body: contentSections.joined(separator: "\n\n"),
+            sourceKind: summary.sourceKind.rawValue,
+            sourceID: summary.sourceID,
+            durationSeconds: summary.durationSeconds
+        )
+    }
+
     func softDelete<T: SoftDeletableRecord>(item: T) throws {
         item.isDeleted = true
         try modelContext.save()

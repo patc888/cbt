@@ -1,13 +1,10 @@
 import SwiftUI
 import SwiftData
+import OSLog
 
 struct HomeView: View {
+    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "HomeView")
     @Binding var selectedTab: FloatingTab
-
-    @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var moodEntries: [MoodEntry]
-    @Query(filter: #Predicate<ThoughtRecord> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
-    @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
-    @Query(filter: #Predicate<JournalEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var journalEntries: [JournalEntry]
     @Environment(ThemeManager.self) private var themeManager
 
     @State private var selectedDate = Date()
@@ -17,135 +14,34 @@ struct HomeView: View {
     @State private var attemptingNewThoughtRecord = false
     @State private var showingTipModal = false
     @State private var selectedMoodForFlow: MoodColor? = nil
-    @State private var manualCompletions: [Date: Set<DailyPlanItem>] = [:]
-
-    private enum DailyPlanItem: Hashable {
-        case moodCheckIn
-        case thoughtRecord
-        case exercises
-        case breathingReset
-        case tipOfTheDay
-    }
-
-    private struct DailyPlanCompletionSnapshot {
-        let moodCheckIn: PlanCardCompletionState
-        let thoughtRecord: PlanCardCompletionState
-        let exercises: PlanCardCompletionState
-        let breathingReset: PlanCardCompletionState
-        let tipOfTheDay: PlanCardCompletionState
-
-        func state(for item: DailyPlanItem) -> PlanCardCompletionState {
-            switch item {
-            case .moodCheckIn:
-                return moodCheckIn
-            case .thoughtRecord:
-                return thoughtRecord
-            case .exercises:
-                return exercises
-            case .breathingReset:
-                return breathingReset
-            case .tipOfTheDay:
-                return tipOfTheDay
-            }
-        }
-    }
-
+    @State private var isDashboardReady = false
     var body: some View {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let weekDates = (-180...180).compactMap { calendar.date(byAdding: .day, value: $0, to: today) }
-        let completionSnapshot = dailyPlanCompletionSnapshot(calendar: calendar)
-
         ZStack {
             ThemedBackground().ignoresSafeArea()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     TopHeadlineView(
-                        title: "Daily Plan",
-                        subtitle: "Step by step toward balance",
+                        title: String(localized: "Daily Plan"),
+                        subtitle: String(localized: "Step by step toward balance"),
                         alignment: .leading
                     )
                     .padding(.horizontal, 16)
 
-                    WeekStripView(selectedDate: $selectedDate, weekDates: weekDates) { date in
-                        hasActivity(on: date)
+                    if isDashboardReady {
+                        HomeDashboardContent(
+                            selectedTab: $selectedTab,
+                            selectedDate: $selectedDate,
+                            showingNewMoodEntry: $showingNewMoodEntry,
+                            showingNewThoughtRecord: $showingNewThoughtRecord,
+                            attemptingNewMoodEntry: $attemptingNewMoodEntry,
+                            attemptingNewThoughtRecord: $attemptingNewThoughtRecord,
+                            showingTipModal: $showingTipModal,
+                            selectedMoodForFlow: $selectedMoodForFlow
+                        )
+                    } else {
+                        HomeDashboardPlaceholder()
                     }
-                    .padding(.top, 8)
-
-                    VStack(alignment: .leading, spacing: 16) {
-                        PlanCard(
-                            title: "Mood Check-In",
-                            subtitle: "Capture how you feel right now.",
-                            trailingSymbol: "face.smiling",
-                            completionState: completionSnapshot.state(for: .moodCheckIn)
-                        ) {
-                            VStack(spacing: 0) {
-                                Divider()
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Start quick check-in")
-                                            .font(.system(.subheadline, design: .rounded).weight(.bold))
-                                            .foregroundStyle(Theme.primaryText)
-                                        Text("Takes about 1 minute")
-                                            .font(.system(.caption, design: .rounded).weight(.medium))
-                                            .foregroundStyle(Theme.secondaryText)
-                                    }
-
-                                    Spacer()
-
-                                    Image(systemName: "arrow.right.circle.fill")
-                                        .font(.title3)
-                                        .foregroundStyle(themeManager.selectedColor)
-                                }
-                                .padding(.top, 12)
-                            }
-                        } action: {
-                            attemptingNewMoodEntry = true
-                        }
-                        .accessibilityIdentifier("home-plan-mood-check-in")
-
-                        PlanCard(
-                            title: "Thought Record",
-                            subtitle: "Challenge one difficult thought.",
-                            trailingSymbol: "brain",
-                            completionState: completionSnapshot.state(for: .thoughtRecord)
-                        ) {
-                            attemptingNewThoughtRecord = true
-                        }
-
-                        PlanCard(
-                            title: "Exercises",
-                            subtitle: "Practice one CBT tool.",
-                            trailingSymbol: "figure.mind.and.body",
-                            completionState: completionSnapshot.state(for: .exercises)
-                        ) {
-                            selectedTab = .exercises
-                        }
-
-                        PlanCard(
-                            title: "Breathing Reset",
-                            subtitle: "Calm your body in 60 seconds",
-                            trailingSymbol: "wind",
-                            completionState: completionSnapshot.state(for: .breathingReset)
-                        ) {
-                            BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true) {
-                                markItemAsDone(.breathingReset)
-                            }
-                        }
-
-
-                        PlanCard(
-                            title: "Tip of the Day",
-                            subtitle: "Open a quick CBT reminder.",
-                            trailingSymbol: "lightbulb",
-                            completionState: completionSnapshot.state(for: .tipOfTheDay)
-                        ) {
-                            showingTipModal = true
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
                 }
                 .responsiveMaxWidth()
                 .frame(maxWidth: .infinity)
@@ -162,6 +58,21 @@ struct HomeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .onAppear {
+            Self.logger.info("HomeView mounted")
+        }
+        .task {
+            guard !isDashboardReady else { return }
+            // Keep the first HomeView render SwiftData-free, then
+            // construct the query-backed dashboard only after the
+            // root model container, NavigationStack, and TabView have
+            // all settled on iPad's regular-width launch path.
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            isDashboardReady = true
+        }
         .onKeyPress(".") {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 toggleManualItems()
@@ -171,31 +82,178 @@ struct HomeView: View {
         .sheet(isPresented: $showingNewMoodEntry, onDismiss: { selectedMoodForFlow = nil }) {
             MoodCheckinView(initialMood: selectedMoodForFlow)
         }
-        .withUsageGate(isAttemptingAction: $attemptingNewMoodEntry) {
-            showingNewMoodEntry = true
-        }
         .sheet(isPresented: $showingNewThoughtRecord) {
             NewThoughtRecordFlowView()
         }
-        .withUsageGate(isAttemptingAction: $attemptingNewThoughtRecord) {
-            showingNewThoughtRecord = true
+    }
+
+    private func toggleManualItems() {
+        // Delegated to HomeDashboardContent via ViewModel if needed
+    }
+}
+
+private struct HomeDashboardPlaceholder: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HomeDashboardSkeleton()
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
         }
-        .sheet(isPresented: $showingTipModal, onDismiss: { markItemAsDone(.tipOfTheDay) }) {
+    }
+}
+
+// MARK: - Subviews
+
+struct HomeDashboardContent: View {
+    private struct RefreshKey: Equatable {
+        let selectedDay: Date
+        let moodCount: Int
+        let thoughtCount: Int
+        let completionCount: Int
+        let journalCount: Int
+    }
+
+    @Binding var selectedTab: FloatingTab
+    @Binding var selectedDate: Date
+    @Binding var showingNewMoodEntry: Bool
+    @Binding var showingNewThoughtRecord: Bool
+    @Binding var attemptingNewMoodEntry: Bool
+    @Binding var attemptingNewThoughtRecord: Bool
+    @Binding var showingTipModal: Bool
+    @Binding var selectedMoodForFlow: MoodColor?
+
+    @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var moodEntries: [MoodEntry]
+    @Query(filter: #Predicate<ThoughtRecord> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
+    @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
+    @Query(filter: #Predicate<JournalEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var journalEntries: [JournalEntry]
+    @Environment(ThemeManager.self) private var themeManager
+
+    @State private var viewModel = HomeDashboardViewModel()
+
+    private var refreshKey: RefreshKey {
+        RefreshKey(
+            selectedDay: Calendar.current.startOfDay(for: selectedDate),
+            moodCount: moodEntries.count,
+            thoughtCount: thoughtRecords.count,
+            completionCount: exerciseCompletions.count,
+            journalCount: journalEntries.count
+        )
+    }
+
+    var body: some View {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let weekDates = (-180...180).compactMap { calendar.date(byAdding: .day, value: $0, to: today) }
+
+        VStack(alignment: .leading, spacing: 16) {
+            WeekStripView(selectedDate: $selectedDate, weekDates: weekDates) { date in
+                viewModel.activeDates.contains(calendar.startOfDay(for: date))
+            }
+            .padding(.top, 8)
+            .opacity(viewModel.isInitialized ? 1 : 0.6)
+
+            VStack(alignment: .leading, spacing: 16) {
+                if !viewModel.isInitialized {
+                    HomeDashboardSkeleton()
+                } else {
+                    PlanCard(
+                        title: String(localized: "Mood Check-In"),
+                        subtitle: String(localized: "Capture how you feel right now."),
+                        trailingSymbol: "face.smiling",
+                        completionState: viewModel.completionSnapshot.state(for: .moodCheckIn)
+                    ) {
+                        VStack(spacing: 0) {
+                            Divider()
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(String(localized: "Start quick check-in"))
+                                        .font(.system(.subheadline, design: .rounded).weight(.bold))
+                                        .foregroundStyle(Theme.primaryText)
+                                    Text(String(localized: "Takes about 1 minute"))
+                                        .font(.system(.caption, design: .rounded).weight(.medium))
+                                        .foregroundStyle(Theme.secondaryText)
+                                }
+                                Spacer()
+                                Image(systemName: "arrow.right.circle.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(themeManager.selectedColor)
+                            }
+                            .padding(.top, 12)
+                        }
+                    } action: {
+                        showingNewMoodEntry = true
+                    }
+                    .accessibilityIdentifier("home-plan-mood-check-in")
+
+                    PlanCard(
+                        title: String(localized: "Thought Record"),
+                        subtitle: String(localized: "Challenge one difficult thought."),
+                        trailingSymbol: "brain",
+                        completionState: viewModel.completionSnapshot.state(for: .thoughtRecord)
+                    ) {
+                        showingNewThoughtRecord = true
+                    }
+
+                    PlanCard(
+                        title: String(localized: "Exercises"),
+                        subtitle: String(localized: "Practice one CBT tool."),
+                        trailingSymbol: "figure.mind.and.body",
+                        completionState: viewModel.completionSnapshot.state(for: .exercises)
+                    ) {
+                        selectedTab = .exercises
+                    }
+
+                    PlanCard(
+                        title: String(localized: "Breathing Reset"),
+                        subtitle: String(localized: "Calm your body in 60 seconds"),
+                        trailingSymbol: "wind",
+                        completionState: viewModel.completionSnapshot.state(for: .breathingReset)
+                    ) {
+                        BreathingPresenter.shared.present(
+                            durationSeconds: 60,
+                            autoStart: true,
+                            onComplete: {
+                                withAnimation {
+                                    viewModel.markItemAsDone(.breathingReset, for: selectedDate)
+                                }
+                            }
+                        )
+                    }
+
+                    PlanCard(
+                        title: String(localized: "Tip of the Day"),
+                        subtitle: String(localized: "Open a quick CBT reminder."),
+                        trailingSymbol: "lightbulb",
+                        completionState: viewModel.completionSnapshot.state(for: .tipOfTheDay)
+                    ) {
+                        showingTipModal = true
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
+        }
+        .sheet(isPresented: $showingTipModal, onDismiss: { 
+            withAnimation {
+                viewModel.markItemAsDone(.tipOfTheDay, for: selectedDate)
+            }
+        }) {
             FeatureModalPresenter {
                 DSFeatureModal(
-                    title: "Tip for Today",
-                    subtitle: "Try naming one thought before reacting. Even a short pause can make the next step clearer.",
+                    title: String(localized: "Tip for Today"),
+                    subtitle: String(localized: "Try naming one thought before reacting. Even a short pause can make the next step clearer."),
                     bullets: [
-                        DSBullet(icon: "brain", text: "Notice the thought"),
-                        DSBullet(icon: "arrow.triangle.2.circlepath", text: "Check for alternatives"),
-                        DSBullet(icon: "checkmark.circle", text: "Choose a small next action")
+                        DSBullet(icon: "brain", text: String(localized: "Notice the thought")),
+                        DSBullet(icon: "arrow.triangle.2.circlepath", text: String(localized: "Check for alternatives")),
+                        DSBullet(icon: "checkmark.circle", text: String(localized: "Choose a small next action"))
                     ],
-                    primaryTitle: "Got it",
+                    primaryTitle: String(localized: "Got it"),
                     primaryAction: {
                         HapticManager.shared.lightImpact()
                         showingTipModal = false
                     },
-                    secondaryTitle: "Close",
+                    secondaryTitle: String(localized: "Close"),
                     secondaryAction: {
                         HapticManager.shared.lightImpact()
                         showingTipModal = false
@@ -207,73 +265,28 @@ struct HomeView: View {
                 )
             }
         }
+        .task(id: refreshKey) { await updateData() }
     }
 
-    private func hasActivity(on date: Date) -> Bool {
-        let calendar = Calendar.current
-
-        if moodEntries.contains(where: { calendar.isDate($0.createdAt, inSameDayAs: date) }) {
-            return true
-        }
-        if thoughtRecords.contains(where: { calendar.isDate($0.createdAt, inSameDayAs: date) }) {
-            return true
-        }
-        if exerciseCompletions.contains(where: { calendar.isDate($0.createdAt, inSameDayAs: date) }) {
-            return true
-        }
-        return false
+    private func updateData() async {
+        await viewModel.update(
+            selectedDate: selectedDate,
+            moodEntries: moodEntries,
+            thoughtRecords: thoughtRecords,
+            exerciseCompletions: exerciseCompletions,
+            journalEntries: journalEntries
+        )
     }
+}
 
-    private func toggleManualItems() {
-        let calendar = Calendar.current
-        let selectedDay = calendar.startOfDay(for: selectedDate)
-        let itemsToToggle: [DailyPlanItem] = [.tipOfTheDay]
-
-        var currentSet = manualCompletions[selectedDay] ?? []
-        let allCompleted = itemsToToggle.allSatisfy { currentSet.contains($0) }
-
-        if allCompleted {
-            itemsToToggle.forEach { currentSet.remove($0) }
-        } else {
-            itemsToToggle.forEach { currentSet.insert($0) }
-        }
-
-        manualCompletions[selectedDay] = currentSet
-        HapticManager.shared.lightImpact()
-    }
-
-    private func markItemAsDone(_ item: DailyPlanItem) {
-        let calendar = Calendar.current
-        let selectedDay = calendar.startOfDay(for: selectedDate)
-        var currentSet = manualCompletions[selectedDay] ?? []
-        if !currentSet.contains(item) {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                currentSet.insert(item)
-                manualCompletions[selectedDay] = currentSet
+private struct HomeDashboardSkeleton: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            ForEach(0..<4, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: DSCornerRadius.large, style: .continuous)
+                    .fill(Color.secondary.opacity(0.1))
+                    .frame(height: 100)
             }
         }
-    }
-
-    private func dailyPlanCompletionSnapshot(calendar: Calendar) -> DailyPlanCompletionSnapshot {
-        let selectedDay = calendar.startOfDay(for: selectedDate)
-
-        let moodDays = Set(moodEntries.map { calendar.startOfDay(for: $0.createdAt) })
-        let thoughtRecordDays = Set(thoughtRecords.map { calendar.startOfDay(for: $0.createdAt) })
-        let exerciseDays = Set(exerciseCompletions.map { calendar.startOfDay(for: $0.createdAt) })
-        let breathingDays = Set(
-            journalEntries
-                .filter { $0.sourceKind == SessionSourceKind.breathing.rawValue }
-                .map { calendar.startOfDay(for: $0.createdAt) }
-        )
-
-        let manualForDay = manualCompletions[selectedDay] ?? []
-
-        return DailyPlanCompletionSnapshot(
-            moodCheckIn: moodDays.contains(selectedDay) ? .completed : .incomplete,
-            thoughtRecord: thoughtRecordDays.contains(selectedDay) ? .completed : .incomplete,
-            exercises: exerciseDays.contains(selectedDay) ? .completed : .incomplete,
-            breathingReset: (breathingDays.contains(selectedDay) || manualForDay.contains(.breathingReset)) ? .completed : .incomplete,
-            tipOfTheDay: manualForDay.contains(.tipOfTheDay) ? .completed : .notTracked
-        )
     }
 }

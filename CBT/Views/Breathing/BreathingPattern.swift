@@ -12,7 +12,7 @@ struct BreathingPattern: Codable, Equatable, Hashable {
     let exhaleGuidance: String
     let hold2Guidance: String
     
-    static let box = BreathingPattern(
+    nonisolated static let box = BreathingPattern(
         name: "Box Breathing",
         inhaleDuration: 4.0,
         hold1Duration: 4.0,
@@ -24,7 +24,7 @@ struct BreathingPattern: Codable, Equatable, Hashable {
         hold2Guidance: "Hold empty"
     )
     
-    static let relaxing478 = BreathingPattern(
+    nonisolated static let relaxing478 = BreathingPattern(
         name: "4-7-8 Breathing",
         inhaleDuration: 4.0,
         hold1Duration: 7.0,

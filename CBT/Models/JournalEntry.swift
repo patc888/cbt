@@ -32,3 +32,25 @@ final class JournalEntry: SoftDeletableRecord {
         self.isDeleted = isDeleted
     }
 }
+
+extension JournalEntry {
+    var sessionSourceKind: SessionSourceKind? {
+        guard let sourceKind else { return nil }
+        return SessionSourceKind(rawValue: sourceKind)
+    }
+
+    var durationLabel: String? {
+        guard let durationSeconds, durationSeconds > 0 else { return nil }
+        return DurationFormatting.sessionLabel(seconds: durationSeconds)
+    }
+
+    var sessionMetadataLine: String? {
+        let parts = [
+            sessionSourceKind?.displayName,
+            durationLabel
+        ]
+        .compactMap { $0 }
+
+        return parts.isEmpty ? nil : parts.joined(separator: " • ")
+    }
+}

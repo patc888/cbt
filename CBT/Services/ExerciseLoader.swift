@@ -1,7 +1,9 @@
 import Foundation
+import OSLog
 
 final class ExerciseLoader {
     static let shared = ExerciseLoader()
+    private static let logger = AppLogger.make(category: "ExerciseLoader")
 
     let exercises: [Exercise]
 
@@ -11,7 +13,7 @@ final class ExerciseLoader {
 
     private static func loadExercises() -> [Exercise] {
         guard let url = Bundle.main.url(forResource: "Exercises", withExtension: "json") else {
-            print("Could not find Exercises.json in bundle")
+            logger.error("Could not find Exercises.json in the main bundle.")
             return []
         }
 
@@ -20,7 +22,7 @@ final class ExerciseLoader {
             let decoder = JSONDecoder()
             return try decoder.decode([Exercise].self, from: data)
         } catch {
-            print("Failed to load or decode Exercises.json: \(error)")
+            logger.error("Failed to load or decode Exercises.json: \(error.localizedDescription, privacy: .public)")
             return []
         }
     }

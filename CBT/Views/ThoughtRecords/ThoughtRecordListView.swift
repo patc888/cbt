@@ -10,7 +10,6 @@ struct ThoughtRecordListView: View {
         order: .reverse
     ) private var records: [ThoughtRecord]
     
-    @Environment(\.colorScheme) private var colorScheme
     @State private var showingNewRecord = false
     @State private var attemptingNewRecord = false
     
@@ -77,20 +76,12 @@ struct ThoughtRecordListView: View {
         .safeAreaInset(edge: .top) {
             HStack {
                 Spacer()
-                Button {
-                    HapticManager.shared.lightImpact()
+                ListActionPillButton(
+                    title: "+ Thought",
+                    color: themeManager.secondaryColor
+                ) {
                     attemptingNewRecord = true
-                } label: {
-                    Text("+ Thought")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundColor(themeManager.secondaryColor)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Theme.cardBackground)
-                        .clipShape(Capsule())
-                        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.05 : 0), radius: colorScheme == .dark ? 2 : 0)
                 }
-                .buttonStyle(.plain)
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)

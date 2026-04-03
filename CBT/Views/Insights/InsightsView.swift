@@ -1,45 +1,31 @@
 import SwiftUI
 import SwiftData
-import Charts
 
-struct InsightsView: View {
-    @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
-    private var moodEntries: [MoodEntry]
+enum InsightsTimeRange: String, CaseIterable, Identifiable {
+    case sevenDays = "7D"
+    case thirtyDays = "30D"
 
-    @Query(filter: #Predicate<ThoughtRecord> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
-    private var thoughtRecords: [ThoughtRecord]
+    var id: String { rawValue }
 
-    @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
-    private var exerciseCompletions: [ExerciseCompletion]
-    
-    @Query(filter: #Predicate<JournalEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
-    private var journalEntries: [JournalEntry]
-
-    @State private var timeRange: TimeRange = .sevenDays
-    @AppStorage("cbt_moodGoalValue") private var moodGoalValue = 7
-    @Environment(ThemeManager.self) private var themeManager
-    @State private var viewModel = InsightsViewModel()
-
-    enum TimeRange: String, CaseIterable, Identifiable {
-        case sevenDays = "7D"
-        case thirtyDays = "30D"
-
-        var id: String { rawValue }
-
-        var localizedName: String {
-            switch self {
-            case .sevenDays: return String(localized: "7D")
-            case .thirtyDays: return String(localized: "30D")
-            }
-        }
-
-        var days: Int {
-            switch self {
-            case .sevenDays: return 7
-            case .thirtyDays: return 30
-            }
+    var localizedName: String {
+        switch self {
+        case .sevenDays: return String(localized: "7D")
+        case .thirtyDays: return String(localized: "30D")
         }
     }
+
+    var days: Int {
+        switch self {
+        case .sevenDays: return 7
+        case .thirtyDays: return 30
+        }
+    }
+}
+
+struct InsightsView: View {
+    @State private var timeRange: InsightsTimeRange = .sevenDays
+    @AppStorage("cbt_moodGoalValue") private var moodGoalValue = 7
+    @State private var isDashboardReady = false
 
     var body: some View {
         ZStack {
@@ -49,23 +35,15 @@ struct InsightsView: View {
                 VStack(spacing: 14) {
                     TopHeadlineView(title: String(localized: "Insights"))
 
-                    if viewModel.isCalculating {
-                        VStack {
-                            ProgressView()
-                                .padding()
-                            Text(String(localized: "Crunching your data..."))
-                                .foregroundStyle(Theme.secondaryText)
-                                .font(.subheadline)
-                        }
-                        .padding(.vertical, 40)
+                    if isDashboardReady {
+                        InsightsDashboardContent(
+                            timeRange: $timeRange,
+                            moodGoalValue: moodGoalValue
+                        )
                     } else {
-                        streaksCard
-                        milestonesRingCard
-                        trendsCard
-                        weeklyAverageCard
-                        goalProgressSection
-                        
-                        topMetricsSection
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color.secondary.opacity(0.1))
+                            .frame(height: 200)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -80,16 +58,116 @@ struct InsightsView: View {
         .toolbar(.hidden, for: .navigationBar)
         #endif
         .task {
-            await recalculateData()
-        }
-        .onChange(of: timeRange) { _, _ in
-            Task { await recalculateData() }
-        }
-        .onChange(of: moodEntries.count + thoughtRecords.count + exerciseCompletions.count + journalEntries.count) { _, _ in
-            Task { await recalculateData() }
+            guard !isDashboardReady else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            isDashboardReady = true
         }
     }
-    
+}
+
+// MARK: - Subviews
+
+private struct InsightsDashboardContent: View {
+    private struct RefreshKey: Equatable {
+        let timeRange: InsightsTimeRange
+        let moodCount: Int
+        let thoughtCount: Int
+        let completionCount: Int
+        let journalCount: Int
+        let moodGoalValue: Int
+    }
+
+    @Binding var timeRange: InsightsTimeRange
+    let moodGoalValue: Int
+
+    @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
+    private var moodEntries: [MoodEntry]
+
+    @Query(filter: #Predicate<ThoughtRecord> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
+    private var thoughtRecords: [ThoughtRecord]
+
+    @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
+    private var exerciseCompletions: [ExerciseCompletion]
+
+    @Query(filter: #Predicate<JournalEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
+    private var journalEntries: [JournalEntry]
+
+    @State private var viewModel = InsightsViewModel()
+
+    private var refreshKey: RefreshKey {
+        RefreshKey(
+            timeRange: timeRange,
+            moodCount: moodEntries.count,
+            thoughtCount: thoughtRecords.count,
+            completionCount: exerciseCompletions.count,
+            journalCount: journalEntries.count,
+            moodGoalValue: moodGoalValue
+        )
+    }
+
+    var body: some View {
+        ZStack {
+            if viewModel.isCalculating {
+                InsightsLoadingStateView()
+            } else {
+                insightsContent
+            }
+        }
+        .task(id: refreshKey) {
+            await recalculateData()
+        }
+    }
+
+    @ViewBuilder
+    private var insightsContent: some View {
+        InsightsStreaksCard(
+            currentStreak: viewModel.currentStreak,
+            longestStreak: viewModel.longestStreak
+        )
+
+        InsightsMilestonesCard(
+            timeRange: $timeRange,
+            milestonesCompleted: viewModel.milestonesCompleted,
+            consistencyProgress: viewModel.consistencyProgress,
+            activeDaysCount: viewModel.activeDaysCount
+        )
+
+        InsightsTrendsCard(
+            timeRange: timeRange,
+            dailyMoodAverages: viewModel.dailyMoodAverages,
+            averageMood: viewModel.averageMood,
+            averageIntensityImprovement: viewModel.averageIntensityImprovement,
+            moodVolatilityLast30Days: viewModel.moodVolatilityLast30Days,
+            moodGoalValue: moodGoalValue
+        )
+
+        InsightsWeeklyOverviewCard(
+            weeklyMoodAverages: viewModel.weeklyMoodAverages,
+            moodGoalValue: moodGoalValue
+        )
+
+        InsightsGoalProgressSection(
+            activeDaysCount: viewModel.activeDaysCount,
+            consistencyGoalTarget: viewModel.consistencyGoalTarget,
+            consistencyProgress: viewModel.consistencyProgress,
+            moodGoalValue: moodGoalValue,
+            moodGoalProgress: viewModel.moodGoalProgress,
+            averageIntensityImprovement: viewModel.averageIntensityImprovement,
+            thoughtGoalProgress: viewModel.thoughtGoalProgress,
+            exerciseGoalTarget: viewModel.exerciseGoalTarget,
+            exerciseProgress: viewModel.exerciseProgress
+        )
+
+        InsightsTopMetricsSection(
+            topEmotions: viewModel.topEmotions,
+            topTriggers: viewModel.topTriggers,
+            topDistortions: viewModel.topDistortions
+        )
+    }
+
     private func recalculateData() async {
         await viewModel.recalculate(
             timeRangeDays: timeRange.days,
@@ -100,365 +178,4 @@ struct InsightsView: View {
             moodGoalValue: moodGoalValue
         )
     }
-
-    // MARK: - Streaks
-    private var streaksCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(String(localized: "Activity Streaks"))
-                .font(.system(.title, design: .rounded).weight(.bold))
-                .foregroundStyle(Theme.primaryText)
-            
-            HStack(spacing: 12) {
-                MiniStatCard(
-                    title: String(localized: "Current Streak"),
-                    value: "\(viewModel.currentStreak)",
-                    unit: viewModel.currentStreak == 1 ? String(localized: "day") : String(localized: "days"),
-                    icon: "flame.fill",
-                    iconColor: .orange,
-                    iconGradient: [Color.orange, Color.red],
-                    valueColor: Theme.primaryText,
-                    state: viewModel.currentStreak > 0 ? .success : .neutral
-                )
-                
-                MiniStatCard(
-                    title: String(localized: "Longest Streak"),
-                    value: "\(viewModel.longestStreak)",
-                    unit: viewModel.longestStreak == 1 ? String(localized: "day") : String(localized: "days"),
-                    icon: "star.fill",
-                    iconColor: .yellow,
-                    iconGradient: [Color.yellow, Color.orange],
-                    valueColor: Theme.primaryText,
-                    state: .neutral
-                )
-            }
-        }
-        .padding(Theme.paddingMedium)
-        .cardStyle()
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(String(localized: "Activity streaks: Current \(viewModel.currentStreak) days, Longest \(viewModel.longestStreak) days."))
-    }
-
-    // MARK: - Milestones Ring
-    private var milestonesRingCard: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Text(String(localized: "Milestones"))
-                    .font(.system(.title, design: .rounded).weight(.bold))
-                    .foregroundStyle(Theme.primaryText)
-                Spacer()
-                Text("\(viewModel.milestonesCompleted)/4")
-                    .font(.system(.caption, design: .rounded).weight(.black))
-                    .foregroundStyle(Theme.secondaryText.opacity(0.65))
-                    .tracking(1.5)
-            }
-
-            SegmentedToggle(selection: $timeRange, options: TimeRange.allCases, titleKey: \.localizedName)
-
-            ZStack {
-                Circle()
-                    .stroke(themeManager.secondaryColor.opacity(0.15), lineWidth: 24)
-                    .frame(width: 190, height: 190)
-
-                Circle()
-                    .trim(from: 0, to: max(0.001, viewModel.consistencyProgress))
-                    .stroke(themeManager.secondaryColor, style: StrokeStyle(lineWidth: 24, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .frame(width: 190, height: 190)
-
-                Circle()
-                    .stroke(themeManager.selectedColor.opacity(0.12), lineWidth: 18)
-                    .frame(width: 136, height: 136)
-
-                Circle()
-                    .trim(from: 0, to: max(0.001, Double(viewModel.milestonesCompleted) / 4.0))
-                    .stroke(themeManager.selectedColor, style: StrokeStyle(lineWidth: 18, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .frame(width: 136, height: 136)
-
-                VStack(spacing: 4) {
-                    Text("\(Int((viewModel.consistencyProgress * 100).rounded()))%")
-                        .font(.system(.largeTitle, design: .rounded).weight(.black))
-                        .foregroundStyle(Theme.primaryText)
-                    Text("CONSISTENCY")
-                        .font(.system(.caption, design: .rounded).weight(.bold))
-                        .foregroundStyle(Theme.secondaryText)
-                }
-            }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Consistency Progress")
-            .accessibilityValue("\(Int((viewModel.consistencyProgress * 100).rounded())) percent. \(viewModel.milestonesCompleted) of 4 milestones completed.")
-
-            Text("\(viewModel.activeDaysCount) active days in last \(timeRange.days) days")
-                .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundStyle(Theme.secondaryText)
-        }
-        .padding(Theme.paddingMedium)
-        .cardStyle()
-    }
-
-    // MARK: - Daily Trends
-    private var trendsCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(String(localized: "Daily Trends"))
-                    .font(.system(.title, design: .rounded).weight(.bold))
-                    .foregroundStyle(Theme.primaryText)
-                Spacer()
-                Text(String(localized: "LAST \(timeRange.days) DAYS"))
-                    .font(.system(.caption, design: .rounded).weight(.black))
-                    .foregroundStyle(Theme.secondaryText.opacity(0.65))
-                    .tracking(1.5)
-            }
-
-            if viewModel.dailyMoodAverages.isEmpty {
-                Text(String(localized: "No mood data for this range."))
-                    .font(.system(size: 14, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText)
-                    .padding(.vertical, 18)
-            } else {
-                Chart {
-                    ForEach(viewModel.dailyMoodAverages) { point in
-                        LineMark(
-                            x: .value(String(localized: "Date"), point.date, unit: .day),
-                            y: .value(String(localized: "Mood"), point.averageScore)
-                        )
-                        .lineStyle(StrokeStyle(lineWidth: 2.2))
-                        .foregroundStyle(themeManager.selectedColor)
-
-                        PointMark(
-                            x: .value(String(localized: "Date"), point.date, unit: .day),
-                            y: .value(String(localized: "Mood"), point.averageScore)
-                        )
-                        .foregroundStyle(themeManager.selectedColor)
-                    }
-
-                    RuleMark(y: .value(String(localized: "Mood Goal"), Double(moodGoalValue)))
-                        .foregroundStyle(themeManager.secondaryColor.opacity(0.85))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
-                }
-                .chartYScale(domain: 0...10)
-                .frame(height: 220)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(String(localized: "Daily mood trend chart"))
-                .accessibilityValue(String(localized: "Showing mood averages over the last \(timeRange.days) days. Average mood is \(viewModel.averageMood?.formatted(.number.precision(.fractionLength(1))) ?? String(localized: "not available"))."))
-            }
-
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                MiniStatCard(
-                    title: String(localized: "Avg Mood"),
-                    value: viewModel.averageMood.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "-",
-                    unit: "/10",
-                    icon: "chart.line.uptrend.xyaxis",
-                    iconColor: themeManager.selectedColor,
-                    valueColor: Theme.primaryText,
-                    state: .neutral
-                )
-
-                MiniStatCard(
-                    title: String(localized: "Thought Relief"),
-                    value: viewModel.averageIntensityImprovement.map { "\($0)" } ?? "-",
-                    unit: String(localized: "pts"),
-                    icon: "brain",
-                    iconColor: themeManager.secondaryColor,
-                    valueColor: Theme.primaryText,
-                    state: .neutral
-                )
-            }
-            
-            if let volatility = viewModel.moodVolatilityLast30Days {
-                Divider().opacity(0.5).padding(.vertical, 4)
-                HStack {
-                    ZStack {
-                        Circle()
-                            .fill(Theme.toggleBackgroundColor(for: .light))
-                            .frame(width: 32, height: 32)
-                        Image(systemName: "waveform.path.ecg")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(themeManager.selectedColor)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(String(localized: "Mood Volatility (\(volatility.formatted(.number.precision(.fractionLength(1)))))"))
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundStyle(Theme.primaryText)
-                        Text(String(localized: "Average day-to-day score change."))
-                            .font(.system(size: 12, design: .rounded))
-                            .foregroundStyle(Theme.secondaryText)
-                    }
-                    Spacer()
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(String(localized: "Mood volatility is \(volatility.formatted(.number.precision(.fractionLength(1)))). Average day-to-day absolute change in score over last 30 days."))
-            }
-        }
-        .padding(Theme.paddingMedium)
-        .cardStyle()
-    }
-    
-    // MARK: - Weekly Overview
-    private var weeklyAverageCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(String(localized: "Weekly Overview"))
-                    .font(.system(.title, design: .rounded).weight(.bold))
-                    .foregroundStyle(Theme.primaryText)
-                Spacer()
-                Text(String(localized: "LAST 8 WEEKS"))
-                    .font(.system(.caption, design: .rounded).weight(.black))
-                    .foregroundStyle(Theme.secondaryText.opacity(0.65))
-                    .tracking(1.5)
-            }
-
-            if viewModel.weeklyMoodAverages.isEmpty {
-                Text(String(localized: "Not enough data to graph weekly trends."))
-                    .font(.system(size: 14, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText)
-                    .padding(.vertical, 18)
-            } else {
-                Chart {
-                    ForEach(viewModel.weeklyMoodAverages) { point in
-                        BarMark(
-                            x: .value(String(localized: "Week"), point.weekStart, unit: .weekOfYear),
-                            y: .value(String(localized: "Mood"), point.averageScore)
-                        )
-                        .foregroundStyle(themeManager.selectedColor.opacity(0.8))
-                        .cornerRadius(4)
-                    }
-
-                    RuleMark(y: .value(String(localized: "Mood Goal"), Double(moodGoalValue)))
-                        .foregroundStyle(themeManager.secondaryColor.opacity(0.85))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
-                }
-                .chartYScale(domain: 0...11)
-                .frame(height: 180)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(String(localized: "Weekly mood trend chart"))
-                .accessibilityValue(String(localized: "Showing weekly average mood over the last 8 weeks."))
-            }
-        }
-        .padding(Theme.paddingMedium)
-        .cardStyle()
-    }
-
-    // MARK: - Goals Section
-    private var goalProgressSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(String(localized: "Goal Progress"))
-                .font(.system(.title, design: .rounded).weight(.bold))
-                .foregroundStyle(Theme.primaryText)
-
-            goalProgressCard(
-                title: String(localized: "Consistency Goal"),
-                subtitle: String(localized: "\(viewModel.activeDaysCount) of \(viewModel.consistencyGoalTarget) active days"),
-                progress: viewModel.consistencyProgress,
-                tint: themeManager.selectedColor
-            )
-
-            goalProgressCard(
-                title: String(localized: "Mood Goal (\(moodGoalValue)+)"),
-                subtitle: String(localized: "\(Int((viewModel.moodGoalProgress * 100).rounded()))% entries hit target"),
-                progress: viewModel.moodGoalProgress,
-                tint: themeManager.secondaryColor
-            )
-
-            goalProgressCard(
-                title: String(localized: "Thought Relief Goal"),
-                subtitle: viewModel.averageIntensityImprovement.map { String(localized: "\($0) of 15 pts average relief") } ?? String(localized: "No thought records yet"),
-                progress: viewModel.thoughtGoalProgress,
-                tint: .orange
-            )
-
-            goalProgressCard(
-                title: String(localized: "Exercise Goal"),
-                subtitle: String(localized: "\(Int((viewModel.exerciseProgress * Double(viewModel.exerciseGoalTarget)).rounded())) of \(viewModel.exerciseGoalTarget) exercises"),
-                progress: viewModel.exerciseProgress,
-                tint: .green
-            )
-        }
-    }
-    
-    // MARK: - Top Metrics
-    private var topMetricsSection: some View {
-        VStack(spacing: 14) {
-            rankingCard(title: String(localized: "Top Emotions"), rows: viewModel.topEmotions.map { ($0.name, $0.count) }, emptyText: String(localized: "No emotions recorded."))
-            rankingCard(title: String(localized: "Top Triggers"), rows: viewModel.topTriggers.map { ($0.name, $0.count) }, emptyText: String(localized: "No triggers recorded."))
-            
-            if !viewModel.topDistortions.isEmpty {
-                rankingCard(title: String(localized: "Top Distortions"), rows: viewModel.topDistortions.map { ($0.name, $0.count) }, emptyText: "")
-            }
-        }
-    }
-
-    // MARK: - Helpers
-    private func goalProgressCard(title: String, subtitle: String, progress: Double, tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(title)
-                    .font(.system(.headline, design: .rounded).weight(.bold))
-                    .foregroundStyle(Theme.primaryText)
-                Spacer()
-                Text("\(Int((min(1, max(0, progress)) * 100).rounded()))%")
-                    .font(.system(.caption, design: .rounded).weight(.black))
-                    .foregroundStyle(Theme.secondaryText.opacity(0.8))
-            }
-
-            Text(subtitle)
-                .font(.system(.subheadline, design: .rounded))
-                .foregroundStyle(Theme.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Theme.toggleBackgroundColor(for: .light))
-                        .frame(height: 10)
-
-                    Capsule()
-                        .fill(tint)
-                        .frame(width: proxy.size.width * min(1, max(0, progress)), height: 10)
-                }
-            }
-            .frame(height: 10)
-        }
-        .padding(Theme.paddingMedium)
-        .cardStyle()
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title): \(subtitle)")
-        .accessibilityValue("\(Int((min(1, max(0, progress)) * 100).rounded())) percent complete")
-    }
-
-    private func rankingCard(title: String, rows: [(String, Int)], emptyText: String) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(.title, design: .rounded).weight(.bold))
-                .foregroundStyle(Theme.primaryText)
-
-            if rows.isEmpty {
-                Text(emptyText)
-                    .font(.system(size: 14, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText)
-            } else {
-                VStack(spacing: 8) {
-                    ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                        HStack {
-                            Text(row.0)
-                                .font(.system(.body, design: .rounded).weight(.medium))
-                            Spacer()
-                            Text("\(row.1)")
-                                .font(.system(.caption, design: .rounded).weight(.bold))
-                                .foregroundStyle(Theme.primaryText)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(themeManager.selectedColor.opacity(0.12))
-                                .clipShape(Capsule())
-                        }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("\(row.0): \(row.1) times")
-                    }
-                }
-            }
-        }
-        .padding(Theme.paddingMedium)
-        .cardStyle()
-    }
-    
 }

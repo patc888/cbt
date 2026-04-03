@@ -6,40 +6,28 @@ struct ExerciseDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    
+
     let exercise: Exercise
-    
+
     @Query private var completions: [ExerciseCompletion]
-    
+
     @State private var currentStep = 0
     @State private var stepResponses: [String]
     @State private var sessionStartTime: Date?
-    
-    // Timer state
+
     @StateObject private var timerManager = TimedSessionManager()
     @State private var completedSummary: SessionSummary?
-    
-    // Total pages = Overview (1) + Steps (N) + Optional breathing (1)
-    private var totalPages: Int { 
+
+    private var totalPages: Int {
         var count = exercise.steps.count + 1
         if exercise.breathingPattern != nil { count += 1 }
         return count
     }
-    
-    private var breathingStepIndex: Int? {
-        exercise.breathingPattern != nil ? 1 : nil
-    }
-    
-    private func stepTag(forIndex index: Int) -> Int {
-        var tag = index + 1
-        if exercise.breathingPattern != nil { tag += 1 }
-        return tag
-    }
-    
+
     private var accent: Color {
         themeManager?.selectedColor ?? .accentColor
     }
-    
+
     init(exercise: Exercise) {
         self.exercise = exercise
         let exerciseID = exercise.id
@@ -48,318 +36,128 @@ struct ExerciseDetailView: View {
         })
         self._stepResponses = State(initialValue: Array(repeating: "", count: exercise.steps.count))
     }
-    
+
     var body: some View {
         ZStack(alignment: .top) {
             ThemedBackground().ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    // Progress Header
-                    ProgressView(value: Double(currentStep + 1), total: Double(totalPages))
-                        .tint(accent)
-                        .padding()
-                        .accessibilityLabel("Step \(currentStep + 1) of \(totalPages)")
-                    
-                    if timerManager.isRunning || timerManager.isPaused {
-                        exerciseTimerBar
-                            .padding(.horizontal)
-                            .padding(.bottom, 8)
-                            .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
-                    }
-                    
-                    TabView(selection: $currentStep) {
-                        overviewStepView.tag(0)
-                        
-                        if let pattern = exercise.breathingPattern {
-                            breathingStepView(pattern: pattern)
-                                .tag(1)
-                        }
-                        
-                        ForEach(Array(exercise.steps.enumerated()), id: \.offset) { index, step in
-                            stepPageView(index: index, step: step)
-                                .tag(stepTag(forIndex: index))
-                        }
-                    }
-                    #if os(iOS)
-                    .tabViewStyle(.page(indexDisplayMode: .never))
-                    #endif
-                    .animation(.easeInOut, value: currentStep)
-                    
-                    // Bottom Navigation
-                    HStack {
-                        if currentStep > 0 {
-                            Button("Back") {
-                                withAnimation { currentStep -= 1 }
-                            }
-                            .foregroundColor(accent)
-                            .padding()
-                            .accessibilityLabel("Go back to previous step")
-                        } else {
-                            Spacer().frame(width: 60)
-                        }
-                        
-                        Spacer()
-                        
-                        if currentStep < totalPages - 1 {
-                            Button(currentStep == 0 ? "Start" : "Next") {
-                                if currentStep == 0 {
-                                    startExerciseSession()
-                                }
-                                withAnimation { currentStep += 1 }
-                            }
-                            .bold()
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(accent)
-                            .clipShape(Capsule())
-                            .padding()
-                            .accessibilityLabel(currentStep == 0 ? "Start exercise" : "Go to next step")
-                        } else {
-                            Button("Finish") {
-                                markComplete()
-                            }
-                            .bold()
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(accent)
-                            .clipShape(Capsule())
-                            .padding()
-                        }
-                    }
-                    .background(Theme.cardBackground.ignoresSafeArea(edges: .bottom))
-                }
-            }
-            .navigationTitle(exercise.title)
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .onAppear {
-                NotificationCenter.default.post(name: .exerciseFlowDidEnter, object: nil)
-                timerManager.onComplete = { summary in
-                    var finalSummary = summary
-                    finalSummary.bodyText = buildFinalBodyText()
-                    completedSummary = finalSummary
-                }
-            }
-            .navigationDestination(item: $completedSummary) { summary in
-                SaveSessionView(summary: summary, onSaveComplete: { dismiss() })
-            }
-            .onDisappear {
-                NotificationCenter.default.post(name: .exerciseFlowDidExit, object: nil)
-                timerManager.stop()
-            }
-    }
-    
-    // MARK: - Flow Views
-    
-    private var overviewStepView: some View {
-        Form {
-            Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Session Overview")
-                        .font(.headline)
-                        .foregroundStyle(Theme.primaryText)
-                    
-                    Text(exercise.description)
-                        .font(.body)
-                        .foregroundStyle(Theme.secondaryText)
-                    
-                    HStack(spacing: 12) {
-                        Label("\(exercise.steps.count) Steps", systemImage: "list.bullet")
-                        Label("\(exercise.duration) min", systemImage: "clock")
-                    }
-                    .font(.caption)
-                    .foregroundStyle(Theme.secondaryText)
-                }
-                .padding(.vertical, 8)
-                
-                Button {
-                    startExerciseSession(withTimer: true)
-                    withAnimation { currentStep += 1 }
-                } label: {
-                    Label("Start with \(exercise.duration)m Timer", systemImage: "timer")
-                        .bold()
-                        .foregroundColor(accent)
-                }
-                
-                if let pattern = exercise.breathingPattern {
-                    Button {
-                        HapticManager.shared.mediumImpact()
-                        withAnimation {
-                            currentStep = 1
-                        }
-                    } label: {
-                        Label("Guided \(pattern.name)", systemImage: "wind")
-                            .bold()
-                            .foregroundColor(accent)
-                    }
-                }
-                
-                if !completions.isEmpty {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
-                        Text("You've completed this \(completions.count) times")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-        }
-        .scrollContentBackground(.hidden)
-    }
-    
-    private func breathingStepView(pattern: BreathingPattern) -> some View {
-        VStack(spacing: 0) {
-            BreathingResetView(
-                durationSeconds: exercise.duration * 60,
-                pattern: pattern,
-                autoStart: true,
-                showsDismissControl: false,
-                showControls: true,
-                hideBackground: true,
-                hideHeader: true,
-                onComplete: {
-                    // We don't auto-advance here to avoid jarring UX,
-                    // user can tap "Next" when they feel ready.
-                },
-                embeddedInFlow: true
-            )
-        }
-    }
-    
-    private func stepPageView(index: Int, step: String) -> some View {
-        Form {
-            Section(header: Text("Stage \(index + 1) of \(exercise.steps.count)")) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Instruction")
-                        .font(.headline)
-                        .foregroundStyle(Theme.primaryText)
-                    
-                    Text(step)
-                        .font(.body)
-                        .foregroundStyle(Theme.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.vertical, 8)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Your Reflection")
-                        .font(.headline)
-                        .foregroundStyle(Theme.primaryText)
-                    
-                    Text("Record your thoughts or results for this step.")
-                        .font(.caption)
-                        .foregroundStyle(Theme.secondaryText)
-                    
-                    TextEditor(text: Binding(
-                        get: { index < stepResponses.count ? stepResponses[index] : "" },
-                        set: { if index < stepResponses.count { stepResponses[index] = $0 } }
-                    ))
-                    .frame(minHeight: 180)
-                    .scrollContentBackground(.hidden)
-                    .background(Theme.cardBackground)
-                    .cornerRadius(Theme.cornerRadiusSmall)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
-                            .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+
+            VStack(spacing: 0) {
+                ExerciseFlowProgressHeader(
+                    currentStep: currentStep,
+                    totalPages: totalPages,
+                    accent: accent
+                )
+
+                if timerManager.isRunning || timerManager.isPaused {
+                    ExerciseTimerBar(
+                        timerManager: timerManager,
+                        accent: accent
                     )
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                 }
-                .padding(.vertical, 8)
 
-                if let pattern = exercise.breathingPattern {
-                    Button {
-                        HapticManager.shared.mediumImpact()
-                        withAnimation {
-                            currentStep = 1
-                        }
-                    } label: {
-                        HStack {
-                            Image(systemName: "wind")
-                            VStack(alignment: .leading) {
-                                Text("Guided \(pattern.name)")
-                                    .font(.subheadline.bold())
-                                Text("Center yourself with this guided session.")
-                                    .font(.caption2)
+                TabView(selection: $currentStep) {
+                    ExerciseOverviewPage(
+                        exercise: exercise,
+                        completionsCount: completions.count,
+                        accent: accent,
+                        onStartWithTimer: {
+                            startExerciseSession(withTimer: true)
+                            withAnimation { currentStep += 1 }
+                        },
+                        onJumpToBreathing: exercise.breathingPattern == nil ? nil : {
+                            HapticManager.shared.mediumImpact()
+                            withAnimation {
+                                currentStep = 1
                             }
                         }
-                        .foregroundStyle(.white)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(accent)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    )
+                    .tag(0)
+
+                    if let pattern = exercise.breathingPattern {
+                        ExerciseBreathingPage(exercise: exercise, pattern: pattern)
+                            .tag(1)
                     }
-                    .padding(.vertical, 8)
+
+                    ForEach(Array(exercise.steps.enumerated()), id: \.offset) { index, step in
+                        ExerciseInstructionPage(
+                            stepIndex: index,
+                            totalSteps: exercise.steps.count,
+                            step: step,
+                            response: responseBinding(for: index),
+                            breathingPattern: exercise.breathingPattern,
+                            accent: accent,
+                            onJumpToBreathing: exercise.breathingPattern == nil ? nil : {
+                                HapticManager.shared.mediumImpact()
+                                withAnimation {
+                                    currentStep = 1
+                                }
+                            }
+                        )
+                        .tag(stepTag(forIndex: index))
+                    }
                 }
+                #if os(iOS)
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                #endif
+                .animation(.easeInOut, value: currentStep)
+
+                ExerciseFlowNavigationBar(
+                    currentStep: currentStep,
+                    totalPages: totalPages,
+                    accent: accent,
+                    onBack: {
+                        withAnimation { currentStep -= 1 }
+                    },
+                    onNext: {
+                        if currentStep == 0 {
+                            startExerciseSession()
+                        }
+                        withAnimation { currentStep += 1 }
+                    },
+                    onFinish: markComplete
+                )
             }
         }
-        .scrollContentBackground(.hidden)
-    }
-    
-    // MARK: - Timer Bar
-    private var exerciseTimerBar: some View {
-        HStack(spacing: DSSpacing.medium) {
-            ZStack {
-                Circle()
-                    .stroke(accent.opacity(0.15), lineWidth: 3)
-                    .frame(width: 32, height: 32)
-                Circle()
-                    .trim(from: 0, to: timerManager.progress)
-                    .stroke(accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                    .frame(width: 32, height: 32)
-                    .rotationEffect(.degrees(-90))
+        .navigationTitle(exercise.title)
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .onAppear {
+            NotificationCenter.default.post(name: .exerciseFlowDidEnter, object: nil)
+            timerManager.onComplete = { summary in
+                var finalSummary = summary
+                finalSummary.bodyText = buildFinalBodyText()
+                completedSummary = finalSummary
             }
-
-            Text(timerManager.formattedRemaining)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(DSTheme.primaryText)
-
-            Spacer()
-
-            if timerManager.isPaused {
-                Button {
-                    HapticManager.shared.lightImpact()
-                    timerManager.resume()
-                } label: {
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(accent)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Resume timer")
-            } else {
-                Button {
-                    HapticManager.shared.lightImpact()
-                    timerManager.pause()
-                } label: {
-                    Image(systemName: "pause.fill")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(accent)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Pause timer")
-            }
-
-            Button {
-                HapticManager.shared.mediumImpact()
-                timerManager.endEarly()
-            } label: {
-                Image(systemName: "stop.fill")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(DSTheme.destructive)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Stop timer")
         }
-        .padding(.horizontal, DSSpacing.large)
-        .padding(.vertical, DSSpacing.medium)
-        .background(DSTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous))
+        .navigationDestination(item: $completedSummary) { summary in
+            SaveSessionView(summary: summary, onSaveComplete: { dismiss() })
+        }
+        .onDisappear {
+            NotificationCenter.default.post(name: .exerciseFlowDidExit, object: nil)
+            timerManager.stop()
+        }
     }
-    
+
+    private func stepTag(forIndex index: Int) -> Int {
+        var tag = index + 1
+        if exercise.breathingPattern != nil { tag += 1 }
+        return tag
+    }
+
+    private func responseBinding(for index: Int) -> Binding<String> {
+        Binding(
+            get: { index < stepResponses.count ? stepResponses[index] : "" },
+            set: { newValue in
+                guard index < stepResponses.count else { return }
+                stepResponses[index] = newValue
+            }
+        )
+    }
+
     private func startExerciseSession(withTimer: Bool = false) {
         if sessionStartTime == nil {
             sessionStartTime = Date()
@@ -368,8 +166,7 @@ struct ExerciseDetailView: View {
             }
         }
     }
-    
-    // MARK: - Timer
+
     private func startExerciseTimer() {
         HapticManager.shared.lightImpact()
         let durationSeconds = exercise.duration * 60
@@ -377,14 +174,14 @@ struct ExerciseDetailView: View {
             sourceKind: .exercise,
             sourceID: exercise.id,
             title: exercise.title,
-            bodyText: "", // Final bodyText is built on completion
+            bodyText: "",
             durationSeconds: durationSeconds,
             startedAt: Date(),
             endedAt: Date()
         )
         timerManager.start(durationSeconds: durationSeconds, summary: summary)
     }
-    
+
     private func buildFinalBodyText() -> String {
         var bodyText = "\(exercise.description)\n\n"
         for (index, step) in exercise.steps.enumerated() {
@@ -399,21 +196,19 @@ struct ExerciseDetailView: View {
         }
         return bodyText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
-    
+
     private func markComplete() {
         let newCompletion = ExerciseCompletion(
             exerciseID: exercise.id
         )
         modelContext.insert(newCompletion)
-        
+
         do {
             try modelContext.save()
             ReviewManager.shared.logSignificantAction()
-            // If timer was running, end it and offer save
             if timerManager.isRunning || timerManager.isPaused {
                 timerManager.endEarly()
             } else {
-                // Construct a manual summary
                 let start = sessionStartTime ?? Date()
                 let elapsed = Int(Date().timeIntervalSince(start))
                 let summary = SessionSummary(

@@ -3,7 +3,9 @@ import SwiftUI
 struct DataResetOptionsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ThemeManager.self) private var themeManager
-    
+
+    private let isCloudSyncEnabled = DataResetManager.isCloudSyncEnabled
+
     @State private var showingLocalConfirm = false
     @State private var showingCloudSheet = false
     @State private var cloudConfirmText = ""
@@ -20,8 +22,8 @@ struct DataResetOptionsView: View {
                         Text("Reset Options")
                             .font(.system(.title2, design: .rounded).weight(.bold))
                             .foregroundStyle(themeManager.primaryColor)
-                        
-                        Text("You can choose to reset data only on this device, or completely delete your synced data from iCloud as well.")
+
+                        Text("Your CBT data is currently stored locally on this device. You can clear the local app database, preferences, and reminders from here.")
                             .font(.body)
                             .foregroundStyle(Theme.secondaryText)
                     }
@@ -37,8 +39,8 @@ struct DataResetOptionsView: View {
                                 Text("Reset This Device")
                                     .font(.headline)
                                     .foregroundStyle(Theme.errorRed)
-                                
-                                Text("Clears local data, preferences, and notifications on this device only. If iCloud sync is enabled, your data remains in the cloud and will re-sync back to this device the next time you open the app.")
+
+                                Text("Clears local data, preferences, and notifications stored on this device. This action cannot be undone.")
                                     .font(.subheadline)
                                     .foregroundStyle(Theme.secondaryText)
                                     .multilineTextAlignment(.leading)
@@ -47,27 +49,42 @@ struct DataResetOptionsView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    
-                    // Option B
-                    SettingsSection(title: "Reset Everywhere") {
-                        Button {
-                            HapticManager.shared.mediumImpact()
-                            cloudConfirmText = ""
-                            showingCloudSheet = true
-                        } label: {
+
+                    if isCloudSyncEnabled {
+                        SettingsSection(title: "Reset Everywhere") {
+                            Button {
+                                HapticManager.shared.mediumImpact()
+                                cloudConfirmText = ""
+                                showingCloudSheet = true
+                            } label: {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Reset Everywhere (Delete iCloud Data)")
+                                        .font(.headline)
+                                        .foregroundStyle(Theme.errorRed)
+
+                                    Text("Permanently deletes your data from this device and removes synced records from your private iCloud. This affects all synced devices. This action is permanent and cannot be undone.")
+                                        .font(.subheadline)
+                                        .foregroundStyle(Theme.secondaryText)
+                                        .multilineTextAlignment(.leading)
+                                }
+                                .padding(.vertical, 8)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    } else {
+                        SettingsSection(title: "iCloud Reset") {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("Reset Everywhere (Delete iCloud Data)")
+                                Text("Unavailable in the current data mode")
                                     .font(.headline)
-                                    .foregroundStyle(Theme.errorRed)
-                                
-                                Text("Permanently deletes your data from this device AND erases all synced records from your private iCloud. This affects all your devices. This action is permanent and cannot be undone.")
+                                    .foregroundStyle(themeManager.primaryColor)
+
+                                Text("Cloud sync is currently turned off, so CBT cannot delete data from iCloud or other devices from this screen.")
                                     .font(.subheadline)
                                     .foregroundStyle(Theme.secondaryText)
                                     .multilineTextAlignment(.leading)
                             }
                             .padding(.vertical, 8)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding()
@@ -93,7 +110,7 @@ struct DataResetOptionsView: View {
                 performLocalWipe()
             }
         } message: {
-            Text("This will delete all local app data and preferences. If iCloud sync is enabled, it may download again.")
+            Text("This will delete all local app data, preferences, and reminders stored on this device.")
         }
         .sheet(isPresented: $showingCloudSheet) {
             NavigationStack {

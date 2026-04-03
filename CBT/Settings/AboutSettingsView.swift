@@ -40,7 +40,7 @@ struct AboutSettingsView: View {
             .buttonStyle(PlainButtonStyle())
             
             NavigationLink(destination: DataResetOptionsView()) {
-                SettingsRow(icon: "trash", iconColor: Theme.errorRed, title: "Reset All Data") {
+                SettingsRow(icon: "trash", iconColor: Theme.errorRed, title: "Reset Device Data") {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Theme.secondaryText)

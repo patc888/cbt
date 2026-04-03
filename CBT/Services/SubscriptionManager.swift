@@ -1,188 +1,45 @@
 import Foundation
 import Combine
-import StoreKit
-import SwiftUI
 
 @MainActor
 class SubscriptionManager: ObservableObject {
     static let shared = SubscriptionManager()
+    static let isV1FreeModeEnabled = true
     
-    @Published var subscriptionStatus: SubscriptionStatus = .unknown
-    @Published var availableProducts: [Product] = []
+    @Published var subscriptionStatus: SubscriptionStatus = .subscribed
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    // Abstracting StoreKit details to support the stub requirement
-    private let productIdentifiersForSale: [String] = [
-        "cbt.premium.yearly",
-        "cbt.premium.monthly",
-        "cbt.premium.lifetime"
-    ]
-    
     enum SubscriptionStatus {
-        case unknown
-        case notSubscribed
         case subscribed
-        case expired
     }
-    
-    private var hasStartedListening = false
 
     private init() {}
 
-    /// Call once after the app UI is ready.
     func startListeningIfNeeded() {
-        guard !hasStartedListening else { return }
-        hasStartedListening = true
-
-        Task { [weak self] in
-            // Listen for transactions that occur outside the app (e.g. App Store, Ask to Buy)
-            for await _ in Transaction.updates {
-                await self?.checkSubscriptionStatus()
-            }
-        }
-
-        Task { [weak self] in
-            await self?.checkSubscriptionStatus()
-        }
+        subscriptionStatus = .subscribed
+        isLoading = false
+        errorMessage = nil
     }
     
-    func loadProducts() async {
-        isLoading = true
-        errorMessage = nil
-        
-        do {
-            let products = try await Product.products(for: productIdentifiersForSale)
-            
-            await MainActor.run {
-                // Sort products to match the order of our identifiers
-                self.availableProducts = products.sorted { p1, p2 in
-                    let index1 = productIdentifiersForSale.firstIndex(of: p1.id) ?? 999
-                    let index2 = productIdentifiersForSale.firstIndex(of: p2.id) ?? 999
-                    return index1 < index2
-                }
-                self.isLoading = false
-            }
-        } catch {
-            print("StoreKit: Failed to load products - \(error)")
-            await MainActor.run {
-                self.errorMessage = "Failed to load subscription plans."
-                self.isLoading = false
-            }
-        }
-    }
+    func loadProducts() async {}
     
     func purchase(_ productId: String) async -> Bool {
-        isLoading = true
+        _ = productId
         errorMessage = nil
-        
-        do {
-            let product = try await product(for: productId)
-            let result = try await product.purchase()
-            
-            switch result {
-            case .success(let verification):
-                let transaction = try checkVerified(verification)
-                await checkSubscriptionStatus()
-                await transaction.finish()
-                await MainActor.run { self.isLoading = false }
-                return true
-            case .pending:
-                await MainActor.run { self.isLoading = false }
-                return false
-            case .userCancelled:
-                await MainActor.run { self.isLoading = false }
-                return false
-            @unknown default:
-                await MainActor.run { self.isLoading = false }
-                return false
-            }
-        } catch {
-            print("StoreKit: Purchase failed - \(error)")
-            await MainActor.run {
-                self.errorMessage = "Purchase failed."
-                self.isLoading = false
-            }
-            return false
-        }
+        return false
     }
     
     func restorePurchases() async {
-        isLoading = true
+        isLoading = false
         errorMessage = nil
-        
-        do {
-            try await AppStore.sync()
-            await checkSubscriptionStatus()
-            await MainActor.run { self.isLoading = false }
-        } catch {
-            print("StoreKit: Restore failed - \(error)")
-            await MainActor.run {
-                self.errorMessage = "Restore failed."
-                self.isLoading = false
-            }
-        }
     }
     
     func checkSubscriptionStatus() async {
-        var hasActiveSubscription = false
-        
-        for await result in Transaction.currentEntitlements {
-            do {
-                let transaction = try checkVerified(result)
-                if transaction.productID.starts(with: "cbt.premium") {
-                    if transaction.revocationDate == nil {
-                        hasActiveSubscription = true
-                        break
-                    }
-                }
-            } catch {
-                print("StoreKit: Verification failed - \(error)")
-            }
-        }
-        
-        await MainActor.run {
-            self.subscriptionStatus = hasActiveSubscription ? .subscribed : .notSubscribed
-        }
-    }
-
-    func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
-        switch result {
-        case .unverified:
-            throw StoreError.failedVerification
-        case .verified(let safe):
-            return safe
-        }
-    }
-
-    enum StoreError: Error {
-        case failedVerification
-        case productUnavailable
+        subscriptionStatus = .subscribed
     }
     
     var isPremium: Bool {
-        subscriptionStatus == .subscribed
-    }
-
-    private func product(for productId: String) async throws -> Product {
-        if let product = availableProducts.first(where: { $0.id == productId }) {
-            return product
-        }
-
-        let fetchedProducts = try await Product.products(for: [productId])
-        guard let product = fetchedProducts.first else {
-            throw StoreError.productUnavailable
-        }
-
-        if !availableProducts.contains(where: { $0.id == product.id }) {
-            availableProducts.append(product)
-            availableProducts.sort { p1, p2 in
-                let index1 = productIdentifiersForSale.firstIndex(of: p1.id) ?? 999
-                let index2 = productIdentifiersForSale.firstIndex(of: p2.id) ?? 999
-                return index1 < index2
-            }
-        }
-
-        return product
+        true
     }
 }

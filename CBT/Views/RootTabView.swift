@@ -5,7 +5,7 @@ struct RootTabView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var selectedTab: FloatingTab = .home
-    @State private var activatedTabs: Set<FloatingTab> = [.home]
+    @State private var activatedTabs: Set<FloatingTab> = []
     @StateObject private var breathing = BreathingPresenter.shared
     @State private var isInExerciseFlow = false
     var body: some View {
@@ -59,7 +59,7 @@ struct RootTabView: View {
                                 case .thought(let record):
                                     ThoughtRecordDetailView(record: record)
                                 case .exercise(let exerciseID):
-                                    if let exercise = ExerciseLibrary.shared.exercises.first(where: { $0.id == exerciseID }) {
+                                    if let exercise = ExerciseLibrary.shared.exercise(withID: exerciseID) {
                                         ExerciseDetailView(exercise: exercise)
                                     } else {
                                         ContentUnavailableView(
@@ -109,6 +109,13 @@ struct RootTabView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear {
             updateTabBarAppearance()
+            // Activate the home tab on appear rather than during init.
+            // This ensures @Query-bearing HomeView is not constructed
+            // during the first body evaluation, adding defense-in-depth
+            // on top of ReadyRootView's container-settlement gate.
+            if activatedTabs.isEmpty {
+                activatedTabs.insert(.home)
+            }
         }
         .overlay {
             if breathing.isPresented {
@@ -161,13 +168,44 @@ struct RootTabView: View {
     @ViewBuilder
     private func tabContent<Content: View>(
         for tab: FloatingTab,
-        @ViewBuilder content: () -> Content
+        @ViewBuilder content: @escaping () -> Content
     ) -> some View {
         if activatedTabs.contains(tab) {
-            content()
+            DeferredTabRoot {
+                content()
+            }
         } else {
             Color.clear
                 .accessibilityHidden(true)
+        }
+    }
+}
+
+private struct DeferredTabRoot<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    @State private var isReady = false
+
+    var body: some View {
+        Group {
+            if isReady {
+                content()
+            } else {
+                ThemedBackground()
+                    .ignoresSafeArea()
+                    .overlay {
+                        ProgressView()
+                            .controlSize(.regular)
+                    }
+            }
+        }
+        .task {
+            guard !isReady else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            isReady = true
         }
     }
 }

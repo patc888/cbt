@@ -9,7 +9,6 @@ struct MoodListView: View {
         order: .reverse
     ) private var entries: [MoodEntry]
     
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
     @State private var showingNewEntry = false
     @State private var attemptingNewEntry = false
@@ -77,20 +76,12 @@ struct MoodListView: View {
         .safeAreaInset(edge: .top) {
             HStack {
                 Spacer()
-                Button {
-                    HapticManager.shared.lightImpact()
+                ListActionPillButton(
+                    title: "+ Mood",
+                    color: themeManager.selectedColor
+                ) {
                     attemptingNewEntry = true
-                } label: {
-                    Text("+ Mood")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundColor(themeManager.selectedColor)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Theme.cardBackground)
-                        .clipShape(Capsule())
-                        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.05 : 0), radius: colorScheme == .dark ? 2 : 0)
                 }
-                .buttonStyle(.plain)
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)

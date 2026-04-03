@@ -85,6 +85,41 @@ struct LockView: View {
     }
 }
 
+struct PrivacyShieldView: View {
+    @Environment(ThemeManager.self) private var themeManager
+
+    var body: some View {
+        ZStack {
+            themeManager.primaryColor
+                .overlay(
+                    LinearGradient(
+                        colors: [.black.opacity(0.18), .clear, .black.opacity(0.12)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .ignoresSafeArea()
+
+            VStack(spacing: 14) {
+                Image(systemName: "hand.raised.shield.fill")
+                    .font(.system(size: 36, weight: .semibold))
+                    .foregroundStyle(.white)
+
+                Text("Protected in App Switcher")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+
+                Text("Sensitive CBT data is hidden while the app is not active.")
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(.horizontal, 32)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 #Preview {
     LockView()
         .environment(ThemeManager())

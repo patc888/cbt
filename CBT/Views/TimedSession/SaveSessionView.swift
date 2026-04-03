@@ -1,7 +1,10 @@
 import SwiftUI
 import SwiftData
+import OSLog
 
 struct SaveSessionView: View {
+    private static let logger = AppLogger.make(category: "SaveSessionView")
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
@@ -200,43 +203,27 @@ struct SaveSessionView: View {
 
     // MARK: - Helpers
     private var formattedDuration: String {
-        let s = summary.durationSeconds
-        if s < 60 { return "\(s)s" }
-        let m = s / 60
-        let r = s % 60
-        return r > 0 ? "\(m)m \(r)s" : "\(m)m"
+        DurationFormatting.sessionLabel(seconds: summary.durationSeconds)
     }
 
     private func saveEntry() {
         HapticManager.shared.lightImpact()
 
-        var bodyContent = summary.bodyText
-        if !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            bodyContent += "\n\n--- Notes ---\n" + notes
-        }
-        if !selectedTags.isEmpty {
-            bodyContent += "\n\nTags: " + selectedTags.sorted().joined(separator: ", ")
-        }
-
-        let entry = JournalEntry(
-            createdAt: summary.endedAt,
-            title: editableTitle.trimmingCharacters(in: .whitespaces),
-            body: bodyContent,
-            sourceKind: summary.sourceKind.rawValue,
-            sourceID: summary.sourceID,
-            durationSeconds: summary.durationSeconds
-        )
-        modelContext.insert(entry)
-
         do {
-            try modelContext.save()
+            try modelContext.cbtStore.insertJournalEntry(
+                summary: summary,
+                title: editableTitle,
+                bodyText: summary.bodyText,
+                notes: notes,
+                tags: selectedTags
+            )
             HapticManager.shared.success()
             ReviewManager.shared.logSignificantAction()
             saved = true
             dismiss()
             onSaveComplete?()
         } catch {
-            print("Failed to save journal entry: \(error)")
+            Self.logger.error("Failed to save journal entry: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

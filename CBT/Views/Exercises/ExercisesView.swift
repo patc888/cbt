@@ -2,45 +2,64 @@ import SwiftUI
 import SwiftData
 
 struct ExercisesView: View {
+    @State private var isDashboardReady = false
+
+    var body: some View {
+        ZStack {
+            ThemedBackground().ignoresSafeArea()
+
+            if isDashboardReady {
+                ExercisesDashboardContent()
+            } else {
+                VStack(alignment: .leading, spacing: 16) {
+                    TopHeadlineView(
+                        title: "Exercises",
+                        subtitle: "Tap once to start any practice"
+                    )
+                    
+                    ExercisesSkeleton()
+                        .padding(.horizontal)
+                    
+                    Spacer()
+                }
+                .padding(.top, 16)
+            }
+        }
+#if os(iOS)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
+#endif
+        .task {
+            guard !isDashboardReady else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            isDashboardReady = true
+        }
+    }
+}
+
+private struct ExercisesDashboardContent: View {
     @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse)
     private var completions: [ExerciseCompletion]
     @Environment(ThemeManager.self) private var themeManager
 
-    @State private var exercises: [Exercise] = []
+    private let exerciseLibrary = ExerciseLibrary.shared
+    @State private var viewModel = ExercisesViewModel()
     @State private var selectedCategory: String = "All"
 
-    var categories: [String] {
-        let allCategories = exercises.map { $0.category }
-        return Array(Set(allCategories)).sorted()
+    private var exercises: [Exercise] {
+        exerciseLibrary.exercises
+    }
+
+    private var categories: [String] {
+        exerciseLibrary.categories()
     }
 
     private var categoryFilters: [String] {
         ["All"] + categories
-    }
-
-    private var completionIDs: Set<String> {
-        Set(completions.map(\.exerciseID))
-    }
-
-    private var recentCompletionIDs: [String] {
-        var uniqueIDs: [String] = []
-        for completion in completions {
-            if uniqueIDs.contains(completion.exerciseID) { continue }
-            uniqueIDs.append(completion.exerciseID)
-            if uniqueIDs.count == 3 { break }
-        }
-        return uniqueIDs
-    }
-
-    private var upNextExercises: [Exercise] {
-        let incomplete = exercises.filter { !completionIDs.contains($0.id) }
-        return Array(incomplete.prefix(3))
-    }
-
-    private var recentlyCompletedExercises: [Exercise] {
-        recentCompletionIDs.compactMap { id in
-            exercises.first(where: { $0.id == id })
-        }
     }
 
     private var filteredExercises: [Exercise] {
@@ -78,20 +97,22 @@ struct ExercisesView: View {
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .cardStyle()
+                    } else if !viewModel.isInitialized {
+                        ExercisesSkeleton()
                     } else {
-                        if !upNextExercises.isEmpty {
+                        if !viewModel.upNextExercises.isEmpty {
                             sectionTitle("Up Next")
                             VStack(spacing: 10) {
-                                ForEach(upNextExercises) { exercise in
+                                ForEach(viewModel.upNextExercises) { exercise in
                                     exerciseCard(exercise, showCategory: true, isComplete: false)
                                 }
                             }
                         }
 
-                        if !recentlyCompletedExercises.isEmpty {
+                        if !viewModel.recentlyCompletedExercises.isEmpty {
                             sectionTitle("Recently Completed")
                             VStack(spacing: 10) {
-                                ForEach(recentlyCompletedExercises) { exercise in
+                                ForEach(viewModel.recentlyCompletedExercises) { exercise in
                                     exerciseCard(exercise, showCategory: true, isComplete: true)
                                 }
                             }
@@ -119,7 +140,7 @@ struct ExercisesView: View {
                                             exerciseCard(
                                                 exercise,
                                                 showCategory: selectedCategory != "All",
-                                                isComplete: completionIDs.contains(exercise.id)
+                                                isComplete: viewModel.completionIDs.contains(exercise.id)
                                             )
                                         }
                                     }
@@ -138,13 +159,8 @@ struct ExercisesView: View {
                 Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
             }
         }
-#if os(iOS)
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
-#endif
-        .onAppear {
-            exercises = ExerciseLibrary.shared.exercises
+        .task(id: completions.count) {
+            await viewModel.update(completions: completions, allExercises: exercises)
         }
     }
 
@@ -320,5 +336,17 @@ struct ExercisesView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(exercise.title). \(exercise.description). \(exercise.steps.count) steps, \(exercise.duration) minutes.")
         .accessibilityHint("Tap to start exercise")
+    }
+}
+
+private struct ExercisesSkeleton: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            ForEach(0..<6, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: DSCornerRadius.large, style: .continuous)
+                    .fill(Color.secondary.opacity(0.1))
+                    .frame(height: 120)
+            }
+        }
     }
 }

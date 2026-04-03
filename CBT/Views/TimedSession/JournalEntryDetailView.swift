@@ -1,7 +1,10 @@
 import SwiftUI
 import SwiftData
+import OSLog
 
 struct JournalEntryDetailView: View {
+    private static let logger = AppLogger.make(category: "JournalEntryDetailView")
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
@@ -15,17 +18,12 @@ struct JournalEntryDetailView: View {
         themeManager?.selectedColor ?? .accentColor
     }
 
-    private var sourceKind: SessionSourceKind? {
-        guard let kind = entry.sourceKind else { return nil }
-        return SessionSourceKind(rawValue: kind)
-    }
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DSSpacing.large) {
                 // Header badge
                 HStack(spacing: DSSpacing.small) {
-                    if let kind = sourceKind {
+                    if let kind = entry.sessionSourceKind {
                         Image(systemName: kind.iconName)
                             .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(accent)
@@ -36,8 +34,8 @@ struct JournalEntryDetailView: View {
 
                     Spacer()
 
-                    if let secs = entry.durationSeconds, secs > 0 {
-                        Label(formattedDuration(secs), systemImage: "timer")
+                    if let durationLabel = entry.durationLabel {
+                        Label(durationLabel, systemImage: "timer")
                             .font(DSTypography.caption)
                             .foregroundStyle(DSTheme.secondaryText)
                             .padding(.horizontal, DSSpacing.medium)
@@ -102,20 +100,12 @@ struct JournalEntryDetailView: View {
 #endif
     }
 
-    private func formattedDuration(_ seconds: Int) -> String {
-        if seconds < 60 { return "\(seconds)s" }
-        let m = seconds / 60
-        let r = seconds % 60
-        return r > 0 ? "\(m)m \(r)s" : "\(m)m"
-    }
-
     private func deleteEntry() {
-        entry.isDeleted = true
         do {
-            try modelContext.save()
+            try modelContext.cbtStore.softDelete(item: entry)
             dismiss()
         } catch {
-            print("Failed to soft-delete journal entry: \(error)")
+            Self.logger.error("Failed to soft-delete journal entry: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
