@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+@MainActor
 final class TimedSessionManager: ObservableObject {
     // MARK: - Published State
     @Published private(set) var isRunning = false

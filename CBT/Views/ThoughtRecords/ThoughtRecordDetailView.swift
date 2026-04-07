@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import os
 
 struct ThoughtRecordDetailView: View {
     @Environment(\.modelContext) private var modelContext
@@ -113,7 +114,7 @@ struct ThoughtRecordDetailView: View {
             try modelContext.cbtStore.softDelete(item: record)
             dismiss()
         } catch {
-            print("Failed to delete record: \(error)")
+            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to delete record: \(error)")
         }
     }
 }

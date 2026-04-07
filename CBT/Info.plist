@@ -4,10 +4,6 @@
 <dict>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Unlock your private CBT records with Face ID.</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-	</array>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.healthcare-fitness</string>
 </dict>

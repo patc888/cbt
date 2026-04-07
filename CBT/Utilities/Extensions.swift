@@ -58,7 +58,7 @@ extension View {
         self
             .padding(DSSpacing.medium)
             .if(minHeight != nil) { view in
-                view.frame(minHeight: minHeight!)
+                view.frame(minHeight: minHeight ?? 0)
             }
             .background(DSTheme.elevatedFill)
             .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous))

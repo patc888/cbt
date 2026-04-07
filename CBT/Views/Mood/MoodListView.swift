@@ -1,10 +1,10 @@
 import SwiftUI
 import SwiftData
+import os
 
 struct MoodListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(
-        filter: #Predicate<MoodEntry> { !$0.isDeleted },
         sort: \MoodEntry.createdAt,
         order: .reverse
     ) private var entries: [MoodEntry]
@@ -12,12 +12,16 @@ struct MoodListView: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var showingNewEntry = false
     @State private var attemptingNewEntry = false
+
+    private var activeEntries: [MoodEntry] {
+        entries.filter { !$0.isDeleted }
+    }
     
     var body: some View {
         ZStack {
             ThemedBackground().ignoresSafeArea()
             
-            if entries.isEmpty {
+            if activeEntries.isEmpty {
                 VStack(spacing: 16) {
                     Image(systemName: "face.smiling")
                         .font(.system(size: 64))
@@ -48,7 +52,7 @@ struct MoodListView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(entries) { entry in
+                        ForEach(activeEntries) { entry in
                             NavigationLink(value: entry) {
                                 MoodEntryRow(entry: entry)
                             }
@@ -98,7 +102,7 @@ struct MoodListView: View {
         do {
             try modelContext.cbtStore.softDelete(item: entry)
         } catch {
-            print("Failed to delete entry: \(error)")
+            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to delete entry: \(error)")
         }
     }
 }

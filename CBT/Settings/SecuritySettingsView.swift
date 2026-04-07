@@ -2,9 +2,11 @@ import SwiftUI
 import SwiftData
 
 struct SecuritySettingsView: View {
+    private static let logger = AppLogger.make(category: "SecuritySettings")
+
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
-    @StateObject private var securityManager = SecurityManager.shared
+    @EnvironmentObject private var securityManager: SecurityManager
     
     let settings: UserSettings
     @Namespace private var appLockNamespace
@@ -35,7 +37,10 @@ struct SecuritySettingsView: View {
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                     settings.appLockEnabled = newValue
                                     appLockEnabledStorage = newValue
-                                    try? modelContext.save()
+                                    modelContext.saveIfChanged(
+                                        logger: Self.logger,
+                                        action: "toggle-app-lock"
+                                    )
                                 }
                             }
                         ),
@@ -88,7 +93,10 @@ struct SecuritySettingsView: View {
 
         settings.appLockEnabled = false
         appLockEnabledStorage = false
-        try? modelContext.save()
+        modelContext.saveIfChanged(
+            logger: Self.logger,
+            action: "disable-unsupported-app-lock"
+        )
     }
 }
 

@@ -12,6 +12,7 @@ import CloudKit
 import SwiftUI
 @testable import CBT
 
+@MainActor
 struct CBTTests {
 
     @Test func durationFormattingUsesCompactSessionLabels() {

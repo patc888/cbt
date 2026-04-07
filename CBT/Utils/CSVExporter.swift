@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
+import os
 
 struct CSVFile: Transferable {
     let url: URL
@@ -76,7 +77,7 @@ final class CSVExporter: Sendable {
             try content.write(to: fileURL, atomically: true, encoding: .utf8)
             return CSVFile(url: fileURL)
         } catch {
-            print("Failed to write CSV: \(error)")
+            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to write CSV: \(error)")
             return nil
         }
     }

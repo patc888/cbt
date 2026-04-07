@@ -371,6 +371,9 @@ private struct InsightsGoalProgressCard: View {
                 Text(title)
                     .font(.system(.headline, design: .rounded).weight(.bold))
                     .foregroundStyle(Theme.primaryText)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .layoutPriority(1)
                 Spacer()
                 Text("\(Int((min(1, max(0, progress)) * 100).rounded()))%")
                     .font(.system(.caption, design: .rounded).weight(.black))
@@ -415,17 +418,24 @@ private struct InsightsRankingCard: View {
             Text(title)
                 .font(.system(.title, design: .rounded).weight(.bold))
                 .foregroundStyle(Theme.primaryText)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
 
             if rows.isEmpty {
                 Text(emptyText)
                     .font(.system(size: 14, design: .rounded))
                     .foregroundStyle(Theme.secondaryText)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
             } else {
                 VStack(spacing: 8) {
                     ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                        HStack {
+                        HStack(alignment: .firstTextBaseline, spacing: 12) {
                             Text(row.0)
                                 .font(.system(.body, design: .rounded).weight(.medium))
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .layoutPriority(1)
                             Spacer()
                             Text("\(row.1)")
                                 .font(.system(.caption, design: .rounded).weight(.bold))
@@ -435,6 +445,7 @@ private struct InsightsRankingCard: View {
                                 .background(themeManager.selectedColor.opacity(0.12))
                                 .clipShape(Capsule())
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("\(row.0): \(row.1) times")
                     }

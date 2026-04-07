@@ -138,7 +138,7 @@ struct MiniStatCard: View {
             }
             .foregroundStyle(
                 iconGradient != nil && state == .neutral
-                ? AnyShapeStyle(LinearGradient(colors: iconGradient!, startPoint: .topLeading, endPoint: .bottomTrailing))
+                ? AnyShapeStyle(LinearGradient(colors: iconGradient ?? [displayIconColor], startPoint: .topLeading, endPoint: .bottomTrailing))
                 : AnyShapeStyle(displayIconColor)
             )
             .textCase(.uppercase)

@@ -27,7 +27,7 @@ struct SettingsRow<Content: View>: View {
                 .layoutPriority(1)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title)\(subtitle != nil ? ", \(subtitle!)" : "")")
+        .accessibilityLabel("\(title)\(subtitle != nil ? ", \(subtitle ?? "")" : "")")
     }
 }
 

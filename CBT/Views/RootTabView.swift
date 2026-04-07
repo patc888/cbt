@@ -109,13 +109,16 @@ struct RootTabView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear {
             updateTabBarAppearance()
-            // Activate the home tab on appear rather than during init.
-            // This ensures @Query-bearing HomeView is not constructed
-            // during the first body evaluation, adding defense-in-depth
-            // on top of ReadyRootView's container-settlement gate.
-            if activatedTabs.isEmpty {
-                activatedTabs.insert(.home)
-            }
+        }
+        .task {
+            guard activatedTabs.isEmpty else { return }
+            // Let the tab and navigation containers settle for one more
+            // async turn before constructing the initial home subtree.
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            activatedTabs.insert(.home)
         }
         .overlay {
             if breathing.isPresented {

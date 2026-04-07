@@ -28,6 +28,7 @@ private struct JournalSnapshot: Sendable {
     let createdAt: Date
 }
 
+@MainActor
 @Observable
 final class InsightsViewModel {
     var isCalculating = true
@@ -65,6 +66,7 @@ final class InsightsViewModel {
     var topTriggers: [TriggerCount] = []
     var topDistortions: [DistortionCount] = []
     
+    @MainActor
     func recalculate(
         timeRangeDays: Int, // 7 or 30
         moodEntries: [MoodEntry],

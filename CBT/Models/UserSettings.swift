@@ -31,8 +31,7 @@ extension UserSettings {
 
     @MainActor
     static func fetchOrCreate(in context: ModelContext) throws -> UserSettings {
-        let settings = try reconcileSingleton(in: context)
-        if let settings {
+        if let settings = try reconcileSingleton(in: context, shouldSaveIfChanged: true) {
             return settings
         }
 
@@ -43,13 +42,13 @@ extension UserSettings {
     }
 
     static func fetchAppLockEnabled(from context: ModelContext) throws -> Bool {
-        try reconcileSingleton(in: context)?.appLockEnabled == true
+        try reconcileSingleton(in: context, shouldSaveIfChanged: false)?.appLockEnabled == true
     }
 
     static func setAppLockEnabled(_ isEnabled: Bool, in context: ModelContext) throws {
         let settings: UserSettings
 
-        if let existing = try reconcileSingleton(in: context) {
+        if let existing = try reconcileSingleton(in: context, shouldSaveIfChanged: false) {
             settings = existing
         } else {
             settings = UserSettings()
@@ -61,7 +60,7 @@ extension UserSettings {
     }
 
     @discardableResult
-    static func reconcileSingleton(in context: ModelContext) throws -> UserSettings? {
+    static func reconcileSingleton(in context: ModelContext, shouldSaveIfChanged: Bool = true) throws -> UserSettings? {
         var descriptor = FetchDescriptor<UserSettings>()
         descriptor.includePendingChanges = true
 
@@ -82,7 +81,7 @@ extension UserSettings {
             didChange = true
         }
 
-        if didChange {
+        if didChange && shouldSaveIfChanged {
             try context.save()
         }
 

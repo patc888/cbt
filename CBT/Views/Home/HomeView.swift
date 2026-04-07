@@ -6,6 +6,7 @@ struct HomeView: View {
     private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "HomeView")
     @Binding var selectedTab: FloatingTab
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var selectedDate = Date()
     @State private var showingNewMoodEntry = false
@@ -61,13 +62,16 @@ struct HomeView: View {
         .onAppear {
             Self.logger.info("HomeView mounted")
         }
-        .task {
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
             guard !isDashboardReady else { return }
             // Keep the first HomeView render SwiftData-free, then
             // construct the query-backed dashboard only after the
             // root model container, NavigationStack, and TabView have
-            // all settled on iPad's regular-width launch path.
+            // all settled on the first active launch pass.
             await Task.yield()
+            guard !Task.isCancelled else { return }
+            try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else { return }
             await Task.yield()
             guard !Task.isCancelled else { return }
@@ -106,13 +110,11 @@ private struct HomeDashboardPlaceholder: View {
 // MARK: - Subviews
 
 struct HomeDashboardContent: View {
-    private struct RefreshKey: Equatable {
-        let selectedDay: Date
-        let moodCount: Int
-        let thoughtCount: Int
-        let completionCount: Int
-        let journalCount: Int
-    }
+    private static let dashboardWeekDates: [Date] = {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        return (-180...180).compactMap { calendar.date(byAdding: .day, value: $0, to: today) }
+    }()
 
     @Binding var selectedTab: FloatingTab
     @Binding var selectedDate: Date
@@ -123,31 +125,71 @@ struct HomeDashboardContent: View {
     @Binding var showingTipModal: Bool
     @Binding var selectedMoodForFlow: MoodColor?
 
-    @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var moodEntries: [MoodEntry]
-    @Query(filter: #Predicate<ThoughtRecord> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
-    @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
-    @Query(filter: #Predicate<JournalEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var journalEntries: [JournalEntry]
     @Environment(ThemeManager.self) private var themeManager
+    @Query(
+        sort: \MoodEntry.createdAt,
+        order: .reverse
+    )
+    private var moodEntries: [MoodEntry]
+    @Query(
+        sort: \ThoughtRecord.createdAt,
+        order: .reverse
+    )
+    private var thoughtRecords: [ThoughtRecord]
+    @Query(
+        sort: \ExerciseCompletion.createdAt,
+        order: .reverse
+    )
+    private var exerciseCompletions: [ExerciseCompletion]
+    @Query(
+        sort: \JournalEntry.createdAt,
+        order: .reverse
+    )
+    private var journalEntries: [JournalEntry]
 
     @State private var viewModel = HomeDashboardViewModel()
 
-    private var refreshKey: RefreshKey {
-        RefreshKey(
-            selectedDay: Calendar.current.startOfDay(for: selectedDate),
-            moodCount: moodEntries.count,
-            thoughtCount: thoughtRecords.count,
-            completionCount: exerciseCompletions.count,
-            journalCount: journalEntries.count
-        )
+    private var activeMoodEntries: [MoodEntry] {
+        moodEntries.filter { !$0.isDeleted }
+    }
+
+    private var activeThoughtRecords: [ThoughtRecord] {
+        thoughtRecords.filter { !$0.isDeleted }
+    }
+
+    private var activeExerciseCompletions: [ExerciseCompletion] {
+        exerciseCompletions.filter { !$0.isDeleted }
+    }
+
+    private var activeJournalEntries: [JournalEntry] {
+        journalEntries.filter { !$0.isDeleted }
+    }
+
+    init(
+        selectedTab: Binding<FloatingTab>,
+        selectedDate: Binding<Date>,
+        showingNewMoodEntry: Binding<Bool>,
+        showingNewThoughtRecord: Binding<Bool>,
+        attemptingNewMoodEntry: Binding<Bool>,
+        attemptingNewThoughtRecord: Binding<Bool>,
+        showingTipModal: Binding<Bool>,
+        selectedMoodForFlow: Binding<MoodColor?>
+    ) {
+        self._selectedTab = selectedTab
+        self._selectedDate = selectedDate
+        self._showingNewMoodEntry = showingNewMoodEntry
+        self._showingNewThoughtRecord = showingNewThoughtRecord
+        self._attemptingNewMoodEntry = attemptingNewMoodEntry
+        self._attemptingNewThoughtRecord = attemptingNewThoughtRecord
+        self._showingTipModal = showingTipModal
+        self._selectedMoodForFlow = selectedMoodForFlow
     }
 
     var body: some View {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let weekDates = (-180...180).compactMap { calendar.date(byAdding: .day, value: $0, to: today) }
 
         VStack(alignment: .leading, spacing: 16) {
-            WeekStripView(selectedDate: $selectedDate, weekDates: weekDates) { date in
+            WeekStripView(selectedDate: $selectedDate, weekDates: Self.dashboardWeekDates) { date in
                 viewModel.activeDates.contains(calendar.startOfDay(for: date))
             }
             .padding(.top, 8)
@@ -265,17 +307,42 @@ struct HomeDashboardContent: View {
                 )
             }
         }
-        .task(id: refreshKey) { await updateData() }
+        .task(id: refreshSignature) {
+            await refreshDashboardSnapshot()
+        }
+        .onAppear {
+            if !viewModel.isInitialized {
+                viewModel.isInitialized = true
+            }
+        }
     }
 
-    private func updateData() async {
+    private var refreshSignature: String {
+        let selectedDay = Calendar.current.startOfDay(for: selectedDate).timeIntervalSinceReferenceDate
+        return [
+            String(selectedDay),
+            signature(for: activeMoodEntries.map(\.createdAt)),
+            signature(for: activeThoughtRecords.map(\.createdAt)),
+            signature(for: activeExerciseCompletions.map(\.createdAt)),
+            signature(for: activeJournalEntries.map(\.createdAt))
+        ].joined(separator: "|")
+    }
+
+    @MainActor
+    private func refreshDashboardSnapshot() async {
         await viewModel.update(
             selectedDate: selectedDate,
-            moodEntries: moodEntries,
-            thoughtRecords: thoughtRecords,
-            exerciseCompletions: exerciseCompletions,
-            journalEntries: journalEntries
+            moodEntries: activeMoodEntries,
+            thoughtRecords: activeThoughtRecords,
+            exerciseCompletions: activeExerciseCompletions,
+            journalEntries: activeJournalEntries
         )
+    }
+
+    private func signature(for dates: [Date]) -> String {
+        let latest = dates.first?.timeIntervalSinceReferenceDate ?? 0
+        let earliest = dates.last?.timeIntervalSinceReferenceDate ?? 0
+        return "\(dates.count):\(latest):\(earliest)"
     }
 }
 

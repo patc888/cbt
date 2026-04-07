@@ -31,7 +31,12 @@ final class CognitiveDistortionsLibrary {
     }
     
     func randomExample(distortion: String? = nil) -> CognitiveDistortionExample? {
-        let pool = distortion != nil ? examples(for: distortion!) : examples
+        let pool: [CognitiveDistortionExample]
+        if let d = distortion {
+            pool = examples(for: d)
+        } else {
+            pool = examples
+        }
         return pool.randomElement()
     }
 }

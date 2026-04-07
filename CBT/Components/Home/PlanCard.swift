@@ -106,13 +106,18 @@ struct PlanCard<CTAContent: View>: View {
                         Text(title)
                             .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(titleStyle)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .layoutPriority(1)
                             .strikethrough(completionState.isCompleted, color: Theme.secondaryText.opacity(0.7))
                         Text(subtitle)
                             .font(.system(.subheadline, design: .rounded))
                             .foregroundStyle(subtitleStyle)
+                            .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .opacity(textOpacity)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                     Spacer(minLength: 8)
 

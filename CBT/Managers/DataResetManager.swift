@@ -38,8 +38,10 @@ final class DataResetManager {
     )
     nonisolated static let isCloudSyncEnabled = false
 
+    private nonisolated static let _defaultStoreURL: URL = ModelConfiguration().url
+
     nonisolated static var defaultStoreURL: URL {
-        ModelConfiguration().url
+        _defaultStoreURL
     }
 
     nonisolated static var fallbackStoreURL: URL {
@@ -76,6 +78,10 @@ final class DataResetManager {
         await ReminderManager.shared.cancelAllCBTReminders()
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+
+        // Give SwiftData a short teardown window after the app switches back to the
+        // loading shell so the old container can release SQLite file handles cleanly.
+        try? await Task.sleep(for: .milliseconds(450))
 
         do {
             try Self.removeStoreFiles(at: Self.defaultStoreURL)
@@ -133,6 +139,23 @@ final class DataResetManager {
 
     nonisolated static func removeFallbackStoreFiles() throws {
         try removeStoreFiles(at: fallbackStoreURL)
+    }
+
+    nonisolated static func ensureStoreParentDirectoryExists(
+        for storeURL: URL,
+        using fileManager: FileManager = .default
+    ) throws {
+        let parentDirectory = storeURL.deletingLastPathComponent()
+
+        guard !fileManager.fileExists(atPath: parentDirectory.path) else {
+            return
+        }
+
+        try fileManager.createDirectory(
+            at: parentDirectory,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
     }
 
     nonisolated static func removeStoreFiles(at storeURL: URL, using fileManager: FileManager = .default) throws {

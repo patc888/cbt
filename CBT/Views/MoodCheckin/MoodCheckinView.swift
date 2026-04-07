@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import os
 
 #if os(macOS)
 import AppKit
@@ -163,7 +164,7 @@ struct MoodCheckinView: View {
             ReviewManager.shared.logSignificantAction()
             dismiss()
         } catch {
-            print("Failed to save mood entry: \(error)")
+            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to save mood entry: \(error)")
         }
     }
 }

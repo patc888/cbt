@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct LockView: View {
-    @StateObject private var securityManager = SecurityManager.shared
+    @EnvironmentObject private var securityManager: SecurityManager
     @Environment(ThemeManager.self) private var themeManager
     @State private var animate = false
     
@@ -123,4 +123,5 @@ struct PrivacyShieldView: View {
 #Preview {
     LockView()
         .environment(ThemeManager())
+        .environmentObject(SecurityManager.shared)
 }

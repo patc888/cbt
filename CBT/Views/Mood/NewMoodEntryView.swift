@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import os
 
 struct NewMoodEntryView: View {
     @Environment(\.dismiss) private var dismiss
@@ -195,7 +196,7 @@ struct NewMoodEntryView: View {
             )
             dismiss()
         } catch {
-            print("Failed to save mood entry: \(error)")
+            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to save mood entry: \(error)")
         }
     }
 }

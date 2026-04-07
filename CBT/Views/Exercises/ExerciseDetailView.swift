@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import os
 
 struct ExerciseDetailView: View {
     @Environment(\.modelContext) private var modelContext
@@ -223,7 +224,7 @@ struct ExerciseDetailView: View {
                 completedSummary = summary
             }
         } catch {
-            print("Failed to save exercise completion: \(error)")
+            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to save exercise completion: \(error)")
         }
     }
 }

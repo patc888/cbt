@@ -109,118 +109,127 @@ struct TimelineDashboardContent: View {
     @Binding var attemptingAddThought: Bool
 
     @Environment(ThemeManager.self) private var themeManager
-    @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var moodEntries: [MoodEntry]
-    @Query(filter: #Predicate<ThoughtRecord> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
-    @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
-    @Query(filter: #Predicate<JournalEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse) private var journalEntries: [JournalEntry]
+    @Query(sort: \MoodEntry.createdAt, order: .reverse) private var moodEntries: [MoodEntry]
+    @Query(sort: \ThoughtRecord.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
+    @Query(sort: \ExerciseCompletion.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
+    @Query(sort: \JournalEntry.createdAt, order: .reverse) private var journalEntries: [JournalEntry]
+    @State private var viewModel = TimelineViewModel()
 
-    private var groupedItems: [(key: Date, value: [TimelineItem])] {
-        var items: [TimelineItem] = []
-
-        for mood in moodEntries { items.append(.mood(mood)) }
-        for thought in thoughtRecords { items.append(.thought(thought)) }
-        for completion in exerciseCompletions { items.append(.exercise(completion)) }
-        for journal in journalEntries { items.append(.journal(journal)) }
-
-        items.sort { $0.date > $1.date }
-
-        let grouped = Dictionary(grouping: items) { Calendar.current.startOfDay(for: $0.date) }
-        return grouped.sorted { $0.key > $1.key }
+    init(
+        showingAddMood: Binding<Bool>,
+        showingAddThought: Binding<Bool>,
+        attemptingAddMood: Binding<Bool>,
+        attemptingAddThought: Binding<Bool>
+    ) {
+        self._showingAddMood = showingAddMood
+        self._showingAddThought = showingAddThought
+        self._attemptingAddMood = attemptingAddMood
+        self._attemptingAddThought = attemptingAddThought
     }
 
     var body: some View {
-        if groupedItems.isEmpty {
-            VStack(spacing: 20) {
-                TopHeadlineView(title: "Timeline")
-                    .padding(.horizontal)
-
-                Spacer()
-                Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 60))
-                    .foregroundStyle(Theme.secondaryText)
-
-                Text("No Activity Yet")
-                    .font(.system(.title2, design: .rounded).weight(.bold))
-                    .foregroundStyle(Theme.primaryText)
-
-                Text("Your timeline will show your mood check-ins, thought records, and completed exercises.")
-                    .font(.system(.subheadline, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Theme.secondaryText)
-                    .padding(.horizontal)
-
-                VStack(spacing: 12) {
-                    Button {
-                        HapticManager.shared.lightImpact()
-                        attemptingAddMood = true
-                    } label: {
-                        Label("Log Mood", systemImage: "face.smiling")
-                            .font(.system(.subheadline, design: .rounded).weight(.bold))
-                            .frame(maxWidth: 220)
-                            .padding(.vertical, 10)
-                            .foregroundStyle(.white)
-                            .background(themeManager.selectedColor)
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-
-                    Button {
-                        HapticManager.shared.lightImpact()
-                        attemptingAddThought = true
-                    } label: {
-                        Label("New Thought Record", systemImage: "brain")
-                            .font(.system(.subheadline, design: .rounded).weight(.bold))
-                            .frame(maxWidth: 220)
-                            .padding(.vertical, 10)
-                            .foregroundStyle(.white)
-                            .background(themeManager.secondaryColor)
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.top, 16)
-
-                Spacer()
-            }
-            .responsiveMaxWidth()
-            .frame(maxWidth: .infinity)
-        } else {
-            ScrollView {
-                LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
+        Group {
+            if viewModel.isInitialized && viewModel.groupedItems.isEmpty {
+                VStack(spacing: 20) {
                     TopHeadlineView(title: "Timeline")
+                        .padding(.horizontal)
 
-                    ForEach(groupedItems, id: \.key) { date, items in
-                        Section {
-                            ForEach(items) { item in
-                                if let route = item.route {
-                                    NavigationLink(value: route) {
-                                        TimelineRow(item: item)
-                                    }
-                                    .buttonStyle(.plain)
-                                } else {
-                                    TimelineRow(item: item)
-                                }
-                            }
-                        } header: {
-                            HStack {
-                                Text(formatHeaderDate(date))
-                                    .font(.system(.caption, design: .rounded).weight(.bold))
-                                    .foregroundColor(Theme.secondaryText)
-                                Spacer()
-                            }
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 4)
-                            .background(ThemedBackground())
+                    Spacer()
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 60))
+                        .foregroundStyle(Theme.secondaryText)
+
+                    Text("No Activity Yet")
+                        .font(.system(.title2, design: .rounded).weight(.bold))
+                        .foregroundStyle(Theme.primaryText)
+
+                    Text("Your timeline will show your mood check-ins, thought records, and completed exercises.")
+                        .font(.system(.subheadline, design: .rounded))
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(Theme.secondaryText)
+                        .padding(.horizontal)
+
+                    VStack(spacing: 12) {
+                        Button {
+                            HapticManager.shared.lightImpact()
+                            attemptingAddMood = true
+                        } label: {
+                            Label("Log Mood", systemImage: "face.smiling")
+                                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                                .frame(maxWidth: 220)
+                                .padding(.vertical, 10)
+                                .foregroundStyle(.white)
+                                .background(themeManager.selectedColor)
+                                .clipShape(Capsule())
                         }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            HapticManager.shared.lightImpact()
+                            attemptingAddThought = true
+                        } label: {
+                            Label("New Thought Record", systemImage: "brain")
+                                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                                .frame(maxWidth: 220)
+                                .padding(.vertical, 10)
+                                .foregroundStyle(.white)
+                                .background(themeManager.secondaryColor)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
                     }
+                    .padding(.top, 16)
+
+                    Spacer()
                 }
-                .padding(.horizontal)
                 .responsiveMaxWidth()
                 .frame(maxWidth: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
+                        TopHeadlineView(title: "Timeline")
+
+                        ForEach(viewModel.groupedItems, id: \.key) { date, items in
+                            Section {
+                                ForEach(items) { item in
+                                    if let route = item.route {
+                                        NavigationLink(value: route) {
+                                            TimelineRow(item: item)
+                                        }
+                                        .buttonStyle(.plain)
+                                    } else {
+                                        TimelineRow(item: item)
+                                    }
+                                }
+                            } header: {
+                                HStack {
+                                    Text(formatHeaderDate(date))
+                                        .font(.system(.caption, design: .rounded).weight(.bold))
+                                        .foregroundColor(Theme.secondaryText)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 4)
+                                .background(ThemedBackground())
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    .responsiveMaxWidth()
+                    .frame(maxWidth: .infinity)
+                }
+                .safeAreaInset(edge: .bottom) {
+                    Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
+                }
             }
-            .safeAreaInset(edge: .bottom) {
-                Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
-            }
+        }
+        .task(id: refreshSignature) {
+            await viewModel.update(
+                moodEntries: moodEntries,
+                thoughtRecords: thoughtRecords,
+                exerciseCompletions: exerciseCompletions,
+                journalEntries: journalEntries
+            )
         }
     }
 
@@ -233,5 +242,42 @@ struct TimelineDashboardContent: View {
         } else {
             return date.formatted(date: .abbreviated, time: .omitted)
         }
+    }
+
+    private var refreshSignature: String {
+        [
+            signature(for: moodEntries),
+            signature(for: thoughtRecords),
+            signature(for: exerciseCompletions),
+            signature(for: journalEntries)
+        ].joined(separator: "|")
+    }
+
+    private func signature(for entries: [MoodEntry]) -> String {
+        let activeEntries = entries.filter { !$0.isDeleted }
+        let latest = activeEntries.first?.createdAt.timeIntervalSinceReferenceDate ?? 0
+        let earliest = activeEntries.last?.createdAt.timeIntervalSinceReferenceDate ?? 0
+        return "\(activeEntries.count):\(latest):\(earliest)"
+    }
+
+    private func signature(for entries: [ThoughtRecord]) -> String {
+        let activeEntries = entries.filter { !$0.isDeleted }
+        let latest = activeEntries.first?.createdAt.timeIntervalSinceReferenceDate ?? 0
+        let earliest = activeEntries.last?.createdAt.timeIntervalSinceReferenceDate ?? 0
+        return "\(activeEntries.count):\(latest):\(earliest)"
+    }
+
+    private func signature(for entries: [ExerciseCompletion]) -> String {
+        let activeEntries = entries.filter { !$0.isDeleted }
+        let latest = activeEntries.first?.createdAt.timeIntervalSinceReferenceDate ?? 0
+        let earliest = activeEntries.last?.createdAt.timeIntervalSinceReferenceDate ?? 0
+        return "\(activeEntries.count):\(latest):\(earliest)"
+    }
+
+    private func signature(for entries: [JournalEntry]) -> String {
+        let activeEntries = entries.filter { !$0.isDeleted }
+        let latest = activeEntries.first?.createdAt.timeIntervalSinceReferenceDate ?? 0
+        let earliest = activeEntries.last?.createdAt.timeIntervalSinceReferenceDate ?? 0
+        return "\(activeEntries.count):\(latest):\(earliest)"
     }
 }

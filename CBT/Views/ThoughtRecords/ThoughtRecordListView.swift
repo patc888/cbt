@@ -1,23 +1,27 @@
 import SwiftUI
 import SwiftData
+import os
 
 struct ThoughtRecordListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
     @Query(
-        filter: #Predicate<ThoughtRecord> { !$0.isDeleted },
         sort: \ThoughtRecord.createdAt,
         order: .reverse
     ) private var records: [ThoughtRecord]
     
     @State private var showingNewRecord = false
     @State private var attemptingNewRecord = false
+
+    private var activeRecords: [ThoughtRecord] {
+        records.filter { !$0.isDeleted }
+    }
     
     var body: some View {
         ZStack {
             ThemedBackground().ignoresSafeArea()
             
-            if records.isEmpty {
+            if activeRecords.isEmpty {
                 VStack(spacing: 16) {
                     Image(systemName: "brain.head.profile")
                         .font(.system(size: 64))
@@ -48,7 +52,7 @@ struct ThoughtRecordListView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(records) { record in
+                        ForEach(activeRecords) { record in
                             NavigationLink(value: record) {
                                 ThoughtRecordRow(record: record)
                             }
@@ -98,7 +102,7 @@ struct ThoughtRecordListView: View {
         do {
             try modelContext.cbtStore.softDelete(item: record)
         } catch {
-            print("Failed to delete record: \(error)")
+            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to delete record: \(error)")
         }
     }
 }

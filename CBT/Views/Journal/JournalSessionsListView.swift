@@ -4,7 +4,6 @@ import SwiftData
 // MARK: - Sessions List
 struct JournalSessionsListView: View {
     @Query(
-        filter: #Predicate<JournalEntry> { !$0.isDeleted },
         sort: \JournalEntry.createdAt,
         order: .reverse
     ) private var entries: [JournalEntry]
@@ -16,8 +15,12 @@ struct JournalSessionsListView: View {
         themeManager?.selectedColor ?? .accentColor
     }
 
+    private var activeEntries: [JournalEntry] {
+        entries.filter { !$0.isDeleted }
+    }
+
     var body: some View {
-        if entries.isEmpty {
+        if activeEntries.isEmpty {
             VStack(spacing: 16) {
                 Spacer()
                 Image(systemName: "book.pages")
@@ -36,7 +39,7 @@ struct JournalSessionsListView: View {
         } else {
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(entries) { entry in
+                    ForEach(activeEntries) { entry in
                         NavigationLink(value: TimelineRoute.journal(entry)) {
                             JournalSessionRow(entry: entry, accent: accent)
                         }

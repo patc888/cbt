@@ -83,33 +83,54 @@ private struct InsightsDashboardContent: View {
     @Binding var timeRange: InsightsTimeRange
     let moodGoalValue: Int
 
-    @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
+    @Query(sort: \MoodEntry.createdAt, order: .forward)
     private var moodEntries: [MoodEntry]
 
-    @Query(filter: #Predicate<ThoughtRecord> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
+    @Query(sort: \ThoughtRecord.createdAt, order: .forward)
     private var thoughtRecords: [ThoughtRecord]
 
-    @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
+    @Query(sort: \ExerciseCompletion.createdAt, order: .forward)
     private var exerciseCompletions: [ExerciseCompletion]
 
-    @Query(filter: #Predicate<JournalEntry> { $0.isDeleted == false }, sort: \.createdAt, order: .forward)
+    @Query(sort: \JournalEntry.createdAt, order: .forward)
     private var journalEntries: [JournalEntry]
 
     @State private var viewModel = InsightsViewModel()
 
+    private var activeMoodEntries: [MoodEntry] {
+        moodEntries.filter { !$0.isDeleted }
+    }
+
+    private var activeThoughtRecords: [ThoughtRecord] {
+        thoughtRecords.filter { !$0.isDeleted }
+    }
+
+    private var activeExerciseCompletions: [ExerciseCompletion] {
+        exerciseCompletions.filter { !$0.isDeleted }
+    }
+
+    private var activeJournalEntries: [JournalEntry] {
+        journalEntries.filter { !$0.isDeleted }
+    }
+
+    init(timeRange: Binding<InsightsTimeRange>, moodGoalValue: Int) {
+        self._timeRange = timeRange
+        self.moodGoalValue = moodGoalValue
+    }
+
     private var refreshKey: RefreshKey {
         RefreshKey(
             timeRange: timeRange,
-            moodCount: moodEntries.count,
-            thoughtCount: thoughtRecords.count,
-            completionCount: exerciseCompletions.count,
-            journalCount: journalEntries.count,
+            moodCount: activeMoodEntries.count,
+            thoughtCount: activeThoughtRecords.count,
+            completionCount: activeExerciseCompletions.count,
+            journalCount: activeJournalEntries.count,
             moodGoalValue: moodGoalValue
         )
     }
 
     var body: some View {
-        ZStack {
+        VStack(spacing: 14) {
             if viewModel.isCalculating {
                 InsightsLoadingStateView()
             } else {
@@ -171,10 +192,10 @@ private struct InsightsDashboardContent: View {
     private func recalculateData() async {
         await viewModel.recalculate(
             timeRangeDays: timeRange.days,
-            moodEntries: moodEntries,
-            thoughtRecords: thoughtRecords,
-            exerciseCompletions: exerciseCompletions,
-            journalEntries: journalEntries,
+            moodEntries: activeMoodEntries,
+            thoughtRecords: activeThoughtRecords,
+            exerciseCompletions: activeExerciseCompletions,
+            journalEntries: activeJournalEntries,
             moodGoalValue: moodGoalValue
         )
     }

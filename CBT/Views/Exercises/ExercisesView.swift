@@ -42,13 +42,19 @@ struct ExercisesView: View {
 }
 
 private struct ExercisesDashboardContent: View {
-    @Query(filter: #Predicate<ExerciseCompletion> { $0.isDeleted == false }, sort: \.createdAt, order: .reverse)
+    @Query(sort: \ExerciseCompletion.createdAt, order: .reverse)
     private var completions: [ExerciseCompletion]
     @Environment(ThemeManager.self) private var themeManager
 
     private let exerciseLibrary = ExerciseLibrary.shared
     @State private var viewModel = ExercisesViewModel()
     @State private var selectedCategory: String = "All"
+
+    private var activeCompletions: [ExerciseCompletion] {
+        completions.filter { !$0.isDeleted }
+    }
+
+    init() {}
 
     private var exercises: [Exercise] {
         exerciseLibrary.exercises
@@ -159,8 +165,8 @@ private struct ExercisesDashboardContent: View {
                 Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
             }
         }
-        .task(id: completions.count) {
-            await viewModel.update(completions: completions, allExercises: exercises)
+        .task(id: activeCompletions.count) {
+            await viewModel.update(completions: activeCompletions, allExercises: exercises)
         }
     }
 

@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import os
 
 struct MoodDetailView: View {
     @Environment(\.dismiss) private var dismiss
@@ -110,7 +111,7 @@ struct MoodDetailView: View {
             try modelContext.cbtStore.softDelete(item: entry)
             dismiss()
         } catch {
-            print("Failed to delete entry: \(error)")
+            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to delete entry: \(error)")
         }
     }
 }

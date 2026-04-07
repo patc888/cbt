@@ -7,71 +7,14 @@ import SwiftUI
 struct CBTApp: App {
     private nonisolated static let bootstrapTimeoutSeconds: TimeInterval = 12
 
-    fileprivate enum LaunchState: Sendable {
-        case launching
-        case preparingContainer(ModelContainer)
-        case ready(ModelContainer)
-        case failed
-    }
-
     private var currentContainer: ModelContainer? {
         guard case .ready(let container) = launchState else { return nil }
         return container
     }
 
-    private var isProtectedDataReady: Bool {
-        currentContainer != nil
-    }
-
     private struct LoadingRequest: Sendable {
         let id = UUID()
         let reason: String
-    }
-
-    enum BootstrapStage: String, Sendable {
-        case primary = "primary-local"
-        case primaryRecovery = "primary-local-recovery"
-        case fallback = "fallback-local"
-        case inMemory = "fallback-memory"
-    }
-
-    enum BootstrapResolution: Equatable, Sendable {
-        case primary
-        case primaryRecovery
-        case fallback
-        case inMemory
-        case repair
-    }
-
-    nonisolated struct BootstrapActions<Resource: Sendable>: Sendable {
-        let makePrimary: @Sendable (BootstrapStage) throws -> Resource
-        let quarantineDefaultStoreForRepair: @Sendable () throws -> URL?
-        let removeFallbackStoreFiles: @Sendable () throws -> Void
-        let makeFallback: @Sendable () throws -> Resource
-        let makeInMemory: @Sendable () throws -> Resource
-        let logBootstrapFailure: @Sendable (Error, BootstrapStage, String) -> Void
-        let logHousekeepingFailure: @Sendable (Error, String) -> Void
-        let logFallbackLaunch: @Sendable () -> Void
-        let logInMemoryLaunch: @Sendable () -> Void
-    }
-
-    nonisolated enum BootstrapAttemptResult<Resource: Sendable> {
-        case ready(Resource, BootstrapResolution)
-        case repair
-    }
-
-    struct LockCheckDecision: Equatable {
-        enum Action: Equatable {
-            case none
-            case authenticate
-        }
-
-        let nextShouldCheckLockOnNextActive: Bool
-        let action: Action
-    }
-
-    fileprivate enum BootstrapError: Error, Sendable {
-        case debugInjectedFailure(String)
     }
 
     private nonisolated static let logger = Logger(
@@ -107,26 +50,33 @@ struct CBTApp: App {
 
     var body: some Scene {
         WindowGroup {
-            rootView
-                .environment(themeManager)
-                .preferredColorScheme(themeManager.appTheme.colorScheme)
-                .onChange(of: scenePhase) { _, newPhase in
-                    handleScenePhaseChange(newPhase)
-                }
-                .onChange(of: isProtectedDataReady) { _, isReady in
-                    guard isReady, let container = currentContainer else { return }
-                    syncSecurityPreferences(from: container)
-                    handleScenePhaseChange(scenePhase)
-                }
-                .onReceive(NotificationCenter.default.publisher(for: .didResetData)) { _ in
-                    themeManager = ThemeManager()
-                    securityManager.unlock()
-                    scheduleBootstrap(reason: "local reset")
-                }
-                .onReceive(NotificationCenter.default.publisher(for: .requestDataReset)) { _ in
-                    beginLocalResetFlow()
-                }
+            mainWindowChrome
         }
+    }
+
+    @ViewBuilder
+    private var mainWindowChrome: some View {
+        rootView
+            .environment(themeManager)
+            .environmentObject(securityManager)
+            .preferredColorScheme(themeManager.appTheme.colorScheme)
+            .fullScreenCover(isPresented: securityCoverBinding) {
+                SecurityCoverRoot()
+                    .environment(themeManager)
+                    .environmentObject(securityManager)
+                    .interactiveDismissDisabled(true)
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                handleScenePhaseChange(newPhase)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .didResetData)) { _ in
+                themeManager = ThemeManager()
+                securityManager.unlock()
+                scheduleBootstrap(reason: "local reset")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .requestDataReset)) { _ in
+                beginLocalResetFlow()
+            }
     }
 
     @ViewBuilder
@@ -142,11 +92,13 @@ struct CBTApp: App {
                     guard isResetInProgress else { return }
                     await DataResetManager.shared.performLocalWipeHousekeeping()
                 }
-        case .preparingContainer(let container), .ready(let container):
-            AppContainerGate(
-                launchState: $launchState,
+        case .ready(let container):
+            ReadyAppRoot(
                 container: container,
-                resetID: resetID
+                resetID: resetID,
+                onAppear: {
+                    handleReadyRootAppear(with: container)
+                }
             )
         case .failed:
             DataRepairView(
@@ -232,6 +184,13 @@ struct CBTApp: App {
         launchState = .launching
     }
 
+    private var securityCoverBinding: Binding<Bool> {
+        Binding(
+            get: { securityManager.isContentProtected },
+            set: { _ in }
+        )
+    }
+
     @MainActor
     private func bootstrapIntoCurrentState(for request: LoadingRequest) async {
         guard lastStartedBootstrapID != request.id else { return }
@@ -245,17 +204,15 @@ struct CBTApp: App {
 
         guard !Task.isCancelled else { return }
         guard loadingRequest.id == request.id else { return }
-        if case .preparingContainer = nextState {
+        if case .ready = nextState {
             resetID = UUID()
         }
 
         switch nextState {
         case .launching:
             Self.logger.info("Bootstrap resolved → launching (unexpected)")
-        case .preparingContainer:
-            Self.logger.info("Bootstrap resolved → preparingContainer")
         case .ready:
-            Self.logger.info("Bootstrap resolved → ready (unexpected)")
+            Self.logger.info("Bootstrap resolved → ready")
         case .failed:
             Self.logger.warning("Bootstrap resolved → failed")
         }
@@ -270,6 +227,12 @@ struct CBTApp: App {
             isAppLockAvailable: securityManager.isAppLockAvailable
         )
         appLockEnabledPreference = isLockEnabled
+    }
+
+    @MainActor
+    private func handleReadyRootAppear(with container: ModelContainer) {
+        syncSecurityPreferences(from: container)
+        handleScenePhaseChange(scenePhase)
     }
 
     private nonisolated static func bootstrapAsync(reason: String) async -> LaunchState {
@@ -328,7 +291,7 @@ struct CBTApp: App {
 
         switch runBootstrapFlow(reason: reason, actions: actions) {
         case .ready(let container, _):
-            return .preparingContainer(container)
+            return .ready(container)
         case .repair:
             return .failed
         }
@@ -352,7 +315,13 @@ struct CBTApp: App {
     ) -> Bool {
         let context = container.mainContext
         do {
-            let isEnabled = try UserSettings.fetchAppLockEnabled(from: context)
+            // Use reconcileSingleton instead of fetchAppLockEnabled here to
+            // ensure any orphaned duplicates from a previous crash/reset
+            // are cleared without triggering an immediate context save
+            // during the startup environment propagation.
+            let settings = try UserSettings.reconcileSingleton(in: context, shouldSaveIfChanged: false)
+            let isEnabled = settings?.appLockEnabled == true
+
             guard isEnabled else { return false }
             guard isAppLockAvailable else {
                 try UserSettings.setAppLockEnabled(false, in: context)
@@ -367,6 +336,7 @@ struct CBTApp: App {
 
     private nonisolated static func makePrimaryContainer(stage: BootstrapStage) throws -> ModelContainer {
         try DebugBootstrapControl.injectFailureIfNeeded(for: stage)
+        try DataResetManager.ensureStoreParentDirectoryExists(for: DataResetManager.defaultStoreURL)
 
         // CloudKit stays behind a single app-wide capability switch so the
         // persistence stack and settings copy cannot drift out of sync.
@@ -382,6 +352,7 @@ struct CBTApp: App {
 
     private nonisolated static func makeFallbackContainer() throws -> ModelContainer {
         try DebugBootstrapControl.injectFailureIfNeeded(for: .fallback)
+        try DataResetManager.ensureStoreParentDirectoryExists(for: DataResetManager.fallbackStoreURL)
 
         let configuration = ModelConfiguration(
             "LocalRecovery",
@@ -510,253 +481,8 @@ struct CBTApp: App {
     }
 }
 
-private struct AppContainerGate: View {
-    private static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "CBT",
-        category: "AppContainerGate"
-    )
 
-    @Binding var launchState: CBTApp.LaunchState
-    let container: ModelContainer
-    let resetID: UUID
 
-    @StateObject private var securityManager = SecurityManager.shared
-    @State private var isContainerSettled = false
 
-    var body: some View {
-        ZStack {
-            if isContainerSettled {
-                ContentView()
-                    .id(resetID)
-                    .transition(.opacity)
-                    .onAppear {
-                        if case .preparingContainer = launchState {
-                            launchState = .ready(container)
-                        }
-                        logMainUIPresented()
-                    }
-            } else {
-                ContainerReadinessGate(onReady: {
-                    settleContainerEnvironment()
-                })
-                .transition(.opacity)
-            }
 
-            if securityManager.isContentProtected {
-                securityCover
-                    .transition(.opacity)
-                    .zIndex(1)
-            }
-        }
-        .animation(.easeInOut(duration: 0.15), value: isContainerSettled)
-        .animation(.easeInOut(duration: 0.15), value: securityManager.isContentProtected)
-        .modelContainer(container)
-        .environmentObject(securityManager)
-        .onChange(of: resetID) { _, _ in
-            isContainerSettled = false
-            if case .ready = launchState {
-                launchState = .preparingContainer(container)
-            }
-        }
-    }
 
-    @ViewBuilder
-    private var securityCover: some View {
-        if securityManager.isLocked {
-            LockView()
-        } else {
-            PrivacyShieldView()
-        }
-    }
-
-    @MainActor
-    private func settleContainerEnvironment() {
-        guard !isContainerSettled else { return }
-
-        Task { @MainActor in
-            // Give SwiftUI one more main-actor turn after injecting
-            // `.modelContainer(container)` before constructing any view
-            // tree that contains `@Query`.
-            await Task.yield()
-            guard !isContainerSettled else { return }
-            isContainerSettled = true
-
-            if case .preparingContainer = launchState {
-                Self.logger.info("Container environment safely populated – advancing to ready state. resetID=\(resetID.uuidString.prefix(8), privacy: .public)")
-                launchState = .ready(container)
-            }
-        }
-    }
-
-    private func logMainUIPresented() {
-        let platform: String
-        #if targetEnvironment(macCatalyst)
-        platform = "macCatalyst"
-        #elseif canImport(UIKit)
-        platform = UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"
-        #else
-        platform = "macOS"
-        #endif
-        Self.logger.info(
-            "Main UI presented – platform=\(platform, privacy: .public) resetID=\(resetID.uuidString.prefix(8), privacy: .public)"
-        )
-    }
-}
-
-private struct ContainerReadinessGate: View {
-    @Environment(\.modelContext) private var modelContext
-    let onReady: () -> Void
-
-    var body: some View {
-        BootstrapGateView()
-            .task {
-                // Force the environment-backed model context to resolve
-                // before the app advances to query-backed content, then
-                // give SwiftUI another turn to propagate the environment
-                // through the root navigation/tab containers on iPad.
-                _ = modelContext.container
-                await Task.yield()
-                guard !Task.isCancelled else { return }
-                onReady()
-            }
-    }
-}
-
-private enum DebugBootstrapControl {
-    #if DEBUG
-    private nonisolated static let launchArguments = ProcessInfo.processInfo.arguments
-    private nonisolated static let failAllStores = launchArguments.contains("-debug-modelcontainer-fail-all")
-    private nonisolated static let remainingPrimaryFailuresLock = NSLock()
-    private nonisolated(unsafe) static var remainingPrimaryFailures = launchArguments.contains("-debug-modelcontainer-fail-primary-once") ? 1 : 0
-    #endif
-
-    nonisolated static func injectFailureIfNeeded(for stage: CBTApp.BootstrapStage) throws {
-        #if DEBUG
-        if failAllStores {
-            throw CBTApp.BootstrapError.debugInjectedFailure(stage.rawValue)
-        }
-
-        if stage == .primary, consumePrimaryFailureIfNeeded() {
-            throw CBTApp.BootstrapError.debugInjectedFailure(stage.rawValue)
-        }
-        #endif
-    }
-
-    #if DEBUG
-    private nonisolated static func consumePrimaryFailureIfNeeded() -> Bool {
-        remainingPrimaryFailuresLock.lock()
-        defer { remainingPrimaryFailuresLock.unlock() }
-
-        guard remainingPrimaryFailures > 0 else { return false }
-        remainingPrimaryFailures -= 1
-        return true
-    }
-    #endif
-}
-
-private struct DataRepairLoadingView: View {
-    var body: some View {
-        ZStack {
-            ThemedBackground()
-                .ignoresSafeArea()
-
-            ProgressView("Opening your data...")
-                .font(DSTypography.body)
-                .padding(24)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: DSCornerRadius.large, style: .continuous))
-                .accessibilityElement(children: .combine)
-        }
-    }
-}
-
-/// Shown inside `ReadyRootView` for exactly one run-loop tick while the
-/// `.modelContainer` modifier settles into the SwiftUI environment.
-///
-/// # Safety contract
-/// This view **must never** contain:
-/// - `@Query`
-/// - `@Environment(\.modelContext)`
-/// - Any `SwiftData` import or model reference
-/// - Any child view that reads from the model container
-///
-/// It exists solely to occupy the view hierarchy while
-/// `.modelContainer(container)` propagates, preventing premature
-/// `@Query` evaluation on iPhone, iPad, and Mac Catalyst.
-///
-/// On Mac Catalyst, this gate also prevents window restoration from
-/// instantiating query-backed views before the container is stable —
-/// `@State isContainerSettled` in `ReadyRootView` is not persisted
-/// across app launches, so the gate always starts closed.
-private struct BootstrapGateView: View {
-    var body: some View {
-        ZStack {
-            ThemedBackground()
-                .ignoresSafeArea()
-
-            ProgressView("Opening your data...")
-                .font(DSTypography.body)
-                .padding(24)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: DSCornerRadius.large, style: .continuous))
-                .accessibilityElement(children: .combine)
-        }
-    }
-}
-
-private struct DataRepairView: View {
-    @Environment(ThemeManager.self) private var themeManager
-
-    let onRetry: () -> Void
-    let onResetThisDevice: () -> Void
-
-    var body: some View {
-        ZStack {
-            ThemedBackground()
-                .ignoresSafeArea()
-
-            ScrollView {
-                VStack(spacing: 20) {
-                    DSCardContainer {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Label {
-                                Text("Data Repair")
-                                    .font(DSTypography.sectionTitle)
-                                    .foregroundStyle(DSTheme.primaryText)
-                            } icon: {
-                                Image(systemName: "externaldrive.badge.exclamationmark")
-                                    .font(.system(size: 22, weight: .semibold))
-                                    .foregroundStyle(themeManager.primaryColor)
-                            }
-
-                            Text("Something went wrong while opening your data on this device.")
-                                .font(DSTypography.body)
-                                .foregroundStyle(DSTheme.primaryText)
-
-                            Text("You can try again, or reset local data on this device. Resetting this device does not delete iCloud data.")
-                                .font(DSTypography.body)
-                                .foregroundStyle(DSTheme.secondaryText)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    VStack(spacing: 12) {
-                        DSPrimaryButton(title: "Retry", action: onRetry)
-
-                        Button("Reset This Device", action: onResetThisDevice)
-                            .font(DSTypography.button)
-                            .foregroundStyle(Theme.errorRed)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, DSSpacing.large)
-                            .background(Theme.errorRed.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous))
-                            .accessibilityHint("Deletes local app data and preferences on this device only.")
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 24)
-                .responsiveMaxWidth(maxWidth: 560)
-                .frame(maxWidth: .infinity)
-            }
-        }
-    }
-}

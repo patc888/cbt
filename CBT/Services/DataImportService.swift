@@ -140,7 +140,7 @@ struct DataImportService {
     }
 
     private func existingRecordsByID<T: SoftDeletableRecord>(from items: [T]) throws -> [UUID: T] {
-        Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
+        Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { _, latest in latest })
     }
 
     private func update(_ mood: MoodEntry, from entry: MoodEntryExport) {
