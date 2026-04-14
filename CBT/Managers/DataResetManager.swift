@@ -32,16 +32,39 @@ enum DataResetError: LocalizedError, Equatable {
 @Observable
 final class DataResetManager {
     nonisolated static let shared = DataResetManager()
-    private nonisolated static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "CBT",
-        category: "DataReset"
-    )
-    nonisolated static let isCloudSyncEnabled = false
-
-    private nonisolated static let _defaultStoreURL: URL = ModelConfiguration().url
+    private nonisolated static let logger = AppLogger.make(category: "DataReset")
+    private nonisolated static let cloudSyncKey = "com.melichan.CBT.cloudSyncEnabled"
+    private nonisolated static let pendingWipeKey = "com.melichan.CBT.pendingWipeOnLaunch"
+    
+    nonisolated static var isCloudSyncEnabled: Bool {
+        get {
+            // We default to true unless explicitly disabled (e.g. after a reset failure)
+            if UserDefaults.standard.object(forKey: cloudSyncKey) == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: cloudSyncKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: cloudSyncKey)
+            logger.notice("Cloud sync preference changed to: \(newValue, privacy: .public)")
+        }
+    }
 
     nonisolated static var defaultStoreURL: URL {
-        _defaultStoreURL
+        // Robustly define the store path to avoid potential crashes during 
+        // early static initialization of ModelConfiguration().url on iOS.
+        let fileManager = FileManager.default
+        let appSupport: URL
+        if let url = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            appSupport = url
+        } else {
+            // Fallback to documents directory if app support is missing (highly unlikely but safer than a trap)
+            appSupport = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first ?? URL(fileURLWithPath: NSTemporaryDirectory())
+        }
+        
+        // We use "default.store" to match SwiftData's default naming convention
+        // while ensuring the path is explicitly resolved.
+        return appSupport.appendingPathComponent("default.store")
     }
 
     nonisolated static var fallbackStoreURL: URL {
@@ -64,6 +87,37 @@ final class DataResetManager {
         }
     }
 
+    nonisolated static func requestHardWipeOnNextLaunch() {
+        UserDefaults.standard.set(true, forKey: pendingWipeKey)
+        UserDefaults.standard.synchronize()
+        logger.notice("Requested hard wipe on next launch.")
+    }
+
+    nonisolated static func performHardWipeIfNeeded() {
+        guard UserDefaults.standard.bool(forKey: pendingWipeKey) else { return }
+        
+        logger.notice("Performing emergency hard wipe at launch...")
+        
+        do {
+            try removeStoreFiles(at: defaultStoreURL)
+            try removeStoreFiles(at: fallbackStoreURL)
+            
+            // Clear preferences as well
+            if let bundleID = Bundle.main.bundleIdentifier {
+                UserDefaults.standard.removePersistentDomain(forName: bundleID)
+            }
+            
+            // Re-enable defaults but keep cloud sync disabled for safety
+            UserDefaults.standard.set(false, forKey: cloudSyncKey)
+            UserDefaults.standard.set(false, forKey: pendingWipeKey)
+            UserDefaults.standard.synchronize()
+            
+            logger.notice("Emergency hard wipe completed successfully.")
+        } catch {
+            logger.error("Emergency hard wipe failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     // 1. Clears AppStorage/UserDefaults
     // 2. Cancels scheduled local notifications
     // 3. Wipes SwiftData stores after the query-backed UI has been torn down
@@ -79,13 +133,24 @@ final class DataResetManager {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
 
-        // Give SwiftData a short teardown window after the app switches back to the
-        // loading shell so the old container can release SQLite file handles cleanly.
-        try? await Task.sleep(for: .milliseconds(450))
+        // Give SwiftData a slightly longer teardown window after the app switches 
+        // back to the loading shell so the old container can release SQLite 
+        // file handles cleanly. 
+        try? await Task.sleep(for: .seconds(1))
 
         do {
             try Self.removeStoreFiles(at: Self.defaultStoreURL)
             try Self.removeStoreFiles(at: Self.fallbackStoreURL)
+            
+            // Verify deletion for logging
+            let defaultExists = FileManager.default.fileExists(atPath: Self.defaultStoreURL.path)
+            let fallbackExists = FileManager.default.fileExists(atPath: Self.fallbackStoreURL.path)
+            
+            if !defaultExists && !fallbackExists {
+                Self.logger.info("Successfully cleared store files during local wipe.")
+            } else {
+                Self.logger.warning("Local wipe completed but some files may still exist. Default=\(defaultExists), Fallback=\(fallbackExists)")
+            }
         } catch {
             logFileOperationFailure(error, action: "local-wipe")
         }

@@ -12,8 +12,8 @@ struct RemindersSettingsSection: View {
     @AppStorage("cbt_reflectionReminderMinute") private var reflectionReminderMinute = 0
 
     @Environment(ThemeManager.self) private var themeManager
-
-    @State private var authorizationState: ReminderManager.AuthorizationState = .unknown
+    @State private var authorizationStatus: PermissionManager.Status = .notDetermined
+    @State private var isShowingPermissionSheet = false
 
     private let reminderManager = ReminderManager.shared
     private let moodReminderIdentifier = "daily_mood_reminder"
@@ -50,7 +50,7 @@ struct RemindersSettingsSection: View {
             }
             .buttonStyle(.plain)
 
-            if authorizationState == .denied {
+            if authorizationStatus == .denied {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(String(localized: "Notifications Disabled"))
                         .font(.system(size: 14, weight: .bold, design: .rounded))
@@ -61,7 +61,7 @@ struct RemindersSettingsSection: View {
                         .foregroundStyle(Theme.secondaryText)
 
                     Button(String(localized: "Open Settings")) {
-                        reminderManager.openSystemNotificationSettings()
+                        PermissionManager.shared.openSettings()
                     }
                     .font(.system(size: 14, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.primaryColor)
@@ -71,14 +71,17 @@ struct RemindersSettingsSection: View {
             }
         }
         .task {
-            await refreshAuthorizationState()
+            await refreshAuthorizationStatus()
+        }
+        .sheet(isPresented: $isShowingPermissionSheet) {
+            PermissionDeniedView(type: .notifications)
         }
     }
 
-    private func refreshAuthorizationState() async {
-        let latestState = await reminderManager.getAuthorizationState()
+    private func refreshAuthorizationStatus() async {
+        let status = await PermissionManager.shared.status(for: .notifications)
         await MainActor.run {
-            authorizationState = latestState
+            authorizationStatus = status
         }
     }
 
@@ -103,14 +106,21 @@ struct RemindersSettingsSection: View {
     }
 
     private func ensureAuthorizationForScheduling() async -> Bool {
-        await refreshAuthorizationState()
+        await refreshAuthorizationStatus()
 
-        if authorizationState == .notDetermined {
-            _ = await reminderManager.requestAuthorization()
-            await refreshAuthorizationState()
+        switch authorizationStatus {
+        case .notDetermined:
+            let status = await PermissionManager.shared.request(.notifications)
+            await refreshAuthorizationStatus()
+            return status == .authorized
+        case .denied:
+            await MainActor.run {
+                isShowingPermissionSheet = true
+            }
+            return false
+        case .authorized, .limited:
+            return true
         }
-
-        return authorizationState == .authorized || authorizationState == .provisional || authorizationState == .ephemeral
     }
 
     private func scheduleMoodReminderIfAuthorized() async {

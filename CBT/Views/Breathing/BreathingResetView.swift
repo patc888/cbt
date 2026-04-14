@@ -165,7 +165,9 @@ struct BreathingResetView: View {
             handlePhaseChange(from: oldValue, to: newValue)
         }
         .onChange(of: engine.state.isComplete) { _, newValue in
-            // Manual dismissal via buttons instead of auto-advance
+            if newValue {
+                HapticManager.shared.success()
+            }
         }
         .onAppear {
             guard autoStart, !hasAutoStarted else { return }

@@ -110,11 +110,12 @@ struct ThoughtRecordDetailView: View {
     }
     
     private func deleteRecord() {
+        HapticManager.shared.destructiveAction()
         do {
             try modelContext.cbtStore.softDelete(item: record)
             dismiss()
         } catch {
-            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to delete record: \(error)")
+            AppLogger.make(category: "Data").error("Failed to delete record: \(error.localizedDescription, privacy: .private)")
         }
     }
 }

@@ -44,6 +44,7 @@ struct NewThoughtRecordFlowView: View {
                     HStack(spacing: DSSpacing.medium) {
                         if viewModel.currentStep > 0 {
                             Button("Back") {
+                                HapticManager.shared.selection()
                                 withAnimation {
                                     viewModel.currentStep -= 1
                                 }
@@ -57,6 +58,7 @@ struct NewThoughtRecordFlowView: View {
                         if viewModel.currentStep < viewModel.totalSteps - 1 {
                             let canProceed = viewModel.currentStep != 0 || viewModel.canSave
                             Button("Next") {
+                                HapticManager.shared.selection()
                                 withAnimation {
                                     viewModel.currentStep += 1
                                 }
@@ -66,7 +68,9 @@ struct NewThoughtRecordFlowView: View {
                             .accessibilityLabel("Go to next step")
                         } else {
                             Button("Save") {
+                                HapticManager.shared.success()
                                 viewModel.saveRecord(context: modelContext)
+                                ReviewManager.shared.logSignificantAction()
                                 dismiss()
                             }
                             .buttonStyle(DSPrimaryButtonStyle())

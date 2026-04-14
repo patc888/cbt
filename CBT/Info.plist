@@ -4,7 +4,17 @@
 <dict>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Unlock your private CBT records with Face ID.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>CBT uses your location to show where you performed exercises and track mood patterns across different environments.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>CBT uses your location to show where you performed exercises and track mood patterns across different environments.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>CBT uses the camera to let you add photos to your journal entries and capture reflections.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>CBT uses the microphone to let you record voice journals and affirmations.</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.healthcare-fitness</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

@@ -196,7 +196,7 @@ struct NewMoodEntryView: View {
             )
             dismiss()
         } catch {
-            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to save mood entry: \(error)")
+            AppLogger.make(category: "Data").error("Failed to save mood entry: \(error.localizedDescription, privacy: .private)")
         }
     }
 }

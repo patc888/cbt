@@ -7,48 +7,51 @@ struct MoodSuggestionsView: View {
     @State private var showingBreathing = false
     
     var body: some View {
-        VStack(spacing: 32) {
-            Spacer().frame(height: 10)
-            
-            Text("Would you like help with this feeling?")
-                .font(DSTypography.pageTitle)
-                .foregroundStyle(DSTheme.primaryText)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-            
-            VStack(spacing: 16) {
-                SuggestionButton(
-                    title: "Breathing Reset",
-                    icon: "wind"
-                ) {
-                    showingBreathing = true
+        GeometryReader { geo in
+            ScrollView {
+                VStack(spacing: 32) {
+                    Spacer().frame(height: 10)
+                    
+                    Text("Would you like help with this feeling?")
+                        .font(DSTypography.pageTitle)
+                        .foregroundStyle(DSTheme.primaryText)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                    
+                    VStack(spacing: 16) {
+                        SuggestionButton(
+                            title: "Breathing Reset",
+                            icon: "wind"
+                        ) {
+                            showingBreathing = true
+                        }
+                        
+                        SuggestionButton(
+                            title: "Write a Thought Record",
+                            icon: "brain.head.profile"
+                        ) {
+                            showingThoughtRecord = true
+                        }
+                        
+                        SuggestionButton(
+                            title: "Try a CBT Exercise",
+                            icon: "list.bullet.rectangle.portrait"
+                        ) {
+                            onNext()
+                        }
+                    }
+                    .padding(.horizontal, DSSpacing.large)
+                    
+                    Button("No thanks, continue") {
+                        onNext()
+                    }
+                    .buttonStyle(.plain)
+                    .font(DSTypography.body.bold())
+                    .foregroundStyle(DSTheme.secondaryText)
                 }
-                
-                SuggestionButton(
-                    title: "Write a Thought Record",
-                    icon: "brain.head.profile"
-                ) {
-                    showingThoughtRecord = true
-                }
-                
-                SuggestionButton(
-                    title: "Try a CBT Exercise",
-                    icon: "list.bullet.rectangle.portrait"
-                ) {
-                    onNext()
-                }
+                .padding(.bottom, DSSpacing.large)
+                .frame(minHeight: geo.size.height)
             }
-            .padding(.horizontal, DSSpacing.large)
-            
-            Spacer()
-            
-            Button("No thanks, continue") {
-                onNext()
-            }
-            .buttonStyle(.plain)
-            .font(DSTypography.body.bold())
-            .foregroundStyle(DSTheme.secondaryText)
-            .padding(.bottom, DSSpacing.large)
         }
         .sheet(isPresented: $showingThoughtRecord) {
             NewThoughtRecordFlowView()

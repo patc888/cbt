@@ -7,30 +7,26 @@ struct TimelineView: View {
     @State private var showingAddThought = false
     @State private var attemptingAddMood = false
     @State private var attemptingAddThought = false
-    @State private var isDashboardReady = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             ThemedBackground().ignoresSafeArea()
-            
-            
-            if isDashboardReady {
+
+            DeferredRenderView {
+                VStack {
+                    TopHeadlineView(title: "Timeline")
+                        .padding(.horizontal)
+                    Spacer()
+                }
+            } content: {
                 TimelineDashboardContent(
                     showingAddMood: $showingAddMood,
                     showingAddThought: $showingAddThought,
                     attemptingAddMood: $attemptingAddMood,
                     attemptingAddThought: $attemptingAddThought
                 )
-            } else {
-                VStack {
-                    TopHeadlineView(title: "Timeline")
-                        .padding(.horizontal)
-                    Spacer()
-                }
             }
         }
-
-// moved to TimelineDashboardContent
         .navigationTitle("")
         #if os(iOS) && !targetEnvironment(macCatalyst)
         .navigationBarTitleDisplayMode(.inline)
@@ -42,14 +38,16 @@ struct TimelineView: View {
                 ListActionPillButton(
                     title: "+ Mood",
                     color: themeManager.selectedColor,
-                    font: .system(.caption, design: .rounded).weight(.bold)
+                    font: .system(.caption, design: .rounded).weight(.bold),
+                    hapticType: .medium
                 ) {
                     attemptingAddMood = true
                 }
                 ListActionPillButton(
                     title: "+ Thought",
                     color: themeManager.secondaryColor,
-                    font: .system(.caption, design: .rounded).weight(.bold)
+                    font: .system(.caption, design: .rounded).weight(.bold),
+                    hapticType: .medium
                 ) {
                     attemptingAddThought = true
                 }
@@ -70,32 +68,7 @@ struct TimelineView: View {
             showingAddThought = true
         }
         .navigationDestination(for: TimelineRoute.self) { route in
-            switch route {
-            case .mood(let entry):
-                MoodDetailView(entry: entry)
-            case .thought(let record):
-                ThoughtRecordDetailView(record: record)
-            case .exercise(let exerciseID):
-                if let exercise = ExerciseLibrary.shared.exercise(withID: exerciseID) {
-                    ExerciseDetailView(exercise: exercise)
-                } else {
-                    ContentUnavailableView(
-                        "Exercise Not Found",
-                        systemImage: "exclamationmark.triangle",
-                        description: Text("This exercise is no longer available.")
-                    )
-                }
-            case .journal(let entry):
-                JournalEntryDetailView(entry: entry)
-            }
-        }
-        .task {
-            guard !isDashboardReady else { return }
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            isDashboardReady = true
+            TimelineRouteDestinationView(route: route)
         }
     }
 }
@@ -109,10 +82,10 @@ struct TimelineDashboardContent: View {
     @Binding var attemptingAddThought: Bool
 
     @Environment(ThemeManager.self) private var themeManager
-    @Query(sort: \MoodEntry.createdAt, order: .reverse) private var moodEntries: [MoodEntry]
-    @Query(sort: \ThoughtRecord.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
-    @Query(sort: \ExerciseCompletion.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
-    @Query(sort: \JournalEntry.createdAt, order: .reverse) private var journalEntries: [JournalEntry]
+    @Query(filter: #Predicate<MoodEntry> { !$0.isDeleted }, sort: \MoodEntry.createdAt, order: .reverse) private var moodEntries: [MoodEntry]
+    @Query(filter: #Predicate<ThoughtRecord> { !$0.isDeleted }, sort: \ThoughtRecord.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
+    @Query(filter: #Predicate<ExerciseCompletion> { !$0.isDeleted }, sort: \ExerciseCompletion.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
+    @Query(filter: #Predicate<JournalEntry> { !$0.isDeleted }, sort: \JournalEntry.createdAt, order: .reverse) private var journalEntries: [JournalEntry]
     @State private var viewModel = TimelineViewModel()
 
     init(
@@ -135,32 +108,46 @@ struct TimelineDashboardContent: View {
                         .padding(.horizontal)
 
                     Spacer()
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 60))
-                        .foregroundStyle(Theme.secondaryText)
-
-                    Text("No Activity Yet")
-                        .font(.system(.title2, design: .rounded).weight(.bold))
-                        .foregroundStyle(Theme.primaryText)
-
-                    Text("Your timeline will show your mood check-ins, thought records, and completed exercises.")
-                        .font(.system(.subheadline, design: .rounded))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Theme.secondaryText)
-                        .padding(.horizontal)
-
+                    
                     VStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(themeManager.selectedColor.opacity(0.12))
+                                .frame(width: 100, height: 100)
+                            Image(systemName: "clock.arrow.circlepath")
+                                .font(.system(size: 44, weight: .light))
+                                .foregroundStyle(themeManager.selectedColor)
+                        }
+                        .padding(.bottom, 8)
+
+                        Text("Your Journey Starts Here")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.primaryText)
+
+                        Text("Your timeline will beautifully document your growth, capturing every mood check-in and breakthrough.")
+                            .font(.system(.subheadline, design: .rounded))
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(Theme.secondaryText)
+                            .padding(.horizontal, 32)
+                            .lineSpacing(4)
+                    }
+
+                    VStack(spacing: 16) {
                         Button {
                             HapticManager.shared.lightImpact()
                             attemptingAddMood = true
                         } label: {
-                            Label("Log Mood", systemImage: "face.smiling")
-                                .font(.system(.subheadline, design: .rounded).weight(.bold))
-                                .frame(maxWidth: 220)
-                                .padding(.vertical, 10)
-                                .foregroundStyle(.white)
-                                .background(themeManager.selectedColor)
-                                .clipShape(Capsule())
+                            HStack {
+                                Image(systemName: "face.smiling")
+                                Text("Log First Mood")
+                            }
+                            .font(.system(.subheadline, design: .rounded).weight(.bold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .foregroundStyle(.white)
+                            .background(themeManager.selectedColor)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .shadow(color: themeManager.selectedColor.opacity(0.3), radius: 10, y: 5)
                         }
                         .buttonStyle(.plain)
 
@@ -168,17 +155,21 @@ struct TimelineDashboardContent: View {
                             HapticManager.shared.lightImpact()
                             attemptingAddThought = true
                         } label: {
-                            Label("New Thought Record", systemImage: "brain")
-                                .font(.system(.subheadline, design: .rounded).weight(.bold))
-                                .frame(maxWidth: 220)
-                                .padding(.vertical, 10)
-                                .foregroundStyle(.white)
-                                .background(themeManager.secondaryColor)
-                                .clipShape(Capsule())
+                            HStack {
+                                Image(systemName: "brain")
+                                Text("New Thought Record")
+                            }
+                            .font(.system(.subheadline, design: .rounded).weight(.bold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .foregroundStyle(themeManager.secondaryColor)
+                            .background(themeManager.secondaryColor.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                         }
                         .buttonStyle(.plain)
                     }
-                    .padding(.top, 16)
+                    .padding(.horizontal, 48)
+                    .padding(.top, 24)
 
                     Spacer()
                 }
@@ -246,38 +237,10 @@ struct TimelineDashboardContent: View {
 
     private var refreshSignature: String {
         [
-            signature(for: moodEntries),
-            signature(for: thoughtRecords),
-            signature(for: exerciseCompletions),
-            signature(for: journalEntries)
+            QueryChangeSignature.make(for: moodEntries),
+            QueryChangeSignature.make(for: thoughtRecords),
+            QueryChangeSignature.make(for: exerciseCompletions),
+            QueryChangeSignature.make(for: journalEntries)
         ].joined(separator: "|")
-    }
-
-    private func signature(for entries: [MoodEntry]) -> String {
-        let activeEntries = entries.filter { !$0.isDeleted }
-        let latest = activeEntries.first?.createdAt.timeIntervalSinceReferenceDate ?? 0
-        let earliest = activeEntries.last?.createdAt.timeIntervalSinceReferenceDate ?? 0
-        return "\(activeEntries.count):\(latest):\(earliest)"
-    }
-
-    private func signature(for entries: [ThoughtRecord]) -> String {
-        let activeEntries = entries.filter { !$0.isDeleted }
-        let latest = activeEntries.first?.createdAt.timeIntervalSinceReferenceDate ?? 0
-        let earliest = activeEntries.last?.createdAt.timeIntervalSinceReferenceDate ?? 0
-        return "\(activeEntries.count):\(latest):\(earliest)"
-    }
-
-    private func signature(for entries: [ExerciseCompletion]) -> String {
-        let activeEntries = entries.filter { !$0.isDeleted }
-        let latest = activeEntries.first?.createdAt.timeIntervalSinceReferenceDate ?? 0
-        let earliest = activeEntries.last?.createdAt.timeIntervalSinceReferenceDate ?? 0
-        return "\(activeEntries.count):\(latest):\(earliest)"
-    }
-
-    private func signature(for entries: [JournalEntry]) -> String {
-        let activeEntries = entries.filter { !$0.isDeleted }
-        let latest = activeEntries.first?.createdAt.timeIntervalSinceReferenceDate ?? 0
-        let earliest = activeEntries.last?.createdAt.timeIntervalSinceReferenceDate ?? 0
-        return "\(activeEntries.count):\(latest):\(earliest)"
     }
 }

@@ -48,6 +48,20 @@ struct DataSettingsSection: View {
 
     var body: some View {
         SettingsSection(title: "Data") {
+            NavigationLink(destination: DataExportView()) {
+                SettingsRow(
+                    icon: "square.and.arrow.up.fill",
+                    iconColor: themeManager.primaryColor,
+                    title: "Export Data",
+                    subtitle: "Portability and backups"
+                ) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
+            .buttonStyle(.plain)
+
             NavigationLink(destination: AdvancedDataSettingsView()) {
                 SettingsRow(
                     icon: "gearshape.2.fill",

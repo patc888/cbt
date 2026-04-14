@@ -2,10 +2,22 @@ import Foundation
 import SwiftData
 import os
 
-enum LaunchState: Sendable {
+enum LaunchState: Equatable, Sendable {
     case launching
+    case migrating
     case ready(ModelContainer)
     case failed
+
+    static func == (lhs: LaunchState, rhs: LaunchState) -> Bool {
+        switch (lhs, rhs) {
+        case (.launching, .launching), (.migrating, .migrating), (.failed, .failed):
+            return true
+        case (.ready, .ready):
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 enum BootstrapStage: String, Sendable {

@@ -8,14 +8,14 @@ enum TimelineItemKind {
     case journal
 }
 
-enum TimelineRoute: Hashable {
-    case mood(MoodEntry)
-    case thought(ThoughtRecord)
+enum TimelineRoute: Hashable, Sendable {
+    case mood(PersistentIdentifier)
+    case thought(PersistentIdentifier)
     case exercise(exerciseID: String)
-    case journal(JournalEntry)
+    case journal(PersistentIdentifier)
 }
 
-struct TimelineItem: Identifiable {
+struct TimelineItem: Identifiable, Sendable {
     let id: String
     let kind: TimelineItemKind
     let date: Date
@@ -34,7 +34,7 @@ extension TimelineItem {
             title: "Mood Check-in",
             subtitle: entry.notes?.isEmpty == false ? entry.notes : "Score: \(entry.moodScore)/10",
             chips: entry.emotions,
-            route: .mood(entry)
+            route: .mood(entry.persistentModelID)
         )
     }
 
@@ -46,7 +46,7 @@ extension TimelineItem {
             title: "Thought Record",
             subtitle: record.situation.isEmpty ? "No situation recorded" : record.situation,
             chips: record.emotions + record.distortions,
-            route: .thought(record)
+            route: .thought(record.persistentModelID)
         )
     }
 
@@ -72,7 +72,7 @@ extension TimelineItem {
             title: entry.title,
             subtitle: entry.sessionMetadataLine,
             chips: [],
-            route: .journal(entry)
+            route: .journal(entry.persistentModelID)
         )
     }
 }

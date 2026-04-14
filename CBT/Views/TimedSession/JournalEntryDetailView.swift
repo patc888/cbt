@@ -101,6 +101,7 @@ struct JournalEntryDetailView: View {
     }
 
     private func deleteEntry() {
+        HapticManager.shared.destructiveAction()
         do {
             try modelContext.cbtStore.softDelete(item: entry)
             dismiss()

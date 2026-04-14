@@ -3,10 +3,10 @@ import SwiftData
 import UniformTypeIdentifiers
 
 struct AdvancedDataSettingsView: View {
-    @Query(sort: \MoodEntry.createdAt, order: .forward)
+    @Query(filter: #Predicate<MoodEntry> { !$0.isDeleted }, sort: \MoodEntry.createdAt, order: .forward)
     private var moodEntries: [MoodEntry]
 
-    @Query(sort: \ThoughtRecord.createdAt, order: .forward)
+    @Query(filter: #Predicate<ThoughtRecord> { !$0.isDeleted }, sort: \ThoughtRecord.createdAt, order: .forward)
     private var thoughtRecords: [ThoughtRecord]
 
     @Environment(\.modelContext) private var modelContext
@@ -14,13 +14,7 @@ struct AdvancedDataSettingsView: View {
 
     @State private var viewModel = AdvancedDataSettingsViewModel()
 
-    private var activeMoodEntries: [MoodEntry] {
-        moodEntries.filter { !$0.isDeleted }
-    }
 
-    private var activeThoughtRecords: [ThoughtRecord] {
-        thoughtRecords.filter { !$0.isDeleted }
-    }
 
     var body: some View {
         ZStack {
@@ -28,80 +22,79 @@ struct AdvancedDataSettingsView: View {
             
             ScrollView {
                 VStack(spacing: 16) {
-                    SettingsSection(title: "Advanced Data") {
-                        SettingsRow(
-                            icon: "square.and.arrow.up",
-                            iconColor: themeManager.primaryColor,
-                            title: "Export Backup (JSON)"
-                        ) {
-                            Button("Export") {
-                                HapticManager.shared.lightImpact()
-                                viewModel.showingExportInfo = true
+                    SettingsSection(title: "Cloud Sync Status") {
+                        HStack(spacing: 12) {
+                            Image(systemName: CloudSyncMonitor.shared.status.iconName)
+                                .font(.system(size: 24))
+                                .foregroundStyle(CloudSyncMonitor.shared.status.color)
+                                .frame(width: 32)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(CloudSyncMonitor.shared.status.localizedDescription)
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .foregroundStyle(Theme.primaryText)
+                                
+                                if let lastSync = CloudSyncMonitor.shared.lastSyncDate {
+                                    Text(String(localized: "Last synced: \(lastSync.formatted(date: .abbreviated, time: .shortened))"))
+                                        .font(.system(size: 12, design: .rounded))
+                                        .foregroundStyle(Theme.secondaryText)
+                                } else {
+                                    Text(String(localized: "Never synced"))
+                                        .font(.system(size: 12, design: .rounded))
+                                        .foregroundStyle(Theme.secondaryText)
+                                }
                             }
-                            .disabled(viewModel.activeBackupOperation != nil)
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundColor(themeManager.primaryColor)
-                        }
-
-                        SettingsRow(
-                            icon: "square.and.arrow.down",
-                            iconColor: themeManager.primaryColor,
-                            title: "Import Backup (JSON)"
-                        ) {
-                            Button("Import") {
-                                HapticManager.shared.lightImpact()
-                                viewModel.showingImportInfo = true
-                            }
-                            .disabled(viewModel.activeBackupOperation != nil)
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundColor(themeManager.primaryColor)
-                        }
-
-                        if let op = viewModel.activeBackupOperation {
-                            HStack(spacing: 10) {
+                            Spacer()
+                            
+                            if CloudSyncMonitor.shared.status == .syncing {
                                 ProgressView()
                                     .controlSize(.small)
+                            } else {
+                                Button {
+                                    CloudSyncMonitor.shared.refreshAccountStatus()
+                                    HapticManager.shared.lightImpact()
+                                } label: {
+                                    Image(systemName: "arrow.clockwise")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundStyle(themeManager.primaryColor)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                    }
 
-                                Text(op.statusText)
-                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    SettingsSection(title: "Advanced Data") {
+                        NavigationLink(destination: DataExportView()) {
+                            SettingsRow(
+                                icon: "square.and.arrow.up",
+                                iconColor: themeManager.primaryColor,
+                                title: "Export Records",
+                                subtitle: "Generate JSON backups or CSV reports"
+                            ) {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
                                     .foregroundStyle(Theme.secondaryText)
-
-                                Spacer()
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.top, 4)
-                        }
-
-                        Divider()
-                            .padding(.vertical, 8)
-
-                        SettingsRow(
-                            icon: "tablecells",
-                            iconColor: themeManager.primaryColor,
-                            title: "Export Moods (CSV)"
-                        ) {
-                            if let csv = CSVExporter.shared.exportMoodEntries(activeMoodEntries) {
-                                ShareLink(item: csv, preview: SharePreview("Mood Entries CSV")) {
-                                    Text("Export")
-                                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                                        .foregroundColor(themeManager.primaryColor)
-                                }
                             }
                         }
+                        .buttonStyle(.plain)
 
-                        SettingsRow(
-                            icon: "tablecells",
-                            iconColor: themeManager.primaryColor,
-                            title: "Export Thoughts (CSV)"
-                        ) {
-                            if let csv = CSVExporter.shared.exportThoughtRecords(activeThoughtRecords) {
-                                ShareLink(item: csv, preview: SharePreview("Thought Records CSV")) {
-                                    Text("Export")
-                                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                                        .foregroundColor(themeManager.primaryColor)
-                                }
+                        Button {
+                            HapticManager.shared.lightImpact()
+                            viewModel.showingImportInfo = true
+                        } label: {
+                            SettingsRow(
+                                icon: "square.and.arrow.down",
+                                iconColor: themeManager.primaryColor,
+                                title: "Import Backup (JSON)"
+                            ) {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(Theme.secondaryText)
                             }
                         }
+                        .buttonStyle(.plain)
 
                         Button(role: .destructive) {
                             HapticManager.shared.mediumImpact()

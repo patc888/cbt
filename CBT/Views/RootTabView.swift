@@ -51,24 +51,7 @@ struct RootTabView: View {
                     NavigationStack {
                         JournalView()
                             .navigationDestination(for: TimelineRoute.self) { route in
-                                switch route {
-                                case .journal(let entry):
-                                    JournalEntryDetailView(entry: entry)
-                                case .mood(let entry):
-                                    MoodDetailView(entry: entry)
-                                case .thought(let record):
-                                    ThoughtRecordDetailView(record: record)
-                                case .exercise(let exerciseID):
-                                    if let exercise = ExerciseLibrary.shared.exercise(withID: exerciseID) {
-                                        ExerciseDetailView(exercise: exercise)
-                                    } else {
-                                        ContentUnavailableView(
-                                            "Exercise Not Found",
-                                            systemImage: "exclamationmark.triangle",
-                                            description: Text("This exercise is no longer available.")
-                                        )
-                                    }
-                                }
+                                TimelineRouteDestinationView(route: route)
                             }
                     }
                 }
@@ -187,28 +170,16 @@ struct RootTabView: View {
 private struct DeferredTabRoot<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
-    @State private var isReady = false
-
     var body: some View {
-        Group {
-            if isReady {
-                content()
-            } else {
-                ThemedBackground()
-                    .ignoresSafeArea()
-                    .overlay {
-                        ProgressView()
-                            .controlSize(.regular)
-                    }
-            }
-        }
-        .task {
-            guard !isReady else { return }
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            isReady = true
+        DeferredRenderView {
+            ThemedBackground()
+                .ignoresSafeArea()
+                .overlay {
+                    ProgressView()
+                        .controlSize(.regular)
+                }
+        } content: {
+            content()
         }
     }
 }

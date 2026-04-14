@@ -6,14 +6,6 @@ import UIKit
 #endif
 
 struct ReminderManager {
-    enum AuthorizationState {
-        case notDetermined
-        case denied
-        case authorized
-        case provisional
-        case ephemeral
-        case unknown
-    }
 
     static let shared = ReminderManager()
 
@@ -23,30 +15,22 @@ struct ReminderManager {
         self.notificationCenter = notificationCenter
     }
 
-    func getAuthorizationState() async -> AuthorizationState {
-        let settings = await notificationSettings()
-        switch settings.authorizationStatus {
-        case .notDetermined:
-            return .notDetermined
-        case .denied:
-            return .denied
-        case .authorized:
-            return .authorized
-        case .provisional:
-            return .provisional
-        case .ephemeral:
-            return .ephemeral
-        @unknown default:
-            return .unknown
-        }
+    func getAuthorizationState() async -> PermissionManager.Status {
+        await PermissionManager.shared.status(for: .notifications)
     }
 
     func requestAuthorization() async -> Bool {
-        await withCheckedContinuation { continuation in
-            notificationCenter.requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
-                continuation.resume(returning: granted)
+        let status = await PermissionManager.shared.request(.notifications)
+        
+        if status == .authorized {
+            #if canImport(UIKit)
+            await MainActor.run {
+                UIApplication.shared.registerForRemoteNotifications()
             }
+            #endif
         }
+        
+        return status == .authorized
     }
 
     func openSystemNotificationSettings() {

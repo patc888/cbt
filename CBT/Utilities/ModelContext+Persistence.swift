@@ -15,7 +15,7 @@ extension ModelContext {
             return true
         } catch {
             logger.error(
-                "Failed to save context action=\(action, privacy: .public) error=\(error.localizedDescription, privacy: .public)"
+                "Failed to save context action=\(action, privacy: .public) error=\(error.localizedDescription, privacy: .private)"
             )
             return false
         }

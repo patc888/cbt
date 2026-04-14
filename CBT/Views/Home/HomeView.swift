@@ -3,7 +3,7 @@ import SwiftData
 import OSLog
 
 struct HomeView: View {
-    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "HomeView")
+    private static let logger = AppLogger.make(category: "HomeView")
     @Binding var selectedTab: FloatingTab
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.scenePhase) private var scenePhase
@@ -15,7 +15,6 @@ struct HomeView: View {
     @State private var attemptingNewThoughtRecord = false
     @State private var showingTipModal = false
     @State private var selectedMoodForFlow: MoodColor? = nil
-    @State private var isDashboardReady = false
     var body: some View {
         ZStack {
             ThemedBackground().ignoresSafeArea()
@@ -29,7 +28,12 @@ struct HomeView: View {
                     )
                     .padding(.horizontal, 16)
 
-                    if isDashboardReady {
+                    DeferredRenderView(
+                        isEnabled: scenePhase == .active,
+                        delay: .milliseconds(250)
+                    ) {
+                        HomeDashboardPlaceholder()
+                    } content: {
                         HomeDashboardContent(
                             selectedTab: $selectedTab,
                             selectedDate: $selectedDate,
@@ -40,8 +44,6 @@ struct HomeView: View {
                             showingTipModal: $showingTipModal,
                             selectedMoodForFlow: $selectedMoodForFlow
                         )
-                    } else {
-                        HomeDashboardPlaceholder()
                     }
                 }
                 .responsiveMaxWidth()
@@ -61,21 +63,6 @@ struct HomeView: View {
         #endif
         .onAppear {
             Self.logger.info("HomeView mounted")
-        }
-        .task(id: scenePhase) {
-            guard scenePhase == .active else { return }
-            guard !isDashboardReady else { return }
-            // Keep the first HomeView render SwiftData-free, then
-            // construct the query-backed dashboard only after the
-            // root model container, NavigationStack, and TabView have
-            // all settled on the first active launch pass.
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            try? await Task.sleep(for: .milliseconds(250))
-            guard !Task.isCancelled else { return }
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            isDashboardReady = true
         }
         .onKeyPress(".") {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -126,45 +113,17 @@ struct HomeDashboardContent: View {
     @Binding var selectedMoodForFlow: MoodColor?
 
     @Environment(ThemeManager.self) private var themeManager
-    @Query(
-        sort: \MoodEntry.createdAt,
-        order: .reverse
-    )
+    @Query(filter: #Predicate<MoodEntry> { !$0.isDeleted }, sort: \MoodEntry.createdAt, order: .reverse)
     private var moodEntries: [MoodEntry]
-    @Query(
-        sort: \ThoughtRecord.createdAt,
-        order: .reverse
-    )
+    @Query(filter: #Predicate<ThoughtRecord> { !$0.isDeleted }, sort: \ThoughtRecord.createdAt, order: .reverse)
     private var thoughtRecords: [ThoughtRecord]
-    @Query(
-        sort: \ExerciseCompletion.createdAt,
-        order: .reverse
-    )
+    @Query(filter: #Predicate<ExerciseCompletion> { !$0.isDeleted }, sort: \ExerciseCompletion.createdAt, order: .reverse)
     private var exerciseCompletions: [ExerciseCompletion]
-    @Query(
-        sort: \JournalEntry.createdAt,
-        order: .reverse
-    )
+    @Query(filter: #Predicate<JournalEntry> { !$0.isDeleted }, sort: \JournalEntry.createdAt, order: .reverse)
     private var journalEntries: [JournalEntry]
 
     @State private var viewModel = HomeDashboardViewModel()
-
-    private var activeMoodEntries: [MoodEntry] {
-        moodEntries.filter { !$0.isDeleted }
-    }
-
-    private var activeThoughtRecords: [ThoughtRecord] {
-        thoughtRecords.filter { !$0.isDeleted }
-    }
-
-    private var activeExerciseCompletions: [ExerciseCompletion] {
-        exerciseCompletions.filter { !$0.isDeleted }
-    }
-
-    private var activeJournalEntries: [JournalEntry] {
-        journalEntries.filter { !$0.isDeleted }
-    }
-
+    
     init(
         selectedTab: Binding<FloatingTab>,
         selectedDate: Binding<Date>,
@@ -310,21 +269,16 @@ struct HomeDashboardContent: View {
         .task(id: refreshSignature) {
             await refreshDashboardSnapshot()
         }
-        .onAppear {
-            if !viewModel.isInitialized {
-                viewModel.isInitialized = true
-            }
-        }
     }
 
     private var refreshSignature: String {
         let selectedDay = Calendar.current.startOfDay(for: selectedDate).timeIntervalSinceReferenceDate
         return [
             String(selectedDay),
-            signature(for: activeMoodEntries.map(\.createdAt)),
-            signature(for: activeThoughtRecords.map(\.createdAt)),
-            signature(for: activeExerciseCompletions.map(\.createdAt)),
-            signature(for: activeJournalEntries.map(\.createdAt))
+            QueryChangeSignature.make(for: moodEntries),
+            QueryChangeSignature.make(for: thoughtRecords),
+            QueryChangeSignature.make(for: exerciseCompletions),
+            QueryChangeSignature.make(for: journalEntries)
         ].joined(separator: "|")
     }
 
@@ -332,17 +286,11 @@ struct HomeDashboardContent: View {
     private func refreshDashboardSnapshot() async {
         await viewModel.update(
             selectedDate: selectedDate,
-            moodEntries: activeMoodEntries,
-            thoughtRecords: activeThoughtRecords,
-            exerciseCompletions: activeExerciseCompletions,
-            journalEntries: activeJournalEntries
+            moodEntries: moodEntries,
+            thoughtRecords: thoughtRecords,
+            exerciseCompletions: exerciseCompletions,
+            journalEntries: journalEntries
         )
-    }
-
-    private func signature(for dates: [Date]) -> String {
-        let latest = dates.first?.timeIntervalSinceReferenceDate ?? 0
-        let earliest = dates.last?.timeIntervalSinceReferenceDate ?? 0
-        return "\(dates.count):\(latest):\(earliest)"
     }
 }
 

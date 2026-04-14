@@ -5,7 +5,7 @@ import SwiftUI
 
 @main
 struct CBTApp: App {
-    private nonisolated static let bootstrapTimeoutSeconds: TimeInterval = 12
+    private nonisolated static let bootstrapTimeoutSeconds: TimeInterval = 120
 
     private var currentContainer: ModelContainer? {
         guard case .ready(let container) = launchState else { return nil }
@@ -17,20 +17,14 @@ struct CBTApp: App {
         let reason: String
     }
 
-    private nonisolated static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "CBT",
-        category: "AppBootstrap"
-    )
+    private nonisolated static let logger = AppLogger.make(category: "AppBootstrap")
 
-    private nonisolated static let schema = Schema([
-        UserSettings.self,
-        MoodEntry.self,
-        ThoughtRecord.self,
-        ExerciseCompletion.self,
-        JournalEntry.self
-    ])
+    private nonisolated static let schema = Schema(versionedSchema: CBTVersionedSchemaV1.self)
 
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    
     @State private var launchState: LaunchState
+
     @State private var loadingRequest: LoadingRequest
     @State private var resetID = UUID()
     @State private var themeManager = ThemeManager()
@@ -43,6 +37,9 @@ struct CBTApp: App {
     @State private var isResetInProgress = false
 
     init() {
+        // Perform emergency hard wipe if flagged before any SwiftData initialization starts.
+        DataResetManager.performHardWipeIfNeeded()
+        
         let initialRequest = LoadingRequest(reason: "app launch")
         _launchState = State(initialValue: .launching)
         _loadingRequest = State(initialValue: initialRequest)
@@ -56,19 +53,25 @@ struct CBTApp: App {
 
     @ViewBuilder
     private var mainWindowChrome: some View {
-        rootView
-            .environment(themeManager)
-            .environmentObject(securityManager)
-            .preferredColorScheme(themeManager.appTheme.colorScheme)
-            .fullScreenCover(isPresented: securityCoverBinding) {
-                SecurityCoverRoot()
-                    .environment(themeManager)
-                    .environmentObject(securityManager)
-                    .interactiveDismissDisabled(true)
-            }
-            .onChange(of: scenePhase) { _, newPhase in
-                handleScenePhaseChange(newPhase)
-            }
+        ZStack {
+            rootView
+                .blur(radius: securityManager.isContentProtected ? 20 : 0)
+                .overlay {
+                    if securityManager.isContentProtected {
+                        Color(UIColor.systemBackground)
+                            .ignoresSafeArea()
+                    }
+                }
+            
+            // This is the interaction-blocking layer
+            SecurityOverlayView()
+        }
+        .environment(themeManager)
+        .environmentObject(securityManager)
+        .preferredColorScheme(themeManager.appTheme.colorScheme)
+        .onChange(of: scenePhase) { _, newPhase in
+            handleScenePhaseChange(newPhase)
+        }
             .onReceive(NotificationCenter.default.publisher(for: .didResetData)) { _ in
                 themeManager = ThemeManager()
                 securityManager.unlock()
@@ -77,13 +80,17 @@ struct CBTApp: App {
             .onReceive(NotificationCenter.default.publisher(for: .requestDataReset)) { _ in
                 beginLocalResetFlow()
             }
+            .onAppear {
+                // CloudSyncMonitor initialization moved to ReadyAppRoot.onAppear 
+                // to prevent launch traps during bootstrap or repair.
+            }
     }
 
     @ViewBuilder
     private var rootView: some View {
         switch launchState {
-        case .launching:
-            DataRepairLoadingView()
+        case .launching, .migrating:
+            DataRepairLoadingView(isMigrating: launchState == .migrating)
                 .task(id: loadingRequest.id) {
                     guard !isResetInProgress else { return }
                     await bootstrapIntoCurrentState(for: loadingRequest)
@@ -181,15 +188,16 @@ struct CBTApp: App {
         isResetInProgress = true
         themeManager = ThemeManager()
         securityManager.unlock()
+        
+        // Disable cloud sync for safety and request a hard wipe on next launch
+        // to ensure we can break through any existing file locks.
+        DataResetManager.isCloudSyncEnabled = false
+        DataResetManager.requestHardWipeOnNextLaunch()
+        
         launchState = .launching
     }
 
-    private var securityCoverBinding: Binding<Bool> {
-        Binding(
-            get: { securityManager.isContentProtected },
-            set: { _ in }
-        )
-    }
+
 
     @MainActor
     private func bootstrapIntoCurrentState(for request: LoadingRequest) async {
@@ -200,7 +208,18 @@ struct CBTApp: App {
             "Bootstrap starting reason=\(request.reason, privacy: .public)"
         )
 
+        // Implement a 'soft timeout' to update UI if bootstrap takes a while (e.g. migration)
+        let softTimeoutTask = Task {
+            try? await Task.sleep(nanoseconds: 5 * 1_000_000_000)
+            if !Task.isCancelled && launchState == .launching && loadingRequest.id == request.id {
+                withAnimation(.easeInOut) {
+                    launchState = .migrating
+                }
+            }
+        }
+
         let nextState = await Self.bootstrapAsync(reason: request.reason)
+        softTimeoutTask.cancel()
 
         guard !Task.isCancelled else { return }
         guard loadingRequest.id == request.id else { return }
@@ -209,8 +228,8 @@ struct CBTApp: App {
         }
 
         switch nextState {
-        case .launching:
-            Self.logger.info("Bootstrap resolved → launching (unexpected)")
+        case .launching, .migrating:
+            Self.logger.info("Bootstrap resolved → \(nextState == .launching ? "launching" : "migrating", privacy: .public) (unexpected)")
         case .ready:
             Self.logger.info("Bootstrap resolved → ready")
         case .failed:
@@ -336,32 +355,43 @@ struct CBTApp: App {
 
     private nonisolated static func makePrimaryContainer(stage: BootstrapStage) throws -> ModelContainer {
         try DebugBootstrapControl.injectFailureIfNeeded(for: stage)
-        try DataResetManager.ensureStoreParentDirectoryExists(for: DataResetManager.defaultStoreURL)
+        
+        let storeURL = DataResetManager.defaultStoreURL
+        try DataResetManager.ensureStoreParentDirectoryExists(for: storeURL)
 
-        // CloudKit stays behind a single app-wide capability switch so the
-        // persistence stack and settings copy cannot drift out of sync.
+        // Explicitly define the configuration with our robustly-resolved URL.
         let configuration = ModelConfiguration(
             "PrimaryLocalStore",
             schema: schema,
-            url: DataResetManager.defaultStoreURL,
+            url: storeURL,
             cloudKitDatabase: cloudKitDatabase
         )
 
-        return try ModelContainer(for: schema, configurations: [configuration])
+        return try ModelContainer(
+            for: schema,
+            migrationPlan: CBTModelMigrationPlan.self,
+            configurations: [configuration]
+        )
     }
 
     private nonisolated static func makeFallbackContainer() throws -> ModelContainer {
         try DebugBootstrapControl.injectFailureIfNeeded(for: .fallback)
-        try DataResetManager.ensureStoreParentDirectoryExists(for: DataResetManager.fallbackStoreURL)
+        
+        let storeURL = DataResetManager.fallbackStoreURL
+        try DataResetManager.ensureStoreParentDirectoryExists(for: storeURL)
 
         let configuration = ModelConfiguration(
             "LocalRecovery",
             schema: schema,
-            url: DataResetManager.fallbackStoreURL,
-            cloudKitDatabase: cloudKitDatabase
+            url: storeURL,
+            cloudKitDatabase: .none // Always skip CloudKit for fallback recovery
         )
 
-        return try ModelContainer(for: schema, configurations: [configuration])
+        return try ModelContainer(
+            for: schema,
+            migrationPlan: CBTModelMigrationPlan.self,
+            configurations: [configuration]
+        )
     }
 
     private nonisolated static func makeInMemoryContainer() throws -> ModelContainer {
@@ -370,10 +400,14 @@ struct CBTApp: App {
         let configuration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: true,
-            cloudKitDatabase: cloudKitDatabase
+            cloudKitDatabase: .none // Always skip CloudKit for in-memory recovery
         )
 
-        return try ModelContainer(for: schema, configurations: [configuration])
+        return try ModelContainer(
+            for: schema,
+            migrationPlan: CBTModelMigrationPlan.self,
+            configurations: [configuration]
+        )
     }
 
     private nonisolated static var cloudKitDatabase: ModelConfiguration.CloudKitDatabase {
@@ -480,6 +514,25 @@ struct CBTApp: App {
         )
     }
 }
+
+private struct SecurityOverlayView: View {
+    @EnvironmentObject var securityManager: SecurityManager
+    @Environment(ThemeManager.self) var themeManager
+    @State private var overlayManager: SecurityOverlayManager?
+
+    var body: some View {
+        Color.clear
+            .onAppear {
+                if overlayManager == nil {
+                    overlayManager = SecurityOverlayManager(
+                        securityManager: securityManager,
+                        themeManager: themeManager
+                    )
+                }
+            }
+    }
+}
+
 
 
 

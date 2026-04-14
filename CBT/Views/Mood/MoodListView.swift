@@ -5,6 +5,7 @@ import os
 struct MoodListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(
+        filter: #Predicate<MoodEntry> { !$0.isDeleted },
         sort: \MoodEntry.createdAt,
         order: .reverse
     ) private var entries: [MoodEntry]
@@ -13,15 +14,13 @@ struct MoodListView: View {
     @State private var showingNewEntry = false
     @State private var attemptingNewEntry = false
 
-    private var activeEntries: [MoodEntry] {
-        entries.filter { !$0.isDeleted }
-    }
+
     
     var body: some View {
         ZStack {
             ThemedBackground().ignoresSafeArea()
             
-            if activeEntries.isEmpty {
+            if entries.isEmpty {
                 VStack(spacing: 16) {
                     Image(systemName: "face.smiling")
                         .font(.system(size: 64))
@@ -52,7 +51,7 @@ struct MoodListView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(activeEntries) { entry in
+                        ForEach(entries) { entry in
                             NavigationLink(value: entry) {
                                 MoodEntryRow(entry: entry)
                             }
@@ -102,7 +101,7 @@ struct MoodListView: View {
         do {
             try modelContext.cbtStore.softDelete(item: entry)
         } catch {
-            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to delete entry: \(error)")
+            AppLogger.make(category: "Data").error("Failed to delete entry: \(error.localizedDescription, privacy: .private)")
         }
     }
 }

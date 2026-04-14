@@ -87,7 +87,7 @@ struct PlanCard<CTAContent: View>: View {
 
     var body: some View {
         Button(action: {
-            HapticManager.shared.lightImpact()
+            HapticManager.shared.mediumImpact()
             action()
         }) {
             VStack(alignment: .leading, spacing: 14) {

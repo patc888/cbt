@@ -107,11 +107,12 @@ struct MoodDetailView: View {
     }
     
     private func deleteEntry() {
+        HapticManager.shared.destructiveAction()
         do {
             try modelContext.cbtStore.softDelete(item: entry)
             dismiss()
         } catch {
-            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to delete entry: \(error)")
+            AppLogger.make(category: "Data").error("Failed to delete entry: \(error.localizedDescription, privacy: .private)")
         }
     }
 }

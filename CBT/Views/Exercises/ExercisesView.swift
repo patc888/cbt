@@ -2,15 +2,11 @@ import SwiftUI
 import SwiftData
 
 struct ExercisesView: View {
-    @State private var isDashboardReady = false
-
     var body: some View {
         ZStack {
             ThemedBackground().ignoresSafeArea()
 
-            if isDashboardReady {
-                ExercisesDashboardContent()
-            } else {
+            DeferredRenderView {
                 VStack(alignment: .leading, spacing: 16) {
                     TopHeadlineView(
                         title: "Exercises",
@@ -23,6 +19,8 @@ struct ExercisesView: View {
                     Spacer()
                 }
                 .padding(.top, 16)
+            } content: {
+                ExercisesDashboardContent()
             }
         }
 #if os(iOS)
@@ -30,19 +28,11 @@ struct ExercisesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
 #endif
-        .task {
-            guard !isDashboardReady else { return }
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            isDashboardReady = true
-        }
     }
 }
 
 private struct ExercisesDashboardContent: View {
-    @Query(sort: \ExerciseCompletion.createdAt, order: .reverse)
+    @Query(filter: #Predicate<ExerciseCompletion> { !$0.isDeleted }, sort: \ExerciseCompletion.createdAt, order: .reverse)
     private var completions: [ExerciseCompletion]
     @Environment(ThemeManager.self) private var themeManager
 
@@ -50,9 +40,7 @@ private struct ExercisesDashboardContent: View {
     @State private var viewModel = ExercisesViewModel()
     @State private var selectedCategory: String = "All"
 
-    private var activeCompletions: [ExerciseCompletion] {
-        completions.filter { !$0.isDeleted }
-    }
+
 
     init() {}
 
@@ -165,8 +153,8 @@ private struct ExercisesDashboardContent: View {
                 Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
             }
         }
-        .task(id: activeCompletions.count) {
-            await viewModel.update(completions: activeCompletions, allExercises: exercises)
+        .task(id: completions.count) {
+            await viewModel.update(completions: completions, allExercises: exercises)
         }
     }
 

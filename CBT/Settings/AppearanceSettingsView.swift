@@ -1,14 +1,15 @@
 import SwiftUI
+import SwiftData
 
 struct AppearanceSettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
     
+    @Environment(\.modelContext) private var modelContext
+    let settings: UserSettings
     @Binding var userTheme: AppTheme
     @Binding var selectedTheme: AppColorTheme
     @Binding var isImmersive: Bool
-    @Binding var hapticsEnabled: Bool
-    @Binding var currentIcon: String?
     
     @Namespace private var appearanceNamespace
     @Namespace private var fullColorNamespace
@@ -42,12 +43,19 @@ struct AppearanceSettingsView: View {
             }
             
             SettingsRow(title: "Haptic Feedback") {
-                SegmentedToggle(isOn: $hapticsEnabled, namespace: hapticNamespace)
+                hapticToggle
             }
             
             if supportsAlternateIcons {
                 appIconDisclosure
             }
+        }
+        .onChange(of: settings.hapticsEnabled) { _, newValue in
+            HapticManager.shared.setEnabled(newValue ?? true)
+            saveSettings(action: "update-haptics-setting")
+        }
+        .onChange(of: settings.currentIcon) { _, _ in
+            saveSettings(action: "update-app-icon-setting")
         }
         .alert("Error Changing Icon", isPresented: $showingError) {
             Button("OK", role: .cancel) {
@@ -56,6 +64,13 @@ struct AppearanceSettingsView: View {
         } message: {
             Text(errorString ?? "Unknown error")
         }
+    }
+
+    private func saveSettings(action: String) {
+        modelContext.saveIfChanged(
+            logger: AppLogger.make(category: "AppearanceSettings"),
+            action: action
+        )
     }
     
     private var accentColorPicker: some View {
@@ -101,6 +116,16 @@ struct AppearanceSettingsView: View {
         .scaleEffect(isSelected ? 1.05 : 1.0)
     }
 
+    private var hapticToggle: some View {
+        SegmentedToggle(
+            isOn: Binding(
+                get: { settings.hapticsEnabled ?? true },
+                set: { settings.hapticsEnabled = $0 }
+            ),
+            namespace: hapticNamespace
+        )
+    }
+
     private var appIconDisclosure: some View {
         VStack(alignment: .leading, spacing: 12) {
             disclosureHeader
@@ -112,10 +137,10 @@ struct AppearanceSettingsView: View {
         .onAppear {
             #if canImport(UIKit)
             guard supportsAlternateIcons else {
-                currentIcon = nil
+                settings.currentIcon = nil
                 return
             }
-            currentIcon = UIApplication.shared.alternateIconName
+            settings.currentIcon = UIApplication.shared.alternateIconName
             #endif
         }
     }
@@ -148,7 +173,7 @@ struct AppearanceSettingsView: View {
     
     private var statusText: some View {
         Group {
-            if let iconName = currentIcon, 
+            if let iconName = settings.currentIcon, 
                let icon = AppIcon.allCases.first(where: { $0.iconName == iconName }) {
                 Text(icon.displayName)
             } else {
@@ -174,7 +199,7 @@ struct AppearanceSettingsView: View {
     }
     
     private func iconButton(for icon: AppIcon) -> some View {
-        let isSelected = currentIcon == icon.iconName
+        let isSelected = iconIsSelected(icon)
         
         return Button(action: {
             HapticManager.shared.lightImpact()
@@ -192,7 +217,7 @@ struct AppearanceSettingsView: View {
                 } else {
                     HapticManager.shared.success()
                     withAnimation {
-                        currentIcon = icon.iconName
+                        settings.currentIcon = icon.iconName
                     }
                 }
             }
@@ -228,5 +253,14 @@ struct AppearanceSettingsView: View {
             }
         }
         .buttonStyle(PlainButtonStyle())
+    }
+
+    private var isSelectedIcon: Bool {
+        // defined for clarity
+        false
+    }
+    
+    private func iconIsSelected(_ icon: AppIcon) -> Bool {
+        settings.currentIcon == icon.iconName
     }
 }

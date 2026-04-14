@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		55FEFA247247F9F86C01FDB8 /* PermissionDeniedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8D5B2F8A1C0F9143E5B1EC9 /* PermissionDeniedView.swift */; };
+		EDFBB69E2E8933519BE3C355 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB7D61292BCA14F59C12C2B /* PermissionManager.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		E2E55C5B2F58B8560055850B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,9 +29,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BDB7D61292BCA14F59C12C2B /* PermissionManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PermissionManager.swift; path = CBT/Services/PermissionManager.swift; sourceTree = "<group>"; };
 		E2E55C492F58B8550055850B /* CBT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CBT.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E55C5A2F58B8560055850B /* CBTTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CBTTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E55C642F58B8560055850B /* CBTUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CBTUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E8D5B2F8A1C0F9143E5B1EC9 /* PermissionDeniedView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PermissionDeniedView.swift; path = CBT/Components/Overlays/PermissionDeniedView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -85,6 +92,39 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B04118D1A0DB50B569FA1A82 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				BDB7D61292BCA14F59C12C2B /* PermissionManager.swift */,
+			);
+			name = Services;
+			sourceTree = "<group>";
+		};
+		B46636A03CF563F472AC5F85 /* CBT */ = {
+			isa = PBXGroup;
+			children = (
+				B04118D1A0DB50B569FA1A82 /* Services */,
+				D864C86A132C8006CABFF548 /* Components */,
+			);
+			name = CBT;
+			sourceTree = "<group>";
+		};
+		D77F8144710E7C6AA940C004 /* Overlays */ = {
+			isa = PBXGroup;
+			children = (
+				E8D5B2F8A1C0F9143E5B1EC9 /* PermissionDeniedView.swift */,
+			);
+			name = Overlays;
+			sourceTree = "<group>";
+		};
+		D864C86A132C8006CABFF548 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				D77F8144710E7C6AA940C004 /* Overlays */,
+			);
+			name = Components;
+			sourceTree = "<group>";
+		};
 		E2E55C402F58B8550055850B = {
 			isa = PBXGroup;
 			children = (
@@ -92,6 +132,7 @@
 				E2E55C5D2F58B8560055850B /* CBTTests */,
 				E2E55C672F58B8560055850B /* CBTUITests */,
 				E2E55C4A2F58B8550055850B /* Products */,
+				B46636A03CF563F472AC5F85 /* CBT */,
 			);
 			sourceTree = "<group>";
 		};
@@ -243,6 +284,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EDFBB69E2E8933519BE3C355 /* PermissionManager.swift in Sources */,
+				55FEFA247247F9F86C01FDB8 /* PermissionDeniedView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

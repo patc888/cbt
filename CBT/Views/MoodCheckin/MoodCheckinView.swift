@@ -72,7 +72,6 @@ struct MoodCheckinView: View {
                     #if os(iOS)
                     .tabViewStyle(.page(indexDisplayMode: .never))
                     #endif
-                    // Disable swiping so they use buttons to proceed
                     .animation(.spring(response: 0.4, dampingFraction: 0.8), value: currentStep)
                 }
             }
@@ -82,10 +81,20 @@ struct MoodCheckinView: View {
 #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
+                    #if targetEnvironment(macCatalyst)
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(.title3, weight: .semibold))
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    .accessibilityLabel("Cancel")
+                    #else
                     Button("Cancel") { dismiss() }
+                    #endif
                 }
                 if currentStep > 0 {
-                    #if os(iOS)
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button {
                             withAnimation {
@@ -96,21 +105,12 @@ struct MoodCheckinView: View {
                         }
                         .accessibilityLabel("Previous step")
                     }
-                    #else
-                    ToolbarItem {
-                        Button {
-                            withAnimation {
-                                previousStep()
-                            }
-                        } label: {
-                            Image(systemName: "chevron.left")
-                        }
-                        .accessibilityLabel("Previous step")
-                    }
-                    #endif
                 }
             }
         }
+        #if targetEnvironment(macCatalyst)
+        .frame(minWidth: 560, idealWidth: 560, minHeight: 520, idealHeight: 520)
+        #endif
     }
     
     private var isLowMood: Bool {
@@ -135,6 +135,7 @@ struct MoodCheckinView: View {
     }
     
     private func nextStep() {
+        HapticManager.shared.selection()
         withAnimation {
             if currentStep < totalSteps - 1 {
                 currentStep += 1
@@ -143,6 +144,7 @@ struct MoodCheckinView: View {
     }
     
     private func previousStep() {
+        HapticManager.shared.selection()
         withAnimation {
             if currentStep > 0 {
                 currentStep -= 1
@@ -164,7 +166,7 @@ struct MoodCheckinView: View {
             ReviewManager.shared.logSignificantAction()
             dismiss()
         } catch {
-            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to save mood entry: \(error)")
+            AppLogger.make(category: "Data").error("Failed to save mood entry: \(error.localizedDescription, privacy: .private)")
         }
     }
 }

@@ -26,13 +26,15 @@ struct BreathingOrbView: View {
         }
     }
     
+    @State private var isPulsing = false
+    
     var body: some View {
         ZStack {
             // Outer Glow
             Circle()
                 .fill(accent.opacity(glowOpacity))
                 .blur(radius: 40)
-                .scaleEffect(circleScale * 1.25)
+                .scaleEffect(circleScale * (isPulsing ? 1.35 : 1.25))
             
             // Main Orb
             Circle()
@@ -42,7 +44,7 @@ struct BreathingOrbView: View {
                         center: .topLeading,
                         startRadius: 0,
                         endRadius: 180
-                    )
+                     )
                 )
                 .overlay(
                     Circle()
@@ -64,7 +66,7 @@ struct BreathingOrbView: View {
                         .opacity(0.6)
                 )
                 .shadow(color: accent.opacity(0.25), radius: 25, x: 0, y: 15)
-                .scaleEffect(circleScale)
+                .scaleEffect(circleScale * (isPulsing ? 1.05 : 1.0))
             
             VStack(spacing: 8) {
                 Text(phaseTitle)
@@ -80,7 +82,12 @@ struct BreathingOrbView: View {
             .offset(y: -5)
         }
         .frame(width: 280, height: 280)
-        .animation(.easeInOut(duration: phaseDuration), value: phase)
+        .animation(.spring(response: phaseDuration, dampingFraction: 0.8), value: phase)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                isPulsing = true
+            }
+        }
     }
     
     private var phaseTitle: String {

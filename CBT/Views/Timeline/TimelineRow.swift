@@ -50,11 +50,7 @@ struct TimelineRow: View {
     private var iconViewInner: some View {
         switch item.kind {
         case .mood:
-            if case .mood(let entry) = item.route, let validColor = MoodColor(rawValue: entry.moodScore) {
-                validColor.iconView
-            } else {
-                Image(systemName: "face.smiling")
-            }
+            Image(systemName: "face.smiling")
         case .thought: Image(systemName: "brain")
         case .exercise: Image(systemName: "figure.mind.and.body")
         case .journal: Image(systemName: "book.pages")

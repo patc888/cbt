@@ -4,7 +4,7 @@ struct DataResetOptionsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ThemeManager.self) private var themeManager
 
-    private let isCloudSyncEnabled = DataResetManager.isCloudSyncEnabled
+    private var isCloudSyncEnabled: Bool { DataResetManager.isCloudSyncEnabled }
 
     @State private var showingLocalConfirm = false
     @State private var showingCloudSheet = false
@@ -116,10 +116,14 @@ struct DataResetOptionsView: View {
             NavigationStack {
                 Form {
                     Section {
-                        Text("This will permanently delete all your CBT data from this device and iCloud. This action cannot be undone and will affect all your synchronized devices.")
+                        Text("DANGER: This will permanently delete your entire CBT history from this device AND from iCloud storage.")
                             .font(.callout)
                             .foregroundStyle(.red)
                             .fontWeight(.semibold)
+                        
+                        Text("This action is irreversible and will immediately remove your data from all other synchronized devices.")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.secondaryText)
                         
                         Text("Please type DELETE below to confirm.")
                             .font(.caption)

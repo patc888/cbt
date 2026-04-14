@@ -18,6 +18,7 @@ class SecurityManager: ObservableObject {
     }
 
     func checkBiometrics() {
+        // Guard against unnecessary checks if already authenticating or not in a state to show UI
         let context = LAContext()
         var biometricsError: NSError?
 

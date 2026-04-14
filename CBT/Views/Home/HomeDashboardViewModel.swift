@@ -36,13 +36,6 @@ final class HomeDashboardViewModel {
     // Manual completion tracking (persisted only for current session here, naturally)
     var manualCompletions: [Date: Set<DailyPlanItem>] = [:]
 
-    private nonisolated struct DataSnapshot: Sendable {
-        let moodDates: [Date]
-        let thoughtDates: [Date]
-        let exerciseDates: [Date]
-        let journalDates: [Date]
-    }
-
     private var updateTaskID = UUID()
 
     @MainActor
@@ -56,32 +49,33 @@ final class HomeDashboardViewModel {
         let currentTaskID = UUID()
         self.updateTaskID = currentTaskID
 
-        // Snapshot only the necessary dates on main actor
-        let snapshot = DataSnapshot(
-            moodDates: moodEntries.map(\.createdAt),
-            thoughtDates: thoughtRecords.map(\.createdAt),
-            exerciseDates: exerciseCompletions.map(\.createdAt),
-            journalDates: journalEntries.filter { $0.sourceKind == SessionSourceKind.breathing.rawValue }.map(\.createdAt)
-        )
-        
-        let manualForDay = manualCompletions[Calendar.current.startOfDay(for: selectedDate)] ?? []
+        let calendar = Calendar.current
+        let selectedDay = calendar.startOfDay(for: selectedDate)
+        let manualForDay = manualCompletions[selectedDay] ?? []
+
+        // 1. Map to Sendable snapshots on the MainActor
+        let moodDates = moodEntries.map { $0.createdAt }
+        let thoughtDates = thoughtRecords.map { $0.createdAt }
+        let exerciseDates = exerciseCompletions.map { $0.createdAt }
+        let journalDates = journalEntries.filter { 
+            $0.sourceKind == SessionSourceKind.breathing.rawValue 
+        }.map { $0.createdAt }
 
         let results = await Task.detached(priority: .userInitiated) {
             let calendar = Calendar.current
-            let selectedDay = calendar.startOfDay(for: selectedDate)
             
-            // 1. Calculate Active Dates
+            // 2. Calculate Active Dates in background
             var dates = Set<Date>()
-            for d in snapshot.moodDates { dates.insert(calendar.startOfDay(for: d)) }
-            for d in snapshot.thoughtDates { dates.insert(calendar.startOfDay(for: d)) }
-            for d in snapshot.exerciseDates { dates.insert(calendar.startOfDay(for: d)) }
-            for d in snapshot.journalDates { dates.insert(calendar.startOfDay(for: d)) }
+            for d in moodDates { dates.insert(calendar.startOfDay(for: d)) }
+            for d in thoughtDates { dates.insert(calendar.startOfDay(for: d)) }
+            for d in exerciseDates { dates.insert(calendar.startOfDay(for: d)) }
+            for d in journalDates { dates.insert(calendar.startOfDay(for: d)) }
             
-            // 2. Calculate Completion for selected day
-            let moodDone = snapshot.moodDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
-            let thoughtDone = snapshot.thoughtDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
-            let exerciseDone = snapshot.exerciseDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
-            let breathingDone = snapshot.journalDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
+            // 3. Calculate Completion for selected day
+            let moodDone = moodDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
+            let thoughtDone = thoughtDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
+            let exerciseDone = exerciseDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
+            let breathingDone = journalDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
             
             let completion = DailyPlanCompletionSnapshot(entries: [
                 .moodCheckIn: moodDone ? .completed : .incomplete,

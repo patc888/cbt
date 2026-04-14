@@ -13,6 +13,7 @@ struct CSVFile: Transferable {
     }
 }
 
+@MainActor
 final class CSVExporter: Sendable {
     static let shared = CSVExporter()
 
@@ -68,6 +69,44 @@ final class CSVExporter: Sendable {
         return createCSVFile(name: "ThoughtRecords", content: csvString)
     }
 
+    func exportJournalEntries(_ entries: [JournalEntry]) -> CSVFile? {
+        let headers = ["Date", "Title", "Body", "Source", "Duration (Seconds)"]
+        var csvString = headers.joined(separator: ",") + "\n"
+
+        let dateFormatter = ISO8601DateFormatter()
+
+        for entry in entries {
+            let row: [String] = [
+                dateFormatter.string(from: entry.createdAt),
+                escapeCSV(entry.title),
+                escapeCSV(entry.body),
+                escapeCSV(entry.sourceKind ?? ""),
+                entry.durationSeconds.map { String($0) } ?? ""
+            ]
+            csvString += row.joined(separator: ",") + "\n"
+        }
+
+        return createCSVFile(name: "JournalEntries", content: csvString)
+    }
+
+    func exportExerciseCompletions(_ completions: [ExerciseCompletion]) -> CSVFile? {
+        let headers = ["Date", "ExerciseID", "Notes"]
+        var csvString = headers.joined(separator: ",") + "\n"
+
+        let dateFormatter = ISO8601DateFormatter()
+
+        for completion in completions {
+            let row: [String] = [
+                dateFormatter.string(from: completion.createdAt),
+                escapeCSV(completion.exerciseID),
+                escapeCSV(completion.notes ?? "")
+            ]
+            csvString += row.joined(separator: ",") + "\n"
+        }
+
+        return createCSVFile(name: "ExerciseHistory", content: csvString)
+    }
+
     private func createCSVFile(name: String, content: String) -> CSVFile? {
         let fileName = "\(name)_\(Int(Date().timeIntervalSince1970)).csv"
         let tempDirectory = FileManager.default.temporaryDirectory
@@ -77,7 +116,7 @@ final class CSVExporter: Sendable {
             try content.write(to: fileURL, atomically: true, encoding: .utf8)
             return CSVFile(url: fileURL)
         } catch {
-            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to write CSV: \(error)")
+            AppLogger.make(category: "Data").error("Failed to write CSV: \(error.localizedDescription, privacy: .private)")
             return nil
         }
     }

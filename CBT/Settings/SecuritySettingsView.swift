@@ -32,17 +32,7 @@ struct SecuritySettingsView: View {
                     SegmentedToggle(
                         isOn: Binding(
                             get: { settings.appLockEnabled ?? false },
-                            set: { newValue in
-                                guard securityManager.isAppLockAvailable || !newValue else { return }
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    settings.appLockEnabled = newValue
-                                    appLockEnabledStorage = newValue
-                                    modelContext.saveIfChanged(
-                                        logger: Self.logger,
-                                        action: "toggle-app-lock"
-                                    )
-                                }
-                            }
+                            set: { settings.appLockEnabled = $0 }
                         ),
                         namespace: appLockNamespace
                     )
@@ -77,6 +67,18 @@ struct SecuritySettingsView: View {
         .onAppear {
             securityManager.checkBiometrics()
             disableUnsupportedAppLockIfNeeded()
+        }
+        .onChange(of: settings.appLockEnabled) { _, newValue in
+            let isEnabled = newValue ?? false
+            guard securityManager.isAppLockAvailable || !isEnabled else { return }
+            
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                appLockEnabledStorage = isEnabled
+                modelContext.saveIfChanged(
+                    logger: Self.logger,
+                    action: "toggle-app-lock"
+                )
+            }
         }
         .onChange(of: securityManager.isAppLockAvailable) { _, _ in
             disableUnsupportedAppLockIfNeeded()

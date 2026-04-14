@@ -82,7 +82,7 @@ private enum SwiftDataCrashReproductionFixtures {
     }
 
     static func truncateStoreToBreakMetadata(at storeURL: URL) throws {
-        var data = try Data(contentsOf: storeURL)
+        let data = try Data(contentsOf: storeURL)
         let truncated = data.prefix(220)
         try truncated.write(to: storeURL, options: .atomic)
     }

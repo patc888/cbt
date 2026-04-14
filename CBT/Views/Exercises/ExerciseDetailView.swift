@@ -224,7 +224,7 @@ struct ExerciseDetailView: View {
                 completedSummary = summary
             }
         } catch {
-            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to save exercise completion: \(error)")
+            AppLogger.make(category: "Data").error("Failed to save exercise completion: \(error.localizedDescription, privacy: .private)")
         }
     }
 }

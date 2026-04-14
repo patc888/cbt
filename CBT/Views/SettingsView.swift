@@ -3,10 +3,7 @@ import SwiftUI
 import SwiftData
 
 struct SettingsView: View {
-    fileprivate static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "CBT",
-        category: "Settings"
-    )
+    fileprivate static let logger = AppLogger.make(category: "Settings")
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
@@ -15,18 +12,16 @@ struct SettingsView: View {
     
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private var metrics: LayoutMetrics { LayoutMetrics.metrics(for: horizontalSizeClass) }
-    
-    @State private var isDashboardReady = false
     var showsDismissControl: Bool = true
     
     var body: some View {
         ZStack(alignment: .topTrailing) {
             ThemedBackground().ignoresSafeArea()
-            
-            if isDashboardReady {
-                SettingsContent(showsDismissControl: showsDismissControl, hasPreparedSettings: $hasPreparedSettings)
-            } else {
+
+            DeferredRenderView {
                 VStack { Spacer() }
+            } content: {
+                SettingsContent(showsDismissControl: showsDismissControl, hasPreparedSettings: $hasPreparedSettings)
             }
 
             if showsDismissControl {
@@ -41,14 +36,6 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
 #endif
-        .task {
-            guard !isDashboardReady else { return }
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            isDashboardReady = true
-        }
     }
 
     private var navigationArrow: some View {
@@ -118,32 +105,14 @@ private struct SettingsContent: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
-            AppearanceSettingsView(
-                userTheme: Bindable(themeManager).appTheme,
-                selectedTheme: Bindable(themeManager).selectedTheme,
-                isImmersive: Bindable(themeManager).isImmersive,
-                hapticsEnabled: Binding(
-                    get: { userSettings?.hapticsEnabled ?? true },
-                    set: {
-                        userSettings?.hapticsEnabled = $0
-                        HapticManager.shared.setEnabled($0)
-                        modelContext.saveIfChanged(
-                            logger: SettingsView.logger,
-                            action: "update-haptics-setting"
-                        )
-                    }
-                ),
-                currentIcon: Binding(
-                    get: { userSettings?.currentIcon },
-                    set: {
-                        userSettings?.currentIcon = $0
-                        modelContext.saveIfChanged(
-                            logger: SettingsView.logger,
-                            action: "update-app-icon-setting"
-                        )
-                    }
+            if let settings = userSettings {
+                AppearanceSettingsView(
+                    settings: settings,
+                    userTheme: Bindable(themeManager).appTheme,
+                    selectedTheme: Bindable(themeManager).selectedTheme,
+                    isImmersive: Bindable(themeManager).isImmersive
                 )
-            )
+            }
             
             DataSettingsSection()
 
@@ -196,6 +165,8 @@ private struct SettingsContent: View {
             
             PrivacyFooter()
                 .padding(.top, 16)
+            
+            VersionFooterView()
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 32)
@@ -221,5 +192,23 @@ struct PrivacyFooter: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.bottom, 8)
+    }
+}
+
+private struct VersionFooterView: View {
+    private var appVersionText: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        return "Version \(version)"
+    }
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(appVersionText)
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(Theme.secondaryText)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 4)
     }
 }

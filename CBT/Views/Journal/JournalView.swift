@@ -40,7 +40,6 @@ struct JournalView: View {
         }
     }
     @State private var selectedTab: JournalTab = .mood
-    @State private var isDashboardReady = false
     
     var body: some View {
         ZStack {
@@ -83,7 +82,9 @@ struct JournalView: View {
                 .responsiveMaxWidth()
                 .frame(maxWidth: .infinity)
 
-                if isDashboardReady {
+                DeferredRenderView {
+                    Spacer()
+                } content: {
                     switch selectedTab {
                     case .mood:
                         MoodListView()
@@ -92,8 +93,6 @@ struct JournalView: View {
                     case .sessions:
                         JournalSessionsListView()
                     }
-                } else {
-                    Spacer()
                 }
             }
         }
@@ -102,13 +101,5 @@ struct JournalView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
         #endif
-        .task {
-            guard !isDashboardReady else { return }
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            isDashboardReady = true
-        }
     }
 }

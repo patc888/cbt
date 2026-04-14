@@ -90,7 +90,7 @@ final class NewThoughtRecordViewModel {
                 intensityAfter: Int(intensityAfter)
             )
         } catch {
-            Logger(subsystem: Bundle.main.bundleIdentifier ?? "CBT", category: "Data").error("Failed to save thought record: \(error)")
+            AppLogger.make(category: "Data").error("Failed to save thought record: \(error.localizedDescription, privacy: .private)")
         }
     }
 }

@@ -3,10 +3,7 @@ import SwiftData
 import os
 
 struct ReadyAppRoot: View {
-    private static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "CBT",
-        category: "ReadyAppRoot"
-    )
+    private static let logger = AppLogger.make(category: "ReadyAppRoot")
 
     let container: ModelContainer
     let resetID: UUID
@@ -20,6 +17,9 @@ struct ReadyAppRoot: View {
             .onAppear {
                 onAppear()
                 logMainUIPresented()
+                
+                // Initialize sync monitor only after data layer is ready
+                _ = CloudSyncMonitor.shared
             }
         .animation(.easeInOut(duration: 0.15), value: securityManager.isContentProtected)
         .modelContainer(container)

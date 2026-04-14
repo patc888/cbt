@@ -36,6 +36,43 @@ struct CBTTests {
         #expect(entry.sessionMetadataLine == "Breathing • 1m 30s")
     }
 
+    @Test func queryChangeSignatureChangesWhenMoodContentChangesWithoutCountChange() {
+        let entry = MoodEntry(
+            id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            createdAt: Date(timeIntervalSince1970: 1_000),
+            moodScore: 4,
+            emotions: ["tense"],
+            triggers: ["work"],
+            notes: "Before",
+            intensity: 5
+        )
+
+        let before = QueryChangeSignature.make(for: [entry])
+        entry.moodScore = 8
+        entry.notes = "After"
+        let after = QueryChangeSignature.make(for: [entry])
+
+        #expect(before != after)
+    }
+
+    @Test func queryChangeSignatureChangesWhenSoftDeleteStateChanges() {
+        let entry = JournalEntry(
+            id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+            createdAt: Date(timeIntervalSince1970: 2_000),
+            title: "Session",
+            body: "Completed a breathing reset",
+            sourceKind: SessionSourceKind.breathing.rawValue,
+            sourceID: "session-1",
+            durationSeconds: 60
+        )
+
+        let before = QueryChangeSignature.make(for: [entry])
+        entry.isDeleted = true
+        let after = QueryChangeSignature.make(for: [entry])
+
+        #expect(before != after)
+    }
+
     @Test func moodEntryBackupRoundTripPreservesTriggersAndIntensity() throws {
         let sourceContainer = try makeInMemoryContainer()
         let sourceContext = ModelContext(sourceContainer)
@@ -400,22 +437,12 @@ struct CBTTests {
     @MainActor
     @Test func requestLocalWipePostsResetNotification() async throws {
         let manager = DataResetManager()
+        var notifications = NotificationCenter.default
+            .notifications(named: .requestDataReset)
+            .makeAsyncIterator()
 
-        let notification = await withCheckedContinuation { continuation in
-            var observer: NSObjectProtocol?
-            observer = NotificationCenter.default.addObserver(
-                forName: .requestDataReset,
-                object: nil,
-                queue: nil
-            ) { notification in
-                if let observer {
-                    NotificationCenter.default.removeObserver(observer)
-                }
-                continuation.resume(returning: notification)
-            }
-
-            manager.requestLocalWipe()
-        }
+        manager.requestLocalWipe()
+        let notification = try #require(await notifications.next())
 
         #expect(notification.name == .requestDataReset)
     }
@@ -440,15 +467,15 @@ struct CBTTests {
     }
 
     @Test func bootstrapFlowRetriesRecoveredPrimaryBeforeFallingBack() throws {
-        var attemptedStages = [CBTApp.BootstrapStage]()
-        var quarantined = false
-        var removedFallbackStore = false
+        let attemptedStages = LockedBox<[BootstrapStage]>([])
+        let quarantined = LockedBox(false)
+        let removedFallbackStore = LockedBox(false)
 
         let result = CBTApp.runBootstrapFlow(
             reason: "unit-test",
-            actions: CBTApp.BootstrapActions<String>(
+            actions: BootstrapActions<String>(
                 makePrimary: { stage in
-                    attemptedStages.append(stage)
+                    attemptedStages.withValue { $0.append(stage) }
                     if stage == .primary {
                         throw TestFailure.simulated
                     }
@@ -456,11 +483,11 @@ struct CBTTests {
                     return stage.rawValue
                 },
                 quarantineDefaultStoreForRepair: {
-                    quarantined = true
+                    quarantined.set(true)
                     return URL(fileURLWithPath: "/tmp/recovered")
                 },
                 removeFallbackStoreFiles: {
-                    removedFallbackStore = true
+                    removedFallbackStore.set(true)
                 },
                 makeFallback: { "fallback" },
                 makeInMemory: { "memory" },
@@ -473,7 +500,7 @@ struct CBTTests {
 
         switch result {
         case .ready(let resource, let resolution):
-            #expect(resource == CBTApp.BootstrapStage.primaryRecovery.rawValue)
+            #expect(resource == BootstrapStage.primaryRecovery.rawValue)
             switch resolution {
             case .primaryRecovery:
                 break
@@ -484,30 +511,30 @@ struct CBTTests {
             Issue.record("Expected primary recovery bootstrap to succeed")
         }
 
-        #expect(attemptedStages == [.primary, .primaryRecovery])
-        #expect(quarantined)
-        #expect(removedFallbackStore == false)
+        #expect(attemptedStages.snapshot() == [.primary, .primaryRecovery])
+        #expect(quarantined.snapshot())
+        #expect(removedFallbackStore.snapshot() == false)
     }
 
     @Test func bootstrapFlowFallsBackToInMemoryAfterPersistentStoreFailures() throws {
-        var removedFallbackStore = false
-        var launchedFallback = false
-        var launchedInMemory = false
+        let removedFallbackStore = LockedBox(false)
+        let launchedFallback = LockedBox(false)
+        let launchedInMemory = LockedBox(false)
 
         let result = CBTApp.runBootstrapFlow(
             reason: "unit-test",
-            actions: CBTApp.BootstrapActions<String>(
+            actions: BootstrapActions<String>(
                 makePrimary: { _ in throw TestFailure.simulated },
-                quarantineDefaultStoreForRepair: { nil },
+                quarantineDefaultStoreForRepair: { nil as URL? },
                 removeFallbackStoreFiles: {
-                    removedFallbackStore = true
+                    removedFallbackStore.set(true)
                 },
                 makeFallback: {
-                    launchedFallback = true
+                    launchedFallback.set(true)
                     throw TestFailure.simulated
                 },
                 makeInMemory: {
-                    launchedInMemory = true
+                    launchedInMemory.set(true)
                     return "memory"
                 },
                 logBootstrapFailure: { _, _, _ in },
@@ -530,9 +557,9 @@ struct CBTTests {
             Issue.record("Expected in-memory recovery bootstrap to succeed")
         }
 
-        #expect(removedFallbackStore)
-        #expect(launchedFallback)
-        #expect(launchedInMemory)
+        #expect(removedFallbackStore.snapshot())
+        #expect(launchedFallback.snapshot())
+        #expect(launchedInMemory.snapshot())
     }
 
     @Test func lockCheckDecisionRelocksOnlyWhenAppBecomesActiveAndReady() {
@@ -576,24 +603,26 @@ struct CBTTests {
         }
     }
 
-    @Test func loadAppLockEnabledReadsPersistedSetting() async throws {
+    @MainActor
+    @Test func loadAppLockEnabledReadsPersistedSetting() throws {
         let container = try makeInMemoryContainer()
         let context = ModelContext(container)
         context.insert(UserSettings(hapticsEnabled: true, appLockEnabled: true))
         try context.save()
 
-        let isEnabled = await CBTApp.loadAppLockEnabled(from: container)
+        let isEnabled = CBTApp.loadAppLockEnabled(from: container)
 
         #expect(isEnabled)
     }
 
-    @Test func loadEnforceableAppLockEnabledDisablesUnavailableLock() async throws {
+    @MainActor
+    @Test func loadEnforceableAppLockEnabledDisablesUnavailableLock() throws {
         let container = try makeInMemoryContainer()
         let context = ModelContext(container)
         context.insert(UserSettings(hapticsEnabled: true, appLockEnabled: true))
         try context.save()
 
-        let isEnabled = await CBTApp.loadEnforceableAppLockEnabled(
+        let isEnabled = CBTApp.loadEnforceableAppLockEnabled(
             from: container,
             isAppLockAvailable: false
         )
@@ -629,4 +658,29 @@ private func makeTemporaryDirectory() throws -> URL {
 
 private enum TestFailure: Error {
     case simulated
+}
+
+private final class LockedBox<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: Value
+
+    init(_ value: Value) {
+        self.value = value
+    }
+
+    func withValue<T>(_ body: (inout Value) -> T) -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        return body(&value)
+    }
+
+    func set(_ newValue: Value) {
+        withValue { $0 = newValue }
+    }
+
+    func snapshot() -> Value {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
+    }
 }
