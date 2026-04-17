@@ -266,20 +266,11 @@ struct HomeDashboardContent: View {
                 )
             }
         }
-        .task(id: refreshSignature) {
+        // Keep the refresh trigger cheap: traversing live SwiftData models
+        // during body evaluation can fault records and destabilize launch.
+        .task(id: "\(Calendar.current.startOfDay(for: selectedDate).timeIntervalSinceReferenceDate)|\(moodEntries.count)|\(thoughtRecords.count)|\(exerciseCompletions.count)|\(journalEntries.count)") {
             await refreshDashboardSnapshot()
         }
-    }
-
-    private var refreshSignature: String {
-        let selectedDay = Calendar.current.startOfDay(for: selectedDate).timeIntervalSinceReferenceDate
-        return [
-            String(selectedDay),
-            QueryChangeSignature.make(for: moodEntries),
-            QueryChangeSignature.make(for: thoughtRecords),
-            QueryChangeSignature.make(for: exerciseCompletions),
-            QueryChangeSignature.make(for: journalEntries)
-        ].joined(separator: "|")
     }
 
     @MainActor

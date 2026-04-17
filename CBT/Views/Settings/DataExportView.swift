@@ -148,7 +148,10 @@ struct DataExportView: View {
                     csv: $exportedMoodCSV,
                     previewName: "Mood Entries",
                     requestExport: {
-                        exportedMoodCSV = await CSVExporter.shared.exportMoodEntries(moodEntries)
+                        exportedMoodCSV = await CSVExporter.shared.exportMoodEntries(
+                            ids: moodEntries.map { $0.persistentModelID },
+                            in: modelContext.container
+                        )
                     }
                 )
                 
@@ -160,7 +163,10 @@ struct DataExportView: View {
                     csv: $exportedThoughtCSV,
                     previewName: "Thought Records",
                     requestExport: {
-                        exportedThoughtCSV = await CSVExporter.shared.exportThoughtRecords(thoughtRecords)
+                        exportedThoughtCSV = await CSVExporter.shared.exportThoughtRecords(
+                            ids: thoughtRecords.map { $0.persistentModelID },
+                            in: modelContext.container
+                        )
                     }
                 )
                 
@@ -172,7 +178,10 @@ struct DataExportView: View {
                     csv: $exportedJournalCSV,
                     previewName: "Journal Entries",
                     requestExport: {
-                        exportedJournalCSV = await CSVExporter.shared.exportJournalEntries(journalEntries)
+                        exportedJournalCSV = await CSVExporter.shared.exportJournalEntries(
+                            ids: journalEntries.map { $0.persistentModelID },
+                            in: modelContext.container
+                        )
                     }
                 )
                 
@@ -184,7 +193,10 @@ struct DataExportView: View {
                     csv: $exportedExerciseCSV,
                     previewName: "Exercise History",
                     requestExport: {
-                        exportedExerciseCSV = await CSVExporter.shared.exportExerciseCompletions(exerciseCompletions)
+                        exportedExerciseCSV = await CSVExporter.shared.exportExerciseCompletions(
+                            ids: exerciseCompletions.map { $0.persistentModelID },
+                            in: modelContext.container
+                        )
                     }
                 )
             }

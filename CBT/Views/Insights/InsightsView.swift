@@ -103,18 +103,6 @@ private struct InsightsDashboardContent: View {
         self._attemptingAddMood = attemptingAddMood
         self._attemptingAddThought = attemptingAddThought
     }
-
-    private var refreshSignature: String {
-        [
-            timeRange.rawValue,
-            String(moodGoalValue),
-            QueryChangeSignature.make(for: moodEntries),
-            QueryChangeSignature.make(for: thoughtRecords),
-            QueryChangeSignature.make(for: exerciseCompletions),
-            QueryChangeSignature.make(for: journalEntries)
-        ].joined(separator: "|")
-    }
-
     var body: some View {
         Group {
             if viewModel.isCalculating {
@@ -148,7 +136,9 @@ private struct InsightsDashboardContent: View {
                 }
             }
         }
-        .task(id: refreshSignature) {
+        // Keep the task identity lightweight; avoid hashing live SwiftData
+        // records during body evaluation.
+        .task(id: "\(timeRange.rawValue)|\(moodGoalValue)|\(moodEntries.count)|\(thoughtRecords.count)|\(exerciseCompletions.count)|\(journalEntries.count)") {
             await recalculateData()
         }
     }

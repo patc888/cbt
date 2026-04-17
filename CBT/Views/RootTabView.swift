@@ -97,6 +97,11 @@ struct RootTabView: View {
             guard activatedTabs.isEmpty else { return }
             // Let the tab and navigation containers settle for one more
             // async turn before constructing the initial home subtree.
+            // On iPad, we add a tiny explicit sleep to ensure split-view 
+            // and sidebar transitions are fully committed.
+            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            guard !Task.isCancelled else { return }
+            
             await Task.yield()
             guard !Task.isCancelled else { return }
             await Task.yield()

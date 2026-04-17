@@ -5,11 +5,14 @@ struct AppearanceSettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
     
-    @Environment(\.modelContext) private var modelContext
-    let settings: UserSettings
+    let hapticsEnabled: Bool
+    let currentIcon: String?
     @Binding var userTheme: AppTheme
     @Binding var selectedTheme: AppColorTheme
     @Binding var isImmersive: Bool
+    
+    let onUpdateHaptics: (Bool) -> Void
+    let onUpdateIcon: (String?) -> Void
     
     @Namespace private var appearanceNamespace
     @Namespace private var fullColorNamespace
@@ -50,13 +53,6 @@ struct AppearanceSettingsView: View {
                 appIconDisclosure
             }
         }
-        .onChange(of: settings.hapticsEnabled) { _, newValue in
-            HapticManager.shared.setEnabled(newValue ?? true)
-            saveSettings(action: "update-haptics-setting")
-        }
-        .onChange(of: settings.currentIcon) { _, _ in
-            saveSettings(action: "update-app-icon-setting")
-        }
         .alert("Error Changing Icon", isPresented: $showingError) {
             Button("OK", role: .cancel) {
                 HapticManager.shared.lightImpact()
@@ -67,10 +63,7 @@ struct AppearanceSettingsView: View {
     }
 
     private func saveSettings(action: String) {
-        modelContext.saveIfChanged(
-            logger: AppLogger.make(category: "AppearanceSettings"),
-            action: action
-        )
+        // Now handled by parent via callbacks
     }
     
     private var accentColorPicker: some View {
@@ -119,8 +112,8 @@ struct AppearanceSettingsView: View {
     private var hapticToggle: some View {
         SegmentedToggle(
             isOn: Binding(
-                get: { settings.hapticsEnabled ?? true },
-                set: { settings.hapticsEnabled = $0 }
+                get: { hapticsEnabled },
+                set: { onUpdateHaptics($0) }
             ),
             namespace: hapticNamespace
         )
@@ -137,10 +130,10 @@ struct AppearanceSettingsView: View {
         .onAppear {
             #if canImport(UIKit)
             guard supportsAlternateIcons else {
-                settings.currentIcon = nil
+                onUpdateIcon(nil)
                 return
             }
-            settings.currentIcon = UIApplication.shared.alternateIconName
+            onUpdateIcon(UIApplication.shared.alternateIconName)
             #endif
         }
     }
@@ -173,7 +166,7 @@ struct AppearanceSettingsView: View {
     
     private var statusText: some View {
         Group {
-            if let iconName = settings.currentIcon, 
+            if let iconName = currentIcon, 
                let icon = AppIcon.allCases.first(where: { $0.iconName == iconName }) {
                 Text(icon.displayName)
             } else {
@@ -217,7 +210,7 @@ struct AppearanceSettingsView: View {
                 } else {
                     HapticManager.shared.success()
                     withAnimation {
-                        settings.currentIcon = icon.iconName
+                        onUpdateIcon(icon.iconName)
                     }
                 }
             }
@@ -261,6 +254,6 @@ struct AppearanceSettingsView: View {
     }
     
     private func iconIsSelected(_ icon: AppIcon) -> Bool {
-        settings.currentIcon == icon.iconName
+        currentIcon == icon.iconName
     }
 }

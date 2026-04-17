@@ -75,18 +75,26 @@ final class InsightsViewModel {
         journalEntries: [JournalEntry],
         moodGoalValue: Int
     ) async {
-        // Snapshot model data on the caller's actor (main) so the
-        // detached task only touches plain value types.
+        isCalculating = true
+
+        // Snapshot query-backed models on the caller's actor so the detached
+        // task only works with value types.
         let moods = moodEntries.map {
-            MoodSnapshot(createdAt: $0.createdAt, moodScore: $0.moodScore,
-                         emotions: $0.emotions, triggers: $0.triggers)
+            MoodSnapshot(
+                createdAt: $0.createdAt,
+                moodScore: $0.moodScore,
+                emotions: $0.emotions,
+                triggers: $0.triggers
+            )
         }
         let thoughts = thoughtRecords.map {
-            ThoughtSnapshot(createdAt: $0.createdAt,
-                            intensityBefore: $0.intensityBefore,
-                            intensityAfter: $0.intensityAfter,
-                            emotions: $0.emotions,
-                            distortions: $0.distortions)
+            ThoughtSnapshot(
+                createdAt: $0.createdAt,
+                intensityBefore: $0.intensityBefore,
+                intensityAfter: $0.intensityAfter,
+                emotions: $0.emotions,
+                distortions: $0.distortions
+            )
         }
         let exercises = exerciseCompletions.map {
             ExerciseSnapshot(createdAt: $0.createdAt)

@@ -20,13 +20,11 @@ final class TimelineViewModel {
         let currentTaskID = UUID()
         updateTaskID = currentTaskID
 
-        // 1. Map to Sendable TimelineItems on the MainActor
         let moods = moodEntries.map { TimelineItem.mood($0) }
         let thoughts = thoughtRecords.map { TimelineItem.thought($0) }
         let exercises = exerciseCompletions.map { TimelineItem.exercise($0) }
         let journals = journalEntries.map { TimelineItem.journal($0) }
-        
-        // 2. Offload sorting and grouping to background
+
         let result = await Task.detached(priority: .userInitiated) {
             let calendar = Calendar.current
             var items: [TimelineItem] = []

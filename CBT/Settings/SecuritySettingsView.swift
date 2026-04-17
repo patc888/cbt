@@ -5,12 +5,13 @@ struct SecuritySettingsView: View {
     private static let logger = AppLogger.make(category: "SecuritySettings")
 
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var securityManager: SecurityManager
     
-    let settings: UserSettings
+    let appLockEnabled: Bool
     @Namespace private var appLockNamespace
     @Environment(ThemeManager.self) private var themeManager
+    
+    let onUpdateAppLock: (Bool) -> Void
     
     @State private var showingPrivacyInfo = false
     
@@ -31,8 +32,8 @@ struct SecuritySettingsView: View {
                 ) {
                     SegmentedToggle(
                         isOn: Binding(
-                            get: { settings.appLockEnabled ?? false },
-                            set: { settings.appLockEnabled = $0 }
+                            get: { appLockEnabled },
+                            set: { onUpdateAppLock($0) }
                         ),
                         namespace: appLockNamespace
                     )
@@ -68,18 +69,6 @@ struct SecuritySettingsView: View {
             securityManager.checkBiometrics()
             disableUnsupportedAppLockIfNeeded()
         }
-        .onChange(of: settings.appLockEnabled) { _, newValue in
-            let isEnabled = newValue ?? false
-            guard securityManager.isAppLockAvailable || !isEnabled else { return }
-            
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                appLockEnabledStorage = isEnabled
-                modelContext.saveIfChanged(
-                    logger: Self.logger,
-                    action: "toggle-app-lock"
-                )
-            }
-        }
         .onChange(of: securityManager.isAppLockAvailable) { _, _ in
             disableUnsupportedAppLockIfNeeded()
         }
@@ -91,14 +80,10 @@ struct SecuritySettingsView: View {
 
     private func disableUnsupportedAppLockIfNeeded() {
         guard !securityManager.isAppLockAvailable else { return }
-        guard settings.appLockEnabled == true || appLockEnabledStorage else { return }
+        guard appLockEnabled || appLockEnabledStorage else { return }
 
-        settings.appLockEnabled = false
+        onUpdateAppLock(false)
         appLockEnabledStorage = false
-        modelContext.saveIfChanged(
-            logger: Self.logger,
-            action: "disable-unsupported-app-lock"
-        )
     }
 }
 

@@ -41,10 +41,12 @@ extension UserSettings {
         return newSettings
     }
 
+    @MainActor
     static func fetchAppLockEnabled(from context: ModelContext) throws -> Bool {
         try reconcileSingleton(in: context, shouldSaveIfChanged: false)?.appLockEnabled == true
     }
 
+    @MainActor
     static func setAppLockEnabled(_ isEnabled: Bool, in context: ModelContext) throws {
         let settings: UserSettings
 
@@ -60,6 +62,7 @@ extension UserSettings {
     }
 
     @discardableResult
+    @MainActor
     static func reconcileSingleton(in context: ModelContext, shouldSaveIfChanged: Bool = true) throws -> UserSettings? {
         var descriptor = FetchDescriptor<UserSettings>()
         descriptor.includePendingChanges = true
@@ -88,6 +91,7 @@ extension UserSettings {
         return canonical
     }
 
+    @MainActor
     private static func canonicalSettings(from allSettings: [UserSettings]) -> UserSettings? {
         allSettings.sorted { lhs, rhs in
             let lhsKey = lhs.uuid?.uuidString ?? String(describing: lhs.persistentModelID)

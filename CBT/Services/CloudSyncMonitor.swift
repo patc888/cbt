@@ -66,11 +66,15 @@ final class CloudSyncMonitor {
     
     private init() {
         setupObservers()
-        refreshAccountStatus()
     }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+    }
+    
+    /// Starts monitoring iCloud account status. Called explicitly after app boot to prevent launch traps.
+    func startMonitoring() {
+        refreshAccountStatus()
     }
     
     private func setupObservers() {
@@ -107,7 +111,8 @@ final class CloudSyncMonitor {
         refreshTask?.cancel()
         refreshTask = Task {
             do {
-                let status = try await CKContainer.default().accountStatus()
+                let container = CKContainer(identifier: "iCloud.com.melichan.CBT")
+                let status = try await container.accountStatus()
                 if Task.isCancelled { return }
                 
                 self.accountStatus = status

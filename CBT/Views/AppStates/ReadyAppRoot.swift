@@ -7,20 +7,44 @@ struct ReadyAppRoot: View {
 
     let container: ModelContainer
     let resetID: UUID
+    let securityManager: SecurityManager
     let onAppear: () -> Void
 
-    @EnvironmentObject private var securityManager: SecurityManager
-
     var body: some View {
-        ContentView()
-            .id(resetID)
-            .onAppear {
-                onAppear()
-                logMainUIPresented()
-                
-                // Initialize sync monitor only after data layer is ready
-                _ = CloudSyncMonitor.shared
+        DeferredRenderView {
+            ThemedBackground()
+                .ignoresSafeArea()
+                .overlay {
+                    ProgressView()
+                        .controlSize(.regular)
+                }
+        } content: {
+            // Give the freshly attached SwiftData container one settled render
+            // pass before the query-backed tab tree is constructed.
+            ContentView()
+                .id(resetID)
+        }
+        .onAppear {
+            onAppear()
+            logMainUIPresented()
+        }
+        .task(id: resetID) {
+            // Start CloudKit monitoring only after the first launch frame has
+            // settled so review launches do not mix query bootstrap with
+            // account-status and event-observer work.
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled else { return }
+
+            await MainActor.run {
+                CloudSyncMonitor.shared.startMonitoring()
             }
+        }
         .animation(.easeInOut(duration: 0.15), value: securityManager.isContentProtected)
         .modelContainer(container)
         .environmentObject(securityManager)

@@ -53,25 +53,26 @@ final class HomeDashboardViewModel {
         let selectedDay = calendar.startOfDay(for: selectedDate)
         let manualForDay = manualCompletions[selectedDay] ?? []
 
-        // 1. Map to Sendable snapshots on the MainActor
+        // Snapshot the query-backed models on the caller's actor before
+        // moving the heavier aggregation work off the main thread.
         let moodDates = moodEntries.map { $0.createdAt }
         let thoughtDates = thoughtRecords.map { $0.createdAt }
         let exerciseDates = exerciseCompletions.map { $0.createdAt }
-        let journalDates = journalEntries.filter { 
-            $0.sourceKind == SessionSourceKind.breathing.rawValue 
+        let journalDates = journalEntries.filter {
+            $0.sourceKind == SessionSourceKind.breathing.rawValue
         }.map { $0.createdAt }
 
         let results = await Task.detached(priority: .userInitiated) {
             let calendar = Calendar.current
-            
-            // 2. Calculate Active Dates in background
+
+            // 1. Calculate active dates in background.
             var dates = Set<Date>()
             for d in moodDates { dates.insert(calendar.startOfDay(for: d)) }
             for d in thoughtDates { dates.insert(calendar.startOfDay(for: d)) }
             for d in exerciseDates { dates.insert(calendar.startOfDay(for: d)) }
             for d in journalDates { dates.insert(calendar.startOfDay(for: d)) }
             
-            // 3. Calculate Completion for selected day
+            // 2. Calculate completion for the selected day.
             let moodDone = moodDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
             let thoughtDone = thoughtDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
             let exerciseDone = exerciseDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }

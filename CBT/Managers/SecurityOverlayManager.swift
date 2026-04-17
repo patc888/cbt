@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import OSLog
 
 @MainActor
 final class SecurityOverlayManager: ObservableObject {
@@ -8,12 +9,20 @@ final class SecurityOverlayManager: ObservableObject {
     
     private let securityManager: SecurityManager
     private let themeManager: ThemeManager
+    private weak var windowScene: UIWindowScene?
     
-    init(securityManager: SecurityManager, themeManager: ThemeManager) {
+    init(securityManager: SecurityManager, themeManager: ThemeManager, windowScene: UIWindowScene? = nil) {
         self.securityManager = securityManager
         self.themeManager = themeManager
+        self.windowScene = windowScene
         
         setupContentProtectionObservation()
+    }
+
+    func updateScene(_ scene: UIWindowScene) {
+        self.windowScene = scene
+        // If already showing but on the wrong scene (unlikely but possible during multitasking shifts),
+        // we might want to re-anchor, but for now just updating the reference is enough.
     }
     
     private func setupContentProtectionObservation() {
@@ -38,12 +47,19 @@ final class SecurityOverlayManager: ObservableObject {
             return 
         }
         
-        // Find the active scene
-        // We use a slight delay or wait for a scene to be active if needed, 
-        // but usually during app launch or foregrounding, there's a scene.
-        let scenes = UIApplication.shared.connectedScenes
-        guard let windowScene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene ?? 
-                                scenes.first(where: { $0.activationState == .foregroundInactive }) as? UIWindowScene else {
+        // Use the captured scene if available, otherwise fallback to the most appropriate active scene
+        // (Fallback is for safety, but captured scene is preferred for multi-window stability)
+        let targetScene: UIWindowScene?
+        if let captured = windowScene {
+            targetScene = captured
+        } else {
+            let scenes = UIApplication.shared.connectedScenes
+            targetScene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene ??
+                          scenes.first(where: { $0.activationState == .foregroundInactive }) as? UIWindowScene
+        }
+
+        guard let windowScene = targetScene else {
+            AppLogger.make(category: "SecurityOverlay").warning("No valid window scene found for security overlay")
             return
         }
         

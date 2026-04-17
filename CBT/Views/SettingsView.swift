@@ -54,6 +54,12 @@ struct SettingsView: View {
     }
 }
 
+private struct UserSettingsSnapshot: Sendable {
+    let hapticsEnabled: Bool
+    let currentIcon: String?
+    let appLockEnabled: Bool
+}
+
 private struct SettingsContent: View {
     let showsDismissControl: Bool
     @Binding var hasPreparedSettings: Bool
@@ -62,40 +68,66 @@ private struct SettingsContent: View {
     @Environment(ThemeManager.self) private var themeManager
     @Query private var settings: [UserSettings]
     
-    var userSettings: UserSettings? {
-        settings.sorted { lhs, rhs in
-            let lhsKey = lhs.uuid?.uuidString ?? String(describing: lhs.persistentModelID)
-            let rhsKey = rhs.uuid?.uuidString ?? String(describing: rhs.persistentModelID)
-            return lhsKey < rhsKey
-        }
-        .first
-    }
+    @State private var snapshot: UserSettingsSnapshot?
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                mainContent
+                if let snapshot {
+                    mainContent(snapshot: snapshot)
+                } else {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, minHeight: 200)
+                }
             }
             .frame(maxWidth: 600)
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity)
         .task {
-            guard !hasPreparedSettings else { return }
-            hasPreparedSettings = true
-            
-            // fetchOrCreate handles reconciliation/singleton logic once
-            // without slamming the context with redundant saves
-            _ = try? UserSettings.fetchOrCreate(in: modelContext)
-            
-            let enabled = userSettings?.hapticsEnabled ?? true
-            HapticManager.shared.setEnabled(enabled)
+            await prepareAndRefresh()
         }
-        .onChange(of: userSettings?.hapticsEnabled ?? true) { _, enabled in
-            HapticManager.shared.setEnabled(enabled)
+        .onChange(of: settings) { _, _ in
+            refreshSnapshot()
         }
     }
-        private var mainContent: some View {
+
+    @MainActor
+    private func prepareAndRefresh() async {
+        guard !hasPreparedSettings else {
+            refreshSnapshot()
+            return
+        }
+        hasPreparedSettings = true
+
+        // fetchOrCreate handles reconciliation/singleton logic once
+        _ = try? UserSettings.fetchOrCreate(in: modelContext)
+        refreshSnapshot()
+
+        if let snapshot {
+            HapticManager.shared.setEnabled(snapshot.hapticsEnabled)
+        }
+    }
+
+    private func refreshSnapshot() {
+        let sorted = settings.sorted { lhs, rhs in
+            let lhsKey = lhs.uuid?.uuidString ?? String(describing: lhs.persistentModelID)
+            let rhsKey = rhs.uuid?.uuidString ?? String(describing: rhs.persistentModelID)
+            return lhsKey < rhsKey
+        }
+
+        guard let first = sorted.first else { return }
+
+        // Capture properties safely outside of the body evaluation
+        self.snapshot = UserSettingsSnapshot(
+            hapticsEnabled: first.hapticsEnabled ?? true,
+            currentIcon: first.currentIcon,
+            appLockEnabled: first.appLockEnabled ?? false
+        )
+    }
+
+    @ViewBuilder
+    private func mainContent(snapshot: UserSettingsSnapshot) -> some View {
         VStack(spacing: 16) {
             HStack {
                 Text(String(localized: "Settings"))
@@ -105,22 +137,28 @@ private struct SettingsContent: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
-            if let settings = userSettings {
-                AppearanceSettingsView(
-                    settings: settings,
-                    userTheme: Bindable(themeManager).appTheme,
-                    selectedTheme: Bindable(themeManager).selectedTheme,
-                    isImmersive: Bindable(themeManager).isImmersive
-                )
-            }
-            
+            AppearanceSettingsView(
+                hapticsEnabled: snapshot.hapticsEnabled,
+                currentIcon: snapshot.currentIcon,
+                userTheme: Bindable(themeManager).appTheme,
+                selectedTheme: Bindable(themeManager).selectedTheme,
+                isImmersive: Bindable(themeManager).isImmersive,
+                onUpdateHaptics: { enabled in
+                    updateSettings { $0.hapticsEnabled = enabled }
+                },
+                onUpdateIcon: { iconName in
+                    updateSettings { $0.currentIcon = iconName }
+                }
+            )
+
             DataSettingsSection()
 
-
-            if let settings = userSettings {
-                SecuritySettingsView(settings: settings)
-
-            }
+            SecuritySettingsView(
+                appLockEnabled: snapshot.appLockEnabled,
+                onUpdateAppLock: { enabled in
+                    updateSettings { $0.appLockEnabled = enabled }
+                }
+            )
 
             SettingsSection(title: String(localized: "Tools")) {
                 NavigationLink(destination: BreathingResetView()) {
@@ -139,7 +177,7 @@ private struct SettingsContent: View {
             }
 
             RemindersSettingsSection()
-            
+
             NavigationLink(destination: WhatIsCBTPagerView()) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
@@ -160,16 +198,32 @@ private struct SettingsContent: View {
                 .cornerRadius(Theme.cornerRadiusMedium)
             }
             .buttonStyle(.plain)
-            
+
             AboutSettingsView()
-            
+
             PrivacyFooter()
                 .padding(.top, 16)
-            
+
             VersionFooterView()
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 32)
+    }
+
+    private func updateSettings(_ block: @escaping (UserSettings) -> Void) {
+        let context = modelContext
+        Task { @MainActor in
+            let sorted = settings.sorted { lhs, rhs in
+                let lhsKey = lhs.uuid?.uuidString ?? String(describing: lhs.persistentModelID)
+                let rhsKey = rhs.uuid?.uuidString ?? String(describing: rhs.persistentModelID)
+                return lhsKey < rhsKey
+            }
+            if let first = sorted.first {
+                block(first)
+                try? context.save()
+                refreshSnapshot()
+            }
+        }
     }
 }
 

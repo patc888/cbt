@@ -19,19 +19,34 @@ final class CBTUITestsLaunchTests: XCTestCase {
 
     @MainActor
     func testLaunch() throws {
+        let app = XCUIApplication()
+        try assertLaunchShowsHome(for: app)
+    }
+
+    @MainActor
+    func testLaunchRecoversAfterPrimaryBootstrapFailure() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-debug-modelcontainer-fail-primary-once"]
+        try assertLaunchShowsHome(for: app, timeout: 12)
+    }
+
+    @MainActor
+    private func assertLaunchShowsHome(
+        for app: XCUIApplication,
+        timeout: TimeInterval = 10
+    ) throws {
         #if targetEnvironment(macCatalyst)
         throw XCTSkip(
             "Manual verification only on Mac Catalyst in this environment: XCUI reaches the app, but accessibility snapshots expose only the top-level application node and do not reliably surface post-bootstrap Home elements."
         )
         #endif
 
-        let app = XCUIApplication()
         app.launch()
         app.activate()
 
         let homeScreen = app.descendants(matching: .any).matching(identifier: "home-screen").firstMatch
         XCTAssertTrue(
-            homeScreen.waitForExistence(timeout: 10),
+            homeScreen.waitForExistence(timeout: timeout),
             "Expected the post-bootstrap Home screen to appear after launch."
         )
 

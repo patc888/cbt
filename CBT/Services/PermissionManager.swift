@@ -2,7 +2,6 @@ import Foundation
 import UserNotifications
 import CoreLocation
 import AVFoundation
-import Photos
 import SwiftUI
 import Observation
 import OSLog
@@ -34,7 +33,7 @@ final class PermissionManager {
         case notDetermined
         case denied
         case authorized
-        case limited // Specific to Photos/Location in some contexts
+        case limited
         
         var isAuthorized: Bool {
             self == .authorized || self == .limited

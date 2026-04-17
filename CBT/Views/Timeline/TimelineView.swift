@@ -214,7 +214,9 @@ struct TimelineDashboardContent: View {
                 }
             }
         }
-        .task(id: refreshSignature) {
+        // Use a lightweight refresh key so launch-time body evaluation does
+        // not walk every queried SwiftData record.
+        .task(id: "\(moodEntries.count)|\(thoughtRecords.count)|\(exerciseCompletions.count)|\(journalEntries.count)") {
             await viewModel.update(
                 moodEntries: moodEntries,
                 thoughtRecords: thoughtRecords,
@@ -233,14 +235,5 @@ struct TimelineDashboardContent: View {
         } else {
             return date.formatted(date: .abbreviated, time: .omitted)
         }
-    }
-
-    private var refreshSignature: String {
-        [
-            QueryChangeSignature.make(for: moodEntries),
-            QueryChangeSignature.make(for: thoughtRecords),
-            QueryChangeSignature.make(for: exerciseCompletions),
-            QueryChangeSignature.make(for: journalEntries)
-        ].joined(separator: "|")
     }
 }

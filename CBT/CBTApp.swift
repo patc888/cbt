@@ -5,8 +5,6 @@ import SwiftUI
 
 @main
 struct CBTApp: App {
-    private nonisolated static let bootstrapTimeoutSeconds: TimeInterval = 120
-
     private var currentContainer: ModelContainer? {
         guard case .ready(let container) = launchState else { return nil }
         return container
@@ -103,6 +101,7 @@ struct CBTApp: App {
             ReadyAppRoot(
                 container: container,
                 resetID: resetID,
+                securityManager: securityManager,
                 onAppear: {
                     handleReadyRootAppear(with: container)
                 }
@@ -256,62 +255,49 @@ struct CBTApp: App {
 
     private nonisolated static func bootstrapAsync(reason: String) async -> LaunchState {
         await Task.detached(priority: .userInitiated) {
-            Self.bootstrapWithWatchdog(reason: reason)
+            await Self.bootstrap(reason: reason)
         }.value
     }
 
-    private nonisolated static func bootstrapWithWatchdog(reason: String) -> LaunchState {
-        let group = DispatchGroup()
-        let lock = NSLock()
-        var result: LaunchState?
-
-        group.enter()
-        DispatchQueue.global(qos: .userInitiated).async {
-            let state = Self.bootstrap(reason: reason)
-            lock.lock()
-            result = state
-            lock.unlock()
-            group.leave()
+    private nonisolated static func bootstrap(reason: String) async -> LaunchState {
+        do {
+            return .ready(try await makeLaunchContainerOnMainActor(stage: .primary))
+        } catch {
+            logBootstrapFailure(error, stage: .primary, reason: reason)
         }
 
-        let timeout = DispatchTime.now() + Self.bootstrapTimeoutSeconds
-        guard group.wait(timeout: timeout) == .success else {
-            logger.error(
-                "Model bootstrap timed out after \(Self.bootstrapTimeoutSeconds, privacy: .public)s reason=\(reason, privacy: .public)"
-            )
-            return .failed
-        }
-
-        lock.lock()
-        defer { lock.unlock() }
-        return result ?? .failed
-    }
-
-    private nonisolated static func bootstrap(reason: String) -> LaunchState {
-        let actions = BootstrapActions<ModelContainer>(
-            makePrimary: { try makePrimaryContainer(stage: $0) },
-            quarantineDefaultStoreForRepair: { try DataResetManager.quarantineDefaultStoreForRepair() },
-            removeFallbackStoreFiles: { try DataResetManager.removeFallbackStoreFiles() },
-            makeFallback: { try makeFallbackContainer() },
-            makeInMemory: { try makeInMemoryContainer() },
-            logBootstrapFailure: { error, stage, reason in
-                logBootstrapFailure(error, stage: stage, reason: reason)
-            },
-            logHousekeepingFailure: { error, action in
-                logHousekeepingFailure(error, action: action)
-            },
-            logFallbackLaunch: {
-                logger.notice("Launching with an isolated local fallback store.")
-            },
-            logInMemoryLaunch: {
-                logger.notice("Launching with an in-memory recovery store.")
+        do {
+            if try DataResetManager.quarantineDefaultStoreForRepair() != nil {
+                logger.notice("Quarantined the default store before retrying model bootstrap.")
             }
-        )
+        } catch {
+            logHousekeepingFailure(error, action: "quarantine-default-store")
+        }
 
-        switch runBootstrapFlow(reason: reason, actions: actions) {
-        case .ready(let container, _):
-            return .ready(container)
-        case .repair:
+        do {
+            return .ready(try await makeLaunchContainerOnMainActor(stage: .primaryRecovery))
+        } catch {
+            logBootstrapFailure(error, stage: .primaryRecovery, reason: reason)
+        }
+
+        do {
+            try DataResetManager.removeFallbackStoreFiles()
+        } catch {
+            logHousekeepingFailure(error, action: "clear-fallback-store")
+        }
+
+        do {
+            logger.notice("Launching with an isolated local fallback store.")
+            return .ready(try await makeFallbackLaunchContainerOnMainActor())
+        } catch {
+            logBootstrapFailure(error, stage: .fallback, reason: reason)
+        }
+
+        do {
+            logger.notice("Launching with an in-memory recovery store.")
+            return .ready(try await makeInMemoryLaunchContainerOnMainActor())
+        } catch {
+            logBootstrapFailure(error, stage: .inMemory, reason: reason)
             return .failed
         }
     }
@@ -374,6 +360,16 @@ struct CBTApp: App {
         )
     }
 
+    private nonisolated static func makeLaunchContainerOnMainActor(stage: BootstrapStage) async throws -> ModelContainer {
+        // SwiftData's SwiftUI integration expects the UI-facing container to be
+        // opened on MainActor. Creating it on a detached queue can leave the
+        // underlying main context bound to the wrong executor and trigger
+        // `performAndWait` assertions during the first `@Query` render on iOS.
+        try await MainActor.run {
+            try makePrimaryContainer(stage: stage)
+        }
+    }
+
     private nonisolated static func makeFallbackContainer() throws -> ModelContainer {
         try DebugBootstrapControl.injectFailureIfNeeded(for: .fallback)
         
@@ -394,6 +390,12 @@ struct CBTApp: App {
         )
     }
 
+    private nonisolated static func makeFallbackLaunchContainerOnMainActor() async throws -> ModelContainer {
+        try await MainActor.run {
+            try makeFallbackContainer()
+        }
+    }
+
     private nonisolated static func makeInMemoryContainer() throws -> ModelContainer {
         try DebugBootstrapControl.injectFailureIfNeeded(for: .inMemory)
 
@@ -408,6 +410,12 @@ struct CBTApp: App {
             migrationPlan: CBTModelMigrationPlan.self,
             configurations: [configuration]
         )
+    }
+
+    private nonisolated static func makeInMemoryLaunchContainerOnMainActor() async throws -> ModelContainer {
+        try await MainActor.run {
+            try makeInMemoryContainer()
+        }
     }
 
     private nonisolated static var cloudKitDatabase: ModelConfiguration.CloudKitDatabase {
@@ -522,17 +530,38 @@ private struct SecurityOverlayView: View {
 
     var body: some View {
         Color.clear
-            .onAppear {
-                if overlayManager == nil {
+            .background(SceneDetector { scene in
+                if let manager = overlayManager {
+                    manager.updateScene(scene)
+                } else {
                     overlayManager = SecurityOverlayManager(
                         securityManager: securityManager,
-                        themeManager: themeManager
+                        themeManager: themeManager,
+                        windowScene: scene
                     )
                 }
-            }
+            })
     }
 }
 
+private struct SceneDetector: UIViewRepresentable {
+    var onSceneDetected: (UIWindowScene) -> Void
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.isUserInteractionEnabled = false
+        view.backgroundColor = .clear
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        DispatchQueue.main.async {
+            if let scene = uiView.window?.windowScene {
+                onSceneDetected(scene)
+            }
+        }
+    }
+}
 
 
 

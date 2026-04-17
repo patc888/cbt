@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-enum TimelineItemKind {
+enum TimelineItemKind: Sendable {
     case mood
     case thought
     case exercise

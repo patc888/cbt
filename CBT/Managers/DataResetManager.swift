@@ -38,9 +38,9 @@ final class DataResetManager {
     
     nonisolated static var isCloudSyncEnabled: Bool {
         get {
-            // We default to true unless explicitly disabled (e.g. after a reset failure)
+            // We default to false unless explicitly enabled
             if UserDefaults.standard.object(forKey: cloudSyncKey) == nil {
-                return true
+                return false
             }
             return UserDefaults.standard.bool(forKey: cloudSyncKey)
         }
