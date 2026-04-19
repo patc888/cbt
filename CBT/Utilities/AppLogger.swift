@@ -11,7 +11,9 @@ import Foundation
 ///    SHOULD be logged using `privacy: .public` to aid in production triage.
 /// 3. **Errors**: Error descriptions should generally be `.private` if they contain path metadata or user context.
 enum AppLogger {
-    private static let subsystem = Bundle.main.bundleIdentifier ?? "com.meliapps.CBT"
+    private nonisolated static var subsystem: String {
+        Bundle.main.bundleIdentifier ?? "com.meliapps.CBT"
+    }
 
     /// Standard factory for creating loggers.
     /// - Parameter category: A descriptive name for the subsystem area (e.g., "Data", "Security", "UI")
