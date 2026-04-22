@@ -46,11 +46,7 @@ struct CBTApp: App {
 
     var body: some Scene {
         WindowGroup {
-            #if os(iOS) && !targetEnvironment(macCatalyst)
-            ReviewSafeIOSRoot()
-            #else
             mainWindowChrome
-            #endif
         }
     }
 
@@ -208,13 +204,16 @@ struct CBTApp: App {
         guard lastStartedBootstrapID != request.id else { return }
         lastStartedBootstrapID = request.id
 
+        let startTime = ContinuousClock.now
         Self.logger.info(
             "Bootstrap starting reason=\(request.reason, privacy: .public)"
         )
 
-        // Implement a 'soft timeout' to update UI if bootstrap takes a while (e.g. migration)
+        // Show migration UI if bootstrap takes longer than 2 seconds.
+        // iOS watchdog is ~20s, so we surface progress early to avoid
+        // giving the impression the app is hung.
         let softTimeoutTask = Task {
-            try? await Task.sleep(nanoseconds: 5 * 1_000_000_000)
+            try? await Task.sleep(for: .seconds(2))
             if !Task.isCancelled && launchState == .launching && loadingRequest.id == request.id {
                 withAnimation(.easeInOut) {
                     launchState = .migrating
@@ -225,6 +224,8 @@ struct CBTApp: App {
         let nextState = await Self.bootstrapAsync(reason: request.reason)
         softTimeoutTask.cancel()
 
+        let elapsed = ContinuousClock.now - startTime
+
         guard !Task.isCancelled else { return }
         guard loadingRequest.id == request.id else { return }
         if case .ready = nextState {
@@ -233,11 +234,11 @@ struct CBTApp: App {
 
         switch nextState {
         case .launching, .migrating:
-            Self.logger.info("Bootstrap resolved → \(nextState == .launching ? "launching" : "migrating", privacy: .public) (unexpected)")
+            Self.logger.info("Bootstrap resolved → \(nextState == .launching ? "launching" : "migrating", privacy: .public) elapsed=\(elapsed, privacy: .public) (unexpected)")
         case .ready:
-            Self.logger.info("Bootstrap resolved → ready")
+            Self.logger.info("Bootstrap resolved → ready elapsed=\(elapsed, privacy: .public)")
         case .failed:
-            Self.logger.warning("Bootstrap resolved → failed")
+            Self.logger.warning("Bootstrap resolved → failed elapsed=\(elapsed, privacy: .public)")
         }
 
         launchState = nextState
@@ -280,9 +281,12 @@ struct CBTApp: App {
     }
 
     private nonisolated static func bootstrapAsync(reason: String) async -> LaunchState {
-        await Task.detached(priority: .userInitiated) {
-            await Self.bootstrap(reason: reason)
-        }.value
+        // Run the bootstrap cascade off MainActor via nonisolated context.
+        // Previously used Task.detached which:
+        //   1. Broke structured cancellation (kept running after .task cancel)
+        //   2. Added a redundant thread hop (off MainActor → back on MainActor)
+        //   3. Could delay MainActor.run scheduling under iOS launch pressure
+        await Self.bootstrap(reason: reason)
     }
 
     private nonisolated static func bootstrap(reason: String) async -> LaunchState {
@@ -448,35 +452,6 @@ struct CBTApp: App {
         DataResetManager.isCloudSyncEnabled ? .automatic : .none
     }
 
-    nonisolated static func makeReviewSafeIOSLaunchContainer() async throws -> ModelContainer {
-        do {
-            return try await MainActor.run {
-                let storeURL = DataResetManager.defaultStoreURL
-                try DataResetManager.ensureStoreParentDirectoryExists(for: storeURL)
-
-                // Keep the review build on a plain local store so iOS launch
-                // does not depend on CloudKit/account state or extra recovery
-                // choreography before the first frame.
-                let configuration = ModelConfiguration(
-                    "ReviewSafeIOSLocalStore",
-                    schema: schema,
-                    url: storeURL,
-                    cloudKitDatabase: .none
-                )
-
-                return try ModelContainer(
-                    for: schema,
-                    migrationPlan: CBTModelMigrationPlan.self,
-                    configurations: [configuration]
-                )
-            }
-        } catch {
-            logBootstrapFailure(error, stage: .primary, reason: "review-safe-ios-launch")
-        }
-
-        logger.notice("Review-safe iOS launch falling back to in-memory container.")
-        return try await makeInMemoryLaunchContainerOnMainActor()
-    }
 
     nonisolated static func runBootstrapFlow<Resource: Sendable>(
         reason: String,
@@ -618,112 +593,3 @@ private struct SceneDetector: UIViewRepresentable {
         }
     }
 }
-
-#if os(iOS) && !targetEnvironment(macCatalyst)
-private struct ReviewSafeIOSRoot: View {
-    private enum LaunchState {
-        case loading
-        case ready(ModelContainer)
-        case failed
-    }
-
-    @State private var launchState: LaunchState = .loading
-    @State private var launchRequestID = UUID()
-    @State private var resetID = UUID()
-    @State private var themeManager = ThemeManager()
-    @StateObject private var securityManager = SecurityManager.shared
-
-    var body: some View {
-        Group {
-            switch launchState {
-            case .loading:
-                reviewSafeLoadingView
-            case .ready(let container):
-                reviewSafeReadyView(container: container)
-            case .failed:
-                reviewSafeFailureView
-            }
-        }
-        .task(id: launchRequestID) {
-            await launch()
-        }
-    }
-
-    @ViewBuilder
-    private func reviewSafeReadyView(container: ModelContainer) -> some View {
-        ZStack {
-            ReadyAppRoot(
-                container: container,
-                resetID: resetID,
-                securityManager: securityManager,
-                onAppear: {}
-            )
-            .blur(radius: securityManager.isContentProtected ? 20 : 0)
-            .overlay {
-                if securityManager.isContentProtected {
-                    Color(UIColor.systemBackground)
-                        .ignoresSafeArea()
-                }
-            }
-
-            SecurityOverlayView()
-        }
-        .environment(themeManager)
-        .environmentObject(securityManager)
-        .preferredColorScheme(themeManager.appTheme.colorScheme)
-    }
-
-    private var reviewSafeLoadingView: some View {
-        ZStack {
-            ThemedBackground()
-                .ignoresSafeArea()
-
-            ProgressView("Opening CBT…")
-                .controlSize(.regular)
-        }
-        .environment(themeManager)
-        .preferredColorScheme(themeManager.appTheme.colorScheme)
-    }
-
-    private var reviewSafeFailureView: some View {
-        ZStack {
-            ThemedBackground()
-                .ignoresSafeArea()
-
-            VStack(spacing: 16) {
-                Text("CBT couldn't finish opening on this iPhone or iPad.")
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
-
-                Text("Try again to reopen the local data store with the simplified iOS launch path.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-
-                Button("Try Again") {
-                    launchState = .loading
-                    launchRequestID = UUID()
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .padding(24)
-        }
-        .environment(themeManager)
-        .preferredColorScheme(themeManager.appTheme.colorScheme)
-    }
-
-    @MainActor
-    private func launch() async {
-        do {
-            let container = try await CBTApp.makeReviewSafeIOSLaunchContainer()
-            resetID = UUID()
-            launchState = .ready(container)
-        } catch {
-            launchState = .failed
-        }
-    }
-}
-#endif
-
-
-
