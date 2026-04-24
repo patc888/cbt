@@ -5,19 +5,10 @@ import UniformTypeIdentifiers
 struct DataExportView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
-    
-    @Query(filter: #Predicate<MoodEntry> { !$0.isDeleted }, sort: \MoodEntry.createdAt, order: .forward)
-    private var moodEntries: [MoodEntry]
-    
-    @Query(filter: #Predicate<ThoughtRecord> { !$0.isDeleted }, sort: \ThoughtRecord.createdAt, order: .forward)
-    private var thoughtRecords: [ThoughtRecord]
-    
-    @Query(filter: #Predicate<JournalEntry> { !$0.isDeleted }, sort: \JournalEntry.createdAt, order: .forward)
-    private var journalEntries: [JournalEntry]
-    
-    @Query(filter: #Predicate<ExerciseCompletion> { !$0.isDeleted }, sort: \ExerciseCompletion.createdAt, order: .forward)
-    private var exerciseCompletions: [ExerciseCompletion]
-    
+    @State private var moodEntries: [MoodEntry] = []
+    @State private var thoughtRecords: [ThoughtRecord] = []
+    @State private var journalEntries: [JournalEntry] = []
+    @State private var exerciseCompletions: [ExerciseCompletion] = []
     @State private var viewModel = AdvancedDataSettingsViewModel()
     
     var body: some View {
@@ -67,6 +58,17 @@ struct DataExportView: View {
         } message: {
             Text(viewModel.errorMessage ?? "An unknown error occurred.")
         }
+        .task {
+            await refreshExportData()
+        }
+    }
+
+    @MainActor
+    private func refreshExportData() async {
+        moodEntries = LaunchSafeFetch.moodEntries(from: modelContext).reversed()
+        thoughtRecords = LaunchSafeFetch.thoughtRecords(from: modelContext).reversed()
+        journalEntries = LaunchSafeFetch.journalEntries(from: modelContext).reversed()
+        exerciseCompletions = LaunchSafeFetch.exerciseCompletions(from: modelContext).reversed()
     }
     
     private var headerSection: some View {

@@ -58,9 +58,11 @@ struct FloatingBottomToolbar: View {
                             guard selectedTab != tab else { return }
                             HapticManager.shared.selection()
                             if reduceMotion {
+                                isExpanded = false
                                 selectedTab = tab
                             } else {
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    isExpanded = false
                                     selectedTab = tab
                                 }
                             }

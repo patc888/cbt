@@ -5,12 +5,7 @@ import os
 struct ThoughtRecordListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
-    @Query(
-        filter: #Predicate<ThoughtRecord> { !$0.isDeleted },
-        sort: \ThoughtRecord.createdAt,
-        order: .reverse
-    ) private var records: [ThoughtRecord]
-    
+    @State private var records: [ThoughtRecord] = []
     @State private var showingNewRecord = false
     @State private var attemptingNewRecord = false
 
@@ -95,11 +90,24 @@ struct ThoughtRecordListView: View {
         .withUsageGate(isAttemptingAction: $attemptingNewRecord) {
             showingNewRecord = true
         }
+        .task {
+            await refreshRecords()
+        }
+        .onChange(of: showingNewRecord) { _, isPresented in
+            guard !isPresented else { return }
+            Task { await refreshRecords() }
+        }
     }
     
+    @MainActor
+    private func refreshRecords() async {
+        records = LaunchSafeFetch.thoughtRecords(from: modelContext)
+    }
+
     private func softDelete(_ record: ThoughtRecord) {
         do {
             try modelContext.cbtStore.softDelete(item: record)
+            Task { await refreshRecords() }
         } catch {
             AppLogger.make(category: "Data").error("Failed to delete record: \(error.localizedDescription, privacy: .private)")
         }

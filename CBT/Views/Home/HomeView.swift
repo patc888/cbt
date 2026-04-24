@@ -97,6 +97,11 @@ private struct HomeDashboardPlaceholder: View {
 // MARK: - Subviews
 
 struct HomeDashboardContent: View {
+    private struct DashboardRefreshToken: Equatable {
+        let day: Date
+        let nonce: Int
+    }
+
     private static let dashboardWeekDates: [Date] = {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -112,17 +117,10 @@ struct HomeDashboardContent: View {
     @Binding var showingTipModal: Bool
     @Binding var selectedMoodForFlow: MoodColor?
 
+    @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
-    @Query(filter: #Predicate<MoodEntry> { !$0.isDeleted }, sort: \MoodEntry.createdAt, order: .reverse)
-    private var moodEntries: [MoodEntry]
-    @Query(filter: #Predicate<ThoughtRecord> { !$0.isDeleted }, sort: \ThoughtRecord.createdAt, order: .reverse)
-    private var thoughtRecords: [ThoughtRecord]
-    @Query(filter: #Predicate<ExerciseCompletion> { !$0.isDeleted }, sort: \ExerciseCompletion.createdAt, order: .reverse)
-    private var exerciseCompletions: [ExerciseCompletion]
-    @Query(filter: #Predicate<JournalEntry> { !$0.isDeleted }, sort: \JournalEntry.createdAt, order: .reverse)
-    private var journalEntries: [JournalEntry]
-
     @State private var viewModel = HomeDashboardViewModel()
+    @State private var refreshNonce = 0
     
     init(
         selectedTab: Binding<FloatingTab>,
@@ -266,21 +264,33 @@ struct HomeDashboardContent: View {
                 )
             }
         }
-        // Keep the refresh trigger cheap: traversing live SwiftData models
-        // during body evaluation can fault records and destabilize launch.
-        .task(id: "\(Calendar.current.startOfDay(for: selectedDate).timeIntervalSinceReferenceDate)|\(moodEntries.count)|\(thoughtRecords.count)|\(exerciseCompletions.count)|\(journalEntries.count)") {
-            await refreshDashboardSnapshot()
+        .onChange(of: showingNewMoodEntry) { _, isPresented in
+            guard !isPresented else { return }
+            refreshNonce &+= 1
+        }
+        .onChange(of: showingNewThoughtRecord) { _, isPresented in
+            guard !isPresented else { return }
+            refreshNonce &+= 1
+        }
+        .task(id: DashboardRefreshToken(
+            day: calendar.startOfDay(for: selectedDate),
+            nonce: refreshNonce
+        )) {
+            await refreshDashboard()
         }
     }
 
     @MainActor
-    private func refreshDashboardSnapshot() async {
-        await viewModel.update(
+    private func refreshDashboard() async {
+        let snapshot = LaunchSafeFetch.homeDashboardSnapshot(
             selectedDate: selectedDate,
-            moodEntries: moodEntries,
-            thoughtRecords: thoughtRecords,
-            exerciseCompletions: exerciseCompletions,
-            journalEntries: journalEntries
+            visibleDates: Self.dashboardWeekDates,
+            from: modelContext
+        )
+
+        await viewModel.apply(
+            snapshot: snapshot,
+            selectedDate: selectedDate
         )
     }
 }

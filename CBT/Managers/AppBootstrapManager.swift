@@ -37,6 +37,7 @@ enum BootstrapResolution: Equatable, Sendable {
 
 struct BootstrapActions<Resource: Sendable>: Sendable {
     let makePrimary: @Sendable (BootstrapStage) throws -> Resource
+    let validateReadyResource: @Sendable (Resource, BootstrapStage) throws -> Void
     let quarantineDefaultStoreForRepair: @Sendable () throws -> URL?
     let removeFallbackStoreFiles: @Sendable () throws -> Void
     let makeFallback: @Sendable () throws -> Resource
@@ -60,6 +61,7 @@ enum DebugBootstrapControl {
     #if DEBUG
     private nonisolated static let launchArguments = ProcessInfo.processInfo.arguments
     private nonisolated static let failAllStores = launchArguments.contains("-debug-modelcontainer-fail-all")
+    private nonisolated static let seedCorruptedPrimaryStore = launchArguments.contains("-debug-seed-corrupted-primary-store")
     private nonisolated static let remainingPrimaryFailuresLock = NSLock()
     private nonisolated(unsafe) static var remainingPrimaryFailures = launchArguments.contains("-debug-modelcontainer-fail-primary-once") ? 1 : 0
     #endif
@@ -73,6 +75,19 @@ enum DebugBootstrapControl {
         if stage == .primary, consumePrimaryFailureIfNeeded() {
             throw BootstrapError.debugInjectedFailure(stage.rawValue)
         }
+        #endif
+    }
+
+    nonisolated static func prepareDebugPrimaryStoreFixtureIfNeeded() throws {
+        #if DEBUG
+        guard seedCorruptedPrimaryStore else { return }
+
+        try DataResetManager.removeStoreFiles(at: DataResetManager.defaultStoreURL)
+        try DataResetManager.removeStoreFiles(at: DataResetManager.fallbackStoreURL)
+        try DataResetManager.ensureStoreParentDirectoryExists(for: DataResetManager.defaultStoreURL)
+
+        let payload = Data(repeating: 0xCB, count: 4096)
+        try payload.write(to: DataResetManager.defaultStoreURL, options: .atomic)
         #endif
     }
 

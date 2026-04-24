@@ -74,19 +74,19 @@ struct DataExportService {
     @MainActor
     private func makePayload(from modelContext: ModelContext) throws -> CBTDataExportPayload {
         let moodDescriptor = FetchDescriptor<MoodEntry>(
-            predicate: #Predicate<MoodEntry> { !$0.isDeleted },
+            predicate: #Predicate<MoodEntry> { $0.isDeleted == false },
             sortBy: [SortDescriptor(\MoodEntry.createdAt)]
         )
         let thoughtDescriptor = FetchDescriptor<ThoughtRecord>(
-            predicate: #Predicate<ThoughtRecord> { !$0.isDeleted },
+            predicate: #Predicate<ThoughtRecord> { $0.isDeleted == false },
             sortBy: [SortDescriptor(\ThoughtRecord.createdAt)]
         )
         let completionDescriptor = FetchDescriptor<ExerciseCompletion>(
-            predicate: #Predicate<ExerciseCompletion> { !$0.isDeleted },
+            predicate: #Predicate<ExerciseCompletion> { $0.isDeleted == false },
             sortBy: [SortDescriptor(\ExerciseCompletion.createdAt)]
         )
         let journalDescriptor = FetchDescriptor<JournalEntry>(
-            predicate: #Predicate<JournalEntry> { !$0.isDeleted },
+            predicate: #Predicate<JournalEntry> { $0.isDeleted == false },
             sortBy: [SortDescriptor(\JournalEntry.createdAt)]
         )
 

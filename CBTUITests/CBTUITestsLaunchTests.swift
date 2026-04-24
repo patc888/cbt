@@ -31,6 +31,13 @@ final class CBTUITestsLaunchTests: XCTestCase {
     }
 
     @MainActor
+    func testLaunchRecoversAfterCorruptedPrimaryStore() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-debug-seed-corrupted-primary-store"]
+        try assertLaunchShowsHome(for: app, timeout: 12)
+    }
+
+    @MainActor
     private func assertLaunchShowsHome(
         for app: XCUIApplication,
         timeout: TimeInterval = 10

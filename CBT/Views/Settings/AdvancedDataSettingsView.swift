@@ -3,15 +3,10 @@ import SwiftData
 import UniformTypeIdentifiers
 
 struct AdvancedDataSettingsView: View {
-    @Query(filter: #Predicate<MoodEntry> { !$0.isDeleted }, sort: \MoodEntry.createdAt, order: .forward)
-    private var moodEntries: [MoodEntry]
-
-    @Query(filter: #Predicate<ThoughtRecord> { !$0.isDeleted }, sort: \ThoughtRecord.createdAt, order: .forward)
-    private var thoughtRecords: [ThoughtRecord]
-
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
-
+    @State private var moodEntries: [MoodEntry] = []
+    @State private var thoughtRecords: [ThoughtRecord] = []
     @State private var viewModel = AdvancedDataSettingsViewModel()
 
 
@@ -252,5 +247,14 @@ struct AdvancedDataSettingsView: View {
                 )
             }
         }
+        .task {
+            await refreshPreviewData()
+        }
+    }
+
+    @MainActor
+    private func refreshPreviewData() async {
+        moodEntries = LaunchSafeFetch.moodEntries(from: modelContext).reversed()
+        thoughtRecords = LaunchSafeFetch.thoughtRecords(from: modelContext).reversed()
     }
 }

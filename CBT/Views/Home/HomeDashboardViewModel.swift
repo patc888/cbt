@@ -39,12 +39,9 @@ final class HomeDashboardViewModel {
     private var updateTaskID = UUID()
 
     @MainActor
-    func update(
-        selectedDate: Date,
-        moodEntries: [MoodEntry],
-        thoughtRecords: [ThoughtRecord],
-        exerciseCompletions: [ExerciseCompletion],
-        journalEntries: [JournalEntry]
+    func apply(
+        snapshot: HomeDashboardSnapshot,
+        selectedDate: Date
     ) async {
         let currentTaskID = UUID()
         self.updateTaskID = currentTaskID
@@ -53,46 +50,19 @@ final class HomeDashboardViewModel {
         let selectedDay = calendar.startOfDay(for: selectedDate)
         let manualForDay = manualCompletions[selectedDay] ?? []
 
-        // Snapshot the query-backed models on the caller's actor before
-        // moving the heavier aggregation work off the main thread.
-        let moodDates = moodEntries.map { $0.createdAt }
-        let thoughtDates = thoughtRecords.map { $0.createdAt }
-        let exerciseDates = exerciseCompletions.map { $0.createdAt }
-        let journalDates = journalEntries.filter {
-            $0.sourceKind == SessionSourceKind.breathing.rawValue
-        }.map { $0.createdAt }
-
-        let results = await Task.detached(priority: .userInitiated) {
-            let calendar = Calendar.current
-
-            // 1. Calculate active dates in background.
-            var dates = Set<Date>()
-            for d in moodDates { dates.insert(calendar.startOfDay(for: d)) }
-            for d in thoughtDates { dates.insert(calendar.startOfDay(for: d)) }
-            for d in exerciseDates { dates.insert(calendar.startOfDay(for: d)) }
-            for d in journalDates { dates.insert(calendar.startOfDay(for: d)) }
-            
-            // 2. Calculate completion for the selected day.
-            let moodDone = moodDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
-            let thoughtDone = thoughtDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
-            let exerciseDone = exerciseDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
-            let breathingDone = journalDates.contains { calendar.isDate($0, inSameDayAs: selectedDay) }
-            
-            let completion = DailyPlanCompletionSnapshot(entries: [
-                .moodCheckIn: moodDone ? .completed : .incomplete,
-                .thoughtRecord: thoughtDone ? .completed : .incomplete,
-                .exercises: exerciseDone ? .completed : .incomplete,
-                .breathingReset: (breathingDone || manualForDay.contains(.breathingReset)) ? .completed : .incomplete,
-                .tipOfTheDay: manualForDay.contains(.tipOfTheDay) ? .completed : .notTracked
-            ])
-            
-            return (dates, completion)
+        let completion = await Task.detached(priority: .userInitiated) {
+            var entries = snapshot.completionSnapshot.entries
+            if manualForDay.contains(.breathingReset) {
+                entries[.breathingReset] = .completed
+            }
+            entries[.tipOfTheDay] = manualForDay.contains(.tipOfTheDay) ? .completed : .notTracked
+            return DailyPlanCompletionSnapshot(entries: entries)
         }.value
         
         guard !Task.isCancelled, self.updateTaskID == currentTaskID else { return }
         
-        self.activeDates = results.0
-        self.completionSnapshot = results.1
+        self.activeDates = snapshot.activeDates
+        self.completionSnapshot = completion
         self.isInitialized = true
     }
 

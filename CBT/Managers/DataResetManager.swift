@@ -1,6 +1,8 @@
 import Foundation
 import SwiftData
 import CloudKit
+import CoreData
+import SQLite3
 import UserNotifications
 import SwiftUI
 import OSLog
@@ -29,6 +31,14 @@ enum DataResetError: LocalizedError, Equatable {
     }
 }
 
+struct StoreValidationError: LocalizedError {
+    let message: String
+
+    var errorDescription: String? {
+        message
+    }
+}
+
 @Observable
 final class DataResetManager {
     nonisolated static let shared = DataResetManager()
@@ -40,7 +50,7 @@ final class DataResetManager {
         get {
             // We default to false unless explicitly enabled
             if UserDefaults.standard.object(forKey: cloudSyncKey) == nil {
-                return false
+                return true
             }
             return UserDefaults.standard.bool(forKey: cloudSyncKey)
         }
@@ -223,6 +233,49 @@ final class DataResetManager {
         )
     }
 
+    nonisolated static func preflightStoreForLaunch(
+        at storeURL: URL,
+        using fileManager: FileManager = .default
+    ) throws {
+        guard fileManager.fileExists(atPath: storeURL.path) else {
+            return
+        }
+
+        let attributes = try fileManager.attributesOfItem(atPath: storeURL.path)
+        let fileSize = (attributes[.size] as? NSNumber)?.int64Value ?? 0
+        guard fileSize > 0 else {
+            throw StoreValidationError(message: "Store file is empty: \(storeURL.lastPathComponent)")
+        }
+
+        let sqliteHeader = Data("SQLite format 3\0".utf8)
+        let headerData = try Data(contentsOf: storeURL, options: [.mappedIfSafe])
+        guard headerData.count >= sqliteHeader.count else {
+            throw StoreValidationError(message: "Store file is truncated: \(storeURL.lastPathComponent)")
+        }
+        guard headerData.prefix(sqliteHeader.count) == sqliteHeader else {
+            throw StoreValidationError(message: "Store header is not SQLite: \(storeURL.lastPathComponent)")
+        }
+
+        try performSQLiteQuickCheck(at: storeURL)
+
+        do {
+            let metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(
+                ofType: NSSQLiteStoreType,
+                at: storeURL,
+                options: nil
+            )
+            guard !metadata.isEmpty else {
+                throw StoreValidationError(message: "Store metadata is empty: \(storeURL.lastPathComponent)")
+            }
+        } catch let error as StoreValidationError {
+            throw error
+        } catch {
+            throw StoreValidationError(
+                message: "Core Data metadata check failed for \(storeURL.lastPathComponent): \(error.localizedDescription)"
+            )
+        }
+    }
+
     nonisolated static func removeStoreFiles(at storeURL: URL, using fileManager: FileManager = .default) throws {
         let files = try relatedStoreFiles(for: storeURL, using: fileManager)
         for file in files {
@@ -313,5 +366,60 @@ final class DataResetManager {
             "\(storeName)-shm",
             "\(storeName)-wal"
         ]
+    }
+
+    private nonisolated static func performSQLiteQuickCheck(at storeURL: URL) throws {
+        var database: OpaquePointer?
+        let openCode = sqlite3_open_v2(
+            storeURL.path,
+            &database,
+            SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX,
+            nil
+        )
+
+        guard openCode == SQLITE_OK, let database else {
+            let message = database.flatMap { String(cString: sqlite3_errmsg($0)) } ?? "unknown sqlite open failure"
+            if let database {
+                sqlite3_close(database)
+            }
+            throw StoreValidationError(
+                message: "SQLite open failed for \(storeURL.lastPathComponent) code=\(openCode): \(message)"
+            )
+        }
+
+        defer { sqlite3_close(database) }
+
+        var statement: OpaquePointer?
+        let sql = "PRAGMA quick_check(1);"
+        let prepareCode = sqlite3_prepare_v2(database, sql, -1, &statement, nil)
+        guard prepareCode == SQLITE_OK, let statement else {
+            let message = String(cString: sqlite3_errmsg(database))
+            if let statement {
+                sqlite3_finalize(statement)
+            }
+            throw StoreValidationError(
+                message: "SQLite quick_check prepare failed for \(storeURL.lastPathComponent) code=\(prepareCode): \(message)"
+            )
+        }
+
+        defer { sqlite3_finalize(statement) }
+
+        let stepCode = sqlite3_step(statement)
+        switch stepCode {
+        case SQLITE_ROW:
+            let result = sqlite3_column_text(statement, 0).map { String(cString: $0) } ?? "unknown"
+            guard result.caseInsensitiveCompare("ok") == .orderedSame else {
+                throw StoreValidationError(
+                    message: "SQLite quick_check failed for \(storeURL.lastPathComponent): \(result)"
+                )
+            }
+        case SQLITE_DONE:
+            break
+        default:
+            let message = String(cString: sqlite3_errmsg(database))
+            throw StoreValidationError(
+                message: "SQLite quick_check execution failed for \(storeURL.lastPathComponent) code=\(stepCode): \(message)"
+            )
+        }
     }
 }

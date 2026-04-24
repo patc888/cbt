@@ -9,6 +9,7 @@ import Testing
 import Foundation
 import SwiftData
 import CloudKit
+import SQLite3
 import SwiftUI
 @testable import CBT
 
@@ -434,6 +435,56 @@ struct CBTTests {
         }
     }
 
+    @Test func preflightStoreForLaunchRejectsRandomBytesBeforeSwiftDataOpensThem() throws {
+        let directory = try makeTemporaryDirectory()
+        let storeURL = directory.appendingPathComponent("cbt.store")
+        try Data(repeating: 0xCB, count: 4096).write(to: storeURL)
+
+        #expect(throws: (any Error).self) {
+            try DataResetManager.preflightStoreForLaunch(at: storeURL)
+        }
+    }
+
+    @Test func preflightStoreForLaunchRejectsPlainSQLiteWithoutCoreDataMetadata() throws {
+        let directory = try makeTemporaryDirectory()
+        let storeURL = directory.appendingPathComponent("plain-sqlite.store")
+
+        var database: OpaquePointer?
+        #expect(sqlite3_open(storeURL.path, &database) == SQLITE_OK)
+        defer { sqlite3_close(database) }
+        #expect(sqlite3_exec(database, "CREATE TABLE sample (id INTEGER PRIMARY KEY);", nil, nil, nil) == SQLITE_OK)
+
+        #expect(throws: (any Error).self) {
+            try DataResetManager.preflightStoreForLaunch(at: storeURL)
+        }
+    }
+
+    @MainActor
+    @Test func preflightStoreForLaunchAcceptsSeededSwiftDataStore() throws {
+        let directory = try makeTemporaryDirectory()
+        let storeURL = directory.appendingPathComponent("valid.store")
+
+        let schema = Schema([
+            UserSettings.self,
+            MoodEntry.self,
+            ThoughtRecord.self,
+            ExerciseCompletion.self,
+            JournalEntry.self
+        ])
+        let configuration = ModelConfiguration(
+            "DiskValidation-\(UUID().uuidString)",
+            schema: schema,
+            url: storeURL,
+            cloudKitDatabase: .none
+        )
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = ModelContext(container)
+        context.insert(MoodEntry(moodScore: 5))
+        try context.save()
+
+        try DataResetManager.preflightStoreForLaunch(at: storeURL)
+    }
+
     @MainActor
     @Test func requestLocalWipePostsResetNotification() async throws {
         let manager = DataResetManager()
@@ -482,6 +533,7 @@ struct CBTTests {
 
                     return stage.rawValue
                 },
+                validateReadyResource: { _, _ in },
                 quarantineDefaultStoreForRepair: {
                     quarantined.set(true)
                     return URL(fileURLWithPath: "/tmp/recovered")
@@ -525,6 +577,7 @@ struct CBTTests {
             reason: "unit-test",
             actions: BootstrapActions<String>(
                 makePrimary: { _ in throw TestFailure.simulated },
+                validateReadyResource: { _, _ in },
                 quarantineDefaultStoreForRepair: { nil as URL? },
                 removeFallbackStoreFiles: {
                     removedFallbackStore.set(true)
@@ -560,6 +613,56 @@ struct CBTTests {
         #expect(removedFallbackStore.snapshot())
         #expect(launchedFallback.snapshot())
         #expect(launchedInMemory.snapshot())
+    }
+
+    @Test func bootstrapFlowQuarantinesWhenPrimaryValidationFailsAfterOpen() throws {
+        let attemptedStages = LockedBox<[BootstrapStage]>([])
+        let validatedStages = LockedBox<[BootstrapStage]>([])
+        let quarantined = LockedBox(false)
+
+        let result = CBTApp.runBootstrapFlow(
+            reason: "unit-test",
+            actions: BootstrapActions<String>(
+                makePrimary: { stage in
+                    attemptedStages.withValue { $0.append(stage) }
+                    return stage.rawValue
+                },
+                validateReadyResource: { resource, stage in
+                    validatedStages.withValue { $0.append(stage) }
+                    if resource == BootstrapStage.primary.rawValue {
+                        throw TestFailure.simulated
+                    }
+                },
+                quarantineDefaultStoreForRepair: {
+                    quarantined.set(true)
+                    return URL(fileURLWithPath: "/tmp/recovered-after-validation")
+                },
+                removeFallbackStoreFiles: { },
+                makeFallback: { "fallback" },
+                makeInMemory: { "memory" },
+                logBootstrapFailure: { _, _, _ in },
+                logHousekeepingFailure: { _, _ in },
+                logFallbackLaunch: { },
+                logInMemoryLaunch: { }
+            )
+        )
+
+        switch result {
+        case .ready(let resource, let resolution):
+            #expect(resource == BootstrapStage.primaryRecovery.rawValue)
+            switch resolution {
+            case .primaryRecovery:
+                break
+            default:
+                Issue.record("Expected primary recovery resolution after validation failure, got \(String(describing: resolution))")
+            }
+        case .repair:
+            Issue.record("Expected bootstrap validation recovery to succeed")
+        }
+
+        #expect(attemptedStages.snapshot() == [.primary, .primaryRecovery])
+        #expect(validatedStages.snapshot() == [.primary, .primaryRecovery])
+        #expect(quarantined.snapshot())
     }
 
     @Test func lockCheckDecisionRelocksOnlyWhenAppBecomesActiveAndReady() {
@@ -616,7 +719,7 @@ struct CBTTests {
     }
 
     @MainActor
-    @Test func loadEnforceableAppLockEnabledDisablesUnavailableLock() throws {
+    @Test func loadEnforceableAppLockEnabledReturnsFalseWithoutMutatingStoreWhenLockUnavailable() throws {
         let container = try makeInMemoryContainer()
         let context = ModelContext(container)
         context.insert(UserSettings(hapticsEnabled: true, appLockEnabled: true))
@@ -628,7 +731,68 @@ struct CBTTests {
         )
 
         #expect(isEnabled == false)
-        #expect(try UserSettings.fetchAppLockEnabled(from: context) == false)
+        #expect(try UserSettings.fetchAppLockEnabled(from: context))
+    }
+
+    @MainActor
+    @Test func settingsViewModelInitializationUsesDefaultsWithoutCreatingSettings() throws {
+        let container = try makeInMemoryContainer()
+        let context = ModelContext(container)
+        let viewModel = SettingsViewModel()
+
+        viewModel.initialize(with: context)
+
+        #expect(viewModel.isInitialized)
+        #expect(viewModel.hapticsEnabled)
+        #expect(viewModel.appLockEnabled == false)
+        #expect(viewModel.currentIcon == nil)
+        #expect(try context.fetch(FetchDescriptor<UserSettings>()).isEmpty)
+    }
+
+    @MainActor
+    @Test func settingsViewModelCreatesSettingsOnlyWhenUserUpdates() throws {
+        let container = try makeInMemoryContainer()
+        let context = ModelContext(container)
+        let viewModel = SettingsViewModel()
+
+        viewModel.initialize(with: context)
+        viewModel.updateAppLock(true)
+
+        let settings = try #require(try context.fetch(FetchDescriptor<UserSettings>()).first)
+        #expect(settings.appLockEnabled == true)
+        #expect(viewModel.appLockEnabled)
+    }
+
+    @Test func launchFacingViewsDoNotUseRawQueryWrappers() throws {
+        let fileURLs = try launchFacingSwiftFiles()
+        let offendingFiles = try fileURLs.compactMap { fileURL -> String? in
+            let contents = try String(contentsOf: fileURL, encoding: .utf8)
+            return contents.contains("@Query") ? fileURL.lastPathComponent : nil
+        }
+
+        #expect(
+            offendingFiles.isEmpty,
+            """
+            Launch-facing app views must not use raw @Query wrappers.
+            Route startup reads through LaunchSafeFetch instead.
+            Offending files: \(offendingFiles.joined(separator: ", "))
+            """
+        )
+    }
+
+    @Test func homeDashboardLaunchPathUsesSingleTaskAndAttachedModelContext() throws {
+        let homeViewURL = try repoRootURL()
+            .appendingPathComponent("CBT", isDirectory: true)
+            .appendingPathComponent("Views", isDirectory: true)
+            .appendingPathComponent("Home", isDirectory: true)
+            .appendingPathComponent("HomeView.swift")
+
+        let contents = try String(contentsOf: homeViewURL, encoding: .utf8)
+
+        #expect(contents.contains("from: modelContext"))
+        #expect(!contents.contains("from: modelContext.container"))
+        #expect(contents.contains(".task(id: DashboardRefreshToken("))
+        #expect(!contents.contains(".task {\n            await refreshDashboard()"))
     }
 
 }
@@ -654,6 +818,33 @@ private func makeTemporaryDirectory() throws -> URL {
         .appendingPathComponent(UUID().uuidString, isDirectory: true)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     return directory
+}
+
+private func launchFacingSwiftFiles() throws -> [URL] {
+    let repoRoot = try repoRootURL()
+    let viewsDirectory = repoRoot
+        .appendingPathComponent("CBT", isDirectory: true)
+        .appendingPathComponent("Views", isDirectory: true)
+
+    let enumerator = FileManager.default.enumerator(
+        at: viewsDirectory,
+        includingPropertiesForKeys: [.isRegularFileKey],
+        options: [.skipsHiddenFiles]
+    )
+
+    var files: [URL] = []
+    while let fileURL = enumerator?.nextObject() as? URL {
+        guard fileURL.pathExtension == "swift" else { continue }
+        files.append(fileURL)
+    }
+
+    return files.sorted { $0.path < $1.path }
+}
+
+private func repoRootURL() throws -> URL {
+    URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
 }
 
 private enum TestFailure: Error {

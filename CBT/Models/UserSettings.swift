@@ -92,7 +92,7 @@ extension UserSettings {
     }
 
     @MainActor
-    private static func canonicalSettings(from allSettings: [UserSettings]) -> UserSettings? {
+    static func canonicalSettings(from allSettings: [UserSettings]) -> UserSettings? {
         allSettings.sorted { lhs, rhs in
             let lhsKey = lhs.uuid?.uuidString ?? String(describing: lhs.persistentModelID)
             let rhsKey = rhs.uuid?.uuidString ?? String(describing: rhs.persistentModelID)

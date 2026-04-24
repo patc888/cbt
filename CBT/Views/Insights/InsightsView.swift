@@ -78,18 +78,11 @@ private struct InsightsDashboardContent: View {
     @Binding var attemptingAddMood: Bool
     @Binding var attemptingAddThought: Bool
 
-    @Query(filter: #Predicate<MoodEntry> { !$0.isDeleted }, sort: \MoodEntry.createdAt, order: .forward)
-    private var moodEntries: [MoodEntry]
-
-    @Query(filter: #Predicate<ThoughtRecord> { !$0.isDeleted }, sort: \ThoughtRecord.createdAt, order: .forward)
-    private var thoughtRecords: [ThoughtRecord]
-
-    @Query(filter: #Predicate<ExerciseCompletion> { !$0.isDeleted }, sort: \ExerciseCompletion.createdAt, order: .forward)
-    private var exerciseCompletions: [ExerciseCompletion]
-
-    @Query(filter: #Predicate<JournalEntry> { !$0.isDeleted }, sort: \JournalEntry.createdAt, order: .forward)
-    private var journalEntries: [JournalEntry]
-
+    @Environment(\.modelContext) private var modelContext
+    @State private var moodEntries: [MoodEntry] = []
+    @State private var thoughtRecords: [ThoughtRecord] = []
+    @State private var exerciseCompletions: [ExerciseCompletion] = []
+    @State private var journalEntries: [JournalEntry] = []
     @State private var viewModel = InsightsViewModel()
 
     init(
@@ -141,6 +134,9 @@ private struct InsightsDashboardContent: View {
         .task(id: "\(timeRange.rawValue)|\(moodGoalValue)|\(moodEntries.count)|\(thoughtRecords.count)|\(exerciseCompletions.count)|\(journalEntries.count)") {
             await recalculateData()
         }
+        .task {
+            await refreshFetchedModels()
+        }
     }
 
     @ViewBuilder
@@ -188,6 +184,14 @@ private struct InsightsDashboardContent: View {
             topTriggers: viewModel.topTriggers,
             topDistortions: viewModel.topDistortions
         )
+    }
+
+    @MainActor
+    private func refreshFetchedModels() async {
+        moodEntries = LaunchSafeFetch.moodEntries(from: modelContext).reversed()
+        thoughtRecords = LaunchSafeFetch.thoughtRecords(from: modelContext).reversed()
+        exerciseCompletions = LaunchSafeFetch.exerciseCompletions(from: modelContext).reversed()
+        journalEntries = LaunchSafeFetch.journalEntries(from: modelContext).reversed()
     }
 
     private func recalculateData() async {

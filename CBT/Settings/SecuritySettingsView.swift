@@ -16,7 +16,6 @@ struct SecuritySettingsView: View {
     @State private var showingPrivacyInfo = false
     
     @AppStorage("autoLockDelay") private var autoLockDelay: String = "Immediately"
-    @AppStorage("appLockEnabled") private var appLockEnabledStorage: Bool = false
     @AppStorage("hideAppSwitcher") private var hideAppSwitcher: Bool = false
     
     private let lockOptions = ["Immediately", "1m", "5m"]
@@ -80,10 +79,9 @@ struct SecuritySettingsView: View {
 
     private func disableUnsupportedAppLockIfNeeded() {
         guard !securityManager.isAppLockAvailable else { return }
-        guard appLockEnabled || appLockEnabledStorage else { return }
+        guard appLockEnabled else { return }
 
         onUpdateAppLock(false)
-        appLockEnabledStorage = false
     }
 }
 

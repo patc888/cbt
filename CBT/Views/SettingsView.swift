@@ -8,7 +8,6 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
-    @State private var hasPreparedSettings = false
     
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private var metrics: LayoutMetrics { LayoutMetrics.metrics(for: horizontalSizeClass) }
@@ -21,7 +20,7 @@ struct SettingsView: View {
             DeferredRenderView {
                 VStack { Spacer() }
             } content: {
-                SettingsContent(showsDismissControl: showsDismissControl, hasPreparedSettings: $hasPreparedSettings)
+                SettingsContent(showsDismissControl: showsDismissControl)
             }
 
             if showsDismissControl {
@@ -54,27 +53,18 @@ struct SettingsView: View {
     }
 }
 
-private struct UserSettingsSnapshot: Sendable {
-    let hapticsEnabled: Bool
-    let currentIcon: String?
-    let appLockEnabled: Bool
-}
-
 private struct SettingsContent: View {
     let showsDismissControl: Bool
-    @Binding var hasPreparedSettings: Bool
+    @State private var viewModel = SettingsViewModel()
     
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
-    @Query private var settings: [UserSettings]
-    
-    @State private var snapshot: UserSettingsSnapshot?
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                if let snapshot {
-                    mainContent(snapshot: snapshot)
+                if viewModel.isInitialized {
+                    mainContent
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity, minHeight: 200)
@@ -84,50 +74,13 @@ private struct SettingsContent: View {
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity)
-        .task {
-            await prepareAndRefresh()
+        .onAppear {
+            viewModel.initialize(with: modelContext)
         }
-        .onChange(of: settings) { _, _ in
-            refreshSnapshot()
-        }
-    }
-
-    @MainActor
-    private func prepareAndRefresh() async {
-        guard !hasPreparedSettings else {
-            refreshSnapshot()
-            return
-        }
-        hasPreparedSettings = true
-
-        // fetchOrCreate handles reconciliation/singleton logic once
-        _ = try? UserSettings.fetchOrCreate(in: modelContext)
-        refreshSnapshot()
-
-        if let snapshot {
-            HapticManager.shared.setEnabled(snapshot.hapticsEnabled)
-        }
-    }
-
-    private func refreshSnapshot() {
-        let sorted = settings.sorted { lhs, rhs in
-            let lhsKey = lhs.uuid?.uuidString ?? String(describing: lhs.persistentModelID)
-            let rhsKey = rhs.uuid?.uuidString ?? String(describing: rhs.persistentModelID)
-            return lhsKey < rhsKey
-        }
-
-        guard let first = sorted.first else { return }
-
-        // Capture properties safely outside of the body evaluation
-        self.snapshot = UserSettingsSnapshot(
-            hapticsEnabled: first.hapticsEnabled ?? true,
-            currentIcon: first.currentIcon,
-            appLockEnabled: first.appLockEnabled ?? false
-        )
     }
 
     @ViewBuilder
-    private func mainContent(snapshot: UserSettingsSnapshot) -> some View {
+    private var mainContent: some View {
         VStack(spacing: 16) {
             HStack {
                 Text(String(localized: "Settings"))
@@ -137,26 +90,27 @@ private struct SettingsContent: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
+            
             AppearanceSettingsView(
-                hapticsEnabled: snapshot.hapticsEnabled,
-                currentIcon: snapshot.currentIcon,
+                hapticsEnabled: viewModel.hapticsEnabled,
+                currentIcon: viewModel.currentIcon,
                 userTheme: Bindable(themeManager).appTheme,
                 selectedTheme: Bindable(themeManager).selectedTheme,
                 isImmersive: Bindable(themeManager).isImmersive,
                 onUpdateHaptics: { enabled in
-                    updateSettings { $0.hapticsEnabled = enabled }
+                    viewModel.updateHaptics(enabled)
                 },
                 onUpdateIcon: { iconName in
-                    updateSettings { $0.currentIcon = iconName }
+                    viewModel.updateIcon(iconName)
                 }
             )
 
             DataSettingsSection()
 
             SecuritySettingsView(
-                appLockEnabled: snapshot.appLockEnabled,
+                appLockEnabled: viewModel.appLockEnabled,
                 onUpdateAppLock: { enabled in
-                    updateSettings { $0.appLockEnabled = enabled }
+                    viewModel.updateAppLock(enabled)
                 }
             )
 
@@ -201,6 +155,18 @@ private struct SettingsContent: View {
 
             AboutSettingsView()
 
+            NavigationLink(destination: DataResetOptionsView()) {
+                HStack {
+                    Image(systemName: "person.badge.minus")
+                        .foregroundStyle(Theme.errorRed)
+                    Text(String(localized: "Delete Account & Data"))
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundStyle(Theme.errorRed)
+                }
+            }
+            .padding(.top, 4)
+            .buttonStyle(PlainButtonStyle())
+
             PrivacyFooter()
                 .padding(.top, 16)
 
@@ -209,23 +175,8 @@ private struct SettingsContent: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 32)
     }
-
-    private func updateSettings(_ block: @escaping (UserSettings) -> Void) {
-        let context = modelContext
-        Task { @MainActor in
-            let sorted = settings.sorted { lhs, rhs in
-                let lhsKey = lhs.uuid?.uuidString ?? String(describing: lhs.persistentModelID)
-                let rhsKey = rhs.uuid?.uuidString ?? String(describing: rhs.persistentModelID)
-                return lhsKey < rhsKey
-            }
-            if let first = sorted.first {
-                block(first)
-                try? context.save()
-                refreshSnapshot()
-            }
-        }
-    }
 }
+
 
 struct PrivacyFooter: View {
     @Environment(ThemeManager.self) private var themeManager

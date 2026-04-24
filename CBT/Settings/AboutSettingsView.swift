@@ -42,8 +42,7 @@ struct AboutSettingsView: View {
             .buttonStyle(PlainButtonStyle())
         }
         .sheet(isPresented: $showingLegalInfo) {
-            LegalInfoSheet(openURL: openURL)
-                .presentationDetents([.medium])
+            LegalView()
         }
     }
 

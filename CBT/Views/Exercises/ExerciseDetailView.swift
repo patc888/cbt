@@ -10,7 +10,7 @@ struct ExerciseDetailView: View {
 
     let exercise: Exercise
 
-    @Query private var completions: [ExerciseCompletion]
+    @State private var completions: [ExerciseCompletion] = []
 
     @State private var currentStep = 0
     @State private var stepResponses: [String]
@@ -31,10 +31,6 @@ struct ExerciseDetailView: View {
 
     init(exercise: Exercise) {
         self.exercise = exercise
-        let exerciseID = exercise.id
-        self._completions = Query(filter: #Predicate<ExerciseCompletion> { completion in
-            completion.exerciseID == exerciseID && !completion.isDeleted
-        })
         self._stepResponses = State(initialValue: Array(repeating: "", count: exercise.steps.count))
     }
 
@@ -128,6 +124,7 @@ struct ExerciseDetailView: View {
         #endif
         .onAppear {
             NotificationCenter.default.post(name: .exerciseFlowDidEnter, object: nil)
+            refreshCompletions()
             timerManager.onComplete = { summary in
                 var finalSummary = summary
                 finalSummary.bodyText = buildFinalBodyText()
@@ -206,6 +203,7 @@ struct ExerciseDetailView: View {
 
         do {
             try modelContext.save()
+            refreshCompletions()
             ReviewManager.shared.logSignificantAction()
             if timerManager.isRunning || timerManager.isPaused {
                 timerManager.endEarly()
@@ -226,5 +224,13 @@ struct ExerciseDetailView: View {
         } catch {
             AppLogger.make(category: "Data").error("Failed to save exercise completion: \(error.localizedDescription, privacy: .private)")
         }
+    }
+
+    @MainActor
+    private func refreshCompletions() {
+        completions = LaunchSafeFetch.exerciseCompletions(
+            for: exercise.id,
+            from: modelContext
+        )
     }
 }

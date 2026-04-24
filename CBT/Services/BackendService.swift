@@ -23,7 +23,12 @@ final class BackendService: Sendable {
             
             // In a real implementation, you would do something like this:
             /*
-            var request = URLRequest(url: registerTokenURL!)
+            guard let url = registerTokenURL else {
+            Self.logger.error("Invalid registration URL")
+            return
+        }
+        
+        var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             

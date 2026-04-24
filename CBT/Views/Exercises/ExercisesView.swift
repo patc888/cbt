@@ -32,9 +32,9 @@ struct ExercisesView: View {
 }
 
 private struct ExercisesDashboardContent: View {
-    @Query(filter: #Predicate<ExerciseCompletion> { !$0.isDeleted }, sort: \ExerciseCompletion.createdAt, order: .reverse)
-    private var completions: [ExerciseCompletion]
+    @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
+    @State private var completions: [ExerciseCompletion] = []
 
     private let exerciseLibrary = ExerciseLibrary.shared
     @State private var viewModel = ExercisesViewModel()
@@ -156,6 +156,14 @@ private struct ExercisesDashboardContent: View {
         .task(id: completions.count) {
             await viewModel.update(completions: completions, allExercises: exercises)
         }
+        .task {
+            await refreshCompletions()
+        }
+    }
+
+    @MainActor
+    private func refreshCompletions() async {
+        completions = LaunchSafeFetch.exerciseCompletions(from: modelContext)
     }
 
     private func sectionTitle(_ title: String) -> some View {

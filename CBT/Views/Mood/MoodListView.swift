@@ -4,13 +4,8 @@ import os
 
 struct MoodListView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(
-        filter: #Predicate<MoodEntry> { !$0.isDeleted },
-        sort: \MoodEntry.createdAt,
-        order: .reverse
-    ) private var entries: [MoodEntry]
-    
     @Environment(ThemeManager.self) private var themeManager
+    @State private var entries: [MoodEntry] = []
     @State private var showingNewEntry = false
     @State private var attemptingNewEntry = false
 
@@ -95,11 +90,24 @@ struct MoodListView: View {
         .withUsageGate(isAttemptingAction: $attemptingNewEntry) {
             showingNewEntry = true
         }
+        .task {
+            await refreshEntries()
+        }
+        .onChange(of: showingNewEntry) { _, isPresented in
+            guard !isPresented else { return }
+            Task { await refreshEntries() }
+        }
     }
     
+    @MainActor
+    private func refreshEntries() async {
+        entries = LaunchSafeFetch.moodEntries(from: modelContext)
+    }
+
     private func softDelete(_ entry: MoodEntry) {
         do {
             try modelContext.cbtStore.softDelete(item: entry)
+            Task { await refreshEntries() }
         } catch {
             AppLogger.make(category: "Data").error("Failed to delete entry: \(error.localizedDescription, privacy: .private)")
         }

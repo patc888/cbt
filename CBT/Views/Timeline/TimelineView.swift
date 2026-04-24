@@ -81,11 +81,12 @@ struct TimelineDashboardContent: View {
     @Binding var attemptingAddMood: Bool
     @Binding var attemptingAddThought: Bool
 
+    @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
-    @Query(filter: #Predicate<MoodEntry> { !$0.isDeleted }, sort: \MoodEntry.createdAt, order: .reverse) private var moodEntries: [MoodEntry]
-    @Query(filter: #Predicate<ThoughtRecord> { !$0.isDeleted }, sort: \ThoughtRecord.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
-    @Query(filter: #Predicate<ExerciseCompletion> { !$0.isDeleted }, sort: \ExerciseCompletion.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
-    @Query(filter: #Predicate<JournalEntry> { !$0.isDeleted }, sort: \JournalEntry.createdAt, order: .reverse) private var journalEntries: [JournalEntry]
+    @State private var moodEntries: [MoodEntry] = []
+    @State private var thoughtRecords: [ThoughtRecord] = []
+    @State private var exerciseCompletions: [ExerciseCompletion] = []
+    @State private var journalEntries: [JournalEntry] = []
     @State private var viewModel = TimelineViewModel()
 
     init(
@@ -224,6 +225,25 @@ struct TimelineDashboardContent: View {
                 journalEntries: journalEntries
             )
         }
+        .task {
+            await refreshFetchedModels()
+        }
+        .onChange(of: showingAddMood) { _, isPresented in
+            guard !isPresented else { return }
+            Task { await refreshFetchedModels() }
+        }
+        .onChange(of: showingAddThought) { _, isPresented in
+            guard !isPresented else { return }
+            Task { await refreshFetchedModels() }
+        }
+    }
+
+    @MainActor
+    private func refreshFetchedModels() async {
+        moodEntries = LaunchSafeFetch.moodEntries(from: modelContext)
+        thoughtRecords = LaunchSafeFetch.thoughtRecords(from: modelContext)
+        exerciseCompletions = LaunchSafeFetch.exerciseCompletions(from: modelContext)
+        journalEntries = LaunchSafeFetch.journalEntries(from: modelContext)
     }
 
     private func formatHeaderDate(_ date: Date) -> String {

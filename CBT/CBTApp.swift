@@ -38,6 +38,7 @@ struct CBTApp: App {
     init() {
         // Perform emergency hard wipe if flagged before any SwiftData initialization starts.
         DataResetManager.performHardWipeIfNeeded()
+        try? DebugBootstrapControl.prepareDebugPrimaryStoreFixtureIfNeeded()
         
         let initialRequest = LoadingRequest(reason: "app launch")
         _launchState = State(initialValue: .launching)
@@ -65,13 +66,14 @@ struct CBTApp: App {
             // This is the interaction-blocking layer
             SecurityOverlayView()
         }
-        .environment(themeManager)
         .environmentObject(securityManager)
+        .environment(themeManager)
         .preferredColorScheme(themeManager.appTheme.colorScheme)
         .onChange(of: scenePhase) { _, newPhase in
             handleScenePhaseChange(newPhase)
         }
             .onReceive(NotificationCenter.default.publisher(for: .didResetData)) { _ in
+                isResetInProgress = false
                 themeManager = ThemeManager()
                 securityManager.unlock()
                 scheduleBootstrap(reason: "local reset")
@@ -184,6 +186,9 @@ struct CBTApp: App {
 
     @MainActor
     private func beginLocalResetFlow() {
+        // Cancel any active bootstrap by changing the request ID
+        loadingRequest = LoadingRequest(reason: "local reset start")
+        
         shouldCheckLockOnNextActive = true
         isResetInProgress = true
         themeManager = ThemeManager()
@@ -291,7 +296,9 @@ struct CBTApp: App {
 
     private nonisolated static func bootstrap(reason: String) async -> LaunchState {
         do {
-            return .ready(try await makeLaunchContainerOnMainActor(stage: .primary))
+            let container = try await makeLaunchContainerOnMainActor(stage: .primary)
+            try await validateLaunchContainerOnMainActor(container, stage: .primary)
+            return .ready(container)
         } catch {
             logBootstrapFailure(error, stage: .primary, reason: reason)
         }
@@ -305,7 +312,9 @@ struct CBTApp: App {
         }
 
         do {
-            return .ready(try await makeLaunchContainerOnMainActor(stage: .primaryRecovery))
+            let container = try await makeLaunchContainerOnMainActor(stage: .primaryRecovery)
+            try await validateLaunchContainerOnMainActor(container, stage: .primaryRecovery)
+            return .ready(container)
         } catch {
             logBootstrapFailure(error, stage: .primaryRecovery, reason: reason)
         }
@@ -318,14 +327,18 @@ struct CBTApp: App {
 
         do {
             logger.notice("Launching with an isolated local fallback store.")
-            return .ready(try await makeFallbackLaunchContainerOnMainActor())
+            let container = try await makeFallbackLaunchContainerOnMainActor()
+            try await validateLaunchContainerOnMainActor(container, stage: .fallback)
+            return .ready(container)
         } catch {
             logBootstrapFailure(error, stage: .fallback, reason: reason)
         }
 
         do {
             logger.notice("Launching with an in-memory recovery store.")
-            return .ready(try await makeInMemoryLaunchContainerOnMainActor())
+            let container = try await makeInMemoryLaunchContainerOnMainActor()
+            try await validateLaunchContainerOnMainActor(container, stage: .inMemory)
+            return .ready(container)
         } catch {
             logBootstrapFailure(error, stage: .inMemory, reason: reason)
             return .failed
@@ -350,16 +363,18 @@ struct CBTApp: App {
     ) -> Bool {
         let context = container.mainContext
         do {
-            // Use reconcileSingleton instead of fetchAppLockEnabled here to
-            // ensure any orphaned duplicates from a previous crash/reset
-            // are cleared without triggering an immediate context save
-            // during the startup environment propagation.
+            // Keep launch-time lock evaluation read-only. We still reconcile in
+            // memory so duplicate singleton rows do not confuse the result, but
+            // we avoid persisting changes during startup because the app review
+            // crash path was hitting SwiftData too early in the first render.
             let settings = try UserSettings.reconcileSingleton(in: context, shouldSaveIfChanged: false)
             let isEnabled = settings?.appLockEnabled == true
 
             guard isEnabled else { return false }
             guard isAppLockAvailable else {
-                try UserSettings.setAppLockEnabled(false, in: context)
+                Self.logger.notice(
+                    "App lock setting is enabled in storage but unavailable on this device; skipping launch-time writeback."
+                )
                 return false
             }
             return true
@@ -374,6 +389,7 @@ struct CBTApp: App {
         
         let storeURL = DataResetManager.defaultStoreURL
         try DataResetManager.ensureStoreParentDirectoryExists(for: storeURL)
+        try DataResetManager.preflightStoreForLaunch(at: storeURL)
 
         // Explicitly define the configuration with our robustly-resolved URL.
         let configuration = ModelConfiguration(
@@ -405,6 +421,7 @@ struct CBTApp: App {
         
         let storeURL = DataResetManager.fallbackStoreURL
         try DataResetManager.ensureStoreParentDirectoryExists(for: storeURL)
+        try DataResetManager.preflightStoreForLaunch(at: storeURL)
 
         let configuration = ModelConfiguration(
             "LocalRecovery",
@@ -423,6 +440,15 @@ struct CBTApp: App {
     private nonisolated static func makeFallbackLaunchContainerOnMainActor() async throws -> ModelContainer {
         try await MainActor.run {
             try makeFallbackContainer()
+        }
+    }
+
+    private nonisolated static func validateLaunchContainerOnMainActor(
+        _ container: ModelContainer,
+        stage: BootstrapStage
+    ) async throws {
+        try await MainActor.run {
+            try validateLaunchContainer(container, stage: stage)
         }
     }
 
@@ -448,6 +474,38 @@ struct CBTApp: App {
         }
     }
 
+    @MainActor
+    private static func validateLaunchContainer(
+        _ container: ModelContainer,
+        stage: BootstrapStage
+    ) throws {
+        let context = container.mainContext
+
+        // Prove the launch-critical read paths are healthy before SwiftUI
+        // attaches this container to the app. A store that merely "opens"
+        // but fails on first fetch should be quarantined during bootstrap,
+        // not after the first user-facing render.
+        _ = try fetchBootstrapProbe(FetchDescriptor<MoodEntry>(), from: context)
+        _ = try fetchBootstrapProbe(FetchDescriptor<ThoughtRecord>(), from: context)
+        _ = try fetchBootstrapProbe(FetchDescriptor<ExerciseCompletion>(), from: context)
+        _ = try fetchBootstrapProbe(FetchDescriptor<JournalEntry>(), from: context)
+        _ = try fetchBootstrapProbe(FetchDescriptor<UserSettings>(), from: context)
+        _ = try UserSettings.reconcileSingleton(in: context, shouldSaveIfChanged: false)
+
+        logger.notice("Launch container validated stage=\(stage.rawValue, privacy: .public)")
+    }
+
+    @MainActor
+    private static func fetchBootstrapProbe<T: PersistentModel>(
+        _ descriptor: FetchDescriptor<T>,
+        from context: ModelContext
+    ) throws -> [T] {
+        var descriptor = descriptor
+        descriptor.includePendingChanges = false
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor)
+    }
+
     private nonisolated static var cloudKitDatabase: ModelConfiguration.CloudKitDatabase {
         DataResetManager.isCloudSyncEnabled ? .automatic : .none
     }
@@ -458,7 +516,9 @@ struct CBTApp: App {
         actions: BootstrapActions<Resource>
     ) -> BootstrapAttemptResult<Resource> {
         do {
-            return .ready(try actions.makePrimary(.primary), .primary)
+            let resource = try actions.makePrimary(.primary)
+            try actions.validateReadyResource(resource, .primary)
+            return .ready(resource, .primary)
         } catch {
             actions.logBootstrapFailure(error, .primary, reason)
         }
@@ -472,7 +532,9 @@ struct CBTApp: App {
         }
 
         do {
-            return .ready(try actions.makePrimary(.primaryRecovery), .primaryRecovery)
+            let resource = try actions.makePrimary(.primaryRecovery)
+            try actions.validateReadyResource(resource, .primaryRecovery)
+            return .ready(resource, .primaryRecovery)
         } catch {
             actions.logBootstrapFailure(error, .primaryRecovery, reason)
         }
@@ -485,14 +547,18 @@ struct CBTApp: App {
 
         do {
             actions.logFallbackLaunch()
-            return .ready(try actions.makeFallback(), .fallback)
+            let resource = try actions.makeFallback()
+            try actions.validateReadyResource(resource, .fallback)
+            return .ready(resource, .fallback)
         } catch {
             actions.logBootstrapFailure(error, .fallback, reason)
         }
 
         do {
             actions.logInMemoryLaunch()
-            return .ready(try actions.makeInMemory(), .inMemory)
+            let resource = try actions.makeInMemory()
+            try actions.validateReadyResource(resource, .inMemory)
+            return .ready(resource, .inMemory)
         } catch {
             actions.logBootstrapFailure(error, .inMemory, reason)
             return .repair
@@ -562,14 +628,14 @@ private struct SecurityOverlayView: View {
     var body: some View {
         Color.clear
             .background(SceneDetector { scene in
-                if let manager = overlayManager {
-                    manager.updateScene(scene)
-                } else {
+                if overlayManager == nil {
                     overlayManager = SecurityOverlayManager(
                         securityManager: securityManager,
                         themeManager: themeManager,
                         windowScene: scene
                     )
+                } else {
+                    overlayManager?.updateScene(scene)
                 }
             })
     }
@@ -579,17 +645,21 @@ private struct SceneDetector: UIViewRepresentable {
     var onSceneDetected: (UIWindowScene) -> Void
 
     func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        view.isUserInteractionEnabled = false
-        view.backgroundColor = .clear
+        let view = SceneDetectionView()
+        view.onSceneDetected = onSceneDetected
         return view
     }
 
-    func updateUIView(_ uiView: UIView, context: Context) {
-        DispatchQueue.main.async {
-            if let scene = uiView.window?.windowScene {
-                onSceneDetected(scene)
-            }
+    func updateUIView(_ uiView: UIView, context: Context) {}
+}
+
+private class SceneDetectionView: UIView {
+    var onSceneDetected: ((UIWindowScene) -> Void)?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if let scene = window?.windowScene {
+            onSceneDetected?(scene)
         }
     }
 }

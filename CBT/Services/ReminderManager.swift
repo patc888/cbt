@@ -21,15 +21,6 @@ struct ReminderManager {
 
     func requestAuthorization() async -> Bool {
         let status = await PermissionManager.shared.request(.notifications)
-        
-        if status == .authorized {
-            #if canImport(UIKit)
-            await MainActor.run {
-                UIApplication.shared.registerForRemoteNotifications()
-            }
-            #endif
-        }
-        
         return status == .authorized
     }
 
