@@ -8,7 +8,7 @@ struct LockView: View {
     var body: some View {
         ZStack {
             Rectangle()
-                .fill(Theme.primaryAccent.gradient)
+                .fill(Theme.primaryAccent)
                 .ignoresSafeArea()
             
             VStack(spacing: 32) {
@@ -57,7 +57,7 @@ struct LockView: View {
                     .background(
                         Capsule()
                             .fill(.white)
-                            .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                            .adaptiveShadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
                     )
                 }
                 .padding(.horizontal, 40)

@@ -34,7 +34,7 @@ struct SettingsView: View {
                 .frame(maxWidth: 600)
             }
             .frame(maxWidth: 600)
-            .padding(.top, 50) // Adjust for close button area
+            .padding(.top, 36) // Adjust for close button area
 
             navigationArrow
         }

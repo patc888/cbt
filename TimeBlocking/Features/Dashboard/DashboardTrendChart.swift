@@ -95,16 +95,7 @@ struct DashboardTrendChart: View {
                                 y: .value("Completed", stat.completedCount)
                             )
                             .interpolationMethod(.catmullRom)
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [
-                                        Theme.successGreen.opacity(0.15),
-                                        Theme.successGreen.opacity(0.0)
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
+                            .foregroundStyle(Theme.successGreen.opacity(0.1))
                         }
                         
                         // 2. Solid Line (Planned Blocks - Baseline/Goal)
@@ -150,7 +141,7 @@ struct DashboardTrendChart: View {
                                     .fill(Theme.successGreen)
                                     .frame(width: 14, height: 14)
                                     .overlay(Circle().stroke(Theme.backgroundColor, lineWidth: 3))
-                                    .shadow(color: Color.black.opacity(0.2), radius: 3)
+                                    .adaptiveShadow(color: Color.black.opacity(0.2), radius: 3)
                             }
                         }
                     }

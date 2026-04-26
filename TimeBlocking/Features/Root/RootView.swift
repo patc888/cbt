@@ -8,7 +8,6 @@ struct RootView: View {
     @Query private var preferences: [AppPreferences]
     @StateObject private var securityManager = SecurityManager.shared
 
-    @State private var isAppReady = false
 
     var body: some View {
         @Bindable var appState = appEnvironment.appState
@@ -25,53 +24,32 @@ struct RootView: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
-                    .background(.orange.gradient)
+                    .background(.orange)
                     .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.1), radius: 5, y: 2)
+                    .adaptiveShadow(color: .black.opacity(0.1), radius: 5, y: 2)
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
 
-                NavigationStack {
-                    ScheduleView()
-                }
+                ScheduleView()
             }
-            .opacity(isAppReady ? 1 : 0)
-            .scaleEffect(isAppReady ? 1 : 0.98)
-            .blur(radius: isAppReady ? 0 : 10)
+            .background {
+                AuroraBackground()
+                    .ignoresSafeArea()
+            }
 
-            if !isAppReady {
-                ZStack {
-                    AuroraBackground()
-                        .ignoresSafeArea()
-                    
-                    VStack(spacing: 24) {
-                        AppIconView(size: 100)
-                            .scaleEffect(1.2)
-                            .shadow(color: Theme.primaryAccent.opacity(0.3), radius: 20)
-                        
-                        ProgressView()
-                            .tint(Theme.primaryAccent)
-                    }
-                }
-                .transition(.opacity.combined(with: .scale(scale: 1.1)))
-                .zIndex(1000)
-            }
         }
 #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
 #endif
         .overlay(alignment: .bottomTrailing) {
-            if isAppReady {
-                floatingActionButton(
-                    systemImage: "plus"
-                ) {
-                    appState.isPresentingAddModal = true
-                }
-                .padding(.trailing, 24)
-                .padding(.bottom, 36)
-                .transition(.scale.combined(with: .opacity))
+            floatingActionButton(
+                systemImage: "plus"
+            ) {
+                appState.isPresentingAddModal = true
             }
+            .padding(.trailing, 24)
+            .padding(.bottom, 36)
         }
         .sheet(item: Binding<TimePresentedSheet?>(
             get: { appState.presentedSheet == .templates ? .templates : nil },
@@ -100,20 +78,15 @@ struct RootView: View {
         .overlay {
             Group {
                 if appState.presentedSheet == .dashboard {
-                    secondarySurface(
-                        title: "Stats",
-                        accessibilityLabel: "Close stats"
-                    ) {
-                        DashboardView()
-                    }
-                    .transition(.move(edge: .leading))
-                    .shadow(color: .black.opacity(0.1), radius: 20, x: 10, y: 0)
+                    DashboardView()
+                        .transition(.move(edge: .leading))
+                        .adaptiveShadow(color: .black.opacity(0.1), radius: 20, x: 10, y: 0)
                 }
 
                 if appState.presentedSheet == .settings {
                     SettingsView()
                         .transition(.move(edge: .trailing))
-                        .shadow(color: .black.opacity(0.1), radius: 20, x: -10, y: 0)
+                        .adaptiveShadow(color: .black.opacity(0.1), radius: 20, x: -10, y: 0)
                 }
             }
             .zIndex(10)
@@ -127,12 +100,6 @@ struct RootView: View {
             }
         }
         .task {
-            // Give a moment for the data to load and splash to show
-            try? await Task.sleep(for: .milliseconds(800))
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                isAppReady = true
-            }
-
             if preferences.first?.appLockEnabled ?? false {
                 securityManager.lock()
                 securityManager.authenticate()
@@ -169,17 +136,6 @@ struct RootView: View {
                     .zIndex(101)
             }
         }
-        .fullScreenCover(isPresented: .init(
-            get: { isAppReady && !(preferences.first?.hasSeenOnboarding ?? true) },
-            set: { _ in }
-        )) {
-            OnboardingView {
-                if let prefs = preferences.first {
-                    prefs.hasSeenOnboarding = true
-                    try? modelContext.save()
-                }
-            }
-        }
     }
 
 
@@ -194,14 +150,8 @@ struct RootView: View {
                 .frame(width: 64, height: 64)
                 .background(
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Theme.primaryAccent, Theme.secondaryAccent],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .shadow(color: Theme.primaryAccent.opacity(0.35), radius: 15, x: 0, y: 8)
+                        .fill(Theme.primaryAccent)
+                        .adaptiveShadow(color: Theme.primaryAccent.opacity(0.35), radius: 15, x: 0, y: 8)
                 )
 
         }
@@ -242,7 +192,7 @@ struct RootView: View {
                     .accessibilityLabel(accessibilityLabel)
                     .padding(.trailing, 16)
                 }
-                .frame(height: 64)
+                .frame(height: 32)
                 .padding(.top, 4)
 
                 Divider()

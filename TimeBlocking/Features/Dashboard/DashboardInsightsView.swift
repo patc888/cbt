@@ -38,7 +38,7 @@ struct DashboardInsightsView: View {
             if viewModel.isCalculating {
                 VStack {
                     ProgressView()
-                    Text("Analyzing your schedule...")
+                    Text(String(localized: "Analyzing your schedule..."))
                         .font(.caption)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -63,6 +63,7 @@ struct DashboardInsightsView: View {
             await viewModel.recalculate(timeRangeDays: timeRange.days, blocks: allBlocks)
         }
         .onChange(of: timeRange) { _, _ in
+            HapticManager.shared.lightImpact()
             Task { await viewModel.recalculate(timeRangeDays: timeRange.days, blocks: allBlocks) }
         }
         .onChange(of: allBlocks.count) { _, _ in
@@ -97,19 +98,21 @@ struct DashboardInsightsView: View {
                 )
                 
                 TimeMetricTile(
-                    title: "Longest Streak",
+                    title: String(localized: "Longest Streak"),
                     value: "\(viewModel.longestStreak)",
                     systemImage: "star.fill",
-                    unit: "days",
+                    unit: String(localized: "days"),
                     iconColor: .yellow
                 )
             }
         }
         .padding(Theme.paddingMedium)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(String(localized: "Activity Streaks: Current streak \(viewModel.currentStreak) days, longest streak \(viewModel.longestStreak) days"))
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Theme.cardBackground)
-                .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 5)
+                .adaptiveShadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 5)
         )
     }
     
@@ -117,7 +120,7 @@ struct DashboardInsightsView: View {
     private var consistencyRingCard: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("Consistency")
+                Text(String(localized: "Consistency"))
                     .font(.system(.title3, design: .rounded).weight(.bold))
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
@@ -137,16 +140,12 @@ struct DashboardInsightsView: View {
                 Circle()
                     .trim(from: 0, to: max(0.001, viewModel.consistencyProgress))
                     .stroke(
-                        LinearGradient(
-                            colors: [Theme.primaryAccent, Theme.secondaryAccent],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
+                        Theme.primaryAccent,
                         style: StrokeStyle(lineWidth: 18, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
                     .frame(width: 160, height: 160)
-                    .shadow(color: Theme.primaryAccent.opacity(0.3), radius: 6, x: 0, y: 3)
+                    .adaptiveShadow(color: Theme.primaryAccent.opacity(0.3), radius: 6, x: 0, y: 3)
 
                 // Inner Ring (Milestones)
                 Circle()
@@ -156,11 +155,7 @@ struct DashboardInsightsView: View {
                 Circle()
                     .trim(from: 0, to: max(0.001, Double(viewModel.milestonesCompleted) / 4.0))
                     .stroke(
-                        LinearGradient(
-                            colors: [Theme.secondaryAccent, Theme.primaryAccent.opacity(0.6)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
+                        Theme.secondaryAccent,
                         style: StrokeStyle(lineWidth: 12, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
@@ -176,17 +171,20 @@ struct DashboardInsightsView: View {
                         .tracking(2)
                 }
             }
+            .accessibilityElement(children: .ignore)
 
             
-            Text("\(viewModel.activeDaysCount) active days in last \(timeRange.days) days")
+            Text(String(localized: "\(viewModel.activeDaysCount) active days in last \(timeRange.days) days"))
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(Theme.secondaryText)
         }
         .padding(Theme.paddingMedium)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(String(localized: "Consistency: \(Int((viewModel.consistencyProgress * 100).rounded()))% active. \(viewModel.activeDaysCount) active days in last \(timeRange.days) days."))
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Theme.cardBackground)
-                .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 5)
+                .adaptiveShadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 5)
         )
     }
 
@@ -194,18 +192,18 @@ struct DashboardInsightsView: View {
     private var dailyTrendCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("Daily Completion")
+                Text(String(localized: "Daily Completion"))
                     .font(.system(.title3, design: .rounded).weight(.bold))
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
-                Text("RATE")
+                Text(String(localized: "RATE"))
                     .font(.system(.caption, design: .rounded).weight(.black))
                     .foregroundStyle(Theme.secondaryText.opacity(0.65))
                     .tracking(1.5)
             }
 
             if viewModel.dailyCompletionRates.isEmpty {
-                Text("Not enough data for trends.")
+                Text(String(localized: "Not enough data for trends."))
                     .font(.caption)
                     .foregroundStyle(Theme.secondaryText)
                     .frame(height: 150)
@@ -226,11 +224,7 @@ struct DashboardInsightsView: View {
                         )
                         .interpolationMethod(.catmullRom)
                         .foregroundStyle(
-                            LinearGradient(
-                                colors: [Theme.primaryAccent.opacity(0.2), Theme.primaryAccent.opacity(0)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
+                            Theme.primaryAccent.opacity(0.1)
                         )
                     }
                     
@@ -256,7 +250,7 @@ struct DashboardInsightsView: View {
                                     .padding(.vertical, 6)
                                     .background(Theme.cardBackground)
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
-                                    .shadow(color: .black.opacity(0.1), radius: 4)
+                                    .adaptiveShadow(color: .black.opacity(0.1), radius: 4)
                                 }
                             }
                     }
@@ -264,11 +258,12 @@ struct DashboardInsightsView: View {
                 .chartYScale(domain: 0...1)
                 .chartXSelection(value: $selectedDate)
                 .frame(height: 180)
+                .accessibilityLabel(String(localized: "Daily completion trend chart"))
             }
             
             HStack(spacing: 12) {
                 TimeMetricTile(
-                    title: "Avg Rate",
+                    title: String(localized: "Avg Rate"),
                     value: viewModel.averageCompletionRate.map { "\(Int(($0 * 100).rounded()))%" } ?? "-",
                     systemImage: "chart.bar.fill",
                     unit: nil,
@@ -276,10 +271,10 @@ struct DashboardInsightsView: View {
                 )
                 
                 TimeMetricTile(
-                    title: "Total Done",
+                    title: String(localized: "Total Done"),
                     value: "\(viewModel.totalCompletedBlocks)",
                     systemImage: "checkmark.seal.fill",
-                    unit: "blocks",
+                    unit: String(localized: "blocks"),
                     iconColor: Theme.successGreen
                 )
             }
@@ -288,7 +283,7 @@ struct DashboardInsightsView: View {
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Theme.cardBackground)
-                .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 5)
+                .adaptiveShadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 5)
         )
     }
 
@@ -296,18 +291,18 @@ struct DashboardInsightsView: View {
     private var weeklyOverviewCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("Weekly Performance")
+                Text(String(localized: "Weekly Performance"))
                     .font(.system(.title3, design: .rounded).weight(.bold))
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
-                Text("8 WEEKS")
+                Text(String(localized: "8 WEEKS"))
                     .font(.system(.caption, design: .rounded).weight(.black))
                     .foregroundStyle(Theme.secondaryText.opacity(0.65))
                     .tracking(1.5)
             }
 
             if viewModel.weeklyCompletionRates.isEmpty {
-                Text("Analyzing weeks...")
+                Text(String(localized: "Analyzing weeks..."))
                     .font(.caption)
                     .foregroundStyle(Theme.secondaryText)
                     .frame(height: 150)
@@ -324,27 +319,28 @@ struct DashboardInsightsView: View {
                 }
                 .chartYScale(domain: 0...1.1)
                 .frame(height: 150)
+                .accessibilityLabel(String(localized: "Weekly performance overview bar chart"))
             }
         }
         .padding(Theme.paddingMedium)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Theme.cardBackground)
-                .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 5)
+                .adaptiveShadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 5)
         )
     }
 
     // MARK: - Goals
     private var goalProgressSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Productivity Goals")
+            Text(String(localized: "Productivity Goals"))
                 .font(.system(.title3, design: .rounded).weight(.bold))
                 .foregroundStyle(Theme.primaryText)
                 .padding(.horizontal, 4)
-
-            goalBar(title: "Overall Completion", progress: viewModel.completionGoalProgress, color: Theme.primaryAccent)
-            goalBar(title: "Routine Discipline", progress: viewModel.routineGoalProgress, color: Theme.successGreen)
-            goalBar(title: "Focus Time", progress: viewModel.focusGoalProgress, color: .blue)
+            
+            goalBar(title: String(localized: "Overall Completion"), progress: viewModel.completionGoalProgress, color: Theme.primaryAccent)
+            goalBar(title: String(localized: "Routine Discipline"), progress: viewModel.routineGoalProgress, color: Theme.successGreen)
+            goalBar(title: String(localized: "Focus Time"), progress: viewModel.focusGoalProgress, color: .blue)
         }
     }
 
@@ -377,20 +373,20 @@ struct DashboardInsightsView: View {
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Theme.cardBackground)
-                .shadow(color: Color.black.opacity(0.02), radius: 5, x: 0, y: 2)
+                .adaptiveShadow(color: Color.black.opacity(0.02), radius: 5, x: 0, y: 2)
         )
     }
 
     // MARK: - Top Categories
     private var topCategoriesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Top Focus Areas")
+            Text(String(localized: "Top Focus Areas"))
                 .font(.system(.title3, design: .rounded).weight(.bold))
                 .foregroundStyle(Theme.primaryText)
 
             VStack(spacing: 8) {
                 if viewModel.topCategories.isEmpty {
-                    Text("No categories completed yet.")
+                    Text(String(localized: "No categories completed yet."))
                         .font(.caption)
                         .foregroundStyle(Theme.secondaryText)
                         .padding()

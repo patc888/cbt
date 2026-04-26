@@ -1,49 +1,65 @@
 import SwiftUI
 
-struct TimeHeaderView: View {
+struct TimeHeaderView<Leading: View, Trailing: View>: View {
     @Binding var selectedDate: Date
     let weekStripDates: [Date]
-    let calendar: Calendar
+    let dateHasItems: (Date) -> Bool
+    let title: String
+    let subtitle: String
     let horizontalPadding: CGFloat
 
-    // Callback for dot indicator in week strip
-    var dateHasItems: (Date) -> Bool
-
-    var showHeadline: Bool = true
+    @ViewBuilder var leadingActions: Leading
+    @ViewBuilder var trailingActions: Trailing
 
     var body: some View {
-        VStack(spacing: 16) {
-            if showHeadline {
+        VStack(spacing: 8) {
+            HStack(alignment: .center, spacing: 0) {
+                leadingActions
+                    .frame(width: 44, alignment: .leading)
+                
+                Spacer()
+                
                 TopHeadlineView(
-                    title: titleForSelectedDate,
-                    subtitle: subtitleForSelectedDate
+                    title: title,
+                    subtitle: subtitle
                 )
-                .padding(.horizontal, horizontalPadding)
+                
+                Spacer()
+                
+                trailingActions
+                    .frame(width: 44, alignment: .trailing)
             }
+            .padding(.horizontal, horizontalPadding)
+            .fixedSize(horizontal: false, vertical: true)
 
             WeekStripView(
                 selectedDate: $selectedDate,
                 weekDates: weekStripDates,
                 dateHasItems: dateHasItems
             )
-            .padding(.top, 4)
+            .frame(height: 100)
             .padding(.horizontal, horizontalPadding)
+            .padding(.bottom, 4)
         }
     }
+}
 
-    private var titleForSelectedDate: String {
-        if Calendar.current.isDateInToday(selectedDate) {
-            return "Today"
-        } else if Calendar.current.isDateInTomorrow(selectedDate) {
-            return "Tomorrow"
-        } else if Calendar.current.isDateInYesterday(selectedDate) {
-            return "Yesterday"
-        } else {
-            return selectedDate.formatted(.dateTime.weekday(.wide))
-        }
-    }
-
-    private var subtitleForSelectedDate: String {
-        selectedDate.formatted(.dateTime.month(.wide).day())
+extension TimeHeaderView where Leading == EmptyView, Trailing == EmptyView {
+    init(
+        selectedDate: Binding<Date>,
+        weekStripDates: [Date],
+        dateHasItems: @escaping (Date) -> Bool,
+        title: String,
+        subtitle: String,
+        horizontalPadding: CGFloat
+    ) {
+        self._selectedDate = selectedDate
+        self.weekStripDates = weekStripDates
+        self.dateHasItems = dateHasItems
+        self.title = title
+        self.subtitle = subtitle
+        self.horizontalPadding = horizontalPadding
+        self.leadingActions = EmptyView()
+        self.trailingActions = EmptyView()
     }
 }

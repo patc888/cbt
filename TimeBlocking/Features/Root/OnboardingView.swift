@@ -9,7 +9,8 @@ struct OnboardingView: View {
         OnboardingStep(
             title: "Design Your Day",
             description: "Break your day into focused blocks of time. Master your schedule, don't let it master you.",
-            image: "calendar.badge.clock",
+            image: "AppIconImage",
+            isAppIcon: true,
             color: Theme.primaryAccent
         ),
         OnboardingStep(
@@ -61,10 +62,16 @@ struct OnboardingView: View {
                                     .scaleEffect(currentStep == index ? 1 : 0.5)
                                     .opacity(currentStep == index ? 1 : 0)
                                 
-                                Image(systemName: steps[index].image)
-                                    .font(.system(size: 80))
-                                    .foregroundStyle(steps[index].color.gradient)
-                                    .symbolEffect(.bounce, value: currentStep == index)
+                                if steps[index].isAppIcon {
+                                    AppIconView(size: 100)
+                                        .scaleEffect(currentStep == index ? 1 : 0.5)
+                                        .opacity(currentStep == index ? 1 : 0)
+                                } else {
+                                    Image(systemName: steps[index].image)
+                                        .font(.system(size: 80))
+                                        .foregroundStyle(steps[index].color)
+                                        .symbolEffect(.bounce, value: currentStep == index)
+                                }
                             }
                             
                             VStack(spacing: 16) {
@@ -117,7 +124,7 @@ struct OnboardingView: View {
                         .frame(height: 60)
                         .background {
                             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .fill(steps[currentStep].color.gradient)
+                                .fill(steps[currentStep].color)
                         }
                         .padding(.horizontal, 24)
                 }
@@ -138,6 +145,7 @@ struct OnboardingStep {
     let title: String
     let description: String
     let image: String
+    var isAppIcon: Bool = false
     let color: Color
 }
 

@@ -9,7 +9,7 @@ struct AppIconView: View {
             .aspectRatio(contentMode: .fit)
             .frame(width: size, height: size)
             .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
-            .shadow(color: .black.opacity(0.1), radius: size * 0.05, x: 0, y: size * 0.02)
+            .adaptiveShadow(color: .black.opacity(0.1), radius: size * 0.05, x: 0, y: size * 0.02)
     }
 }
 

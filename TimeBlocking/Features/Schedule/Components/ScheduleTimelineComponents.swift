@@ -108,7 +108,7 @@ struct TimeBlockDragPreviewView: View {
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 8)
+                .adaptiveShadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 8)
         )
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -128,13 +128,7 @@ struct TimeBlockDragPreviewView: View {
     }
 
     private var tintColor: Color {
-        switch block.category {
-        case .focus: return Theme.primaryAccent
-        case .personal: return Color(hex: "F59E0B")
-        case .admin: return Color(hex: "0EA5E9")
-        case .routine: return Color(hex: "10B981")
-        case .custom: return Color(hex: "64748B")
-        }
+        Theme.color(for: block.category)
     }
 
     private var timeRangeText: String {
@@ -161,7 +155,7 @@ struct DayTimelineEmptyState: View {
 
                 Image(systemName: "calendar.badge.plus")
                     .font(.system(size: 42, weight: .semibold))
-                    .foregroundStyle(Theme.primaryAccent.gradient)
+                    .foregroundStyle(Theme.primaryAccent)
                     .symbolEffect(.bounce, options: .repeating)
             }
             .padding(.top, 10)
@@ -192,14 +186,14 @@ struct DayTimelineEmptyState: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 32)
                 .padding(.vertical, 16)
-                .background(Theme.primaryAccent.gradient)
+                .background(Theme.primaryAccent)
                 .clipShape(Capsule())
-                .shadow(color: Theme.primaryAccent.opacity(0.3), radius: 15, x: 0, y: 8)
+                .adaptiveShadow(color: Theme.primaryAccent.opacity(0.3), radius: 15, x: 0, y: 8)
             }
             .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 60)
+        .padding(.vertical, 32)
         .background(
             RoundedRectangle(cornerRadius: 32, style: .continuous)
                 .fill(Theme.cardBackground)

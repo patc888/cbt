@@ -29,12 +29,8 @@ enum Theme {
         Color(hex: activeColorTheme.secondaryHex)
     }
 
-    static var primaryGradient: LinearGradient {
-        LinearGradient(
-            colors: [primaryAccent, secondaryAccent],
-            startPoint: .top,
-            endPoint: .bottom
-        )
+    static var primaryGradient: Color {
+        primaryAccent
     }
 
     // UI Colors
@@ -129,68 +125,15 @@ enum Theme {
 
 struct AuroraBackground: View {
     @Environment(\.colorScheme) var colorScheme
-    @State private var phase: CGFloat = 0
-    @State private var phase2: CGFloat = 0
 
     var body: some View {
-        let activeTheme = Theme.activeColorTheme
-        let primary = Color(hex: activeTheme.primaryHex)
-        let secondary = Color(hex: activeTheme.secondaryHex)
-
         ZStack {
-            // Base layer
             if colorScheme == .dark {
                 Color(hex: "050508")
             } else {
                 Color(hex: "FCFCFF")
             }
-
-            // Primary Glow
-            GeometryReader { proxy in
-                Circle()
-                    .fill(primary.opacity(colorScheme == .dark ? 0.35 : 0.18))
-                    .frame(width: proxy.size.width * 1.6, height: proxy.size.width * 1.6)
-                    .blur(radius: 100)
-                    .offset(
-                        x: -proxy.size.width * 0.3 + sin(phase) * 40,
-                        y: -proxy.size.height * 0.4 + cos(phase) * 30
-                    )
-            }
-
-            // Secondary Glow
-            GeometryReader { proxy in
-                Circle()
-                    .fill(secondary.opacity(colorScheme == .dark ? 0.25 : 0.15))
-                    .frame(width: proxy.size.width * 1.3, height: proxy.size.width * 1.3)
-                    .blur(radius: 120)
-                    .offset(
-                        x: proxy.size.width * 0.5 + cos(phase2) * 50,
-                        y: proxy.size.height * 0.6 + sin(phase2) * 40
-                    )
-            }
-
-            // Center Accent
-            GeometryReader { proxy in
-                RadialGradient(
-                    colors: [
-                        primary.opacity(colorScheme == .dark ? 0.12 : 0.06),
-                        .clear
-                    ],
-                    center: .center,
-                    startRadius: 0,
-                    endRadius: proxy.size.height * 0.6
-                )
-            }
         }
-        .onAppear {
-            withAnimation(.linear(duration: 12).repeatForever(autoreverses: true)) {
-                phase = .pi * 2
-            }
-            withAnimation(.linear(duration: 18).repeatForever(autoreverses: true)) {
-                phase2 = .pi * 2
-            }
-        }
-        .allowsHitTesting(false)
         .ignoresSafeArea()
     }
 }
@@ -243,10 +186,10 @@ struct TimeCard<Content: View>: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge, style: .continuous))
         .shadow(
-            color: Color.black.opacity(colorScheme == .light ? 0.03 : 0.1),
-            radius: colorScheme == .light ? 5 : 10,
+            color: Color.black.opacity(colorScheme == .light ? 0 : 0.1),
+            radius: colorScheme == .light ? 0 : 10,
             x: 0,
-            y: colorScheme == .light ? 2 : 5
+            y: colorScheme == .light ? 0 : 5
         )
         .overlay {
             RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge, style: .continuous)
@@ -300,7 +243,7 @@ struct TimeMetricTile: View {
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(colorScheme == .dark ? Color(white: 0.12) : .white)
-                .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.2 : 0.05), radius: 4, x: 0, y: 2)
+                .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.2 : 0), radius: colorScheme == .dark ? 4 : 0, x: 0, y: colorScheme == .dark ? 2 : 0)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -332,6 +275,27 @@ extension View {
 #else
         self
 #endif
+    }
+
+    func adaptiveShadow(color: Color = .black, radius: CGFloat, x: CGFloat = 0, y: CGFloat = 0) -> some View {
+        self.modifier(AdaptiveShadowModifier(color: color, radius: radius, x: x, y: y))
+    }
+}
+
+struct AdaptiveShadowModifier: ViewModifier {
+    @Environment(\.colorScheme) var colorScheme
+    let color: Color
+    let radius: CGFloat
+    let x: CGFloat
+    let y: CGFloat
+
+    func body(content: Content) -> some View {
+        content.shadow(
+            color: colorScheme == .dark ? color : .clear,
+            radius: colorScheme == .dark ? radius : 0,
+            x: x,
+            y: y
+        )
     }
 }
 

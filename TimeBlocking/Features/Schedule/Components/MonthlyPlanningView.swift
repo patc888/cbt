@@ -239,9 +239,9 @@ private struct MonthlyPlanningDayCell: View {
         day.isInDisplayedMonth ? Color.primary.opacity(0.08) : Color.primary.opacity(0.04)
     }
 
-    private var fillColor: LinearGradient {
+    private var fillColor: Color {
         if day.totalBlockCount > 0, day.snapshot.completedCount == day.totalBlockCount {
-            return LinearGradient(colors: [.green.opacity(0.9), .green.opacity(0.65)], startPoint: .leading, endPoint: .trailing)
+            return Color.green.opacity(0.8)
         }
 
         return Theme.primaryGradient

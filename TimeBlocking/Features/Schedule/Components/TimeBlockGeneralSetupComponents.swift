@@ -12,16 +12,7 @@ struct SetupHeroSection: View {
             HStack(alignment: .top, spacing: 14) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    currentChooserTint.opacity(0.22),
-                                    currentChooserTint.opacity(0.08)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(currentChooserTint.opacity(0.12))
                         .frame(width: 62, height: 62)
 
                     Image(systemName: selectedMode.icon)

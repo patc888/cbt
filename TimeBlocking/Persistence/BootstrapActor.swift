@@ -2,10 +2,9 @@ import Foundation
 import SwiftData
 import os
 
-private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "BootstrapActor")
-
 @ModelActor
 final actor BootstrapActor {
+    private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "BootstrapActor")
     func prepareAppFoundation(
         preferencesStore: AppPreferencesStore,
         scheduleRepository: ScheduleRepository,
@@ -35,7 +34,7 @@ final actor BootstrapActor {
         logger.info("Background bootstrap completed.")
     }
 
-    private func isEffectivelyEmpty() throws -> Bool {
+    private func isEffectivelyEmpty() async throws -> Bool {
         var templateDescriptor = FetchDescriptor<ScheduleTemplate>()
         templateDescriptor.fetchLimit = 1
 
@@ -51,7 +50,7 @@ final actor BootstrapActor {
         preferences: AppPreferences,
         scheduleRepository: ScheduleRepository,
         calendar: Calendar = .current
-    ) throws {
+    ) async throws {
         // Sample preferences
         preferences.notificationsEnabled = false
         preferences.notificationLeadTimeMinutes = 0
@@ -72,7 +71,7 @@ final actor BootstrapActor {
             partialResult |= 1 << (weekday.rawValue - 1)
         }
 
-        _ = try scheduleRepository.createTemplate(
+        _ = try await scheduleRepository.createTemplate(
             name: "Daily Strategy",
             notes: "Review priorities, clear urgent emails, and set the intention for the day.",
             defaultStartTime: time(hour: 8, minute: 30, on: today, calendar: calendar),
@@ -83,9 +82,9 @@ final actor BootstrapActor {
             calendar: calendar
         )
 
-        try scheduleRepository.generateBlocksIfNeeded(for: today, in: modelContext, calendar: calendar)
+        try await scheduleRepository.generateBlocksIfNeeded(for: today, in: modelContext, calendar: calendar)
 
-        _ = try scheduleRepository.createBlock(
+        _ = try await scheduleRepository.createBlock(
             title: "Client Focus: Core Project",
             notes: "High-leverage work for my primary client. No distractions allowed.",
             date: today,
@@ -96,7 +95,7 @@ final actor BootstrapActor {
             calendar: calendar
         )
 
-        let adminBlock = try scheduleRepository.createBlock(
+        let adminBlock = try await scheduleRepository.createBlock(
             title: "Admin & Invoicing",
             notes: "Keep the business running smoothly. Review pending tasks and finances.",
             date: today,
@@ -117,7 +116,7 @@ final actor BootstrapActor {
             firstChecklistItem.updatedAt = .now
         }
 
-        let planningBlock = try scheduleRepository.createBlock(
+        let planningBlock = try await scheduleRepository.createBlock(
             title: "Tomorrow's Plan",
             notes: "Decide what needs to happen tomorrow so I can shut down with a clear mind.",
             date: today,
@@ -127,7 +126,7 @@ final actor BootstrapActor {
             in: modelContext,
             calendar: calendar
         )
-        try scheduleRepository.setBlockStatus(planningBlock, to: .completed, in: modelContext)
+        try await scheduleRepository.setBlockStatus(planningBlock, to: .completed, in: modelContext)
         
         try modelContext.save()
     }

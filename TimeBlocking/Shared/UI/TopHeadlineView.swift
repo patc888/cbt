@@ -18,7 +18,7 @@ struct TopHeadlineView: View {
             }
         }
         .frame(maxWidth: alignment == .center ? .infinity : nil)
-        .padding(.top, 4)
-        .padding(.bottom, 4)
+        .padding(.top, 0)
+        .padding(.bottom, 0)
     }
 }

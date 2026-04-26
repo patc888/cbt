@@ -77,12 +77,22 @@ struct DashboardView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topLeading) {
             AuroraBackground()
                 .ignoresSafeArea()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                    HStack {
+                        Spacer()
+                        Text("Stats")
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.primaryText)
+                        Spacer()
+                    }
+                    .padding(.top, 12)
+                    .padding(.bottom, 4)
+
                     TimeCard {
                         VStack(alignment: .leading, spacing: 16) {
                             TimeSectionHeader("Today", subtitle: todayLabel)
@@ -100,8 +110,8 @@ struct DashboardView: View {
                                 ) {
                                     appEnvironment.appState.showAddBlock()
                                 }
-                                .padding(.vertical, 20)
-                            } else {
+                    .padding(.vertical, 20)
+                                } else {
 
                                 Divider()
 
@@ -228,11 +238,29 @@ struct DashboardView: View {
                         }
                     }
                 }
-                .padding()
-                .padding(.top, 64) // Offset for custom header
-                .padding(.bottom, 100)
+                .frame(maxWidth: 600)
             }
+            .frame(maxWidth: 600)
+            .padding(.top, 36)
+            .padding(.bottom, 100)
+
+            navigationArrow
         }
+    }
+
+    private var navigationArrow: some View {
+        Button(action: {
+            HapticManager.shared.lightImpact()
+            appEnvironment.appState.showScheduleHome()
+        }) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(Theme.primaryAccent)
+                .padding(8)
+                .contentShape(Rectangle())
+        }
+        .padding(.leading, 20)
+        .padding(.top, 12)
     }
 }
 

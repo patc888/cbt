@@ -67,7 +67,7 @@ struct SegmentedToggle<T: Hashable, Label: View>: View {
                                             id: namespace != nil ? "selection" : "internal_selection",
                                             in: namespace ?? internalNamespace
                                         )
-                                        .shadow(
+                                        .adaptiveShadow(
                                             color: selectionColor(for: option).opacity(0.2),
                                             radius: 3,
                                             x: 0,

@@ -25,11 +25,11 @@ struct PremiumEmptyStateView: View {
                     Circle()
                         .fill(.ultraThinMaterial)
                         .frame(width: 80, height: 80)
-                        .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 5)
+                        .adaptiveShadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 5)
                     
                     Image(systemName: systemImage)
                         .font(.system(size: 32, weight: .bold))
-                        .foregroundStyle(Theme.primaryAccent.gradient)
+                        .foregroundStyle(Theme.primaryAccent)
                         .symbolEffect(.bounce, value: isAnimating)
                 }
             }
@@ -61,9 +61,9 @@ struct PremiumEmptyStateView: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 12)
-                        .background(Theme.primaryAccent.gradient)
+                        .background(Theme.primaryAccent)
                         .clipShape(Capsule())
-                        .shadow(color: Theme.primaryAccent.opacity(0.3), radius: 10, x: 0, y: 5)
+                        .adaptiveShadow(color: Theme.primaryAccent.opacity(0.3), radius: 10, x: 0, y: 5)
                 }
                 .buttonStyle(.plain)
             }

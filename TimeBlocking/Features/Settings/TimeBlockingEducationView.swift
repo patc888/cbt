@@ -281,7 +281,7 @@ struct TBCyclePage: View {
                                 .font(.system(size: 20, weight: .bold))
                                 .foregroundStyle(activeStep == step.id ? .white : Theme.primaryAccent)
                         )
-                        .shadow(color: Theme.primaryAccent.opacity(activeStep == step.id ? 0.3 : 0.1), radius: 8, y: 4)
+                        .adaptiveShadow(color: Theme.primaryAccent.opacity(activeStep == step.id ? 0.3 : 0.1), radius: 8, y: 4)
                         .overlay(
                             Circle()
                                 .stroke(Theme.primaryAccent.opacity(0.2), lineWidth: 2)
@@ -407,7 +407,7 @@ struct TBTipsPage: View {
                     .font(.headline)
                     .foregroundStyle(.white)
                     .frame(width: 40, height: 40)
-                    .background(color.gradient)
+                    .background(color)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 
                 VStack(alignment: .leading, spacing: 4) {
@@ -441,7 +441,7 @@ struct TBConclusionPage: View {
                     
                     Image(systemName: "checkmark.seal.fill")
                         .font(.system(size: 80))
-                        .foregroundStyle(Theme.primaryAccent.gradient)
+                        .foregroundStyle(Theme.primaryAccent)
                 }
                 .padding(.top, 20)
                 

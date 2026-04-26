@@ -78,24 +78,16 @@ struct TimeBlockRowView: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 20, style: .continuous)
                             .fill(
-                                LinearGradient(
-                                    colors: [
-                                        accentColor,
-                                        accentColor.opacity(0.8),
-                                        accentColor.opacity(isCompleted ? 0.3 : 0.9)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+                                accentColor.opacity(isCompleted ? 0.6 : 1.0)
                             )
                             .frame(width: 64, height: 64)
-                            .shadow(color: accentColor.opacity(isCompleted ? 0 : 0.4), radius: 12, x: 0, y: 6)
+                            .adaptiveShadow(color: accentColor.opacity(isCompleted ? 0 : 0.4), radius: 12, x: 0, y: 6)
                         
                         Image(systemName: categoryIcon)
                             .font(.system(size: 30, weight: .bold))
                             .foregroundColor(.white)
                             .opacity(isCompleted ? 0.6 : 1.0)
-                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                            .adaptiveShadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
@@ -189,18 +181,14 @@ struct TimeBlockRowView: View {
                     if fillProgress > 0 {
                         RoundedRectangle(cornerRadius: 24, style: .continuous)
                             .fill(
-                                LinearGradient(
-                                    colors: [accentColor.opacity(0.12), accentColor.opacity(0.05)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
+                                accentColor.opacity(0.08)
                             )
                             .scaleEffect(x: fillProgress, anchor: .leading)
                     }
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .shadow(color: Color.black.opacity(isCompleted ? 0 : (colorScheme == .dark ? 0.15 : 0.04)), radius: 10, x: 0, y: 4)
+            .shadow(color: Color.black.opacity(isCompleted ? 0 : (colorScheme == .dark ? 0.15 : 0)), radius: colorScheme == .dark ? 10 : 0, x: 0, y: colorScheme == .dark ? 4 : 0)
             .overlay {
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .stroke(isCompleted ? Color.primary.opacity(0.04) : accentColor.opacity(0.12), lineWidth: 1.2)

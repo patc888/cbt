@@ -146,7 +146,7 @@ struct TimeAppearanceSettingsView: View {
             Circle()
                 .fill(Color(hex: theme.primaryHex))
                 .frame(width: 28, height: 28)
-                .shadow(color: Color(hex: theme.primaryHex).opacity(0.4), radius: 3, x: 0, y: 2)
+                .adaptiveShadow(color: Color(hex: theme.primaryHex).opacity(0.4), radius: 3, x: 0, y: 2)
         }
         .frame(width: 38, height: 38)
         .onTapGesture {

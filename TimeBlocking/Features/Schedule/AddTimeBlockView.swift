@@ -808,6 +808,7 @@ struct AddTimeBlockView: View {
             return
         }
 
+        HapticManager.shared.lightImpact()
         isShowingDetailsScreen = true
         focusedField = .title
     }

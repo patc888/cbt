@@ -131,7 +131,7 @@ struct DayTimelineView: View {
     private let minimumBlockDurationMinutes: Double = 15
     private let structuralCardHeight: CGFloat = 72
     private let structuralCardSpacing: CGFloat = 12
-    private let timelineTopSafeSpacing: CGFloat = 18
+    private let timelineTopSafeSpacing: CGFloat = 8
     private let timelineBottomSafeSpacing: CGFloat = 16
 
     private var allDayCalendarEvents: [TimeCalendarEvent] {
@@ -866,7 +866,7 @@ private struct DayTimelineBlockCard: View {
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .strokeBorder(contentBorderColor, lineWidth: conflictSummary == nil ? 1 : 1.25)
                 }
-                .shadow(
+                .adaptiveShadow(
                     color: tintColor.opacity(isDragging ? 0.18 : 0.05),
                     radius: isDragging ? 18 : 10,
                     x: 0,
@@ -1059,6 +1059,7 @@ private struct DayTimelineBlockCard: View {
                 foreground: secondaryTextColor,
                 background: Color.primary.opacity(0.05)
             )
+            .accessibilityLabel(String(localized: "\(checklistCompletionCount) of \(sortedChecklistItems.count) checklist items completed"))
         } else if block.isTemplateBacked && usesNarrowLayout {
             infoPill(
                 text: "Template",
@@ -1077,14 +1078,18 @@ private struct DayTimelineBlockCard: View {
 
             if showsTopConnector {
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .fill(connectorColor.opacity(0.85))
+                    .fill(
+                        connectorColor.opacity(0.4)
+                    )
                     .frame(width: 2, height: nodeY + 2)
                     .offset(x: lineX, y: 0)
             }
 
             if showsBottomConnector {
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .fill(connectorColor.opacity(0.78))
+                    .fill(
+                        connectorColor.opacity(0.4)
+                    )
                     .frame(width: 2, height: max(blockHeight - (nodeY + nodeSize) + 8, 12))
                     .offset(x: lineX, y: nodeY + nodeSize - 4)
             }
@@ -1096,14 +1101,7 @@ private struct DayTimelineBlockCard: View {
 
             Circle()
                 .fill(
-                    LinearGradient(
-                        colors: [
-                            tintColor.opacity(isCompleted ? 0.92 : 1),
-                            tintColor.opacity(colorScheme == .dark ? 0.75 : 0.88)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                    tintColor.opacity(isCompleted ? 0.8 : 1)
                 )
                 .frame(width: nodeSize, height: nodeSize)
                 .overlay {
@@ -1115,7 +1113,7 @@ private struct DayTimelineBlockCard: View {
                         .font(.system(size: usesCompactLayout ? 13 : 15, weight: .black))
                         .foregroundStyle(.white.opacity(0.98))
                 }
-                .shadow(color: tintColor.opacity(isDragging ? 0.35 : 0.18), radius: isDragging ? 14 : 7, x: 0, y: 4)
+                .adaptiveShadow(color: tintColor.opacity(isDragging ? 0.35 : 0.18), radius: isDragging ? 14 : 7, x: 0, y: 4)
                 .offset(x: nodeX, y: nodeY)
 
             if !usesDenseLayout {
@@ -1159,7 +1157,7 @@ private struct DayTimelineBlockCard: View {
                 }
             }
             .scaleEffect(checkScale)
-            .shadow(
+            .adaptiveShadow(
                 color: (isCompleted ? Color.green : tintColor).opacity(fillProgress > 0.88 || isCompleted ? 0.22 : 0.08),
                 radius: fillProgress > 0.88 || isCompleted ? 12 : 4,
                 x: 0,
@@ -1274,29 +1272,13 @@ private struct DayTimelineBlockCard: View {
 
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(
-                    LinearGradient(
-                        colors: [
-                            tintColor.opacity(isAttachmentTarget ? 0.18 : 0.08),
-                            tintColor.opacity(0.02),
-                            Color.clear
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
+                    tintColor.opacity(isAttachmentTarget ? 0.12 : 0.05)
                 )
 
             if fillProgress > 0 {
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(
-                        LinearGradient(
-                            colors: [
-                                tintColor.opacity(0.12),
-                                tintColor.opacity(0.04),
-                                Color.green.opacity(0.06)
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+                        tintColor.opacity(0.08)
                     )
                     .scaleEffect(x: fillProgress, anchor: .leading)
             }

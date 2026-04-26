@@ -21,7 +21,7 @@ struct TimeSettingsPickerButton: View {
             
             Image(systemName: "pencil.circle.fill")
                 .font(.system(size: 14, weight: .bold))
-                .shadow(color: Theme.primaryAccent.opacity(0.1), radius: 4, x: 0, y: 2)
+                .adaptiveShadow(color: Theme.primaryAccent.opacity(0.1), radius: 4, x: 0, y: 2)
         }
         .foregroundStyle(Theme.primaryAccent)
         .padding(.horizontal, 10)

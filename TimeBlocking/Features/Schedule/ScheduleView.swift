@@ -231,6 +231,22 @@ struct ScheduleView: View {
         }
     }
 
+    private var titleForSelectedDate: String {
+        if calendar.isDateInToday(appEnvironment.appState.selectedDate) {
+            return "Today"
+        } else if calendar.isDateInTomorrow(appEnvironment.appState.selectedDate) {
+            return "Tomorrow"
+        } else if calendar.isDateInYesterday(appEnvironment.appState.selectedDate) {
+            return "Yesterday"
+        } else {
+            return appEnvironment.appState.selectedDate.formatted(.dateTime.weekday(.wide))
+        }
+    }
+
+    private var subtitleForSelectedDate: String {
+        appEnvironment.appState.selectedDate.formatted(.dateTime.month(.wide).day())
+    }
+
 
     private var selectedMonthStart: Date {
         ScheduleMonthSupport.startOfMonth(for: appEnvironment.appState.selectedDate, calendar: calendar)
@@ -312,6 +328,9 @@ struct ScheduleView: View {
             .overlay {
                 activeDragOverlay
             }
+            .navigationTitle("")
+            .navigationBarHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $editorRoute) { route in
                 editorSheet(for: route)
             }
@@ -339,7 +358,7 @@ struct ScheduleView: View {
     }
 
     private var scheduleRoot: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             AuroraBackground()
                 .ignoresSafeArea()
 
@@ -448,8 +467,8 @@ struct ScheduleView: View {
                     selectedDayContent
                 }
                 .padding(.horizontal, contentHorizontalPadding)
-                .padding(.top, 16)
-                .padding(.bottom, 120)
+                .padding(.top, 0)
+                .padding(.bottom, 40)
                 .background(alignment: .top) {
                     GeometryReader { proxy in
                         Color.clear
@@ -469,24 +488,17 @@ struct ScheduleView: View {
 
 
     private var pinnedHeader: some View {
-        VStack(spacing: 0) {
-            dateHeader
-                .padding(.bottom, 12)
-
-            Divider()
-                .opacity(0.1)
-        }
-        .background {
-            Color.clear
-                .background(.ultraThinMaterial)
-                .ignoresSafeArea(edges: .top)
-        }
-    }
-
-
-    private var dateHeader: some View {
-        VStack(spacing: 12) {
-            HStack(alignment: .center, spacing: 12) {
+        TimeHeaderView(
+            selectedDate: selectedDate,
+            weekStripDates: weekStripDates,
+            dateHasItems: { date in
+                appEnvironment.scheduleRepository.hasBlocks(on: date, in: blocks, calendar: calendar) ||
+                appEnvironment.timeCalendarManager.summary(for: date, calendar: calendar).hasEvents
+            },
+            title: titleForSelectedDate,
+            subtitle: subtitleForSelectedDate,
+            horizontalPadding: contentHorizontalPadding,
+            leadingActions: {
                 Button {
                     appEnvironment.appState.showDashboard()
                 } label: {
@@ -498,88 +510,29 @@ struct ScheduleView: View {
                         .background(Theme.primaryAccent.opacity(0.1))
                         .clipShape(Circle())
                 }
-                .accessibilityLabel("Open stats")
-
-                Spacer()
-
-                VStack(spacing: 0) {
-                    Text(titleForDate(appEnvironment.appState.selectedDate))
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
-
-                    Text(subtitleForDate(appEnvironment.appState.selectedDate))
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(Theme.secondaryText)
+            },
+            trailingActions: {
+                Button {
+                    appEnvironment.appState.showSettings()
+                } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Theme.primaryAccent)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Circle())
+                        .background(Theme.primaryAccent.opacity(0.1))
+                        .clipShape(Circle())
                 }
-
-                Spacer()
-
-                HStack(spacing: 8) {
-                    if canRegenerateSelectedDay {
-                        Button {
-                            regenerateSelectedDay()
-                        } label: {
-                            Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 15, weight: .bold))
-                                .foregroundStyle(Theme.primaryAccent)
-                                .frame(width: 36, height: 36)
-                                .contentShape(Circle())
-                                .background(Theme.primaryAccent.opacity(0.1))
-                                .clipShape(Circle())
-                        }
-                        .accessibilityLabel("Refresh day from routines")
-                        .transition(.scale.combined(with: .opacity))
-                    }
-
-                    if !calendar.isDateInToday(appEnvironment.appState.selectedDate) {
-                        Button {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                                appEnvironment.appState.selectedDate = .now
-                            }
-                            HapticManager.shared.lightImpact()
-                        } label: {
-                            Text("Today")
-                                .font(.system(size: 12, weight: .bold, design: .rounded))
-                                .foregroundStyle(Theme.primaryAccent)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .background(Theme.primaryAccent.opacity(0.1))
-                                .clipShape(Capsule())
-                        }
-                        .transition(.scale.combined(with: .opacity))
-                    }
-
-                    Button {
-                        appEnvironment.appState.showSettings()
-                    } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(Theme.primaryAccent)
-                            .frame(width: 36, height: 36)
-                            .contentShape(Circle())
-                            .background(Theme.primaryAccent.opacity(0.1))
-                            .clipShape(Circle())
-                    }
-                    .accessibilityLabel("Open settings")
-                }
-
             }
-            .padding(.horizontal, contentHorizontalPadding)
-            .padding(.top, 8)
-
-            TimeHeaderView(
-                selectedDate: selectedDate,
-                weekStripDates: weekStripDates,
-                calendar: calendar,
-                horizontalPadding: 0,
-                dateHasItems: { date in
-                    appEnvironment.scheduleRepository.hasBlocks(on: date, in: blocks, calendar: calendar) ||
-                    appEnvironment.timeCalendarManager.summary(for: date, calendar: calendar).hasEvents
-                },
-                showHeadline: false
-            )
+        )
+        .background {
+            Color.clear
+                .background(.ultraThinMaterial)
+                .ignoresSafeArea(edges: .top)
         }
     }
+
+
 
     @ViewBuilder
     private var moveRibbon: some View {
@@ -1335,22 +1288,6 @@ struct ScheduleView: View {
                 collapseToDay()
             }
         }
-    }
-
-    private func titleForDate(_ date: Date) -> String {
-        if calendar.isDateInToday(date) {
-            return String(localized: "Today")
-        } else if calendar.isDateInTomorrow(date) {
-            return String(localized: "Tomorrow")
-        } else if calendar.isDateInYesterday(date) {
-            return String(localized: "Yesterday")
-        } else {
-            return date.formatted(.dateTime.weekday(.wide))
-        }
-    }
-
-    private func subtitleForDate(_ date: Date) -> String {
-        date.formatted(.dateTime.month(.wide).day())
     }
 
     private func collapseToDay() {

@@ -107,22 +107,15 @@ struct TimeSettingsCardStyleModifier: ViewModifier {
             }
             .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge, style: .continuous))
             .shadow(
-                color: Color.black.opacity(colorScheme == .light ? 0.03 : 0.2),
-                radius: colorScheme == .light ? 5 : 15,
+                color: Color.black.opacity(colorScheme == .light ? 0 : 0.2),
+                radius: colorScheme == .light ? 0 : 15,
                 x: 0,
-                y: colorScheme == .light ? 2 : 8
+                y: colorScheme == .light ? 0 : 8
             )
             .overlay {
                 RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge, style: .continuous)
                     .strokeBorder(
-                        LinearGradient(
-                            colors: [
-                                Color.primary.opacity(colorScheme == .light ? 0.05 : 0.1),
-                                Color.primary.opacity(colorScheme == .light ? 0.02 : 0.05)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
+                        Color.primary.opacity(colorScheme == .light ? 0.05 : 0.08),
                         lineWidth: 1
                     )
             }
@@ -170,9 +163,9 @@ struct WhatIsTimeBlockingCard: View {
                 .padding(.top, 4)
             }
             .padding(20)
-            .background(Theme.primaryAccent.gradient)
+            .background(Theme.primaryAccent)
             .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge, style: .continuous))
-            .shadow(color: Theme.primaryAccent.opacity(0.3), radius: 10, x: 0, y: 5)
+            .adaptiveShadow(color: Theme.primaryAccent.opacity(0.3), radius: 10, x: 0, y: 5)
         }
         .buttonStyle(.plain)
     }

@@ -28,12 +28,11 @@ struct LoadingView: View {
                     Circle()
                         .fill(.ultraThinMaterial)
                         .frame(width: 100, height: 100)
-                        .shadow(color: Theme.primaryAccent.opacity(0.2), radius: 20, x: 0, y: 10)
+                        .adaptiveShadow(color: Theme.primaryAccent.opacity(0.2), radius: 20, x: 0, y: 10)
                     
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.system(size: 40, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryAccent.gradient)
-                        .symbolEffect(.bounce, value: isAnimating)
+                    AppIconView(size: 80)
+                        .scaleEffect(isAnimating ? 1.1 : 1.0)
+                        .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: isAnimating)
                 }
                 
                 VStack(spacing: 20) {
@@ -56,7 +55,7 @@ struct LoadingView: View {
                             .frame(width: 240, height: 4)
                         
                         Capsule()
-                            .fill(Theme.primaryAccent.gradient)
+                            .fill(Theme.primaryAccent)
                             .frame(width: isAnimating ? 240 : 40, height: 4)
                             .animation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true), value: isAnimating)
                     }

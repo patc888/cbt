@@ -1,5 +1,5 @@
-import CoreData
 @preconcurrency import Dispatch
+import CoreData
 import Foundation
 import SwiftData
 import os

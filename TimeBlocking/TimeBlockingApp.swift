@@ -8,22 +8,12 @@ struct TimeBlockingApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ZStack {
-                if appEnvironment.isReady, let controller = appEnvironment.persistenceController {
-                    RootView()
-                        .environment(appEnvironment)
-                        .modelContainer(controller.container)
-                        .transition(.opacity.combined(with: .scale(scale: 1.02)))
-                } else {
-                    LoadingView()
-                        .transition(.opacity)
+            RootView()
+                .environment(appEnvironment)
+                .modelContainer(appEnvironment.persistenceController?.container ?? PersistenceController.shared.container)
+                .task {
+                    await appEnvironment.initialize()
                 }
-            }
-            .animation(.smooth(duration: 0.8), value: appEnvironment.isReady)
-            .task {
-                await appEnvironment.initialize()
-            }
-
         }
     }
 }

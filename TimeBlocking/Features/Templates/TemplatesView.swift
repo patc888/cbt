@@ -137,7 +137,7 @@ struct TemplatesView: View {
                     }
                 }
                 .padding()
-                .padding(.top, 64) // Offset for custom header
+                .padding(.top, 48) // Offset for custom header
                 .padding(.bottom, 100)
             }
         }

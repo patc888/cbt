@@ -92,18 +92,9 @@ struct WeekStripDayView: View {
         .background {
             if isSelected {
                 RoundedRectangle(cornerRadius: 32, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Theme.primaryAccent, Theme.secondaryAccent],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .shadow(color: Theme.primaryAccent.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .fill(Theme.primaryAccent)
                     .matchedGeometryEffect(id: "selectionPill", in: namespace)
             }
         }
-
     }
 }
-

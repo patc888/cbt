@@ -135,7 +135,7 @@ private struct DayMoveTargetChip: View {
             }
         }
         .scaleEffect(isHovered ? 1.06 : 1)
-        .shadow(
+        .adaptiveShadow(
             color: isHovered ? Theme.primaryAccent.opacity(0.22) : .clear,
             radius: 14,
             x: 0,
