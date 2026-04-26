@@ -174,6 +174,7 @@ struct WhatIsTimeBlockingCard: View {
             .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
             .adaptiveShadow(color: Theme.primaryAccent.opacity(0.4), radius: 15, x: 0, y: 10)
         }
+        .contentShape(Rectangle())
         .buttonStyle(TimeScaleButtonStyle())
     }
 

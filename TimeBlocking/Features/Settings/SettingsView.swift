@@ -23,28 +23,30 @@ struct SettingsView: View {
     @State private var notificationAccessState: TimeNotificationManager.AccessState = .notDetermined
 
     var body: some View {
-        ZStack(alignment: .top) {
-            AuroraBackground()
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack(alignment: .top) {
+                AuroraBackground()
+                    .ignoresSafeArea()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    mainContent
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        mainContent
+                    }
+                    .frame(maxWidth: 600)
+                    .padding(.top, 60)
+                    .padding(.bottom, 40)
                 }
-                .frame(maxWidth: 600)
-                .padding(.top, 60)
-                .padding(.bottom, 40)
-            }
-            .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity)
 
-            HStack {
-                Spacer()
-                closeButton
+                HStack {
+                    Spacer()
+                    closeButton
+                }
+                .padding(.trailing, 24)
+                .padding(.top, 60)
             }
-            .padding(.trailing, 24)
-            .padding(.top, 60)
+            .ignoresSafeArea()
         }
-        .ignoresSafeArea()
         .statusBarHidden(true)
         .toolbar(.hidden, for: .navigationBar, .bottomBar, .tabBar)
         .confirmationDialog("Reset Data", isPresented: $showingResetOptions, titleVisibility: .visible) {

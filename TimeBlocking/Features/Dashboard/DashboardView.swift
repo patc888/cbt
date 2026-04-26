@@ -77,12 +77,22 @@ struct DashboardView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
+        ZStack(alignment: .top) {
             AuroraBackground()
                 .ignoresSafeArea()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                    HStack {
+                        Spacer()
+                        Text("Stats")
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.primaryText)
+                        Spacer()
+                    }
+                    .padding(.top, 12)
+                    .padding(.bottom, 4)
+
                     TimeCard {
                         VStack(alignment: .leading, spacing: 16) {
                             TimeSectionHeader("Today", subtitle: todayLabel)
@@ -229,8 +239,9 @@ struct DashboardView: View {
                     }
                 }
                 .frame(maxWidth: 600)
+                .frame(maxWidth: .infinity)
             }
-            .padding(.top, 120)
+            .padding(.top, 60)
             .padding(.bottom, 40)
 
             topBar
@@ -245,34 +256,22 @@ struct DashboardView: View {
     }
 
     private var topBar: some View {
-        ZStack {
-            Text("Stats")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .foregroundStyle(Theme.primaryText)
-            
-            HStack {
-                Button(action: {
-                    HapticManager.shared.lightImpact()
-                    appEnvironment.appState.showScheduleHome()
-                }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(Theme.primaryAccent)
-                        .frame(width: 36, height: 36)
-                        .background(Theme.primaryAccent.opacity(0.1))
-                        .clipShape(Circle())
-                }
-                Spacer()
+        HStack {
+            Button(action: {
+                HapticManager.shared.lightImpact()
+                appEnvironment.appState.showScheduleHome()
+            }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Theme.primaryAccent)
+                    .frame(width: 36, height: 36)
+                    .background(Theme.primaryAccent.opacity(0.1))
+                    .clipShape(Circle())
             }
+            Spacer()
         }
         .padding(.horizontal, 24)
         .padding(.top, 60)
-        .padding(.bottom, 16)
-        .background {
-            Color.clear
-                .background(.ultraThinMaterial)
-                .ignoresSafeArea(edges: .top)
-        }
     }
 }
 
