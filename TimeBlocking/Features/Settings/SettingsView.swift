@@ -28,16 +28,21 @@ struct SettingsView: View {
                 .ignoresSafeArea()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: 16) {
                     mainContent
                 }
                 .frame(maxWidth: 600)
-                .padding(.top, 120)
+                .padding(.top, 60)
                 .padding(.bottom, 40)
             }
             .frame(maxWidth: .infinity)
 
-            topBar
+            HStack {
+                Spacer()
+                closeButton
+            }
+            .padding(.trailing, 24)
+            .padding(.top, 60)
         }
         .ignoresSafeArea()
         .statusBarHidden(true)
@@ -72,12 +77,20 @@ struct SettingsView: View {
     }
 
     private var mainContent: some View {
-        VStack(spacing: 28) {
+        VStack(spacing: 16) {
+            HStack {
+                Spacer()
+                Text("Settings")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.primaryText)
+                Spacer()
+            }
+            .padding(.top, 12)
+            .padding(.bottom, 4)
+
             if appPreferences == nil {
                 TimeSettingsSection(
-                    title: "Setup",
-                    subtitle: "Preparing your preferences",
-                    icon: "gearshape.fill"
+                    title: "Setup"
                 ) {
                     EmptyStateView(
                         title: "Settings Are Preparing",
@@ -123,35 +136,17 @@ struct SettingsView: View {
         .padding(.horizontal, 16)
     }
 
-    private var topBar: some View {
-        ZStack(alignment: .center) {
-            Text("Settings")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .foregroundStyle(Theme.primaryText)
-            
-            HStack {
-                Spacer()
-                
-                Button {
-                    HapticManager.shared.lightImpact()
-                    appEnvironment.appState.showScheduleHome()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Theme.primaryAccent)
-                        .frame(width: 36, height: 36)
-                        .background(Theme.primaryAccent.opacity(0.1))
-                        .clipShape(Circle())
-                }
-            }
-        }
-        .padding(.horizontal, 24)
-        .padding(.top, 60)
-        .padding(.bottom, 16)
-        .background {
-            Color.clear
-                .background(.ultraThinMaterial)
-                .ignoresSafeArea(edges: .top)
+    private var closeButton: some View {
+        Button {
+            HapticManager.shared.lightImpact()
+            appEnvironment.appState.showScheduleHome()
+        } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(Theme.primaryAccent)
+                .frame(width: 36, height: 36)
+                .background(Theme.primaryAccent.opacity(0.1))
+                .clipShape(Circle())
         }
     }
 

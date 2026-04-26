@@ -11,15 +11,12 @@ struct TimeAppearanceSettingsView: View {
     
     var body: some View {
         TimeSettingsSection(
-            title: "Appearance",
-            subtitle: "Themes, colors, and visual feedback",
-            icon: "paintpalette.fill"
+            title: "Appearance"
         ) {
             TimeSettingsRow(
                 icon: "circle.lefthalf.filled",
                 iconColor: Theme.primaryAccent,
-                title: "App Theme",
-                subtitle: "System, Light, or Dark"
+                title: "App Theme"
             ) {
                 TimeSegmentedToggle(
                     selection: Binding(
@@ -36,19 +33,12 @@ struct TimeAppearanceSettingsView: View {
                 .frame(maxWidth: 220)
             }
 
-            Divider()
-                .padding(.vertical, 4)
-
             accentColorPicker
-
-            Divider()
-                .padding(.vertical, 4)
 
             TimeSettingsRow(
                 icon: "sparkles",
                 iconColor: Theme.primaryAccent,
-                title: "Background Style",
-                subtitle: "Use the full aurora background"
+                title: "Background Style"
             ) {
                 TimeSegmentedToggle(
                     isOn: Binding(
@@ -62,14 +52,10 @@ struct TimeAppearanceSettingsView: View {
                 )
             }
 
-            Divider()
-                .padding(.vertical, 4)
-
             TimeSettingsRow(
                 icon: "checkmark.circle",
                 iconColor: Theme.primaryAccent,
-                title: "Show Completed",
-                subtitle: "Keep finished blocks visible"
+                title: "Show Completed"
             ) {
                 TimeSegmentedToggle(
                     isOn: Binding(
@@ -82,14 +68,10 @@ struct TimeAppearanceSettingsView: View {
                 )
             }
 
-            Divider()
-                .padding(.vertical, 4)
-
             TimeSettingsRow(
                 icon: "hand.tap.fill",
                 iconColor: Theme.primaryAccent,
-                title: "Haptics",
-                subtitle: "Tap feedback for supported actions"
+                title: "Haptics"
             ) {
                 TimeSegmentedToggle(
                     isOn: Binding(
@@ -117,10 +99,6 @@ struct TimeAppearanceSettingsView: View {
                     Text("Accent Color")
                         .font(.system(size: 16, weight: .medium, design: .rounded))
                         .foregroundStyle(Theme.primaryText)
-
-                    Text("Applied across highlights and controls")
-                        .font(.system(size: 12, design: .rounded))
-                        .foregroundStyle(Theme.secondaryText)
                 }
             }
             

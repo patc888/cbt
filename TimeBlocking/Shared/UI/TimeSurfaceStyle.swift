@@ -280,6 +280,47 @@ extension View {
     func adaptiveShadow(color: Color = .black, radius: CGFloat, x: CGFloat = 0, y: CGFloat = 0) -> some View {
         self.modifier(AdaptiveShadowModifier(color: color, radius: radius, x: x, y: y))
     }
+
+    func cardStyle() -> some View {
+        self.modifier(TimeCardStyleModifier())
+    }
+
+    func cardShadow(colorScheme: ColorScheme, opacity: Double = 0.1, radius: CGFloat = 10, x: CGFloat = 0, y: CGFloat = 5) -> some View {
+        self.shadow(
+            color: Color.black.opacity(colorScheme == .light ? 0 : opacity),
+            radius: colorScheme == .light ? 0 : radius,
+            x: x,
+            y: colorScheme == .light ? 0 : y
+        )
+    }
+}
+
+struct TimeCardStyleModifier: ViewModifier {
+    @Environment(\.colorScheme) var colorScheme
+    
+    func body(content: Content) -> some View {
+        content
+            .background {
+                if Theme.isImmersive {
+                    if colorScheme == .light {
+                        Color.white
+                    } else {
+                        Rectangle().fill(.ultraThinMaterial)
+                    }
+                } else {
+                    Theme.cardBackground
+                }
+            }
+            .cornerRadius(Theme.cornerRadiusXLarge)
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge)
+                    .strokeBorder(
+                        Theme.isImmersive ? Color.clear : Color.primary.opacity(0.05),
+                        lineWidth: 0.5
+                    )
+            )
+            .cardShadow(colorScheme: colorScheme)
+    }
 }
 
 struct AdaptiveShadowModifier: ViewModifier {

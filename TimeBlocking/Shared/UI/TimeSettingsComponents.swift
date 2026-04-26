@@ -2,86 +2,32 @@ import SwiftUI
 
 struct TimeSettingsSection<Content: View>: View {
     let title: String
-    let subtitle: String?
-    let icon: String?
-    let iconColor: Color?
-    @ViewBuilder let content: () -> Content
+    let content: () -> Content
 
     init(
         title: String,
-        subtitle: String? = nil,
-        icon: String? = nil,
-        iconColor: Color? = nil,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.title = title
-        self.subtitle = subtitle
-        self.icon = icon
-        self.iconColor = iconColor
         self.content = content
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: title.isEmpty ? 0 : 16) {
             if !title.isEmpty {
-                HStack(alignment: .top, spacing: 12) {
-                    if let icon = icon {
-                        ZStack {
-                            Circle()
-                                .fill((iconColor ?? Theme.primaryAccent).opacity(0.12))
-                                .frame(width: 32, height: 32)
-                            
-                            Image(systemName: icon)
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(iconColor ?? Theme.primaryAccent)
-                        }
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(title)
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundStyle(Theme.primaryText)
-                        
-                        if let subtitle = subtitle {
-                            Text(subtitle)
-                                .font(.system(size: 12, weight: .medium, design: .rounded))
-                                .foregroundStyle(Theme.secondaryText)
-                        }
-                    }
-                }
-                .padding(.horizontal, 4)
+                Text(title)
+                    .font(.system(size: 25, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.primaryText)
+                    .padding(.horizontal, 4)
             }
 
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 16) {
                 content()
             }
-            .padding(16)
-            .background {
-                TimeSettingsCardBackground()
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-            }
         }
-    }
-}
-
-struct TimeSettingsCardBackground: View {
-    @Environment(\.colorScheme) var colorScheme
-    
-    var body: some View {
-        ZStack {
-            if colorScheme == .light {
-                Color.white
-            } else {
-                Color.black.opacity(0.15)
-            }
-            
-            Rectangle()
-                .fill(.ultraThinMaterial)
-        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .cardStyle()
     }
 }
 
@@ -90,7 +36,7 @@ struct TimeSettingsRow<Content: View>: View {
     let iconColor: Color?
     let title: String
     let subtitle: String?
-    @ViewBuilder let content: () -> Content
+    let content: () -> Content
 
     init(
         icon: String? = nil,
@@ -109,25 +55,20 @@ struct TimeSettingsRow<Content: View>: View {
     var body: some View {
         HStack(spacing: 12) {
             if let icon = icon {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill((iconColor ?? Theme.primaryAccent).opacity(0.1))
-                        .frame(width: 32, height: 32)
-                    
-                    Image(systemName: icon)
-                        .foregroundStyle(iconColor ?? Theme.primaryAccent)
-                        .font(.system(size: 15, weight: .semibold))
-                }
+                Image(systemName: icon)
+                    .foregroundStyle(iconColor ?? Theme.primaryAccent)
+                    .font(.system(size: 18))
+                    .frame(width: 24)
             }
 
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
                     .foregroundStyle(Theme.primaryText)
 
                 if let subtitle = subtitle {
                     Text(subtitle)
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Theme.secondaryText)
                         .lineLimit(1)
                 }

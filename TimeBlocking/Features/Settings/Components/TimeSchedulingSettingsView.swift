@@ -7,9 +7,7 @@ struct TimeSchedulingSettingsView: View {
     
     var body: some View {
         TimeSettingsSection(
-            title: "Scheduling",
-            subtitle: "Global timing and calendar defaults",
-            icon: "clock.fill"
+            title: "Scheduling"
         ) {
             defaultDurationRow
             dayStartRow
@@ -21,8 +19,7 @@ struct TimeSchedulingSettingsView: View {
         TimeSettingsRow(
             icon: "timer",
             iconColor: Theme.primaryAccent,
-            title: "Default Block Length",
-            subtitle: "New schedule entry duration"
+            title: "Default Block Length"
         ) {
             Menu("\(preferences?.defaultBlockDurationMinutes ?? 60) min") {
                 ForEach([15, 30, 45, 60, 90, 120, 180], id: \.self) { minutes in
@@ -41,8 +38,7 @@ struct TimeSchedulingSettingsView: View {
         TimeSettingsRow(
             icon: "sunrise",
             iconColor: Theme.primaryAccent,
-            title: "Day Start Hour",
-            subtitle: "Global schedule anchor"
+            title: "Day Start Hour"
         ) {
             Menu("\(preferences?.dayStartHour ?? 6):00") {
                 ForEach(0..<24, id: \.self) { hour in
@@ -61,8 +57,7 @@ struct TimeSchedulingSettingsView: View {
         TimeSettingsRow(
             icon: "calendar",
             iconColor: Theme.primaryAccent,
-            title: "Week Starts On",
-            subtitle: "Top date strip preference"
+            title: "Week Starts On"
         ) {
             Menu(preferences?.firstWeekday.title ?? Weekday.monday.title) {
                 ForEach(Weekday.allCases) { weekday in

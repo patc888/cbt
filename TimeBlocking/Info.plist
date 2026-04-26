@@ -14,5 +14,10 @@
 	<string>TimeBlocking requires full calendar access to view, add, and modify your scheduled events.</string>
 	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
 	<string>TimeBlocking requires calendar access to add new events.</string>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
 </dict>
 </plist>

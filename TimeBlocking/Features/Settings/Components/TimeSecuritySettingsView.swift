@@ -15,12 +15,10 @@ struct TimeSecuritySettingsView: View {
     
     var body: some View {
         TimeSettingsSection(
-            title: "Security",
-            subtitle: "App locking and data privacy",
-            icon: "lock.shield.fill"
+            title: "Security"
         ) {
             VStack(spacing: 0) {
-                TimeSettingsRow(icon: "faceid", iconColor: Theme.primaryAccent, title: "Lock app with Face ID or passcode") {
+                TimeSettingsRow(icon: "faceid", iconColor: Theme.primaryAccent, title: "Lock app") {
                     SegmentedToggle(
                         isOn: Binding(
                             get: { preferences?.appLockEnabled ?? false },

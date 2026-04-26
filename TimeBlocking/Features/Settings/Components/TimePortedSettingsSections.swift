@@ -149,36 +149,26 @@ struct TimeNotificationsSettingsView: View {
 
     var body: some View {
         TimeSettingsSection(
-            title: "Notifications",
-            subtitle: "Alerts and reminders for your blocks",
-            icon: "bell.fill"
+            title: "Notifications"
         ) {
             TimeSettingsRow(
                 icon: "bell.fill",
                 iconColor: Theme.primaryAccent,
-                title: "Block Reminders",
-                subtitle: reminderSubtitle
+                title: "Block Reminders"
             ) {
                 TimeSegmentedToggle(isOn: remindersEnabled, namespace: reminderNamespace)
             }
 
-            Divider()
-                .padding(.vertical, 4)
-
             TimeSettingsRow(
                 icon: reminderState.symbolName,
                 iconColor: reminderState == .denied ? .orange : Theme.primaryAccent,
-                title: "Reminder Status",
-                subtitle: reminderState.message
+                title: "Reminder Status"
             ) {
                 Text(reminderState.label)
                     .timeSettingsValueStyle()
             }
 
             if shouldShowDetails {
-                Divider()
-                    .padding(.vertical, 4)
-
                 VStack(alignment: .leading, spacing: 10) {
                     Label(reminderState.title, systemImage: reminderState.symbolName)
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
@@ -206,16 +196,10 @@ struct TimeNotificationsSettingsView: View {
             }
 
             if shouldShowLeadTime {
-                Divider()
-                    .padding(.vertical, 4)
-
                 TimeSettingsRow(
                     icon: "clock.badge",
                     iconColor: Theme.primaryAccent,
-                    title: "Reminder Time",
-                    subtitle: accessState.allowsScheduling
-                        ? "How early reminders should arrive"
-                        : "Saved now and used once reminders are available"
+                    title: "Reminder Time"
                 ) {
                     Menu(leadTimeText) {
                         ForEach([0, 5, 10, 15, 30, 60], id: \.self) { minutes in

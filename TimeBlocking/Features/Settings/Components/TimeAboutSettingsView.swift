@@ -32,9 +32,7 @@ struct TimeAboutSettingsView: View {
             .padding(.bottom, 12)
 
             TimeSettingsSection(
-                title: "Support",
-                subtitle: "Get help and read policies",
-                icon: "hand.raised.fill"
+                title: "Support"
             ) {
                 VStack(alignment: .leading, spacing: 12) {
                     Button(action: { openExternalURL("https://xeo.com/TimeBlocking/support") }) {
@@ -45,8 +43,6 @@ struct TimeAboutSettingsView: View {
                         }
                     }
                     .buttonStyle(.plain)
-
-                    Divider()
 
                     Button(action: { openExternalURL("https://xeo.com/TimeBlocking/privacy") }) {
                         TimeSettingsRow(icon: "lock.shield", title: "Privacy Policy") {
@@ -61,9 +57,7 @@ struct TimeAboutSettingsView: View {
 
 
             TimeSettingsSection(
-                title: "Data Management",
-                subtitle: "App version and reset options",
-                icon: "gearshape.2.fill"
+                title: "Data Management"
             ) {
                 VStack(alignment: .leading, spacing: 12) {
                     TimeSettingsRow(icon: "info.circle", title: "Version") {
@@ -71,13 +65,11 @@ struct TimeAboutSettingsView: View {
                             .timeSettingsValueStyle()
                     }
 
-                    Divider()
-
                     Button(action: {
                         HapticManager.shared.mediumImpact()
                         onReset()
                     }) {
-                        TimeSettingsRow(icon: "trash", iconColor: Theme.errorRed, title: "Reset All Data", subtitle: "Clear your schedule and preferences") {
+                        TimeSettingsRow(icon: "trash", iconColor: Theme.errorRed, title: "Reset All Data") {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(Theme.secondaryText)
