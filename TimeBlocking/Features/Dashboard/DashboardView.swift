@@ -83,16 +83,6 @@ struct DashboardView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    HStack {
-                        Spacer()
-                        Text("Stats")
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
-                            .foregroundStyle(Theme.primaryText)
-                        Spacer()
-                    }
-                    .padding(.top, 12)
-                    .padding(.bottom, 4)
-
                     TimeCard {
                         VStack(alignment: .leading, spacing: 16) {
                             TimeSectionHeader("Today", subtitle: todayLabel)
@@ -240,26 +230,39 @@ struct DashboardView: View {
                 }
                 .frame(maxWidth: 600)
             }
-            .frame(maxWidth: 600)
-            .padding(.top, 36)
+            .padding(.top, 64)
             .padding(.bottom, 100)
 
-            navigationArrow
+            topBar
         }
+        .statusBarHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .bottomBar)
+        .toolbar(.hidden, for: .tabBar)
+        #endif
     }
 
-    private var navigationArrow: some View {
-        Button(action: {
-            HapticManager.shared.lightImpact()
-            appEnvironment.appState.showScheduleHome()
-        }) {
-            Image(systemName: "chevron.left")
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(Theme.primaryAccent)
-                .padding(8)
-                .contentShape(Rectangle())
+    private var topBar: some View {
+        HStack(spacing: 8) {
+            Button(action: {
+                HapticManager.shared.lightImpact()
+                appEnvironment.appState.showScheduleHome()
+            }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Theme.primaryAccent)
+                    .padding(8)
+                    .contentShape(Rectangle())
+            }
+            
+            Text("Stats")
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundStyle(Theme.primaryText)
+            
+            Spacer()
         }
-        .padding(.leading, 20)
+        .padding(.horizontal, 12)
         .padding(.top, 12)
     }
 }

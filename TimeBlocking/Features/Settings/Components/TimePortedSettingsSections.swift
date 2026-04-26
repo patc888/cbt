@@ -148,7 +148,11 @@ struct TimeNotificationsSettingsView: View {
     }
 
     var body: some View {
-        TimeSettingsSection(title: "Notifications") {
+        TimeSettingsSection(
+            title: "Notifications",
+            subtitle: "Alerts and reminders for your blocks",
+            icon: "bell.fill"
+        ) {
             TimeSettingsRow(
                 icon: "bell.fill",
                 iconColor: Theme.primaryAccent,

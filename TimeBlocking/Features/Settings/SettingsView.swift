@@ -23,26 +23,28 @@ struct SettingsView: View {
     @State private var notificationAccessState: TimeNotificationManager.AccessState = .notDetermined
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            AuroraBackground()
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack(alignment: .topTrailing) {
+                AuroraBackground()
+                    .ignoresSafeArea()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    mainContent
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        mainContent
+                    }
+                    .frame(maxWidth: 600)
                 }
                 .frame(maxWidth: 600)
-            }
-            .frame(maxWidth: 600)
-            .padding(.top, 36) // Adjust for close button area
+                .padding(.top, 36) // Adjust for close button area
 
-            navigationArrow
-        }
-        .navigationTitle("")
+                navigationArrow
+            }
+            .navigationTitle("")
 #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
 #endif
+        }
         .confirmationDialog("Reset Data", isPresented: $showingResetOptions, titleVisibility: .visible) {
             Button("Reset to Empty", role: .destructive) {
                 resetAllDataToEmpty()
@@ -73,19 +75,29 @@ struct SettingsView: View {
     }
 
     private var mainContent: some View {
-        VStack(spacing: 20) {
-            HStack {
-                Spacer()
-                Text("Settings")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.primaryText)
+        VStack(spacing: 28) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Settings")
+                        .font(.system(size: 34, weight: .black, design: .rounded))
+                        .foregroundStyle(Theme.primaryText)
+                    
+                    Text("Customize your experience")
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+                
                 Spacer()
             }
-            .padding(.top, 12)
-            .padding(.bottom, 4)
+            .padding(.top, 20)
+            .padding(.horizontal, 4)
 
             if appPreferences == nil {
-                TimeSettingsSection(title: "Setup") {
+                TimeSettingsSection(
+                    title: "Setup",
+                    subtitle: "Preparing your preferences",
+                    icon: "gearshape.fill"
+                ) {
                     EmptyStateView(
                         title: "Settings Are Preparing",
                         systemImage: "gearshape.2.fill",
@@ -137,13 +149,14 @@ struct SettingsView: View {
             appEnvironment.appState.showScheduleHome()
         }) {
             Image(systemName: "chevron.right")
-                .font(.system(size: 18, weight: .bold))
+                .font(.system(size: 14, weight: .black))
                 .foregroundStyle(Theme.primaryAccent)
-                .padding(8)
-                .contentShape(Rectangle())
+                .frame(width: 32, height: 32)
+                .background(Theme.primaryAccent.opacity(0.12))
+                .clipShape(Circle())
         }
-        .padding(.trailing, 20)
-        .padding(.top, 12)
+        .padding(.trailing, 24)
+        .padding(.top, 24)
     }
 
     private func updatePreferences(_ update: (AppPreferences) -> Void) {

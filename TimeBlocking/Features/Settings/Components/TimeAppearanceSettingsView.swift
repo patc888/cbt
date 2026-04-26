@@ -10,7 +10,11 @@ struct TimeAppearanceSettingsView: View {
     @Namespace private var completedNamespace
     
     var body: some View {
-        TimeSettingsSection(title: "Appearance") {
+        TimeSettingsSection(
+            title: "Appearance",
+            subtitle: "Themes, colors, and visual feedback",
+            icon: "paintpalette.fill"
+        ) {
             TimeSettingsRow(
                 icon: "circle.lefthalf.filled",
                 iconColor: Theme.primaryAccent,

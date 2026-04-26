@@ -43,13 +43,16 @@ struct RootView: View {
         .toolbar(.hidden, for: .navigationBar)
 #endif
         .overlay(alignment: .bottomTrailing) {
-            floatingActionButton(
-                systemImage: "plus"
-            ) {
-                appState.isPresentingAddModal = true
+            if appState.presentedSheet == nil {
+                floatingActionButton(
+                    systemImage: "plus"
+                ) {
+                    appState.isPresentingAddModal = true
+                }
+                .padding(.trailing, 24)
+                .padding(.bottom, 36)
+                .transition(.scale.combined(with: .opacity))
             }
-            .padding(.trailing, 24)
-            .padding(.bottom, 36)
         }
         .sheet(item: Binding<TimePresentedSheet?>(
             get: { appState.presentedSheet == .templates ? .templates : nil },

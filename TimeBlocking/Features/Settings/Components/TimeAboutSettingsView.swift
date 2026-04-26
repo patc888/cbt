@@ -14,23 +14,28 @@ struct TimeAboutSettingsView: View {
     var body: some View {
         VStack(spacing: 24) {
             // Brand Header
-            VStack(spacing: 12) {
-                AppIconView(size: 80)
+            VStack(spacing: 16) {
+                AppIconView(size: 88)
+                    .adaptiveShadow(color: Theme.primaryAccent.opacity(0.3), radius: 12, x: 0, y: 6)
 
-                VStack(spacing: 4) {
+                VStack(spacing: 6) {
                     Text("TimeBlocking")
-                        .font(.system(size: 24, weight: .black, design: .rounded))
+                        .font(.system(size: 28, weight: .black, design: .rounded))
                         .foregroundStyle(Theme.primaryText)
 
                     Text("Design your day, master your time.")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
                         .foregroundStyle(Theme.secondaryText)
                 }
             }
-            .padding(.top, 12)
-            .padding(.bottom, 8)
+            .padding(.top, 20)
+            .padding(.bottom, 12)
 
-            TimeSettingsSection(title: "Support") {
+            TimeSettingsSection(
+                title: "Support",
+                subtitle: "Get help and read policies",
+                icon: "hand.raised.fill"
+            ) {
                 VStack(alignment: .leading, spacing: 12) {
                     Button(action: { openExternalURL("https://xeo.com/TimeBlocking/support") }) {
                         TimeSettingsRow(icon: "questionmark.circle", title: "Help Center") {
@@ -54,7 +59,11 @@ struct TimeAboutSettingsView: View {
                 }
             }
 
-            TimeSettingsSection(title: "Spread the Word") {
+            TimeSettingsSection(
+                title: "Spread the Word",
+                subtitle: "Help us grow the community",
+                icon: "heart.fill"
+            ) {
                 VStack(alignment: .leading, spacing: 12) {
                     Button(action: { openExternalURL("itms-apps://itunes.apple.com/app/id6759693729?action=write-review") }) {
                         TimeSettingsRow(icon: "star", title: "Rate on App Store") {
@@ -78,7 +87,11 @@ struct TimeAboutSettingsView: View {
                 }
             }
 
-            TimeSettingsSection(title: "Data Management") {
+            TimeSettingsSection(
+                title: "Data Management",
+                subtitle: "App version and reset options",
+                icon: "gearshape.2.fill"
+            ) {
                 VStack(alignment: .leading, spacing: 12) {
                     TimeSettingsRow(icon: "info.circle", title: "Version") {
                         Text(appVersionDisplay)

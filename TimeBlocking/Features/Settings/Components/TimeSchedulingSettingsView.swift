@@ -6,7 +6,11 @@ struct TimeSchedulingSettingsView: View {
     let onUpdate: ((AppPreferences) -> Void) -> Void
     
     var body: some View {
-        TimeSettingsSection(title: "Scheduling") {
+        TimeSettingsSection(
+            title: "Scheduling",
+            subtitle: "Global timing and calendar defaults",
+            icon: "clock.fill"
+        ) {
             defaultDurationRow
             dayStartRow
             weekStartRow

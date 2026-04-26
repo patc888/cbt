@@ -2,7 +2,11 @@ import SwiftUI
 
 struct TimeInfrastructureSettingsView: View {
     var body: some View {
-        TimeSettingsSection(title: "Infrastructure") {
+        TimeSettingsSection(
+            title: "Infrastructure",
+            subtitle: "Persistence and sync details",
+            icon: "cpu.fill"
+        ) {
             TimeSettingsRow(icon: "externaldrive", iconColor: Theme.primaryAccent, title: "Engine", subtitle: "Persistence layer") {
                 Text("SwiftData")
                     .timeSettingsValueStyle()

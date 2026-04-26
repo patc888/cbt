@@ -14,7 +14,11 @@ struct TimeSecuritySettingsView: View {
     @State private var showingPrivacyInfo = false
     
     var body: some View {
-        TimeSettingsSection(title: "Security") {
+        TimeSettingsSection(
+            title: "Security",
+            subtitle: "App locking and data privacy",
+            icon: "lock.shield.fill"
+        ) {
             VStack(spacing: 0) {
                 TimeSettingsRow(icon: "faceid", iconColor: Theme.primaryAccent, title: "Lock app with Face ID or passcode") {
                     SegmentedToggle(
