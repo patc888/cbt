@@ -49,8 +49,8 @@ struct ConfettiView: View {
             let speed = Double.random(in: 100..<350)
             
             newParticles.append(ConfettiParticle(
-                color: colors.randomElement()!,
-                shape: ParticleShape.allCases.randomElement()!,
+                color: colors.randomElement() ?? .red,
+                shape: ParticleShape.allCases.randomElement() ?? .circle,
                 initialX: 0,
                 initialY: 0,
                 velocityX: CGFloat(cos(angle) * speed),

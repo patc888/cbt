@@ -60,7 +60,7 @@ enum AppColorTheme: String, CaseIterable, Codable, Identifiable {
         case .green: return "86E3CE"
         case .emerald: return "2ECC71"
         case .gold: return "F6C852"
-        case .red: return "FF3B30"
+        case .red: return "FF4D4D"
         case .indigo: return "818CF8"
         case .teal: return "2DD4BF"
         case .cyan: return "67E8F9"
@@ -79,7 +79,7 @@ enum AppColorTheme: String, CaseIterable, Codable, Identifiable {
         case .green: return "5DBEA3"
         case .emerald: return "10B981"
         case .gold: return "FF9F0A"
-        case .red: return "CC2F26"
+        case .red: return "D63031"
         case .indigo: return "6366F1"
         case .teal: return "14B8A6"
         case .cyan: return "06B6D4"
@@ -117,11 +117,13 @@ final class AppPreferences {
     var notificationLeadTimeMinutes: Int? = 0
     var showsCompletedBlocks: Bool? = true
     var appTheme: AppTheme? = AppTheme.system
-    var selectedColorTheme: AppColorTheme? = AppColorTheme.purple
+    var selectedColorTheme: AppColorTheme? = AppColorTheme.red
     var isImmersive: Bool? = true
     var hapticsEnabled: Bool? = true
     var appLockEnabled: Bool? = false
+    var hasSeenOnboarding: Bool = false
     var createdAt: Date = Date.now
+
     var updatedAt: Date = Date.now
 
     init(
@@ -133,11 +135,13 @@ final class AppPreferences {
         notificationLeadTimeMinutes: Int? = 0,
         showsCompletedBlocks: Bool? = true,
         appTheme: AppTheme? = .system,
-        selectedColorTheme: AppColorTheme? = .purple,
+        selectedColorTheme: AppColorTheme? = .red,
         isImmersive: Bool? = true,
         hapticsEnabled: Bool? = true,
         appLockEnabled: Bool? = false,
+        hasSeenOnboarding: Bool = false,
         createdAt: Date = .now,
+
         updatedAt: Date = .now
     ) {
         self.id = id
@@ -152,7 +156,9 @@ final class AppPreferences {
         self.isImmersive = isImmersive
         self.hapticsEnabled = hapticsEnabled
         self.appLockEnabled = appLockEnabled
+        self.hasSeenOnboarding = hasSeenOnboarding
         self.createdAt = createdAt
+
         self.updatedAt = updatedAt
     }
 }

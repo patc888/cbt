@@ -54,7 +54,7 @@ struct DayMoveRibbon: View {
             .padding(2)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Theme.primaryPurple.opacity(0.04))
+                    .fill(Theme.primaryAccent.opacity(0.04))
             )
         }
     }
@@ -84,7 +84,7 @@ private struct StepBadge: View {
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(width: 18, height: 18)
-                .background(Circle().fill(Theme.primaryPurple))
+                .background(Circle().fill(Theme.primaryAccent))
 
             Text(text)
                 .font(.system(size: 11, weight: .semibold, design: .rounded))
@@ -92,7 +92,7 @@ private struct StepBadge: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(Theme.primaryPurple.opacity(0.08))
+        .background(Theme.primaryAccent.opacity(0.08))
         .clipShape(Capsule())
     }
 }
@@ -129,14 +129,14 @@ private struct DayMoveTargetChip: View {
         .overlay(alignment: .topTrailing) {
             if isSelectedDay {
                 Circle()
-                    .fill(isHovered ? Color.white.opacity(0.9) : Theme.primaryPurple)
+                    .fill(isHovered ? Color.white.opacity(0.9) : Theme.primaryAccent)
                     .frame(width: 8, height: 8)
                     .padding(10)
             }
         }
         .scaleEffect(isHovered ? 1.06 : 1)
         .shadow(
-            color: isHovered ? Theme.primaryPurple.opacity(0.22) : .clear,
+            color: isHovered ? Theme.primaryAccent.opacity(0.22) : .clear,
             radius: 14,
             x: 0,
             y: 10
@@ -157,12 +157,12 @@ private struct DayMoveTargetChip: View {
             .fill(
                 isHovered
                     ? AnyShapeStyle(Theme.primaryGradient)
-                    : AnyShapeStyle(Theme.primaryPurple.opacity(isSelectedDay ? 0.12 : 0.06))
+                    : AnyShapeStyle(Theme.primaryAccent.opacity(isSelectedDay ? 0.12 : 0.06))
             )
             .overlay {
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .strokeBorder(
-                        isHovered ? Color.white.opacity(0.22) : Theme.primaryPurple.opacity(isSelectedDay ? 0.18 : 0.1),
+                        isHovered ? Color.white.opacity(0.22) : Theme.primaryAccent.opacity(isSelectedDay ? 0.18 : 0.1),
                         lineWidth: 1
                     )
             }

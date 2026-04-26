@@ -50,7 +50,7 @@ struct TimeSettingsRow<Content: View>: View {
         HStack {
             if let icon = icon {
                 Image(systemName: icon)
-                    .foregroundStyle(iconColor ?? Theme.primaryPurple)
+                    .foregroundStyle(iconColor ?? Theme.primaryAccent)
                     .font(.system(size: 18))
                     .frame(width: 24)
             }
@@ -93,23 +93,41 @@ struct TimeSettingsCardStyleModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .background(colorScheme == .light ? Color.white : Color.black.opacity(0.1))
-            .background(.ultraThinMaterial)
-            .cornerRadius(Theme.cornerRadiusXLarge)
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge)
-                    .strokeBorder(
-                        Color.primary.opacity(0.05),
-                        lineWidth: 0.5
-                    )
-            )
+            .background {
+                ZStack {
+                    if colorScheme == .light {
+                        Color.white
+                    } else {
+                        Color.black.opacity(0.1)
+                    }
+
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge, style: .continuous))
             .shadow(
-                color: Color.black.opacity(colorScheme == .light ? 0 : 0.1),
-                radius: colorScheme == .light ? 0 : 10,
+                color: Color.black.opacity(colorScheme == .light ? 0.03 : 0.2),
+                radius: colorScheme == .light ? 5 : 15,
                 x: 0,
-                y: colorScheme == .light ? 0 : 5
+                y: colorScheme == .light ? 2 : 8
             )
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.primary.opacity(colorScheme == .light ? 0.05 : 0.1),
+                                Color.primary.opacity(colorScheme == .light ? 0.02 : 0.05)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            }
     }
+
 }
 struct WhatIsTimeBlockingCard: View {
     var body: some View {
@@ -120,25 +138,25 @@ struct WhatIsTimeBlockingCard: View {
                         Text("What is Time Blocking")
                             .font(.system(size: 22, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
-                        
+
                         Text("The secret to extreme productivity.")
                             .font(.system(size: 14, weight: .medium, design: .rounded))
                             .foregroundStyle(.white.opacity(0.8))
                     }
-                    
+
                     Spacer()
-                    
+
                     Image(systemName: "calendar.badge.clock")
                         .font(.system(size: 38))
                         .foregroundStyle(.white.opacity(0.9))
                 }
-                
+
                 VStack(alignment: .leading, spacing: 10) {
                     benefitRow(icon: "target", text: "Turn abstract goals into concrete appointments.")
                     benefitRow(icon: "bolt.fill", text: "Minimize distractions by focusing on one task.")
                     benefitRow(icon: "sparkles", text: "Perfect for deep work and avoiding burnout.")
                 }
-                
+
                 HStack {
                     Spacer()
                     Text("Learn More")
@@ -152,20 +170,20 @@ struct WhatIsTimeBlockingCard: View {
                 .padding(.top, 4)
             }
             .padding(20)
-            .background(Theme.primaryPurple.gradient)
+            .background(Theme.primaryAccent.gradient)
             .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusXLarge, style: .continuous))
-            .shadow(color: Theme.primaryPurple.opacity(0.3), radius: 10, x: 0, y: 5)
+            .shadow(color: Theme.primaryAccent.opacity(0.3), radius: 10, x: 0, y: 5)
         }
         .buttonStyle(.plain)
     }
-    
+
     private func benefitRow(icon: String, text: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 20)
-            
+
             Text(text)
                 .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.9))

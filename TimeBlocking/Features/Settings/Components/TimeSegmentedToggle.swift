@@ -105,7 +105,7 @@ struct TimeSegmentedToggle<T: Hashable, Label: View>: View {
         if let stringValue = option as? String, stringValue.lowercased() == "off" {
             return Color.gray
         }
-        return Theme.primaryPurple
+        return Theme.primaryAccent
     }
 }
 

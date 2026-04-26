@@ -173,7 +173,7 @@ struct SchedulePlanningGuidanceView: View {
                         Button("Resolve Conflicts", action: onResolveConflicts)
                             .font(.system(size: 12, weight: .bold, design: .rounded))
                             .buttonStyle(.borderedProminent)
-                            .tint(Theme.primaryPurple)
+                            .tint(Theme.primaryAccent)
                             .controlSize(.small)
                     }
                 }
@@ -227,7 +227,7 @@ struct SchedulePlanningGuidanceView: View {
 
                             Text(durationText(for: window.durationMinutes))
                                 .font(.system(size: 11, weight: .bold, design: .rounded))
-                                .foregroundStyle(Theme.primaryPurple)
+                                .foregroundStyle(Theme.primaryAccent)
                         }
                     }
                 }
@@ -258,7 +258,7 @@ struct SchedulePlanningGuidanceView: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Theme.primaryPurple.opacity(0.08))
+                .fill(Theme.primaryAccent.opacity(0.08))
         )
     }
 

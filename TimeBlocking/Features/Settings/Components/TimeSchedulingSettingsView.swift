@@ -16,7 +16,7 @@ struct TimeSchedulingSettingsView: View {
     private var defaultDurationRow: some View {
         TimeSettingsRow(
             icon: "timer",
-            iconColor: Theme.primaryPurple,
+            iconColor: Theme.primaryAccent,
             title: "Default Block Length",
             subtitle: "New schedule entry duration"
         ) {
@@ -36,7 +36,7 @@ struct TimeSchedulingSettingsView: View {
     private var dayStartRow: some View {
         TimeSettingsRow(
             icon: "sunrise",
-            iconColor: Theme.primaryPurple,
+            iconColor: Theme.primaryAccent,
             title: "Day Start Hour",
             subtitle: "Global schedule anchor"
         ) {
@@ -56,7 +56,7 @@ struct TimeSchedulingSettingsView: View {
     private var weekStartRow: some View {
         TimeSettingsRow(
             icon: "calendar",
-            iconColor: Theme.primaryPurple,
+            iconColor: Theme.primaryAccent,
             title: "Week Starts On",
             subtitle: "Top date strip preference"
         ) {

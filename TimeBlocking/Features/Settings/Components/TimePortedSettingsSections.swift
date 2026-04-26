@@ -151,7 +151,7 @@ struct TimeNotificationsSettingsView: View {
         TimeSettingsSection(title: "Notifications") {
             TimeSettingsRow(
                 icon: "bell.fill",
-                iconColor: Theme.primaryPurple,
+                iconColor: Theme.primaryAccent,
                 title: "Block Reminders",
                 subtitle: reminderSubtitle
             ) {
@@ -163,7 +163,7 @@ struct TimeNotificationsSettingsView: View {
 
             TimeSettingsRow(
                 icon: reminderState.symbolName,
-                iconColor: reminderState == .denied ? .orange : Theme.primaryPurple,
+                iconColor: reminderState == .denied ? .orange : Theme.primaryAccent,
                 title: "Reminder Status",
                 subtitle: reminderState.message
             ) {
@@ -192,7 +192,7 @@ struct TimeNotificationsSettingsView: View {
                         Button(action: onOpenSystemSettings) {
                             Text("Open System Settings")
                                 .font(.system(size: 13, weight: .bold, design: .rounded))
-                                .foregroundStyle(Theme.primaryPurple)
+                                .foregroundStyle(Theme.primaryAccent)
                         }
                         .buttonStyle(.plain)
                     }
@@ -207,7 +207,7 @@ struct TimeNotificationsSettingsView: View {
 
                 TimeSettingsRow(
                     icon: "clock.badge",
-                    iconColor: Theme.primaryPurple,
+                    iconColor: Theme.primaryAccent,
                     title: "Reminder Time",
                     subtitle: accessState.allowsScheduling
                         ? "How early reminders should arrive"

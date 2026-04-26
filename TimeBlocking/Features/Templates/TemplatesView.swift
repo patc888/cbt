@@ -1,6 +1,9 @@
 import Foundation
+import os
 import SwiftData
 import SwiftUI
+
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "TemplatesView")
 
 struct TemplateEditorDraft: Identifiable {
     let id: UUID
@@ -55,19 +58,19 @@ struct TemplatesView: View {
                                             .font(.system(size: 13, weight: .bold, design: .rounded))
                                     }
                                     .buttonStyle(.borderedProminent)
-                                    .tint(Theme.primaryPurple)
+                                    .tint(Theme.primaryAccent)
                                     .controlSize(.small)
                                 }
                             }
 
                             if templates.isEmpty {
                                 EmptyStateView(
-                                    title: "No Routines Yet",
+                                    title: String(localized: "No Routines Yet"),
                                     systemImage: "square.on.square",
-                                    message: "Create a routine for blocks you want to regenerate into future days.",
-                                    eyebrow: "Routines"
+                                    message: String(localized: "Create your first routine to easily generate blocks for future days."),
+                                    eyebrow: String(localized: "Routines")
                                 ) {
-                                    Button("Create Routine") {
+                                    Button(String(localized: "Create Routine")) {
                                         isPresentingTemplateEditor = true
                                     }
                                     .buttonStyle(.borderedProminent)
@@ -100,7 +103,7 @@ struct TemplatesView: View {
                                                 }
 
                                                 HStack(spacing: 8) {
-                                                    templateBadge(template.category.title, tint: Theme.primaryPurple)
+                                                    templateBadge(template.category.title, tint: Theme.primaryAccent)
 
                                                     let maskSummary = weekdaySummary(for: template.weekdayMask)
                                                     if !maskSummary.isEmpty {
@@ -187,6 +190,7 @@ struct TemplateEditorView: View {
     @State private var category: TimeBlockCategory
     @State private var errorMessage: String?
     @State private var isShowingDeleteConfirmation = false
+    @FocusState private var isNameFocused: Bool
 
     private let template: ScheduleTemplate?
     private let onSave: (() -> Void)?
@@ -218,6 +222,7 @@ struct TemplateEditorView: View {
 
                         VStack(alignment: .leading, spacing: 14) {
                             TextField("Routine Name", text: $name)
+                                .focused($isNameFocused)
 
                             Picker("Start Time", selection: $defaultStartTime) {
                                 ForEach(0..<24, id: \.self) { hour in
@@ -250,15 +255,15 @@ struct TemplateEditorView: View {
                                                 .padding(.vertical, 10)
                                                 .background(
                                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                        .fill(isSelected(weekday) ? Theme.primaryPurple.opacity(0.18) : Color.secondary.opacity(0.1))
+                                                        .fill(isSelected(weekday) ? Theme.primaryAccent.opacity(0.18) : Color.secondary.opacity(0.1))
                                                 )
                                                 .overlay {
                                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                        .stroke(isSelected(weekday) ? Theme.primaryPurple : Color.secondary.opacity(0.18), lineWidth: 1)
+                                                        .stroke(isSelected(weekday) ? Theme.primaryAccent : Color.secondary.opacity(0.18), lineWidth: 1)
                                                 }
                                         }
                                         .buttonStyle(.plain)
-                                        .foregroundStyle(isSelected(weekday) ? Theme.primaryPurple : .primary)
+                                        .foregroundStyle(isSelected(weekday) ? Theme.primaryAccent : .primary)
                                     }
                                 }
                             }
@@ -307,6 +312,12 @@ struct TemplateEditorView: View {
                         saveTemplate()
                     }
                     .disabled(isSaveDisabled)
+                }
+            }
+            .onAppear {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(500))
+                    isNameFocused = true
                 }
             }
             .confirmationDialog(
@@ -374,10 +385,11 @@ struct TemplateEditorView: View {
             }
 
             onSave?()
+            HapticManager.shared.success()
             dismiss()
         } catch {
-            errorMessage = "Unable to save this template right now."
-            assertionFailure("Failed to save template: \(error)")
+            errorMessage = String(localized: "Unable to save this template right now.")
+            logger.error("Failed to save template: \(error)")
         }
     }
 
@@ -390,8 +402,8 @@ struct TemplateEditorView: View {
             try appEnvironment.scheduleRepository.deleteTemplate(template, in: modelContext)
             dismiss()
         } catch {
-            errorMessage = "Unable to delete this template right now."
-            assertionFailure("Failed to delete template: \(error)")
+            errorMessage = String(localized: "Unable to delete this template right now.")
+            logger.error("Failed to delete template: \(error)")
         }
     }
 }

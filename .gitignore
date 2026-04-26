@@ -1,8 +1,12 @@
 .DS_Store
+.DerivedData/
+.DerivedData-iOS/
 build/
 DerivedData/
 xcuserdata/
 *.xcworkspace
 *.ipa
 *.xcarchive
+*.profraw
+build.log
 node_modules/

@@ -102,7 +102,8 @@ struct TimeBlockingTests {
 
     @Test
     func scheduleRepositoryBuildsDaySnapshotWithoutProfileState() {
-        let now = Date(timeIntervalSince1970: 1_000_000)
+        let calendar = Calendar(identifier: .gregorian)
+        let now = DateComponents(calendar: calendar, year: 2026, month: 3, day: 10, hour: 12).date ?? Date(timeIntervalSince1970: 1_000_000)
         let plannedBlock = TimeBlock(
             title: "Block A",
             startDate: now.addingTimeInterval(1_800),
@@ -122,24 +123,24 @@ struct TimeBlockingTests {
             for: now,
             from: [plannedBlock, completedBlock],
             includeCompleted: true,
-            calendar: Calendar(identifier: .gregorian)
+            calendar: calendar
         )
 
         #expect(snapshot.blocks.count == 2)
         #expect(snapshot.plannedCount == 1)
         #expect(snapshot.completedCount == 1)
-        #expect(snapshot.scheduledMinutes == 150)
+        #expect(snapshot.scheduledMinutes == 120)
     }
 
     @Test
     @MainActor
-    func prepareIfNeededCreatesOnePreferencesRecord() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+    func prepareIfNeededCreatesOnePreferencesRecord() async throws {
+        let persistenceController = try PersistenceController(inMemory: true)
         let appEnvironment = AppEnvironment(persistenceController: persistenceController)
         let modelContext = ModelContext(persistenceController.container)
 
-        appEnvironment.prepareIfNeeded(using: modelContext)
-        appEnvironment.prepareIfNeeded(using: modelContext)
+        try await appEnvironment.prepareIfNeeded(using: modelContext)
+        try await appEnvironment.prepareIfNeeded(using: modelContext)
 
         let preferences = try modelContext.fetch(FetchDescriptor<AppPreferences>())
         #expect(preferences.count == 1)
@@ -148,45 +149,42 @@ struct TimeBlockingTests {
 
     @Test
     @MainActor
-    func prepareIfNeededSeedsFirstRunSampleDataWhenStoreIsEmpty() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+    func prepareIfNeededSeedsFirstRunSampleDataWhenStoreIsEmpty() async throws {
+        let persistenceController = try PersistenceController(inMemory: true)
         let appEnvironment = AppEnvironment(persistenceController: persistenceController)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: .now)
+        let today = calendar.startOfDay(for: Date.now)
 
-        appEnvironment.prepareIfNeeded(using: modelContext)
+        try await appEnvironment.prepareIfNeeded(using: modelContext)
 
         let preferences = try #require(modelContext.fetch(FetchDescriptor<AppPreferences>()).first)
         let templates = try modelContext.fetch(
             FetchDescriptor<ScheduleTemplate>(
-                sortBy: [SortDescriptor(\.sortOrder)]
+                sortBy: [SortDescriptor(\ScheduleTemplate.sortOrder)]
             )
         )
         let blocks = try modelContext.fetch(
             FetchDescriptor<TimeBlock>(
                 sortBy: [
-                    SortDescriptor(\.startDate),
-                    SortDescriptor(\.sortOrder)
+                    SortDescriptor(\TimeBlock.startDate),
+                    SortDescriptor(\TimeBlock.sortOrder)
                 ]
             )
         )
         let checklistItems = try modelContext.fetch(
             FetchDescriptor<BlockChecklistItem>(
-                sortBy: [SortDescriptor(\.sortOrder)]
+                sortBy: [SortDescriptor(\BlockChecklistItem.sortOrder)]
             )
         )
 
         #expect(preferences.defaultBlockDurationMinutes == 45)
         #expect(preferences.dayStartHour == 7)
-        #expect(preferences.firstWeekday == .monday)
+        #expect(preferences.firstWeekday == Weekday.monday)
         #expect(preferences.showsCompletedBlocks == false)
 
-        #expect(templates.map(\.name) == [
-            "Morning Planning",
-            "Focus Work",
-            "Lunch Break",
-            "Evening Wrap-Up"
+        #expect(templates.map(\ScheduleTemplate.name) == [
+            "Morning Planning"
         ])
 
         let expectedWeekdayMask = 0
@@ -200,28 +198,27 @@ struct TimeBlockingTests {
         let generatedTodayBlocks = blocks.filter {
             $0.template != nil && calendar.isDate($0.startDate, inSameDayAs: today)
         }
-        let manualErrandsBlock = try #require(blocks.first { $0.title == "Errands" })
+        let prepBlock = try #require(blocks.first { $0.title == "Prep for Team Check-In" })
+        let lunchWalkBlock = try #require(blocks.first { $0.title == "Lunch Walk" })
         let weekday = calendar.component(.weekday, from: today)
-        let expectedGeneratedCount = (expectedWeekdayMask & (1 << (weekday - 1))) != 0 ? 4 : 0
+        let expectedGeneratedCount = (expectedWeekdayMask & (1 << (weekday - 1))) != 0 ? 1 : 0
 
-        #expect(blocks.count == expectedGeneratedCount + 1)
+        #expect(blocks.count == expectedGeneratedCount + 3)
         #expect(generatedTodayBlocks.count == expectedGeneratedCount)
-        #expect(calendar.isDate(manualErrandsBlock.startDate, inSameDayAs: today))
-        #expect(manualErrandsBlock.template == nil)
-        #expect(manualErrandsBlock.notes == "Example manual block: add one-off tasks that should not come from a template.")
-        #expect(checklistItems.map(\.title) == [
-            "Pick up essentials",
-            "Drop off return",
-            "Review tomorrow's first task"
+        #expect(calendar.isDate(prepBlock.startDate, inSameDayAs: today))
+        #expect(prepBlock.template == nil)
+        #expect(prepBlock.notes == "Example block with a checklist so the day view demonstrates step-by-step progress.")
+        #expect(lunchWalkBlock.status == TimeBlockStatus.completed)
+        #expect(checklistItems.map(\BlockChecklistItem.title) == [
+            "Review agenda",
+            "Update blockers",
+            "Capture next actions"
         ])
-        #expect(checklistItems.allSatisfy { $0.timeBlock?.id == manualErrandsBlock.id })
+        #expect(checklistItems.allSatisfy { $0.timeBlock?.id == prepBlock.id })
 
         if (expectedWeekdayMask & (1 << (weekday - 1))) != 0 {
-            #expect(generatedTodayBlocks.map(\.title) == [
-                "Morning Planning",
-                "Focus Work",
-                "Lunch Break",
-                "Evening Wrap-Up"
+            #expect(generatedTodayBlocks.map(\TimeBlock.title) == [
+                "Morning Planning"
             ])
         } else {
             #expect(generatedTodayBlocks.isEmpty)
@@ -230,8 +227,8 @@ struct TimeBlockingTests {
 
     @Test
     @MainActor
-    func prepareIfNeededDoesNotSeedWhenUserDataAlreadyExists() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+    func prepareIfNeededDoesNotSeedWhenUserDataAlreadyExists() async throws {
+        let persistenceController = try PersistenceController(inMemory: true)
         let appEnvironment = AppEnvironment(persistenceController: persistenceController)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar(identifier: .gregorian)
@@ -255,7 +252,7 @@ struct TimeBlockingTests {
         )
         try modelContext.save()
 
-        appEnvironment.prepareIfNeeded(using: modelContext)
+        try await appEnvironment.prepareIfNeeded(using: modelContext)
 
         let preferences = try modelContext.fetch(FetchDescriptor<AppPreferences>())
         let templates = try modelContext.fetch(FetchDescriptor<ScheduleTemplate>())
@@ -265,13 +262,13 @@ struct TimeBlockingTests {
         #expect(preferences.count == 1)
         #expect(preferences.first?.defaultBlockDurationMinutes == 90)
         #expect(preferences.first?.dayStartHour == 5)
-        #expect(preferences.first?.firstWeekday == .sunday)
+        #expect(preferences.first?.firstWeekday == Weekday.sunday)
         #expect(preferences.first?.showsCompletedBlocks == true)
         #expect(templates.isEmpty)
         #expect(blocks.count == 1)
         #expect(blocks.first?.title == "Existing Block")
         #expect(checklistItems.isEmpty)
-        #expect(calendar.isDate(blocks.first?.startDate ?? .distantPast, equalTo: Date(timeIntervalSince1970: 1_700_000_000), toGranularity: .second))
+        #expect(calendar.isDate(blocks.first?.startDate ?? Date.distantPast, equalTo: Date(timeIntervalSince1970: 1_700_000_000), toGranularity: .second))
     }
 
     @Test
@@ -303,7 +300,8 @@ struct TimeBlockingTests {
 
     @Test
     func scheduleRepositoryBuildsDashboardSummaryForToday() {
-        let now = Date(timeIntervalSince1970: 2_500_000)
+        let calendar = Calendar(identifier: .gregorian)
+        let now = DateComponents(calendar: calendar, year: 2026, month: 3, day: 10, hour: 12).date ?? Date(timeIntervalSince1970: 2_500_000)
         let completedBlock = TimeBlock(
             title: "Early Done",
             startDate: now.addingTimeInterval(-7_200),
@@ -336,28 +334,28 @@ struct TimeBlockingTests {
         let summary = ScheduleRepository().dashboardSummary(
             for: now,
             from: [completedBlock, tomorrowBlock, laterBlock, nextBlock],
-            calendar: Calendar(identifier: .gregorian)
+            calendar: calendar
         )
 
         #expect(summary.daySnapshot.completedCount == 1)
         #expect(summary.daySnapshot.plannedCount == 2)
-        #expect(summary.daySnapshot.scheduledMinutes == 150)
+        #expect(summary.daySnapshot.scheduledMinutes == 120)
         #expect(summary.nextBlock?.title == "Current Focus")
         #expect(summary.upcomingBlocks.count == 3)
         #expect(summary.totalBlocks == 3)
         #expect(summary.remainingPlannedCount == 2)
         #expect(summary.currentBlock(at: now) == nil)
-        #expect(summary.remainingTodayBlocks(after: now).map(\.title) == ["Current Focus", "Wrap Up"])
-        #expect(summary.remainingScheduledMinutes(after: now) == 150)
+        #expect(summary.remainingTodayBlocks(after: now).map(\TimeBlock.title) == ["Current Focus", "Wrap Up"])
+        #expect(summary.remainingScheduledMinutes(after: now) == 90)
     }
 
     @Test
     func scheduleRepositoryFetchesDaySnapshotFromModelContext() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar(identifier: .gregorian)
         let repository = ScheduleRepository()
-        let date = Date(timeIntervalSince1970: 2_500_000)
+        let date = DateComponents(calendar: calendar, year: 2026, month: 3, day: 10, hour: 12).date ?? Date(timeIntervalSince1970: 2_500_000)
 
         modelContext.insert(
             TimeBlock(
@@ -407,11 +405,11 @@ struct TimeBlockingTests {
 
     @Test
     func scheduleRepositoryFetchesDashboardSummaryFromModelContext() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar(identifier: .gregorian)
         let repository = ScheduleRepository()
-        let now = Date(timeIntervalSince1970: 2_500_000)
+        let now = DateComponents(calendar: calendar, year: 2026, month: 3, day: 10, hour: 12).date ?? Date(timeIntervalSince1970: 2_500_000)
 
         modelContext.insert(
             TimeBlock(
@@ -463,19 +461,19 @@ struct TimeBlockingTests {
 
         #expect(summary.daySnapshot.completedCount == 1)
         #expect(summary.daySnapshot.plannedCount == 2)
-        #expect(summary.daySnapshot.scheduledMinutes == 150)
+        #expect(summary.daySnapshot.scheduledMinutes == 120)
         #expect(summary.nextBlock?.title == "Current Focus")
         #expect(summary.upcomingBlocks.count == 3)
         #expect(summary.totalBlocks == 3)
         #expect(summary.remainingPlannedCount == 2)
         #expect(summary.currentBlock(at: now) == nil)
-        #expect(summary.remainingTodayBlocks(after: now).map(\.title) == ["Current Focus", "Wrap Up"])
-        #expect(summary.remainingScheduledMinutes(after: now) == 150)
+        #expect(summary.remainingTodayBlocks(after: now).map(\TimeBlock.title) == ["Current Focus", "Wrap Up"])
+        #expect(summary.remainingScheduledMinutes(after: now) == 90)
     }
 
     @Test
     func scheduleRepositoryGeneratesTemplateBlocksOncePerDay() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar(identifier: .gregorian)
         let date = Date(timeIntervalSince1970: 1_700_000_000)
@@ -511,12 +509,12 @@ struct TimeBlockingTests {
         #expect(blocks.count == 1)
         #expect(blocks.first?.template?.id == template.id)
         #expect(blocks.first?.title == "Morning Focus")
-        #expect(calendar.isDate(blocks.first?.startDate ?? .distantPast, inSameDayAs: date))
+        #expect(calendar.isDate(blocks.first?.startDate ?? Date.distantPast, inSameDayAs: date))
     }
 
     @Test
     func scheduleRepositoryRegeneratesTemplateBlocksForTheSelectedDay() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar(identifier: .gregorian)
         let repository = ScheduleRepository()
@@ -569,8 +567,8 @@ struct TimeBlockingTests {
         let blocks = try modelContext.fetch(
             FetchDescriptor<TimeBlock>(
                 sortBy: [
-                    SortDescriptor(\.startDate),
-                    SortDescriptor(\.sortOrder)
+                    SortDescriptor(\TimeBlock.startDate),
+                    SortDescriptor(\TimeBlock.sortOrder)
                 ]
             )
         )
@@ -585,7 +583,7 @@ struct TimeBlockingTests {
 
     @Test
     func scheduleRepositoryRegeneratePreservesCompletedGeneratedBlocksAndManualBlocks() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar(identifier: .gregorian)
         let repository = ScheduleRepository()
@@ -659,8 +657,8 @@ struct TimeBlockingTests {
         let blocks = try modelContext.fetch(
             FetchDescriptor<TimeBlock>(
                 sortBy: [
-                    SortDescriptor(\.startDate),
-                    SortDescriptor(\.sortOrder)
+                    SortDescriptor(\TimeBlock.startDate),
+                    SortDescriptor(\TimeBlock.sortOrder)
                 ]
             )
         )
@@ -668,13 +666,13 @@ struct TimeBlockingTests {
         #expect(regeneratedBlocks.count == 1)
         #expect(blocks.count == 3)
         #expect(blocks.contains { $0.title == "Updated Focus" && $0.template?.id == morningTemplate.id })
-        #expect(blocks.contains { $0.id == completedGeneratedBlock.id && $0.status == .completed })
+        #expect(blocks.contains { $0.id == completedGeneratedBlock.id && $0.status == TimeBlockStatus.completed })
         #expect(blocks.contains { $0.title == "Manual Planning" && $0.template == nil })
     }
 
     @Test
     func scheduleRepositoryDetachesGeneratedBlocksAfterManualEdit() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar(identifier: .gregorian)
         let repository = ScheduleRepository()
@@ -721,8 +719,8 @@ struct TimeBlockingTests {
         let blocks = try modelContext.fetch(
             FetchDescriptor<TimeBlock>(
                 sortBy: [
-                    SortDescriptor(\.startDate),
-                    SortDescriptor(\.sortOrder)
+                    SortDescriptor(\TimeBlock.startDate),
+                    SortDescriptor(\TimeBlock.sortOrder)
                 ]
             )
         )
@@ -735,7 +733,7 @@ struct TimeBlockingTests {
 
     @Test
     func scheduleRepositoryMovesBlocksToAnotherDayWhilePreservingTimeAndDuration() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar(identifier: .gregorian)
         let repository = ScheduleRepository()
@@ -784,7 +782,7 @@ struct TimeBlockingTests {
 
     @Test
     func scheduleRepositoryDetachesGeneratedBlocksWhenMovedToAnotherDay() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar(identifier: .gregorian)
         let repository = ScheduleRepository()
@@ -821,7 +819,7 @@ struct TimeBlockingTests {
 
     @Test
     func scheduleRepositoryReschedulesBlocksWithinTheDayWhilePreservingDuration() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar(identifier: .gregorian)
         let repository = ScheduleRepository()
@@ -857,7 +855,7 @@ struct TimeBlockingTests {
 
     @Test
     func scheduleRepositoryDetachesGeneratedBlocksWhenRescheduledWithinTheDay() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar(identifier: .gregorian)
         let repository = ScheduleRepository()
@@ -894,7 +892,7 @@ struct TimeBlockingTests {
 
     @Test
     func scheduleRepositoryPreservesCompletedGeneratedBlocksDuringRegenerate() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar(identifier: .gregorian)
         let repository = ScheduleRepository()
@@ -917,7 +915,7 @@ struct TimeBlockingTests {
             repository.generateBlocksIfNeeded(for: date, in: modelContext, calendar: calendar).first
         )
         generatedBlock.status = .completed
-        generatedBlock.updatedAt = .now
+        generatedBlock.updatedAt = Date.now
         try modelContext.save()
 
         let regeneratedBlocks = try repository.regenerateTemplateBlocks(
@@ -929,13 +927,13 @@ struct TimeBlockingTests {
 
         #expect(regeneratedBlocks.isEmpty)
         #expect(blocks.count == 1)
-        #expect(blocks.first?.status == .completed)
+        #expect(blocks.first?.status == TimeBlockStatus.completed)
         #expect(blocks.first?.template?.id == template.id)
     }
 
     @Test
     func scheduleRepositorySkipsTemplatesOutsideTheirWeekdayMask() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let calendar = Calendar(identifier: .gregorian)
         let date = Date(timeIntervalSince1970: 1_700_086_400)
@@ -964,12 +962,12 @@ struct TimeBlockingTests {
 
     @Test
     func scheduleRepositoryCanCreateAndUpdateTemplate() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let repository = ScheduleRepository()
         let calendar = Calendar(identifier: .gregorian)
-        let startTime = calendar.date(bySettingHour: 6, minute: 0, second: 0, of: .now) ?? .now
-        let updatedStartTime = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: .now) ?? .now
+        let startTime = calendar.date(bySettingHour: 6, minute: 0, second: 0, of: Date.now) ?? Date.now
+        let updatedStartTime = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: Date.now) ?? Date.now
 
         let createdTemplate = try repository.createTemplate(
             name: " Morning Routine ",
@@ -1007,15 +1005,15 @@ struct TimeBlockingTests {
         #expect(templates.first?.defaultStartHour == 10)
         #expect(templates.first?.defaultDurationMinutes == 120)
         #expect(templates.first?.weekdayMask == 0b0010000)
-        #expect(templates.first?.category == .focus)
+        #expect(templates.first?.category == TimeBlockCategory.focus)
     }
 
     @Test
     func scheduleRepositoryCanDeleteTemplate() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let repository = ScheduleRepository()
-        let startTime = Calendar(identifier: .gregorian).date(bySettingHour: 8, minute: 0, second: 0, of: .now) ?? .now
+        let startTime = Calendar(identifier: .gregorian).date(bySettingHour: 8, minute: 0, second: 0, of: Date.now) ?? Date.now
 
         let template = try repository.createTemplate(
             name: "Delete Me",
@@ -1034,7 +1032,7 @@ struct TimeBlockingTests {
 
     @Test
     func scheduleRepositoryCreatesChecklistItemsWithNewBlock() throws {
-        let persistenceController = PersistenceController(inMemory: true)
+        let persistenceController = try PersistenceController(inMemory: true)
         let modelContext = ModelContext(persistenceController.container)
         let repository = ScheduleRepository()
         let calendar = Calendar(identifier: .gregorian)
@@ -1059,17 +1057,17 @@ struct TimeBlockingTests {
 
         let checklistItems = try modelContext.fetch(
             FetchDescriptor<BlockChecklistItem>(
-                sortBy: [SortDescriptor(\.sortOrder)]
+                sortBy: [SortDescriptor(\BlockChecklistItem.sortOrder)]
             )
         )
 
         #expect(block.title == "Errands")
         #expect(block.notes == "Quick run")
-        #expect(checklistItems.map(\.title) == [
+        #expect(checklistItems.map(\BlockChecklistItem.title) == [
             "Pick up groceries",
             "Mail package"
         ])
-        #expect(checklistItems.map(\.sortOrder) == [0, 1])
+        #expect(checklistItems.map(\BlockChecklistItem.sortOrder) == [0, 1])
         #expect(checklistItems.allSatisfy { $0.timeBlock?.id == block.id })
         #expect((block.checklistItems ?? []).count == 2)
     }

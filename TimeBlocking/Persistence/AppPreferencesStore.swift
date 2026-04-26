@@ -1,7 +1,6 @@
 import Foundation
 import SwiftData
 
-@MainActor
 struct AppPreferencesStore {
     func fetchOrCreate(in modelContext: ModelContext) throws -> AppPreferences {
         let descriptor = FetchDescriptor<AppPreferences>(

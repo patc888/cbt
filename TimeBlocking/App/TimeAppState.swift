@@ -5,7 +5,6 @@ enum TimePresentedSheet: String, Identifiable {
     case dashboard
     case settings
     case templates
-    case premium
 
     var id: String { rawValue }
 }
@@ -54,9 +53,5 @@ final class TimeAppState {
     func showScheduleHome() {
         selectedSection = .schedule
         presentedSheet = nil
-    }
-
-    func showPremium() {
-        presentedSheet = .premium
     }
 }

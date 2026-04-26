@@ -66,7 +66,7 @@ struct WeekStripDayView: View {
                 if isToday {
                     // Today ring (subtle pulse-like ring)
                     Circle()
-                        .stroke(isSelected ? .white.opacity(0.4) : Theme.primaryPurple.opacity(0.3), lineWidth: 1.5)
+                        .stroke(isSelected ? .white.opacity(0.4) : Theme.primaryAccent.opacity(0.3), lineWidth: 1.5)
                         .frame(width: 36, height: 36)
                 }
 
@@ -84,7 +84,7 @@ struct WeekStripDayView: View {
             
             // Has Items Indicator
             Circle()
-                .fill(hasItems ? (isSelected ? .white : Theme.primaryPurple.opacity(0.6)) : Color.clear)
+                .fill(hasItems ? (isSelected ? .white : Theme.primaryAccent.opacity(0.6)) : Color.clear)
                 .frame(width: 5, height: 5)
         }
         .frame(width: 54)
@@ -92,10 +92,18 @@ struct WeekStripDayView: View {
         .background {
             if isSelected {
                 RoundedRectangle(cornerRadius: 32, style: .continuous)
-                    .fill(Theme.primaryPurple)
+                    .fill(
+                        LinearGradient(
+                            colors: [Theme.primaryAccent, Theme.secondaryAccent],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: Theme.primaryAccent.opacity(0.3), radius: 8, x: 0, y: 4)
                     .matchedGeometryEffect(id: "selectionPill", in: namespace)
             }
         }
+
     }
 }
 

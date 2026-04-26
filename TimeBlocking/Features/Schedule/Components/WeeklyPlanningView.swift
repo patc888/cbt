@@ -94,7 +94,7 @@ struct WeeklyPlanningView: View {
                 }
                 .buttonStyle(.bordered)
             }
-            .tint(Theme.primaryPurple)
+            .tint(Theme.primaryAccent)
         }
     }
 
@@ -176,7 +176,7 @@ private struct WeeklyPlanningDayColumn: View {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(day.date.formatted(.dateTime.weekday(.abbreviated)))
                         .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(isSelected ? Theme.primaryPurple : Theme.secondaryText)
+                        .foregroundStyle(isSelected ? Theme.primaryAccent : Theme.secondaryText)
 
                     Text(day.date.formatted(.dateTime.day()))
                         .font(.system(size: 20, weight: .bold, design: .rounded))
@@ -187,16 +187,16 @@ private struct WeeklyPlanningDayColumn: View {
                     if isToday {
                         Text("Today")
                             .font(.system(size: 10, weight: .bold, design: .rounded))
-                            .foregroundStyle(Theme.primaryPurple)
+                            .foregroundStyle(Theme.primaryAccent)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 5)
-                            .background(Theme.primaryPurple.opacity(0.12))
+                            .background(Theme.primaryAccent.opacity(0.12))
                             .clipShape(Capsule())
                     }
                 }
 
                 HStack(spacing: 8) {
-                    weekStatPill("\(day.snapshot.plannedCount) planned", systemImage: "calendar.badge.clock", tint: Theme.primaryPurple)
+                    weekStatPill("\(day.snapshot.plannedCount) planned", systemImage: "calendar.badge.clock", tint: Theme.primaryAccent)
                     weekStatPill(minutesText, systemImage: "timer", tint: Theme.primaryText)
                 }
 
@@ -228,13 +228,13 @@ private struct WeeklyPlanningDayColumn: View {
                 HStack {
                     Text(isSelected ? "Editing this day below" : "Open in Day")
                         .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryPurple)
+                        .foregroundStyle(Theme.primaryAccent)
 
                     Spacer(minLength: 0)
 
                     Image(systemName: "arrow.down.circle")
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(Theme.primaryPurple)
+                        .foregroundStyle(Theme.primaryAccent)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -264,12 +264,12 @@ private struct WeeklyPlanningDayColumn: View {
 
     private var columnBackground: some View {
         RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
-            .fill(isSelected ? Theme.primaryPurple.opacity(0.08) : Color.primary.opacity(0.03))
+            .fill(isSelected ? Theme.primaryAccent.opacity(0.08) : Color.primary.opacity(0.03))
     }
 
     private var columnBorderColor: Color {
         if isSelected {
-            return Theme.primaryPurple.opacity(0.28)
+            return Theme.primaryAccent.opacity(0.28)
         }
 
         return Color.primary.opacity(0.08)
@@ -327,7 +327,7 @@ private struct WeeklyPlanningInlineDayChip: View {
 
                     if isToday {
                         Circle()
-                            .fill(isSelected ? .white.opacity(0.92) : Theme.primaryPurple)
+                            .fill(isSelected ? .white.opacity(0.92) : Theme.primaryAccent)
                             .frame(width: 6, height: 6)
                     }
                 }
@@ -365,11 +365,11 @@ private struct WeeklyPlanningInlineDayChip: View {
 
     private var backgroundShape: some View {
         RoundedRectangle(cornerRadius: 18, style: .continuous)
-            .fill(isSelected ? Theme.primaryPurple : Color.primary.opacity(0.045))
+            .fill(isSelected ? Theme.primaryAccent : Color.primary.opacity(0.045))
     }
 
     private var borderColor: Color {
-        isSelected ? Theme.primaryPurple.opacity(0.24) : Color.primary.opacity(0.08)
+        isSelected ? Theme.primaryAccent.opacity(0.24) : Color.primary.opacity(0.08)
     }
 
     private var summaryLabel: String {
@@ -452,7 +452,7 @@ extension TimeBlockCategory {
     var weekOverviewTint: Color {
         switch self {
         case .focus:
-            Theme.primaryPurple
+            Theme.primaryAccent
         case .personal:
             Color(hex: "F59E0B")
         case .admin:

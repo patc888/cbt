@@ -27,7 +27,6 @@
 		E230A5852F5D321E00DE101D /* TimeBlocking.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TimeBlocking.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E230A5962F5D322000DE101D /* TimeBlockingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TimeBlockingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E230A5A02F5D322000DE101D /* TimeBlockingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TimeBlockingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		E271B0002F7A1000000A1001 /* TimeBlockingWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TimeBlockingWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -37,13 +36,6 @@
 				Info.plist,
 			);
 			target = E230A5842F5D321E00DE101D /* TimeBlocking */;
-		};
-		E271B0142F7A1000000A1001 /* Exceptions for "TimeBlockingWidgets" folder in "TimeBlockingWidgets" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = E271B0102F7A1000000A1001 /* TimeBlockingWidgets */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -64,19 +56,6 @@
 		E230A5A32F5D322000DE101D /* TimeBlockingUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = TimeBlockingUITests;
-			sourceTree = "<group>";
-		};
-		E271B0042F7A1000000A1001 /* TimeBlockingShared */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = TimeBlockingShared;
-			sourceTree = "<group>";
-		};
-		E271B0052F7A1000000A1001 /* TimeBlockingWidgets */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				E271B0142F7A1000000A1001 /* Exceptions for "TimeBlockingWidgets" folder in "TimeBlockingWidgets" target */,
-			);
-			path = TimeBlockingWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -103,13 +82,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E271B0062F7A1000000A1001 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -117,8 +89,6 @@
 			isa = PBXGroup;
 			children = (
 				E230A5872F5D321E00DE101D /* TimeBlocking */,
-				E271B0042F7A1000000A1001 /* TimeBlockingShared */,
-				E271B0052F7A1000000A1001 /* TimeBlockingWidgets */,
 				E230A5992F5D322000DE101D /* TimeBlockingTests */,
 				E230A5A32F5D322000DE101D /* TimeBlockingUITests */,
 				E230A5862F5D321E00DE101D /* Products */,
@@ -129,7 +99,6 @@
 			isa = PBXGroup;
 			children = (
 				E230A5852F5D321E00DE101D /* TimeBlocking.app */,
-				E271B0002F7A1000000A1001 /* TimeBlockingWidgets.appex */,
 				E230A5962F5D322000DE101D /* TimeBlockingTests.xctest */,
 				E230A5A02F5D322000DE101D /* TimeBlockingUITests.xctest */,
 			);
@@ -153,7 +122,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				E230A5872F5D321E00DE101D /* TimeBlocking */,
-				E271B0042F7A1000000A1001 /* TimeBlockingShared */,
 			);
 			name = TimeBlocking;
 			packageProductDependencies = (
@@ -208,29 +176,6 @@
 			productReference = E230A5A02F5D322000DE101D /* TimeBlockingUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		E271B0102F7A1000000A1001 /* TimeBlockingWidgets */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = E271B0112F7A1000000A1001 /* Build configuration list for PBXNativeTarget "TimeBlockingWidgets" */;
-			buildPhases = (
-				E271B0082F7A1000000A1001 /* Sources */,
-				E271B0062F7A1000000A1001 /* Frameworks */,
-				E271B0092F7A1000000A1001 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				E271B0042F7A1000000A1001 /* TimeBlockingShared */,
-				E271B0052F7A1000000A1001 /* TimeBlockingWidgets */,
-			);
-			name = TimeBlockingWidgets;
-			packageProductDependencies = (
-			);
-			productName = TimeBlockingWidgets;
-			productReference = E271B0002F7A1000000A1001 /* TimeBlockingWidgets.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -252,9 +197,6 @@
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = E230A5842F5D321E00DE101D;
 					};
-					E271B0102F7A1000000A1001 = {
-						CreatedOnToolsVersion = 26.2;
-					};
 				};
 			};
 			buildConfigurationList = E230A5802F5D321E00DE101D /* Build configuration list for PBXProject "TimeBlocking" */;
@@ -272,7 +214,6 @@
 			projectRoot = "";
 			targets = (
 				E230A5842F5D321E00DE101D /* TimeBlocking */,
-				E271B0102F7A1000000A1001 /* TimeBlockingWidgets */,
 				E230A5952F5D322000DE101D /* TimeBlockingTests */,
 				E230A59F2F5D322000DE101D /* TimeBlockingUITests */,
 			);
@@ -301,13 +242,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E271B0092F7A1000000A1001 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -326,13 +260,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E230A59C2F5D322000DE101D /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E271B0082F7A1000000A1001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -667,70 +594,6 @@
 			};
 			name = Release;
 		};
-		E271B0122F7A1000000A1001 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = TimeBlockingWidgets/TimeBlockingWidgets.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6W3R5F6T8X;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = TimeBlockingWidgets/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.melichan.TimeBlockingWidgets;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-			};
-			name = Debug;
-		};
-		E271B0132F7A1000000A1001 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = TimeBlockingWidgets/TimeBlockingWidgets.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6W3R5F6T8X;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = TimeBlockingWidgets/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.melichan.TimeBlockingWidgets;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -766,15 +629,6 @@
 			buildConfigurations = (
 				E230A5B22F5D322000DE101D /* Debug */,
 				E230A5B32F5D322000DE101D /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		E271B0112F7A1000000A1001 /* Build configuration list for PBXNativeTarget "TimeBlockingWidgets" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				E271B0122F7A1000000A1001 /* Debug */,
-				E271B0132F7A1000000A1001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

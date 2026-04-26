@@ -8,107 +8,131 @@ struct RootView: View {
     @Query private var preferences: [AppPreferences]
     @StateObject private var securityManager = SecurityManager.shared
 
+    @State private var isAppReady = false
+
     var body: some View {
         @Bindable var appState = appEnvironment.appState
 
-        NavigationStack {
-            ScheduleView()
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            HStack(alignment: .center, spacing: 12) {
-                Button {
-                    appState.showDashboard()
-                } label: {
-                    Image(systemName: "chart.bar.xaxis")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Theme.primaryPurple)
-                        .frame(width: 36, height: 36)
-                        .contentShape(Circle())
-                        .background(Theme.primaryPurple.opacity(0.1))
-                        .clipShape(Circle())
+        ZStack {
+            VStack(spacing: 0) {
+                if appEnvironment.isFallback {
+                    HStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 14, weight: .bold))
+                        Text("Temporary Storage Mode: Changes will not be saved")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(.orange.gradient)
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.1), radius: 5, y: 2)
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
-                .accessibilityLabel("Open stats")
-                .padding(.leading, 16)
 
-                Spacer()
 
-                Spacer()
-
-                Spacer()
-
-                Spacer()
-
-                Button {
-                    appState.showSettings()
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Theme.primaryPurple)
-                        .frame(width: 36, height: 36)
-                        .contentShape(Circle())
-                        .background(Theme.primaryPurple.opacity(0.1))
-                        .clipShape(Circle())
+                NavigationStack {
+                    ScheduleView()
                 }
-                .accessibilityLabel("Open settings")
-                .padding(.trailing, 16)
             }
-            .frame(height: 64)
-            .padding(.top, 4)
-            .background(.ultraThinMaterial.opacity(0.6))
-            .overlay(alignment: .bottom) {
-                Divider().opacity(0.1)
+            .opacity(isAppReady ? 1 : 0)
+            .scaleEffect(isAppReady ? 1 : 0.98)
+            .blur(radius: isAppReady ? 0 : 10)
+
+            if !isAppReady {
+                ZStack {
+                    AuroraBackground()
+                        .ignoresSafeArea()
+                    
+                    VStack(spacing: 24) {
+                        AppIconView(size: 100)
+                            .scaleEffect(1.2)
+                            .shadow(color: Theme.primaryAccent.opacity(0.3), radius: 20)
+                        
+                        ProgressView()
+                            .tint(Theme.primaryAccent)
+                    }
+                }
+                .transition(.opacity.combined(with: .scale(scale: 1.1)))
+                .zIndex(1000)
             }
         }
 #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
 #endif
         .overlay(alignment: .bottomTrailing) {
-            floatingActionButton(
-                systemImage: "plus"
+            if isAppReady {
+                floatingActionButton(
+                    systemImage: "plus"
+                ) {
+                    appState.isPresentingAddModal = true
+                }
+                .padding(.trailing, 24)
+                .padding(.bottom, 36)
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .sheet(item: Binding<TimePresentedSheet?>(
+            get: { appState.presentedSheet == .templates ? .templates : nil },
+            set: { if $0 == nil && appState.presentedSheet == .templates { appState.presentedSheet = nil } }
+        )) { _ in
+            secondarySurface(
+                title: "Routines",
+                accessibilityLabel: "Close routines"
             ) {
-                appState.isPresentingAddModal = true
+                TemplatesView()
             }
-            .padding(.trailing, 24)
-            .padding(.bottom, 36)
         }
-        .sheet(item: $appState.presentedSheet) { sheet in
-            switch sheet {
-            case .dashboard:
-                secondarySurface(
-                    title: "Stats",
-                    accessibilityLabel: "Close stats"
-                ) {
-                    DashboardView()
+        .overlay {
+            if appState.presentedSheet != nil && appState.presentedSheet != .templates {
+                Color.black.opacity(0.15)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                            appState.showScheduleHome()
+                        }
+                    }
+                    .zIndex(5)
+            }
+        }
+        .overlay {
+            Group {
+                if appState.presentedSheet == .dashboard {
+                    secondarySurface(
+                        title: "Stats",
+                        accessibilityLabel: "Close stats"
+                    ) {
+                        DashboardView()
+                    }
+                    .transition(.move(edge: .leading))
+                    .shadow(color: .black.opacity(0.1), radius: 20, x: 10, y: 0)
                 }
-            case .settings:
-                NavigationStack {
+
+                if appState.presentedSheet == .settings {
                     SettingsView()
+                        .transition(.move(edge: .trailing))
+                        .shadow(color: .black.opacity(0.1), radius: 20, x: -10, y: 0)
                 }
-            case .templates:
-                secondarySurface(
-                    title: "Routines",
-                    accessibilityLabel: "Close routines"
-                ) {
-                    TemplatesView()
-                }
-            case .premium:
-                TimeSubscriptionView()
             }
+            .zIndex(10)
         }
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: appState.presentedSheet)
         .onChange(of: appState.selectedSection) { _, newSection in
             switch newSection {
-            case .schedule:
-                break
-            case .dashboard:
-                appState.showDashboard()
-            case .templates:
-                appState.showTemplates()
+            case .dashboard: appState.showDashboard()
+            case .templates: appState.showTemplates()
+            case .schedule: appState.showScheduleHome()
             }
         }
         .task {
-            appEnvironment.prepareIfNeeded(using: modelContext)
-            await appEnvironment.resyncNotifications(using: modelContext)
-            
+            // Give a moment for the data to load and splash to show
+            try? await Task.sleep(for: .milliseconds(800))
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                isAppReady = true
+            }
+
             if preferences.first?.appLockEnabled ?? false {
                 securityManager.lock()
                 securityManager.authenticate()
@@ -119,7 +143,7 @@ struct RootView: View {
                 Task {
                     await appEnvironment.resyncNotifications(using: modelContext)
                 }
-                
+
                 if preferences.first?.appLockEnabled ?? false {
                     securityManager.authenticate()
                 }
@@ -136,8 +160,28 @@ struct RootView: View {
                     .transition(.opacity)
                     .zIndex(100)
             }
+            
+            // Privacy blur when app is in switcher
+            if (preferences.first?.appLockEnabled ?? false) && scenePhase != .active {
+                Color.clear
+                    .background(.ultraThinMaterial)
+                    .ignoresSafeArea()
+                    .zIndex(101)
+            }
+        }
+        .fullScreenCover(isPresented: .init(
+            get: { isAppReady && !(preferences.first?.hasSeenOnboarding ?? true) },
+            set: { _ in }
+        )) {
+            OnboardingView {
+                if let prefs = preferences.first {
+                    prefs.hasSeenOnboarding = true
+                    try? modelContext.save()
+                }
+            }
         }
     }
+
 
     private func floatingActionButton(
         systemImage: String,
@@ -150,9 +194,16 @@ struct RootView: View {
                 .frame(width: 64, height: 64)
                 .background(
                     Circle()
-                        .fill(Theme.primaryPurple.gradient)
-                        .shadow(color: Theme.primaryPurple.opacity(0.4), radius: 12, x: 0, y: 6)
+                        .fill(
+                            LinearGradient(
+                                colors: [Theme.primaryAccent, Theme.secondaryAccent],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: Theme.primaryAccent.opacity(0.35), radius: 15, x: 0, y: 8)
                 )
+
         }
         .buttonStyle(.plain)
     }
@@ -165,39 +216,46 @@ struct RootView: View {
         ZStack(alignment: .top) {
             content()
 
-            HStack {
-                Spacer()
+            VStack(spacing: 0) {
+                HStack {
+                    Spacer()
 
-                VStack(spacing: 2) {
-                    Text(title)
-                        .font(.system(size: Theme.fontSizeSection, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
+                    VStack(spacing: 2) {
+                        Text(title)
+                            .font(.system(size: Theme.fontSizeSection, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.primaryText)
+                    }
+
+                    Spacer()
+
+                    Button {
+                        appEnvironment.appState.showScheduleHome()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Theme.primaryAccent)
+                            .frame(width: 36, height: 36)
+                            .contentShape(Circle())
+                            .background(Theme.primaryAccent.opacity(0.1))
+                            .clipShape(Circle())
+                    }
+                    .accessibilityLabel(accessibilityLabel)
+                    .padding(.trailing, 16)
                 }
+                .frame(height: 64)
+                .padding(.top, 4)
 
-                Spacer()
-
-                Button {
-                    appEnvironment.appState.showScheduleHome()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Theme.primaryPurple)
-                        .frame(width: 36, height: 36)
-                        .contentShape(Circle())
-                        .background(Theme.primaryPurple.opacity(0.1))
-                        .clipShape(Circle())
-                }
-                .accessibilityLabel(accessibilityLabel)
-                .padding(.trailing, 16)
+                Divider()
+                    .opacity(0.1)
             }
-            .frame(height: 64)
-            .padding(.top, 4)
-            .background(.ultraThinMaterial.opacity(0.6))
-            .overlay(alignment: .bottom) {
-                Divider().opacity(0.1)
+            .background {
+                Color.clear
+                    .background(.ultraThinMaterial)
+                    .ignoresSafeArea(edges: .top)
             }
         }
     }
+
 }
 
 #Preview {

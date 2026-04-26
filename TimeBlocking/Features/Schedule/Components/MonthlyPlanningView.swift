@@ -56,7 +56,7 @@ struct MonthlyPlanningView: View {
                     }
                     .buttonStyle(.bordered)
                 }
-                .tint(Theme.primaryPurple)
+                .tint(Theme.primaryAccent)
             }
 
             Text("Month is navigation-only. Pick a date, then make changes on the Day canvas.")
@@ -143,7 +143,7 @@ private struct MonthlyPlanningDayCell: View {
 
                     if isToday {
                         Circle()
-                            .fill(Theme.primaryPurple)
+                            .fill(Theme.primaryAccent)
                             .frame(width: 5, height: 5)
                     }
 
@@ -217,7 +217,7 @@ private struct MonthlyPlanningDayCell: View {
 
     private var dayNumberColor: Color {
         if isSelected {
-            return Theme.primaryPurple
+            return Theme.primaryAccent
         }
 
         if day.isInDisplayedMonth {
@@ -232,7 +232,7 @@ private struct MonthlyPlanningDayCell: View {
             return Color.green.opacity(day.isInDisplayedMonth ? 0.85 : 0.45)
         }
 
-        return Theme.primaryPurple.opacity(day.isInDisplayedMonth ? 0.75 : 0.35)
+        return Theme.primaryAccent.opacity(day.isInDisplayedMonth ? 0.75 : 0.35)
     }
 
     private var trackColor: Color {
@@ -254,7 +254,7 @@ private struct MonthlyPlanningDayCell: View {
 
     private var backgroundColor: Color {
         if isSelected {
-            return Theme.primaryPurple.opacity(0.1)
+            return Theme.primaryAccent.opacity(0.1)
         }
 
         if day.isInDisplayedMonth {
@@ -266,11 +266,11 @@ private struct MonthlyPlanningDayCell: View {
 
     private var borderColor: Color {
         if isSelected {
-            return Theme.primaryPurple.opacity(0.35)
+            return Theme.primaryAccent.opacity(0.35)
         }
 
         if isToday {
-            return Theme.primaryPurple.opacity(0.18)
+            return Theme.primaryAccent.opacity(0.18)
         }
 
         return Color.primary.opacity(day.isInDisplayedMonth ? 0.07 : 0.03)

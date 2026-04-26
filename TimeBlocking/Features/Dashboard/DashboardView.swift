@@ -1,6 +1,9 @@
+import Charts
+import os
 import SwiftData
 import SwiftUI
-import Charts
+
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "DashboardView")
 
 struct DashboardView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
@@ -10,25 +13,25 @@ struct DashboardView: View {
         .now
     }
 
-    private var summary: ScheduleDashboardSummary {
-        do {
-            return try appEnvironment.scheduleRepository.dashboardSummary(
-                for: now,
-                in: modelContext
-            )
-        } catch {
-            assertionFailure("Failed to build dashboard summary: \(error)")
-            return ScheduleDashboardSummary(
-                daySnapshot: ScheduleDaySnapshot(
-                    blocks: [],
-                    completedCount: 0,
-                    plannedCount: 0,
-                    scheduledMinutes: 0
-                ),
-                upcomingBlocks: []
-            )
-        }
+    @Query private var blocks: [TimeBlock]
+
+    init() {
+        let earliestEndDate = Date.now.addingTimeInterval(-86400)
+        _blocks = Query(
+            filter: #Predicate<TimeBlock> { block in
+                block.endDate > earliestEndDate
+            },
+            sort: \TimeBlock.startDate
+        )
     }
+
+    private var summary: ScheduleDashboardSummary {
+        appEnvironment.scheduleRepository.dashboardSummary(
+            for: now,
+            from: blocks
+        )
+    }
+
 
     private var todayLabel: String {
         now.formatted(.dateTime.weekday(.wide).month(.wide).day())
@@ -88,37 +91,31 @@ struct DashboardView: View {
                             if summary.isEmpty {
                                 Divider()
 
-                                EmptyStateView(
+                                PremiumEmptyStateView(
                                     title: "No Plan Yet",
-                                    systemImage: "calendar.badge.plus",
                                     message: "Add a block in Schedule, or create routines for plans you want to regenerate later.",
-                                    eyebrow: "Get Started"
+                                    systemImage: "calendar.badge.plus",
+                                    eyebrow: "Get Started",
+                                    actionTitle: "Add Block"
                                 ) {
-                                    Button("Add Block") {
-                                        appEnvironment.appState.showAddBlock()
-                                    }
-                                    .buttonStyle(.borderedProminent)
-
-                                    Button("Open Routines") {
-                                        appEnvironment.appState.showTemplates()
-                                    }
-                                    .buttonStyle(.bordered)
+                                    appEnvironment.appState.showAddBlock()
                                 }
                                 .padding(.vertical, 20)
                             } else {
+
                                 Divider()
 
                                 // MARK: - Overview Main Stat
                                 VStack(spacing: 4) {
-                                    let rate = summary.totalBlocks > 0 
-                                        ? Int((Double(summary.daySnapshot.completedCount) / Double(summary.totalBlocks)) * 100) 
+                                    let rate = summary.totalBlocks > 0
+                                        ? Int((Double(summary.daySnapshot.completedCount) / Double(summary.totalBlocks)) * 100)
                                         : 0
-                                    
+
                                     Text("\(rate)%")
                                         .font(.system(size: 52, weight: .black, design: .rounded))
                                         .foregroundStyle(Theme.primaryText)
                                         .contentTransition(.numericText())
-                                    
+
                                     Text("\(summary.daySnapshot.completedCount) of \(summary.totalBlocks) Blocks Completed")
                                         .font(.system(size: 14, weight: .medium, design: .rounded))
                                         .foregroundStyle(Theme.secondaryText)
@@ -126,7 +123,7 @@ struct DashboardView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
-                                
+
                                 DashboardInsightsView()
 
                                 // MARK: - Quick Stats Grid
@@ -147,7 +144,7 @@ struct DashboardView: View {
                                         value: "\(summary.daySnapshot.scheduledMinutes)",
                                         systemImage: "timer",
                                         unit: "min",
-                                        iconColor: Theme.secondaryPurple
+                                        iconColor: Theme.secondaryAccent
                                     )
                                     TimeMetricTile(
                                         title: "Remaining",
@@ -244,5 +241,4 @@ struct DashboardView: View {
         .environment(AppEnvironment(persistenceController: .preview))
         .modelContainer(PersistenceController.preview.container)
 }
-
 

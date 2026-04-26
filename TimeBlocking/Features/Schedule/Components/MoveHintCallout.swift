@@ -6,11 +6,11 @@ struct MoveHintCallout: View {
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: "hand.draw")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Theme.primaryPurple)
+                    .foregroundStyle(Theme.primaryAccent)
                     .frame(width: 30, height: 30)
                     .background(
                         Circle()
-                            .fill(Theme.primaryPurple.opacity(0.12))
+                            .fill(Theme.primaryAccent.opacity(0.12))
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -47,11 +47,11 @@ struct MoveHintCallout: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Theme.primaryPurple.opacity(0.08))
+                .fill(Theme.primaryAccent.opacity(0.08))
         )
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(Theme.primaryPurple.opacity(0.14), lineWidth: 1)
+                .strokeBorder(Theme.primaryAccent.opacity(0.14), lineWidth: 1)
         }
     }
 }

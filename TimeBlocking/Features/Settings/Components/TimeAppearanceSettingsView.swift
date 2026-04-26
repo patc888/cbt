@@ -13,7 +13,7 @@ struct TimeAppearanceSettingsView: View {
         TimeSettingsSection(title: "Appearance") {
             TimeSettingsRow(
                 icon: "circle.lefthalf.filled",
-                iconColor: Theme.primaryPurple,
+                iconColor: Theme.primaryAccent,
                 title: "App Theme",
                 subtitle: "System, Light, or Dark"
             ) {
@@ -22,8 +22,8 @@ struct TimeAppearanceSettingsView: View {
                         get: { preferences?.appTheme ?? .system },
                         set: { newValue in
                             onUpdate { $0.appTheme = newValue }
-                            UserDefaults.standard.set(newValue.rawValue, forKey: "userTheme")
                         }
+
                     ),
                     options: AppTheme.allCases,
                     titleKey: \.rawValue,
@@ -42,7 +42,7 @@ struct TimeAppearanceSettingsView: View {
 
             TimeSettingsRow(
                 icon: "sparkles",
-                iconColor: Theme.primaryPurple,
+                iconColor: Theme.primaryAccent,
                 title: "Background Style",
                 subtitle: "Use the full aurora background"
             ) {
@@ -51,8 +51,8 @@ struct TimeAppearanceSettingsView: View {
                         get: { preferences?.isImmersive ?? true },
                         set: { newValue in
                             onUpdate { $0.isImmersive = newValue }
-                            UserDefaults.standard.set(newValue, forKey: "appThemeImmersive")
                         }
+
                     ),
                     namespace: fullColorNamespace
                 )
@@ -63,7 +63,7 @@ struct TimeAppearanceSettingsView: View {
 
             TimeSettingsRow(
                 icon: "checkmark.circle",
-                iconColor: Theme.primaryPurple,
+                iconColor: Theme.primaryAccent,
                 title: "Show Completed",
                 subtitle: "Keep finished blocks visible"
             ) {
@@ -83,7 +83,7 @@ struct TimeAppearanceSettingsView: View {
 
             TimeSettingsRow(
                 icon: "hand.tap.fill",
-                iconColor: Theme.primaryPurple,
+                iconColor: Theme.primaryAccent,
                 title: "Haptics",
                 subtitle: "Tap feedback for supported actions"
             ) {
@@ -92,8 +92,8 @@ struct TimeAppearanceSettingsView: View {
                         get: { preferences?.hapticsEnabled ?? true },
                         set: { newValue in
                             onUpdate { $0.hapticsEnabled = newValue }
-                            UserDefaults.standard.set(newValue, forKey: "hapticsEnabled")
                         }
+
                     ),
                     namespace: hapticNamespace
                 )
@@ -105,7 +105,7 @@ struct TimeAppearanceSettingsView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 Image(systemName: "paintpalette.fill")
-                    .foregroundStyle(Theme.primaryPurple)
+                    .foregroundStyle(Theme.primaryAccent)
                     .font(.system(size: 18))
                     .frame(width: 24)
 
@@ -134,7 +134,7 @@ struct TimeAppearanceSettingsView: View {
     }
     
     private func colorThemeButton(for theme: AppColorTheme) -> some View {
-        let isSelected = (preferences?.selectedColorTheme ?? .purple) == theme
+        let isSelected = (preferences?.selectedColorTheme ?? .red) == theme
         
         return ZStack {
             if isSelected {
@@ -152,8 +152,8 @@ struct TimeAppearanceSettingsView: View {
         .onTapGesture {
             HapticManager.shared.lightImpact()
             onUpdate { $0.selectedColorTheme = theme }
-            UserDefaults.standard.set(theme.rawValue, forKey: "appColorTheme")
         }
+
         .scaleEffect(isSelected ? 1.05 : 1.0)
     }
 }

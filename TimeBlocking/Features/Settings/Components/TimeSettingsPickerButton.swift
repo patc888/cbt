@@ -21,18 +21,18 @@ struct TimeSettingsPickerButton: View {
             
             Image(systemName: "pencil.circle.fill")
                 .font(.system(size: 14, weight: .bold))
-                .shadow(color: Theme.primaryPurple.opacity(0.1), radius: 4, x: 0, y: 2)
+                .shadow(color: Theme.primaryAccent.opacity(0.1), radius: 4, x: 0, y: 2)
         }
-        .foregroundStyle(Theme.primaryPurple)
+        .foregroundStyle(Theme.primaryAccent)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(
             Capsule()
-                .fill(Theme.primaryPurple.opacity(isExpanded ? 0.15 : 0.1))
+                .fill(Theme.primaryAccent.opacity(isExpanded ? 0.15 : 0.1))
         )
         .overlay(
             Capsule()
-                .stroke(Theme.primaryPurple, lineWidth: isExpanded ? 2 : 0)
+                .stroke(Theme.primaryAccent, lineWidth: isExpanded ? 2 : 0)
         )
     }
 }
@@ -51,16 +51,16 @@ struct TimeSettingsDropdownButton: View {
             Image(systemName: "chevron.up.chevron.down")
                 .font(.system(size: 10, weight: .bold))
         }
-        .foregroundStyle(Theme.primaryPurple)
+        .foregroundStyle(Theme.primaryAccent)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(
             Capsule()
-                .fill(Theme.primaryPurple.opacity(isExpanded ? 0.15 : 0.1))
+                .fill(Theme.primaryAccent.opacity(isExpanded ? 0.15 : 0.1))
         )
         .overlay(
             Capsule()
-                .stroke(Theme.primaryPurple, lineWidth: isExpanded ? 2 : 0)
+                .stroke(Theme.primaryAccent, lineWidth: isExpanded ? 2 : 0)
         )
     }
 }

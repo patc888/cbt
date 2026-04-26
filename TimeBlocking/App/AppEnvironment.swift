@@ -1,6 +1,9 @@
 import Foundation
 import Observation
+import os
 import SwiftData
+
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "AppEnvironment")
 
 enum AppBootstrapState: String {
     case empty
@@ -10,17 +13,21 @@ enum AppBootstrapState: String {
 @MainActor
 @Observable
 final class AppEnvironment {
-    let persistenceController: PersistenceController
+    private(set) var persistenceController: PersistenceController?
+    private(set) var isReady = false
+
     let preferencesStore: AppPreferencesStore
     let scheduleRepository: ScheduleRepository
     let timeCalendarManager: TimeCalendarManager
     let timeNotificationManager: TimeNotificationManager
-    let widgetSnapshotManager: TimeWidgetSnapshotManager
-    let subscriptionStore: TimeSubscriptionStore
     let appState: TimeAppState
 
+    var isFallback: Bool {
+        persistenceController?.isFallback ?? false
+    }
+
     private let bootstrapStateKey = "timeblocking.bootstrap-state"
-    private var hasPreparedPersistentState = false
+    private var isInitializing = false
 
     init(
         persistenceController: PersistenceController? = nil,
@@ -28,97 +35,125 @@ final class AppEnvironment {
         scheduleRepository: ScheduleRepository? = nil,
         timeCalendarManager: TimeCalendarManager? = nil,
         timeNotificationManager: TimeNotificationManager? = nil,
-        widgetSnapshotManager: TimeWidgetSnapshotManager? = nil,
-        subscriptionStore: TimeSubscriptionStore? = nil,
         appState: TimeAppState? = nil
     ) {
         let resolvedScheduleRepository = scheduleRepository ?? ScheduleRepository()
 
-        self.persistenceController = persistenceController ?? .shared
+        self.persistenceController = persistenceController
         self.preferencesStore = preferencesStore ?? AppPreferencesStore()
         self.scheduleRepository = resolvedScheduleRepository
         self.timeCalendarManager = timeCalendarManager ?? TimeCalendarManager()
         self.timeNotificationManager = timeNotificationManager ?? TimeNotificationManager()
-        self.widgetSnapshotManager = widgetSnapshotManager ?? TimeWidgetSnapshotManager(
-            repository: resolvedScheduleRepository
-        )
-        self.subscriptionStore = subscriptionStore ?? TimeSubscriptionStore(config: .time)
         self.appState = appState ?? TimeAppState()
+
+        // If a controller was provided (e.g. preview), we're immediately ready
+        if persistenceController != nil {
+            self.isReady = true
+        }
     }
 
-    func prepareIfNeeded(using modelContext: ModelContext) {
-        guard !hasPreparedPersistentState else {
-            return
+    func initialize() async {
+        guard !isReady, !isInitializing else { return }
+        isInitializing = true
+
+        defer {
+            isInitializing = false
         }
 
         do {
-            let preferences = try preferencesStore.fetchOrCreate(in: modelContext)
-            try seedSampleDataOnFirstLaunchIfNeeded(using: preferences, modelContext: modelContext)
-            refreshWidgets(using: modelContext)
-            hasPreparedPersistentState = true
-            Task {
-                await resyncNotifications(using: modelContext, preferences: preferences)
-            }
+            logger.info("Starting async app environment initialization...")
+            let controller = try await PersistenceController.createAsync()
+            self.persistenceController = controller
+
+            // Background bootstrap tasks
+            let bootstrapActor = BootstrapActor(modelContainer: controller.container)
+            try await bootstrapActor.prepareAppFoundation(
+                preferencesStore: preferencesStore,
+                scheduleRepository: scheduleRepository,
+                notificationManager: timeNotificationManager
+            )
+
+            self.isReady = true
+            syncPreferencesToUserDefaults(using: controller.container.mainContext)
+            logger.info("App environment initialization finished successfully.")
+
         } catch {
-            assertionFailure("Failed to prepare app foundation: \(error)")
+            logger.error("Failed to initialize app environment: \(error)")
+            // Fallback to a guaranteed (in-memory) state if even createAsync fails catastrophically
+            if persistenceController == nil {
+                self.persistenceController = .shared // This is the old sync fallback
+                self.isReady = true
+            }
         }
     }
 
-    func resetAllDataToEmpty(using modelContext: ModelContext) throws {
+    func prepareIfNeeded(using modelContext: ModelContext) async throws {
+        let bootstrapActor = BootstrapActor(modelContainer: modelContext.container)
+        try await bootstrapActor.prepareAppFoundation(
+            preferencesStore: preferencesStore,
+            scheduleRepository: scheduleRepository,
+            notificationManager: timeNotificationManager
+        )
+        syncPreferencesToUserDefaults(using: modelContext)
+    }
+
+    func resetAllDataToEmpty(using modelContext: ModelContext) async throws {
         let preferences = try preferencesStore.fetchOrCreate(in: modelContext)
         try deleteAllScheduleData(in: modelContext)
         applyDefaultPreferences(to: preferences)
         try preferencesStore.save(preferences, in: modelContext)
         storeBootstrapState(.empty)
-        refreshWidgets(using: modelContext)
 
-        Task {
-            await resyncNotifications(using: modelContext, preferences: preferences)
-        }
+        await resyncNotifications(using: modelContext, preferences: preferences)
     }
 
-    func resetAllDataToSample(using modelContext: ModelContext) throws {
+    func resetAllDataToSample(using modelContext: ModelContext) async throws {
         let preferences = try preferencesStore.fetchOrCreate(in: modelContext)
         try deleteAllScheduleData(in: modelContext)
-        try seedSampleData(using: preferences, modelContext: modelContext)
-        storeBootstrapState(.sample)
-        refreshWidgets(using: modelContext)
 
-        Task {
-            await resyncNotifications(using: modelContext, preferences: preferences)
-        }
+        let actor = BootstrapActor(modelContainer: modelContext.container)
+        try await actor.seedSampleData(preferences: preferences, scheduleRepository: scheduleRepository)
+
+        storeBootstrapState(.sample)
+
+        await resyncNotifications(using: modelContext, preferences: preferences)
     }
 
     func generateScheduleIfNeeded(for date: Date, using modelContext: ModelContext) {
         do {
             try scheduleRepository.generateBlocksIfNeeded(for: date, in: modelContext)
-            refreshWidgets(using: modelContext)
             Task {
                 await resyncNotifications(using: modelContext)
             }
         } catch {
-            assertionFailure("Failed to generate schedule blocks: \(error)")
+            logger.error("Failed to generate schedule blocks: \(error)")
         }
     }
 
+    func syncPreferencesToUserDefaults(using modelContext: ModelContext) {
+        guard let prefs = try? preferencesStore.fetchOrCreate(in: modelContext) else { return }
+
+        UserDefaults.standard.set(prefs.selectedColorTheme?.rawValue, forKey: "appColorTheme")
+        UserDefaults.standard.set(prefs.isImmersive ?? true, forKey: "appThemeImmersive")
+        UserDefaults.standard.set(prefs.appTheme?.rawValue, forKey: "userTheme")
+        UserDefaults.standard.set(prefs.hapticsEnabled ?? true, forKey: "hapticsEnabled")
+    }
+
+
     func syncReminder(for block: TimeBlock, using modelContext: ModelContext) async {
         guard let preferences = try? preferencesStore.fetchOrCreate(in: modelContext) else {
-            refreshWidgets(using: modelContext)
             return
         }
 
         await timeNotificationManager.scheduleReminder(for: block, preferences: preferences)
-        refreshWidgets(using: modelContext)
     }
 
     func cancelReminder(for block: TimeBlock, using modelContext: ModelContext) async {
         timeNotificationManager.cancelReminder(for: block)
-        refreshWidgets(using: modelContext)
     }
 
     func cancelReminder(forBlockID blockID: UUID, using modelContext: ModelContext) async {
         timeNotificationManager.cancelReminder(forBlockID: blockID)
-        refreshWidgets(using: modelContext)
     }
 
     func resyncNotifications(
@@ -138,114 +173,9 @@ final class AppEnvironment {
             in: modelContext,
             preferences: resolvedPreferences
         )
-        refreshWidgets(using: modelContext)
     }
 
-    func refreshWidgets(using modelContext: ModelContext) {
-        do {
-            try widgetSnapshotManager.refresh(using: modelContext)
-        } catch {
-            assertionFailure("Failed to refresh widget snapshot: \(error)")
-        }
-    }
 
-    private func seedSampleDataOnFirstLaunchIfNeeded(
-        using preferences: AppPreferences,
-        modelContext: ModelContext,
-        calendar: Calendar = .current
-    ) throws {
-        guard try isEffectivelyEmpty(modelContext: modelContext) else {
-            return
-        }
-
-        guard bootstrapState == nil else {
-            return
-        }
-
-        try seedSampleData(using: preferences, modelContext: modelContext, calendar: calendar)
-        storeBootstrapState(.sample)
-    }
-
-    private func isEffectivelyEmpty(modelContext: ModelContext) throws -> Bool {
-        var templateDescriptor = FetchDescriptor<ScheduleTemplate>()
-        templateDescriptor.fetchLimit = 1
-
-        var blockDescriptor = FetchDescriptor<TimeBlock>()
-        blockDescriptor.fetchLimit = 1
-
-        let hasTemplates = try !modelContext.fetch(templateDescriptor).isEmpty
-        let hasBlocks = try !modelContext.fetch(blockDescriptor).isEmpty
-        return !hasTemplates && !hasBlocks
-    }
-
-    private func seedSampleData(
-        using preferences: AppPreferences,
-        modelContext: ModelContext,
-        calendar: Calendar = .current
-    ) throws {
-        applySamplePreferences(to: preferences)
-        try preferencesStore.save(preferences, in: modelContext)
-
-        let today = calendar.startOfDay(for: .now)
-        let weekdayMask = weekdayMask(for: [.monday, .tuesday, .wednesday, .thursday, .friday])
-
-        _ = try scheduleRepository.createTemplate(
-            name: "Morning Planning",
-            notes: "Reusable weekday routine that can be regenerated onto future days.",
-            defaultStartTime: time(hour: 8, minute: 30, on: today, calendar: calendar),
-            durationMinutes: 30,
-            weekdayMask: weekdayMask,
-            category: .routine,
-            in: modelContext,
-            calendar: calendar
-        )
-
-        try scheduleRepository.generateBlocksIfNeeded(for: today, in: modelContext, calendar: calendar)
-
-        _ = try scheduleRepository.createBlock(
-            title: "Focus Sprint: Project Proposal",
-            notes: "A realistic focused work block you can drag to another time if the day changes.",
-            date: today,
-            startTime: time(hour: 9, minute: 30, on: today, calendar: calendar),
-            durationMinutes: 90,
-            category: .focus,
-            in: modelContext,
-            calendar: calendar
-        )
-
-        let prepBlock = try scheduleRepository.createBlock(
-            title: "Prep for Team Check-In",
-            notes: "Example block with a checklist so the day view demonstrates step-by-step progress.",
-            date: today,
-            startTime: time(hour: 11, minute: 30, on: today, calendar: calendar),
-            durationMinutes: 30,
-            category: .admin,
-            checklistItemTitles: [
-                "Review agenda",
-                "Update blockers",
-                "Capture next actions"
-            ],
-            in: modelContext,
-            calendar: calendar
-        )
-
-        if let firstChecklistItem = prepBlock.checklistItems?.sorted(by: { $0.sortOrder < $1.sortOrder }).first {
-            firstChecklistItem.isCompleted = true
-            firstChecklistItem.updatedAt = .now
-        }
-
-        let walkBlock = try scheduleRepository.createBlock(
-            title: "Lunch Walk",
-            notes: "Completed example block to show progress and finished work in the schedule.",
-            date: today,
-            startTime: time(hour: 13, minute: 0, on: today, calendar: calendar),
-            durationMinutes: 30,
-            category: .personal,
-            in: modelContext,
-            calendar: calendar
-        )
-        try scheduleRepository.setBlockStatus(walkBlock, to: .completed, in: modelContext)
-    }
 
     private func deleteAllScheduleData(in modelContext: ModelContext) throws {
         try modelContext.delete(model: TimeBlock.self)
@@ -262,7 +192,7 @@ final class AppEnvironment {
         preferences.notificationLeadTimeMinutes = 0
         preferences.showsCompletedBlocks = true
         preferences.appTheme = .system
-        preferences.selectedColorTheme = .purple
+        preferences.selectedColorTheme = .red
         preferences.isImmersive = true
         preferences.hapticsEnabled = true
     }
@@ -275,7 +205,7 @@ final class AppEnvironment {
         preferences.firstWeekday = .monday
         preferences.showsCompletedBlocks = false
         preferences.appTheme = .system
-        preferences.selectedColorTheme = .purple
+        preferences.selectedColorTheme = .red
         preferences.isImmersive = true
         preferences.hapticsEnabled = true
     }

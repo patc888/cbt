@@ -8,7 +8,7 @@ struct LockView: View {
     var body: some View {
         ZStack {
             Rectangle()
-                .fill(Theme.primaryPurple.gradient)
+                .fill(Theme.primaryAccent.gradient)
                 .ignoresSafeArea()
             
             VStack(spacing: 32) {
@@ -51,7 +51,7 @@ struct LockView: View {
                         Text("Unlock App")
                             .font(.system(size: 18, weight: .bold, design: .rounded))
                     }
-                    .foregroundColor(Theme.primaryPurple)
+                    .foregroundColor(Theme.primaryAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
                     .background(

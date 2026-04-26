@@ -6,5 +6,13 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>NSFaceIDUsageDescription</key>
+	<string>TimeBlocking uses Face ID to securely lock and unlock your data.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>TimeBlocking needs calendar access to view and manage your scheduled events.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>TimeBlocking requires full calendar access to view, add, and modify your scheduled events.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>TimeBlocking requires calendar access to add new events.</string>
 </dict>
 </plist>

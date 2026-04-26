@@ -1,5 +1,8 @@
+import os
 import SwiftData
 import SwiftUI
+
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "TimeBlockRowView")
 
 struct TimeBlockRowView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
@@ -51,14 +54,9 @@ struct TimeBlockRowView: View {
     }
 
     private var accentColor: Color {
-        switch block.category {
-        case .focus: return Theme.primaryPurple
-        case .personal: return Color(hex: "F59E0B")
-        case .admin: return Color(hex: "0EA5E9")
-        case .routine: return Color(hex: "10B981")
-        case .custom: return Color(hex: "64748B")
-        }
+        Theme.color(for: block.category)
     }
+
 
     private var categoryIcon: String {
         switch block.category {
@@ -244,6 +242,13 @@ struct TimeBlockRowView: View {
             }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isCompleted)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(block.title), \(block.category.title)")
+        .accessibilityValue("\(isCompleted ? "Completed" : "Planned"), \(timeRangeText)")
+        .accessibilityAddTraits(isCompleted ? [.isButton, .isSelected] : [.isButton])
+        .accessibilityAction {
+            handleComplete()
+        }
     }
 
     private var sortedChecklistItems: [BlockChecklistItem] {
@@ -350,26 +355,24 @@ struct TimeBlockRowView: View {
             fillProgress = 1.0
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(150))
             withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                 bounceScale = 1.0
             }
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+
+            try? await Task.sleep(for: .milliseconds(50))
             withAnimation {
                 showConfetti = true
             }
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+
+            try? await Task.sleep(for: .milliseconds(400))
             toggleCompletion()
             isAnimating = false
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                showConfetti = false
-                fillProgress = 0
-            }
+
+            try? await Task.sleep(for: .seconds(1.2))
+            showConfetti = false
+            fillProgress = 0
         }
     }
 
@@ -392,12 +395,16 @@ struct TimeBlockRowView: View {
                 await appEnvironment.syncReminder(for: block, using: modelContext)
             }
         } catch {
-            assertionFailure("Failed to update block completion state: \(error)")
+            logger.error("Failed to update block completion state: \(error)")
         }
     }
 
     private func saveChanges() {
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            logger.error("Failed to save inline changes: \(error)")
+        }
     }
 
     private func toggleChecklistItem(_ item: BlockChecklistItem) {

@@ -1,16 +1,17 @@
+import os
 import SwiftData
 import SwiftUI
-#if os(macOS)
-import AppKit
-#endif
 #if os(iOS)
 import UIKit
 #endif
+
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "SettingsView")
 
 struct SettingsView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
     @Query private var preferences: [AppPreferences]
 
     private var appPreferences: AppPreferences? {
@@ -94,14 +95,6 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
                 }
             } else {
-                TimeSubscriptionSettingsView(
-                    isPremium: appEnvironment.subscriptionStore.isPremium,
-                    action: {
-                        HapticManager.shared.lightImpact()
-                        appEnvironment.appState.showPremium()
-                    }
-                )
-
                 TimeSchedulingSettingsView(
                     preferences: appPreferences,
                     onUpdate: updatePreferences
@@ -141,11 +134,11 @@ struct SettingsView: View {
     private var navigationArrow: some View {
         Button(action: {
             HapticManager.shared.lightImpact()
-            dismiss()
+            appEnvironment.appState.showScheduleHome()
         }) {
             Image(systemName: "chevron.right")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(Theme.primaryPurple)
+                .foregroundStyle(Theme.primaryAccent)
                 .padding(8)
                 .contentShape(Rectangle())
         }
@@ -160,7 +153,9 @@ struct SettingsView: View {
 
         update(appPreferences)
         try? appEnvironment.preferencesStore.save(appPreferences, in: modelContext)
+        appEnvironment.syncPreferencesToUserDefaults(using: modelContext)
     }
+
 
     private func setNotificationsEnabled(_ isEnabled: Bool) {
         Task {
@@ -190,30 +185,34 @@ struct SettingsView: View {
         guard let url = URL(string: UIApplication.openSettingsURLString) else {
             return
         }
-        UIApplication.shared.open(url)
+        openURL(url)
 #elseif os(macOS)
         guard let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension") else {
             return
         }
-        NSWorkspace.shared.open(url)
+        openURL(url)
 #endif
     }
 
     private func resetAllDataToEmpty() {
         HapticManager.shared.lightImpact()
-        do {
-            try appEnvironment.resetAllDataToEmpty(using: modelContext)
-        } catch {
-            print("Error resetting data: \(error)")
+        Task {
+            do {
+                try await appEnvironment.resetAllDataToEmpty(using: modelContext)
+            } catch {
+                logger.error("Failed to reset data to empty: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 
     private func resetAllDataToSample() {
         HapticManager.shared.lightImpact()
-        do {
-            try appEnvironment.resetAllDataToSample(using: modelContext)
-        } catch {
-            print("Error resetting data to sample: \(error)")
+        Task {
+            do {
+                try await appEnvironment.resetAllDataToSample(using: modelContext)
+            } catch {
+                logger.error("Failed to reset data to sample: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 }

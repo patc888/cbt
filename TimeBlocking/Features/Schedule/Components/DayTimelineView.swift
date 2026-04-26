@@ -212,7 +212,7 @@ struct DayTimelineView: View {
                                     .frame(width: labelColumnWidth, alignment: .leading)
 
                                 Rectangle()
-                                    .fill(Theme.primaryPurple.opacity(hour == timelineBounds.startHour ? 0 : 0.1))
+                                    .fill(Theme.primaryAccent.opacity(hour == timelineBounds.startHour ? 0 : 0.1))
                                     .frame(height: 1)
                             }
                             .frame(height: hourHeight, alignment: .top)
@@ -1245,13 +1245,13 @@ private struct DayTimelineBlockCard: View {
             case .wakeUp:
                 return Color(hex: "F59E0B")
             case .sleep:
-                return Theme.primaryPurple
+                return Theme.primaryAccent
             }
         }
 
         switch block.category {
         case .focus:
-            return Theme.primaryPurple
+            return Theme.primaryAccent
         case .personal:
             return Color(hex: "F59E0B")
         case .admin:

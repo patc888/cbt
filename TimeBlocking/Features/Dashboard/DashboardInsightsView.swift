@@ -3,11 +3,23 @@ import Charts
 import SwiftData
 
 struct DashboardInsightsView: View {
-    @Query(sort: \TimeBlock.startDate, order: .forward)
-    private var allBlocks: [TimeBlock]
+    @Query private var allBlocks: [TimeBlock]
+
     
     @State private var viewModel = DashboardInsightsViewModel()
     @State private var timeRange: TimeRange = .sevenDays
+    @State private var selectedDate: Date?
+
+    init() {
+        let earliestStartDate = Date.now.addingTimeInterval(-60 * 24 * 60 * 60)
+        _allBlocks = Query(
+            filter: #Predicate<TimeBlock> { block in
+                block.startDate > earliestStartDate
+            },
+            sort: \TimeBlock.startDate,
+            order: .forward
+        )
+    }
     
     enum TimeRange: String, CaseIterable, Identifiable {
         case sevenDays = "7D"
@@ -116,35 +128,55 @@ struct DashboardInsightsView: View {
             }
 
             ZStack {
+                // Background Track
                 Circle()
-                    .stroke(Theme.primaryPurple.opacity(0.1), lineWidth: 18)
+                    .stroke(Theme.primaryAccent.opacity(0.1), lineWidth: 18)
                     .frame(width: 160, height: 160)
 
+                // Outer Ring (Active Days)
                 Circle()
                     .trim(from: 0, to: max(0.001, viewModel.consistencyProgress))
-                    .stroke(Theme.primaryPurple, style: StrokeStyle(lineWidth: 18, lineCap: .round))
+                    .stroke(
+                        LinearGradient(
+                            colors: [Theme.primaryAccent, Theme.secondaryAccent],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        style: StrokeStyle(lineWidth: 18, lineCap: .round)
+                    )
                     .rotationEffect(.degrees(-90))
                     .frame(width: 160, height: 160)
+                    .shadow(color: Theme.primaryAccent.opacity(0.3), radius: 6, x: 0, y: 3)
 
+                // Inner Ring (Milestones)
                 Circle()
-                    .stroke(Theme.secondaryPurple.opacity(0.1), lineWidth: 12)
+                    .stroke(Theme.secondaryAccent.opacity(0.1), lineWidth: 12)
                     .frame(width: 120, height: 120)
 
                 Circle()
                     .trim(from: 0, to: max(0.001, Double(viewModel.milestonesCompleted) / 4.0))
-                    .stroke(Theme.secondaryPurple, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                    .stroke(
+                        LinearGradient(
+                            colors: [Theme.secondaryAccent, Theme.primaryAccent.opacity(0.6)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                    )
                     .rotationEffect(.degrees(-90))
                     .frame(width: 120, height: 120)
 
                 VStack(spacing: 2) {
                     Text("\(Int((viewModel.consistencyProgress * 100).rounded()))%")
-                        .font(.system(.title, design: .rounded).weight(.black))
+                        .font(.system(size: 32, weight: .black, design: .rounded))
                         .foregroundStyle(Theme.primaryText)
                     Text("ACTIVE")
                         .font(.system(size: 10, weight: .bold, design: .rounded))
                         .foregroundStyle(Theme.secondaryText)
+                        .tracking(2)
                 }
             }
+
             
             Text("\(viewModel.activeDaysCount) active days in last \(timeRange.days) days")
                 .font(.system(size: 12, weight: .medium, design: .rounded))
@@ -186,7 +218,7 @@ struct DashboardInsightsView: View {
                         )
                         .interpolationMethod(.catmullRom)
                         .lineStyle(StrokeStyle(lineWidth: 3))
-                        .foregroundStyle(Theme.primaryPurple)
+                        .foregroundStyle(Theme.primaryAccent)
 
                         AreaMark(
                             x: .value("Date", point.date, unit: .day),
@@ -195,7 +227,7 @@ struct DashboardInsightsView: View {
                         .interpolationMethod(.catmullRom)
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [Theme.primaryPurple.opacity(0.2), Theme.primaryPurple.opacity(0)],
+                                colors: [Theme.primaryAccent.opacity(0.2), Theme.primaryAccent.opacity(0)],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
@@ -205,8 +237,32 @@ struct DashboardInsightsView: View {
                     RuleMark(y: .value("Goal", 0.8))
                         .foregroundStyle(Color.green.opacity(0.5))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
+
+                    if let selectedDate {
+                        RuleMark(x: .value("Selected", selectedDate, unit: .day))
+                            .foregroundStyle(Theme.primaryAccent.opacity(0.3))
+                            .offset(y: -10)
+                            .annotation(position: .top, spacing: 0) {
+                                if let point = viewModel.dailyCompletionRates.first(where: { Calendar.current.isDate($0.date, inSameDayAs: selectedDate) }) {
+                                    VStack(spacing: 4) {
+                                        Text(point.date.formatted(.dateTime.month().day()))
+                                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                                            .foregroundStyle(Theme.secondaryText)
+                                        Text("\(Int((point.rate * 100).rounded()))%")
+                                            .font(.system(size: 14, weight: .black, design: .rounded))
+                                            .foregroundStyle(Theme.primaryAccent)
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 6)
+                                    .background(Theme.cardBackground)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    .shadow(color: .black.opacity(0.1), radius: 4)
+                                }
+                            }
+                    }
                 }
                 .chartYScale(domain: 0...1)
+                .chartXSelection(value: $selectedDate)
                 .frame(height: 180)
             }
             
@@ -216,7 +272,7 @@ struct DashboardInsightsView: View {
                     value: viewModel.averageCompletionRate.map { "\(Int(($0 * 100).rounded()))%" } ?? "-",
                     systemImage: "chart.bar.fill",
                     unit: nil,
-                    iconColor: Theme.primaryPurple
+                    iconColor: Theme.primaryAccent
                 )
                 
                 TimeMetricTile(
@@ -262,7 +318,7 @@ struct DashboardInsightsView: View {
                             x: .value("Week", point.weekStart, unit: .weekOfYear),
                             y: .value("Rate", point.rate)
                         )
-                        .foregroundStyle(Theme.secondaryPurple.opacity(0.7))
+                        .foregroundStyle(Theme.secondaryAccent.opacity(0.7))
                         .cornerRadius(6)
                     }
                 }
@@ -286,7 +342,7 @@ struct DashboardInsightsView: View {
                 .foregroundStyle(Theme.primaryText)
                 .padding(.horizontal, 4)
 
-            goalBar(title: "Overall Completion", progress: viewModel.completionGoalProgress, color: Theme.primaryPurple)
+            goalBar(title: "Overall Completion", progress: viewModel.completionGoalProgress, color: Theme.primaryAccent)
             goalBar(title: "Routine Discipline", progress: viewModel.routineGoalProgress, color: Theme.successGreen)
             goalBar(title: "Focus Time", progress: viewModel.focusGoalProgress, color: .blue)
         }
@@ -349,7 +405,7 @@ struct DashboardInsightsView: View {
                                 .foregroundStyle(Theme.primaryText)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(Theme.primaryPurple.opacity(0.1))
+                                .background(Theme.primaryAccent.opacity(0.1))
                                 .clipShape(Capsule())
                         }
                         .padding(.horizontal, 16)

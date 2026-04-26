@@ -27,7 +27,7 @@ struct EmptyStateView<Actions: View>: View {
                 if let eyebrow, !eyebrow.isEmpty {
                     Text(eyebrow.uppercased())
                         .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryPurple)
+                        .foregroundStyle(Theme.primaryAccent)
                         .tracking(0.8)
                 }
 

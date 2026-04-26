@@ -6,7 +6,7 @@ import AppKit
 #endif
 
 
-// MARK: - Design System (Ported from Weight Tracker)
+// MARK: - Design System
 
 enum Theme {
     static var activeColorTheme: AppColorTheme {
@@ -14,29 +14,29 @@ enum Theme {
            let theme = AppColorTheme(rawValue: stored) {
             return theme
         }
-        return .purple
+        return .red
     }
 
     static var isImmersive: Bool {
         UserDefaults.standard.bool(forKey: "appThemeImmersive")
     }
 
-    static var primaryPurple: Color {
+    static var primaryAccent: Color {
         Color(hex: activeColorTheme.primaryHex)
     }
 
-    static var secondaryPurple: Color {
+    static var secondaryAccent: Color {
         Color(hex: activeColorTheme.secondaryHex)
     }
 
     static var primaryGradient: LinearGradient {
         LinearGradient(
-            colors: [primaryPurple, secondaryPurple],
+            colors: [primaryAccent, secondaryAccent],
             startPoint: .top,
             endPoint: .bottom
         )
     }
-    
+
     // UI Colors
     static var backgroundColor: Color {
         #if os(iOS)
@@ -45,50 +45,68 @@ enum Theme {
         return Color(nsColor: .windowBackgroundColor)
         #endif
     }
-    
+
     static var background: Color { backgroundColor }
-    
+
     static var secondaryBackground: AnyView {
         if isImmersive {
             return AnyView(AuroraBackground())
         }
         return AnyView(backgroundColor)
     }
-    
+
     static let primaryText = Color.primary
     static let secondaryText = Color.secondary
-    
+
     // Spacing
     static let paddingSmall: CGFloat = 12
     static let paddingMedium: CGFloat = 16
     static let paddingLarge: CGFloat = 20
     static let paddingXLarge: CGFloat = 24
-    
+
     // Font Sizes
     static let fontSizeTitle: CGFloat = 28
     static let fontSizeSection: CGFloat = 24
     static let fontSizeSubsection: CGFloat = 19
     static let fontSizeBody: CGFloat = 17
     static let fontSizeSmall: CGFloat = 14
-    
-    // Status Colors (from Weight Tracker)
+
+    // Status Colors
     static var successGreen: Color { Color(hex: "34C759") }
     static var warningOrange: Color { Color(hex: "FF9F0A") }
     static var errorRed: Color { Color(hex: "FF453A") }
-    
+
     // Corner Radius
     static let cornerRadiusMedium: CGFloat = 12
     static let cornerRadiusLarge: CGFloat = 18
     static let cornerRadiusXLarge: CGFloat = 24
-    
+
+    // Category Colors
+    static var categoryFocus: Color { primaryAccent }
+    static var categoryPersonal: Color { Color(hex: "F59E0B") } // Amber
+    static var categoryAdmin: Color { Color(hex: "0EA5E9") }    // Sky
+    static var categoryRoutine: Color { Color(hex: "10B981") }  // Emerald
+    static var categoryCustom: Color { Color(hex: "64748B") }   // Slate
+
+    static func color(for category: TimeBlockCategory) -> Color {
+        switch category {
+        case .focus: return categoryFocus
+        case .personal: return categoryPersonal
+        case .admin: return categoryAdmin
+        case .routine: return categoryRoutine
+        case .custom: return categoryCustom
+        }
+    }
+
+
     static func unselectedOptionColor(for scheme: ColorScheme) -> Color {
         return scheme == .dark ? Color.gray : Color.secondary
     }
-    
+
     static func toggleBackgroundColor(for scheme: ColorScheme) -> Color {
         return scheme == .dark ? Color.white.opacity(0.12) : Color.gray.opacity(0.08)
     }
-    
+
     // Card Backgrounds
     static var cardBackground: Color {
         #if os(iOS)
@@ -97,7 +115,7 @@ enum Theme {
         return Color(nsColor: .controlBackgroundColor)
         #endif
     }
-    
+
     static var secondaryCardBackground: Color {
         #if os(iOS)
         return Color(uiColor: .tertiarySystemGroupedBackground)
@@ -107,70 +125,76 @@ enum Theme {
     }
 }
 
-// MARK: - App Icon
-
-struct AppIconView: View {
-    var size: CGFloat = 60
-    
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size * 0.225, style: .continuous)
-                .fill(Theme.primaryPurple.gradient)
-                .frame(width: size, height: size)
-            
-            Image(systemName: "calendar.badge.clock")
-                .font(.system(size: size * 0.45, weight: .bold))
-                .foregroundStyle(.white)
-        }
-        .shadow(color: Theme.primaryPurple.opacity(0.3), radius: size * 0.1, x: 0, y: size * 0.05)
-    }
-}
-
 // MARK: - Backgrounds
 
 struct AuroraBackground: View {
     @Environment(\.colorScheme) var colorScheme
-    
+    @State private var phase: CGFloat = 0
+    @State private var phase2: CGFloat = 0
+
     var body: some View {
         let activeTheme = Theme.activeColorTheme
         let primary = Color(hex: activeTheme.primaryHex)
         let secondary = Color(hex: activeTheme.secondaryHex)
-        
+
         ZStack {
+            // Base layer
             if colorScheme == .dark {
-                Color(hex: "08080C")
+                Color(hex: "050508")
             } else {
-                Color(hex: "FAFAFA")
+                Color(hex: "FCFCFF")
             }
-            
+
+            // Primary Glow
+            GeometryReader { proxy in
+                Circle()
+                    .fill(primary.opacity(colorScheme == .dark ? 0.35 : 0.18))
+                    .frame(width: proxy.size.width * 1.6, height: proxy.size.width * 1.6)
+                    .blur(radius: 100)
+                    .offset(
+                        x: -proxy.size.width * 0.3 + sin(phase) * 40,
+                        y: -proxy.size.height * 0.4 + cos(phase) * 30
+                    )
+            }
+
+            // Secondary Glow
+            GeometryReader { proxy in
+                Circle()
+                    .fill(secondary.opacity(colorScheme == .dark ? 0.25 : 0.15))
+                    .frame(width: proxy.size.width * 1.3, height: proxy.size.width * 1.3)
+                    .blur(radius: 120)
+                    .offset(
+                        x: proxy.size.width * 0.5 + cos(phase2) * 50,
+                        y: proxy.size.height * 0.6 + sin(phase2) * 40
+                    )
+            }
+
+            // Center Accent
             GeometryReader { proxy in
                 RadialGradient(
                     colors: [
-                        primary.opacity(colorScheme == .dark ? 0.35 : 0.25),
-                        primary.opacity(0)
+                        primary.opacity(colorScheme == .dark ? 0.12 : 0.06),
+                        .clear
                     ],
-                    center: UnitPoint(x: 0.5, y: -0.1),
+                    center: .center,
                     startRadius: 0,
-                    endRadius: proxy.size.height * 1.5
+                    endRadius: proxy.size.height * 0.6
                 )
             }
-            
-            GeometryReader { proxy in
-                RadialGradient(
-                    colors: [
-                        secondary.opacity(colorScheme == .dark ? 0.25 : 0.18),
-                        secondary.opacity(0)
-                    ],
-                    center: UnitPoint(x: 0.9, y: 0.9),
-                    startRadius: 0,
-                    endRadius: proxy.size.width * 1.8
-                )
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 12).repeatForever(autoreverses: true)) {
+                phase = .pi * 2
+            }
+            withAnimation(.linear(duration: 18).repeatForever(autoreverses: true)) {
+                phase2 = .pi * 2
             }
         }
         .allowsHitTesting(false)
         .ignoresSafeArea()
     }
 }
+
 
 // MARK: - Components
 
@@ -231,129 +255,6 @@ struct TimeCard<Content: View>: View {
     }
 }
 
-struct TimeFullAccessCard: View {
-    let isPremium: Bool
-    var subtitle: String? = nil
-    var footnote: String? = nil
-    var isLoading: Bool = false
-    let action: () -> Void
-    
-    @Environment(\.colorScheme) private var colorScheme
-    
-    var body: some View {
-        if !isPremium {
-            TimeProUpgradeCard(
-                title: "Full Access",
-                subtitle: subtitle ?? "Unlock unlimited planning power.",
-                ctaTitle: "Update to Full Access",
-                footnote: footnote,
-                action: action,
-                isLoading: isLoading
-            )
-        } else {
-            HStack(alignment: .top, spacing: 16) {
-                AppIconView(size: 60)
-                    .cornerRadius(14)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .center, spacing: 8) {
-                        Text("Full Access")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundStyle(Theme.primaryText)
-                        
-                        statusChip(title: "Activated")
-                    }
-                    
-                    Text(subtitle ?? "All premium features are unlocked.")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(Theme.secondaryText)
-                }
-            }
-            .padding(.vertical, 8)
-        }
-    }
-    
-    private func statusChip(title: String) -> some View {
-        Text(title)
-            .font(.system(size: 14, weight: .bold, design: .rounded))
-            .foregroundStyle(Theme.primaryPurple)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
-            .background(Theme.primaryPurple.opacity(0.1))
-            .clipShape(Capsule())
-    }
-}
-
-struct TimeProUpgradeCard: View {
-    var title: String
-    var subtitle: String
-    var ctaTitle: String
-    var footnote: String? = nil
-    var action: () -> Void
-    var isLoading: Bool = false
-    
-    @Environment(\.colorScheme) private var colorScheme
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header Content
-            HStack(alignment: .center, spacing: 16) {
-                AppIconView(size: 50)
-                    .shadow(color: Theme.primaryPurple.opacity(0.3), radius: 5, x: 0, y: 3)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
-                    
-                    Text(subtitle)
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(Theme.secondaryText)
-                }
-            }
-            
-            Button(action: {
-                HapticManager.shared.mediumImpact()
-                action()
-            }) {
-                ZStack {
-                    if isLoading {
-                        ProgressView()
-                            .tint(.white)
-                    } else {
-                        Text(ctaTitle)
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                    }
-                }
-                .foregroundStyle(.white)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 32)
-                .frame(maxWidth: .infinity)
-                .background(Theme.primaryPurple)
-                .clipShape(Capsule())
-            }
-            .buttonStyle(.plain)
-            .premiumPressEffect()
-            .disabled(isLoading)
-            
-            if let footnote = footnote {
-                Text(footnote)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText.opacity(0.8))
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.top, -4)
-            }
-        }
-        .padding(.top, 8)
-        .padding(.bottom, 2)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            HapticManager.shared.lightImpact()
-            action()
-        }
-    }
-}
-
 struct TimeMetricTile: View {
     @Environment(\.colorScheme) var colorScheme
     let title: String
@@ -361,30 +262,31 @@ struct TimeMetricTile: View {
     let systemImage: String
     var unit: String? = nil
     var iconColor: Color? = nil
+    @State private var isPressed = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: systemImage)
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(iconColor ?? Theme.primaryText)
-                
+                    .foregroundStyle(iconColor ?? Theme.primaryAccent)
+
                 Text(title)
                     .font(.system(size: 11, weight: .heavy))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .tracking(1.0)
-                    .foregroundStyle(Theme.primaryText)
+                    .foregroundStyle(Theme.primaryText.opacity(0.8))
             }
             .textCase(.uppercase)
-            
+
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(value)
                     .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundColor(Theme.primaryText)
                     .minimumScaleFactor(0.4)
                     .lineLimit(1)
-                
+
                 if let unit {
                     Text(unit)
                         .font(.system(size: 12, weight: .bold, design: .rounded))
@@ -398,33 +300,31 @@ struct TimeMetricTile: View {
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(colorScheme == .dark ? Color(white: 0.12) : .white)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.primary.opacity(0.04), lineWidth: 1.5)
-                )
+                .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.2 : 0.05), radius: 4, x: 0, y: 2)
         )
-        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.2 : 0.05), radius: 4, x: 0, y: 2)
-    }
-}
-
-// MARK: - Button Styles
-
-struct PremiumButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
-            .opacity(configuration.isPressed ? 0.8 : 1.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.primary.opacity(isPressed ? 0.2 : 0.04), lineWidth: 1.5)
+        )
+        .scaleEffect(isPressed ? 0.97 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+        .onTapGesture {
+            HapticManager.shared.lightImpact()
+            withAnimation {
+                isPressed = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation {
+                    isPressed = false
+                }
+            }
+        }
     }
 }
 
 // MARK: - Extensions
 
 extension View {
-    func premiumPressEffect() -> some View {
-        self.buttonStyle(PremiumButtonStyle())
-    }
-    
     @ViewBuilder
     func timeInlineNavigationTitle() -> some View {
 #if os(iOS)
@@ -435,7 +335,7 @@ extension View {
     }
 }
 
-// Color hex support ported from donor
+// Color hex support
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

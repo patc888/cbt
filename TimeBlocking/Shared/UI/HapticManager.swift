@@ -14,8 +14,10 @@ final class HapticManager {
     private init() {}
     
     private var isEnabled: Bool {
-        // Simple true for now, can be linked to AppPreferences later
-        return true
+        if UserDefaults.standard.object(forKey: "hapticsEnabled") == nil {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: "hapticsEnabled")
     }
     
     /// Generic trigger for a specific haptic type.

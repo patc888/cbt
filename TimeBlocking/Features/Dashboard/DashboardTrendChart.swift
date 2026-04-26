@@ -1,6 +1,9 @@
-import SwiftUI
 import Charts
+import os
 import SwiftData
+import SwiftUI
+
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "DashboardTrendChart")
 
 struct DashboardTrendChart: View {
     @Environment(\.modelContext) private var modelContext
@@ -71,7 +74,7 @@ struct DashboardTrendChart: View {
                             
                             Text("\(rate)%")
                                 .font(.system(size: 16, weight: .bold, design: .rounded))
-                                .foregroundStyle(Theme.primaryPurple)
+                                .foregroundStyle(Theme.primaryAccent)
                         }
                     }
                 }
@@ -221,12 +224,13 @@ struct DashboardTrendChart: View {
     }
     
     // MARK: - Data Loading
+    @MainActor
     private func loadData() async {
         // Find blocks from the last N days
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: .now)
-        let startDate = calendar.date(byAdding: .day, value: -(daysToLookBack - 1), to: today)!
-        let endDate = calendar.date(byAdding: .day, value: 1, to: today)!
+        let startDate = calendar.date(byAdding: .day, value: -(daysToLookBack - 1), to: today) ?? today.addingTimeInterval(Double(-(daysToLookBack - 1)) * 86400)
+        let endDate = calendar.date(byAdding: .day, value: 1, to: today) ?? today.addingTimeInterval(86400)
         
         let descriptor = FetchDescriptor<TimeBlock>(
             predicate: #Predicate<TimeBlock> { block in
@@ -248,7 +252,7 @@ struct DashboardTrendChart: View {
             
             // Ensure all days are represented, even if empty
             for i in 0..<daysToLookBack {
-                let currentDay = calendar.date(byAdding: .day, value: i, to: startDate)!
+                let currentDay = calendar.date(byAdding: .day, value: i, to: startDate) ?? startDate.addingTimeInterval(Double(i) * 86400)
                 let blocksForDay = grouped[currentDay] ?? []
                 
                 let planned = blocksForDay.count
@@ -280,7 +284,7 @@ struct DashboardTrendChart: View {
             }
             
         } catch {
-            print("Failed to load chart data: \(error)")
+            logger.error("Failed to load chart data: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

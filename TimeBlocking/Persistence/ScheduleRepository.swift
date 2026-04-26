@@ -9,11 +9,11 @@ enum ScheduleRepositoryError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .emptyTemplateName:
-            return "Template name cannot be empty."
+            return String(localized: "Template name cannot be empty.")
         case .invalidTemplateWeekdays:
-            return "Select at least one weekday for this template."
+            return String(localized: "Select at least one weekday for this template.")
         case .emptyBlockTitle:
-            return "Block title cannot be empty."
+            return String(localized: "Block title cannot be empty.")
         }
     }
 }
@@ -835,6 +835,7 @@ struct ScheduleRepository {
         let bounds = dayBounds(for: date, calendar: calendar)
         let dayStart = bounds.start
         let dayEnd = bounds.end
+
         let blocks = try fetchBlocks(
             predicate: #Predicate<TimeBlock> { block in
                 block.startDate >= dayStart && block.startDate < dayEnd
@@ -896,19 +897,26 @@ struct ScheduleRepository {
         let bounds = dayBounds(for: date, calendar: calendar)
         let dayStart = bounds.start
         let dayEnd = bounds.end
-        var descriptor = FetchDescriptor<TimeBlock>(
-            predicate: #Predicate<TimeBlock> { block in
-                block.startDate >= dayStart && block.startDate < dayEnd
-            },
-            sortBy: [SortDescriptor(\.sortOrder, order: .reverse)]
-        )
 
-        if excludingBlockID == nil {
-            descriptor.fetchLimit = 1
+        let predicate: Predicate<TimeBlock>
+        if let excludingBlockID {
+            predicate = #Predicate<TimeBlock> { block in
+                block.startDate >= dayStart && block.startDate < dayEnd && block.id != excludingBlockID
+            }
+        } else {
+            predicate = #Predicate<TimeBlock> { block in
+                block.startDate >= dayStart && block.startDate < dayEnd
+            }
         }
 
+        var descriptor = FetchDescriptor<TimeBlock>(
+            predicate: predicate,
+            sortBy: [SortDescriptor(\.sortOrder, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+
         let blocks = try modelContext.fetch(descriptor)
-        return blocks.first(where: { $0.id != excludingBlockID })?.sortOrder ?? -1
+        return blocks.first?.sortOrder ?? -1
     }
 
     private func fetchBlocks(

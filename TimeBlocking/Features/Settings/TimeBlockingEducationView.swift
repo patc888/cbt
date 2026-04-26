@@ -49,7 +49,7 @@ struct TimeBlockingEducationView: View {
                         Text("Settings")
                     }
                     .font(.system(.body, design: .rounded).weight(.semibold))
-                    .foregroundStyle(Theme.primaryPurple)
+                    .foregroundStyle(Theme.primaryAccent)
                 }
             }
         }
@@ -62,7 +62,7 @@ struct TimeBlockingEducationView: View {
             HStack(spacing: 8) {
                 ForEach(EducationPage.allCases) { page in
                     Circle()
-                        .fill(currentPage == page.rawValue ? Theme.primaryPurple : Color.secondary.opacity(0.3))
+                        .fill(currentPage == page.rawValue ? Theme.primaryAccent : Color.secondary.opacity(0.3))
                         .frame(width: 6, height: 6)
                         .scaleEffect(currentPage == page.rawValue ? 1.2 : 1.0)
                         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
@@ -85,7 +85,7 @@ struct TimeBlockingEducationView: View {
                     .font(.system(.headline, design: .rounded).bold())
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(Theme.primaryPurple)
+                    .background(Theme.primaryAccent)
                     .foregroundColor(.white)
                     .cornerRadius(Theme.cornerRadiusMedium)
                     .padding(.horizontal, 24)
@@ -158,7 +158,7 @@ struct TBIntroPage: View {
                         HStack {
                             Image(systemName: "hand.raised.fill")
                                 .font(.title2)
-                                .foregroundStyle(Theme.primaryPurple)
+                                .foregroundStyle(Theme.primaryAccent)
                             Text("Take Control")
                                 .font(.headline)
                                 .foregroundStyle(Theme.primaryText)
@@ -175,7 +175,7 @@ struct TBIntroPage: View {
                         HStack {
                             Image(systemName: "bolt.shield.fill")
                                 .font(.title2)
-                                .foregroundStyle(Theme.primaryPurple)
+                                .foregroundStyle(Theme.primaryAccent)
                             Text("Protect Your Focus")
                                 .font(.headline)
                                 .foregroundStyle(Theme.primaryText)
@@ -219,7 +219,7 @@ struct TBCyclePage: View {
                 // Interactive Cycle Diagram
                 ZStack {
                     Circle()
-                        .stroke(Theme.primaryPurple.opacity(0.1), lineWidth: 40)
+                        .stroke(Theme.primaryAccent.opacity(0.1), lineWidth: 40)
                         .frame(width: 220, height: 220)
                     
                     ForEach(steps) { step in
@@ -233,7 +233,7 @@ struct TBCyclePage: View {
                     // Center Icon
                     Image(systemName: "infinity")
                         .font(.system(size: 30, weight: .bold))
-                        .foregroundStyle(Theme.primaryPurple.opacity(0.3))
+                        .foregroundStyle(Theme.primaryAccent.opacity(0.3))
                 }
                 .frame(height: 280)
                 
@@ -242,7 +242,7 @@ struct TBCyclePage: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(steps[activeStep].title)
                                 .font(.headline)
-                                .foregroundStyle(Theme.primaryPurple)
+                                .foregroundStyle(Theme.primaryAccent)
                             
                             Text(steps[activeStep].description)
                                 .font(.subheadline)
@@ -274,23 +274,23 @@ struct TBCyclePage: View {
             } label: {
                 VStack(spacing: 8) {
                     Circle()
-                        .fill(activeStep == step.id ? Theme.primaryPurple : Theme.cardBackground)
+                        .fill(activeStep == step.id ? Theme.primaryAccent : Theme.cardBackground)
                         .frame(width: 54, height: 54)
                         .overlay(
                             Image(systemName: step.icon)
                                 .font(.system(size: 20, weight: .bold))
-                                .foregroundStyle(activeStep == step.id ? .white : Theme.primaryPurple)
+                                .foregroundStyle(activeStep == step.id ? .white : Theme.primaryAccent)
                         )
-                        .shadow(color: Theme.primaryPurple.opacity(activeStep == step.id ? 0.3 : 0.1), radius: 8, y: 4)
+                        .shadow(color: Theme.primaryAccent.opacity(activeStep == step.id ? 0.3 : 0.1), radius: 8, y: 4)
                         .overlay(
                             Circle()
-                                .stroke(Theme.primaryPurple.opacity(0.2), lineWidth: 2)
+                                .stroke(Theme.primaryAccent.opacity(0.2), lineWidth: 2)
                         )
                         .scaleEffect(activeStep == step.id ? 1.15 : 1.0)
                     
                     Text(step.title)
                         .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(activeStep == step.id ? Theme.primaryPurple : Theme.secondaryText)
+                        .foregroundStyle(activeStep == step.id ? Theme.primaryAccent : Theme.secondaryText)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(
@@ -321,7 +321,7 @@ struct TBComparisonPage: View {
                 
                 Image(systemName: "arrow.down")
                     .font(.title3)
-                    .foregroundStyle(Theme.primaryPurple)
+                    .foregroundStyle(Theme.primaryAccent)
                 
                 ComparisonView(
                     title: "The Time Block",
@@ -388,7 +388,7 @@ struct TBTipsPage: View {
         ) {
             VStack(spacing: 20) {
                 TipRow(icon: "shield.fill", title: "Add Buffer Time", color: .blue, text: "Never schedule blocks back-to-back. Add 15m transitions for emails or snacks.")
-                TipRow(icon: "paintpalette.fill", title: "Color Code", color: .purple, text: "Distinguish between deep work, meetings, and personal time at a glance.")
+                TipRow(icon: "paintpalette.fill", title: "Color Code", color: .red, text: "Distinguish between deep work, meetings, and personal time at a glance.")
                 TipRow(icon: "scissors", title: "Be Realistic", color: .orange, text: "Tasks always take 2x longer than you think. Build in a 'Catch-up' block in the afternoon.")
                 TipRow(icon: "hammer.fill", title: "Rough Drafts", color: .green, text: "Your schedule is a plan, not a prison. Adjust it as the day evolves.")
             }
@@ -436,12 +436,12 @@ struct TBConclusionPage: View {
             VStack(spacing: 32) {
                 ZStack {
                     Circle()
-                        .fill(Theme.primaryPurple.opacity(0.1))
+                        .fill(Theme.primaryAccent.opacity(0.1))
                         .frame(width: 160, height: 160)
                     
                     Image(systemName: "checkmark.seal.fill")
                         .font(.system(size: 80))
-                        .foregroundStyle(Theme.primaryPurple.gradient)
+                        .foregroundStyle(Theme.primaryAccent.gradient)
                 }
                 .padding(.top, 20)
                 

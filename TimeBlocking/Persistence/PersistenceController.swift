@@ -1,8 +1,11 @@
 import CoreData
+@preconcurrency import Dispatch
 import Foundation
 import SwiftData
+import os
 
 struct PersistenceController {
+    private static let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "Persistence")
     private static let cloudKitContainerIdentifier = "iCloud.com.melichan.TimeBlocking"
     private static let forceNoCloudKitEnvironmentKey = "TIMEBLOCKING_FORCE_NO_CLOUDKIT"
 
@@ -18,34 +21,121 @@ struct PersistenceController {
     )
 
     static let shared = PersistenceController()
-    static let preview = PersistenceController(inMemory: true)
+    static let preview = try! PersistenceController(inMemory: true)
 
     let container: ModelContainer
+    let isFallback: Bool
 
-    init(
+    /// Internal init for synchronous cases (previews, tests)
+    init(inMemory: Bool) throws {
+        let configuration = Self.makeConfiguration(inMemory: inMemory, cloudKitDatabase: .none)
+        self.container = try Self.makeContainer(configuration: configuration)
+        self.isFallback = inMemory
+    }
+
+    /// Primary async initializer for the app
+    static func createAsync(
         inMemory: Bool = false,
-        cloudKitDatabase: ModelConfiguration.CloudKitDatabase? = nil
-    ) {
+        timeout: TimeInterval = 5.0
+    ) async throws -> PersistenceController {
         let resolvedCloudKitDatabase = Self.resolveCloudKitDatabase(
             inMemory: inMemory,
-            requestedCloudKitDatabase: cloudKitDatabase
+            requestedCloudKitDatabase: nil
         )
         let configuration = Self.makeConfiguration(
             inMemory: inMemory,
             cloudKitDatabase: resolvedCloudKitDatabase
         )
 
+        return try await withCheckedThrowingContinuation { continuation in
+            var isResumed = false
+            func resumeOnce(with result: Result<PersistenceController, Error>) {
+                guard !isResumed else { return }
+                isResumed = true
+                switch result {
+                case .success(let controller):
+                    continuation.resume(returning: controller)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+
+            let workItem = DispatchWorkItem {
+                do {
+                    let container = try Self.makeContainer(configuration: configuration)
+                    resumeOnce(with: .success(PersistenceController(container: container, isFallback: false)))
+                } catch {
+                    Self.logger.error("Primary initialization failed: \(error.localizedDescription)")
+
+                    // Recovery Stage 1: Local storage
+                    if !inMemory && String(describing: resolvedCloudKitDatabase) != "none" {
+                        Self.logger.info("Retrying with local-only storage...")
+                        let localConfig = Self.makeConfiguration(inMemory: false, cloudKitDatabase: .none)
+                        if let localContainer = try? Self.makeContainer(configuration: localConfig) {
+                            resumeOnce(with: .success(PersistenceController(container: localContainer, isFallback: false)))
+                            return
+                        }
+                    }
+
+                    // Recovery Stage 2: In-memory fallback
+                    Self.logger.warning("Database unavailable. Falling back to in-memory store.")
+                    let inMemoryConfig = Self.makeConfiguration(inMemory: true, cloudKitDatabase: .none)
+                    do {
+                        let inMemoryContainer = try Self.makeContainer(configuration: inMemoryConfig)
+                        resumeOnce(with: .success(PersistenceController(container: inMemoryContainer, isFallback: true)))
+                    } catch {
+                        resumeOnce(with: .failure(error))
+                    }
+                }
+            }
+
+            // Execute on a background utility queue to avoid blocking main thread
+            DispatchQueue.global(qos: .userInitiated).async(execute: workItem)
+
+            // Implement timeout for the primary initialization (mostly CloudKit related hangs)
+            if String(describing: resolvedCloudKitDatabase) != "none" {
+                DispatchQueue.global().asyncAfter(deadline: .now() + timeout) {
+                    if !workItem.isCancelled {
+                        workItem.cancel()
+                        Self.logger.error("Initialization timed out after \(timeout)s. Forcing local fallback.")
+
+                        let localConfig = Self.makeConfiguration(inMemory: false, cloudKitDatabase: .none)
+                        do {
+                            let localContainer = try Self.makeContainer(configuration: localConfig)
+                            resumeOnce(with: .success(PersistenceController(container: localContainer, isFallback: false)))
+                        } catch {
+                            // Last resort: in-memory
+                            let inMemoryConfig = Self.makeConfiguration(inMemory: true, cloudKitDatabase: .none)
+                            if let inMemoryContainer = try? Self.makeContainer(configuration: inMemoryConfig) {
+                                resumeOnce(with: .success(PersistenceController(container: inMemoryContainer, isFallback: true)))
+                            } else {
+                                resumeOnce(with: .failure(error))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private init(container: ModelContainer, isFallback: Bool) {
+        self.container = container
+        self.isFallback = isFallback
+    }
+
+    private init() {
+        // Legacy shared instance for backward compatibility where needed,
+        // but it will likely block the first time it's accessed.
+        // We'll move away from this in the app lifecycle.
+        let resolvedCloudKitDatabase = Self.resolveCloudKitDatabase(inMemory: false, requestedCloudKitDatabase: .automatic)
+        let configuration = Self.makeConfiguration(inMemory: false, cloudKitDatabase: resolvedCloudKitDatabase)
         do {
-            container = try Self.makeContainer(configuration: configuration)
+            self.container = try Self.makeContainer(configuration: configuration)
+            self.isFallback = false
         } catch {
-            fatalError(
-                Self.modelContainerFailureMessage(
-                    error: error,
-                    configuration: configuration,
-                    inMemory: inMemory,
-                    cloudKitDatabase: resolvedCloudKitDatabase
-                )
-            )
+            let inMemoryConfig = Self.makeConfiguration(inMemory: true, cloudKitDatabase: .none)
+            self.container = try! Self.makeContainer(configuration: inMemoryConfig)
+            self.isFallback = true
         }
     }
 

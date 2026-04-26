@@ -1,5 +1,8 @@
+import os
 import SwiftUI
 import SwiftData
+
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "TimeSecuritySettingsView")
 
 struct TimeSecuritySettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -13,7 +16,7 @@ struct TimeSecuritySettingsView: View {
     var body: some View {
         TimeSettingsSection(title: "Security") {
             VStack(spacing: 0) {
-                TimeSettingsRow(icon: "faceid", iconColor: Theme.primaryPurple, title: "Lock app with Face ID or passcode") {
+                TimeSettingsRow(icon: "faceid", iconColor: Theme.primaryAccent, title: "Lock app with Face ID or passcode") {
                     SegmentedToggle(
                         isOn: Binding(
                             get: { preferences?.appLockEnabled ?? false },
@@ -21,7 +24,11 @@ struct TimeSecuritySettingsView: View {
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                     if let preferences = preferences {
                                         preferences.appLockEnabled = newValue
-                                        try? modelContext.save()
+                                        do {
+                                            try modelContext.save()
+                                        } catch {
+                                            logger.error("Failed to save app lock setting: \(error)")
+                                        }
                                         HapticManager.shared.lightImpact()
                                     }
                                 }
@@ -42,7 +49,7 @@ struct TimeSecuritySettingsView: View {
                             .font(.system(size: 14, weight: .medium, design: .rounded))
                         Spacer()
                     }
-                    .foregroundStyle(Theme.primaryPurple)
+                    .foregroundStyle(Theme.primaryAccent)
                     .padding(.top, 12)
                     .padding(.leading, 32) // Align with text
                 }
@@ -74,7 +81,7 @@ struct TimePrivacyInfoPopup: View {
             VStack(spacing: 16) {
                 Image(systemName: "hand.raised.shield.fill")
                     .font(.system(size: 44))
-                    .foregroundStyle(Theme.primaryPurple)
+                    .foregroundStyle(Theme.primaryAccent)
                     .padding(.bottom, 8)
                 
                 Text("Your Data is Private")
@@ -108,7 +115,7 @@ struct TimePrivacyInfoPopup: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(Theme.primaryPurple)
+                    .background(Theme.primaryAccent)
                     .clipShape(Capsule())
             }
             .padding(.horizontal, 24)
@@ -125,7 +132,7 @@ struct TimePrivacyPoint: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 18))
-                .foregroundStyle(Theme.primaryPurple)
+                .foregroundStyle(Theme.primaryAccent)
                 .frame(width: 24)
             
             Text(text)

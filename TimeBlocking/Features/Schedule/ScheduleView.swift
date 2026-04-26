@@ -1,12 +1,16 @@
+import os
 import SwiftData
 import SwiftUI
+
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "ScheduleView")
 
 struct ScheduleView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
-    @Query(sort: \TimeBlock.startDate) private var blocks: [TimeBlock]
+    @Query private var blocks: [TimeBlock]
+
     @Query(sort: \ScheduleTemplate.sortOrder) private var templates: [ScheduleTemplate]
     @Query private var preferences: [AppPreferences]
     @AppStorage("schedule.hasSeenBlockMoveHint") private var hasSeenBlockMoveHint = false
@@ -24,6 +28,19 @@ struct ScheduleView: View {
     @State private var completedBuiltInTimelineItemsByDay: [Date: Set<DayTimelineBuiltInItemKind>] = [:]
     @State private var overviewLayer: ScheduleOverviewLayer = .collapsed
     @State private var topPullDistance: CGFloat = 0
+    @State private var showDailyConfetti = false
+
+    init() {
+        let earliestStartDate = Date.now.addingTimeInterval(-180 * 24 * 60 * 60)
+        let latestStartDate = Date.now.addingTimeInterval(180 * 24 * 60 * 60)
+        _blocks = Query(
+            filter: #Predicate<TimeBlock> { block in
+                block.startDate > earliestStartDate &&
+                block.startDate < latestStartDate
+            },
+            sort: \TimeBlock.startDate
+        )
+    }
 
 
     private let dragCoordinateSpaceName = "schedule-drag-surface"
@@ -92,22 +109,22 @@ struct ScheduleView: View {
             includeCompleted: showsCompletedBlocks,
             calendar: calendar
         )
-        
+
         if showsCompletedBlocks {
             return baseSnapshot
         }
-        
+
         let allSnapshot = appEnvironment.scheduleRepository.daySnapshot(
             for: appEnvironment.appState.selectedDate,
             from: blocks,
             includeCompleted: true,
             calendar: calendar
         )
-        
+
         let visibleBlocks = allSnapshot.blocks.filter { block in
             block.status != .completed || recentlyCompletedBlockIDs.contains(block.id)
         }
-        
+
         return ScheduleDaySnapshot(
             blocks: visibleBlocks,
             completedCount: baseSnapshot.completedCount,
@@ -288,138 +305,280 @@ struct ScheduleView: View {
     }
 
     var body: some View {
+        scheduleRoot
+            .coordinateSpace(name: dragCoordinateSpaceName)
+            .animation(.spring(response: 0.32, dampingFraction: 0.84), value: activeDrag?.hoveredDate)
+            .animation(.spring(response: 0.32, dampingFraction: 0.84), value: activeDrag?.blockID)
+            .overlay {
+                activeDragOverlay
+            }
+            .sheet(item: $editorRoute) { route in
+                editorSheet(for: route)
+            }
+            .sheet(isPresented: $isShowingPlanningGuidance) {
+                planningGuidanceSheet
+            }
+            .task(id: visibleGenerationDates) {
+                generateVisibleDates()
+            }
+            .task(id: calendarLoadTrigger) {
+                await refreshVisibleCalendarEvents()
+            }
+            .onChange(of: scenePhase) { _, newValue in
+                handleScenePhaseChange(newValue)
+            }
+            .onChange(of: appEnvironment.appState.selectedDate) { _, _ in
+                handleSelectedDateChange()
+            }
+            .onChange(of: appEnvironment.appState.isPresentingAddModal) { _, isPresenting in
+                handleAddModalPresentationChange(isPresenting)
+            }
+            .onChange(of: dayTimelineBlocks.map(\.id)) { _, blockIDs in
+                handleVisibleTimelineBlockIDsChange(blockIDs)
+            }
+    }
+
+    private var scheduleRoot: some View {
         ZStack {
             AuroraBackground()
                 .ignoresSafeArea()
 
             contentView
-        }
-        .coordinateSpace(name: dragCoordinateSpaceName)
-        .animation(.spring(response: 0.32, dampingFraction: 0.84), value: activeDrag?.hoveredDate)
-        .animation(.spring(response: 0.32, dampingFraction: 0.84), value: activeDrag?.blockID)
-        .overlay {
-            activeDragOverlay
-        }
-        .sheet(item: $editorRoute) { route in
-            AddTimeBlockView(
-                selectedDate: route.draft.selectedDate,
-                editingBlockID: route.editingBlockID,
-                entryMode: route.entryMode,
-                initialDraft: route.draft,
-                onSave: { savedDate in
-                    appEnvironment.appState.selectedDate = savedDate
-                },
-                onDelete: { deletedDate in
-                    if Calendar.current.isDate(appEnvironment.appState.selectedDate, inSameDayAs: deletedDate) {
-                        return
-                    }
 
-                    appEnvironment.appState.selectedDate = deletedDate
-                }
+            if showDailyConfetti {
+                ConfettiView()
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .zIndex(100)
+                    .onAppear {
+                        HapticManager.shared.success()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                            withAnimation {
+                                showDailyConfetti = false
+                            }
+                        }
+                    }
+            }
+        }
+    }
+
+    private func editorSheet(for route: ScheduleEditorRoute) -> some View {
+        AddTimeBlockView(
+            selectedDate: route.draft.selectedDate,
+            editingBlockID: route.editingBlockID,
+            entryMode: route.entryMode,
+            initialDraft: route.draft,
+            onSave: handleEditorSave,
+            onDelete: handleEditorDelete
+        )
+    }
+
+    private func handleEditorSave(_ savedDate: Date) {
+        appEnvironment.appState.selectedDate = savedDate
+    }
+
+    private func handleEditorDelete(_ deletedDate: Date) {
+        guard !Calendar.current.isDate(appEnvironment.appState.selectedDate, inSameDayAs: deletedDate) else {
+            return
+        }
+
+        appEnvironment.appState.selectedDate = deletedDate
+    }
+
+    private func generateVisibleDates() {
+        for date in visibleGenerationDates {
+            appEnvironment.generateScheduleIfNeeded(
+                for: date,
+                using: modelContext
             )
         }
+    }
 
-        .sheet(isPresented: $isShowingPlanningGuidance) {
-            planningGuidanceSheet
+    private func handleScenePhaseChange(_ newValue: ScenePhase) {
+        guard newValue == .active else {
+            return
         }
-        .task(id: visibleGenerationDates) {
-            for date in visibleGenerationDates {
-                appEnvironment.generateScheduleIfNeeded(
-                    for: date,
-                    using: modelContext
-                )
-            }
-        }
-        .task(id: calendarLoadTrigger) {
-            await refreshVisibleCalendarEvents()
-        }
-        .onChange(of: scenePhase) { _, newValue in
-            guard newValue == .active else {
-                return
-            }
 
-            Task {
-                await refreshVisibleCalendarEvents(forceRefresh: true)
-            }
+        Task {
+            await refreshVisibleCalendarEvents(forceRefresh: true)
         }
-        .onChange(of: appEnvironment.appState.selectedDate) { _, _ in
-            clearActiveDrag()
-            dragErrorMessage = nil
-            timelineErrorMessage = nil
-            recentlyCompletedBlockIDs.removeAll()
-        }
-        .onChange(of: appEnvironment.appState.isPresentingAddModal) { _, isPresenting in
-            guard isPresenting else {
-                return
-            }
+    }
 
-            presentNewBlockEditor(for: appEnvironment.appState.selectedDate)
-            appEnvironment.appState.isPresentingAddModal = false
-        }
-        .onChange(of: dayTimelineBlocks.map(\.id)) { _, blockIDs in
-            expandedChecklistBlockIDs = expandedChecklistBlockIDs.filter { blockIDs.contains($0) }
+    private func handleSelectedDateChange() {
+        clearActiveDrag()
+        dragErrorMessage = nil
+        timelineErrorMessage = nil
+        recentlyCompletedBlockIDs.removeAll()
+    }
 
-            guard let activeDrag, !blockIDs.contains(activeDrag.blockID) else {
-                return
-            }
-
-            clearActiveDrag()
+    private func handleAddModalPresentationChange(_ isPresenting: Bool) {
+        guard isPresenting else {
+            return
         }
+
+        presentNewBlockEditor(for: appEnvironment.appState.selectedDate)
+        appEnvironment.appState.isPresentingAddModal = false
+    }
+
+    private func handleVisibleTimelineBlockIDsChange(_ blockIDs: [UUID]) {
+        expandedChecklistBlockIDs = expandedChecklistBlockIDs.filter { blockIDs.contains($0) }
+
+        guard let activeDrag, !blockIDs.contains(activeDrag.blockID) else {
+            return
+        }
+
+        clearActiveDrag()
     }
 
     private var contentView: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                Spacer(minLength: 0)
-                
-                VStack(spacing: 16) {
-                    dateHeader
-                    
-                    VStack(spacing: 16) {
-                        selectedDayUtilityRow
-                        moveRibbon
-                        if shouldShowMoveHint {
-                            MoveHintCallout()
-                                .transition(.move(edge: .top).combined(with: .opacity))
-                        }
-                        sharedScheduleMessages
-                        calendarIntegrationStatus
-                        calendarLoadingStatus
-                        selectedDayContent
+        VStack(spacing: 0) {
+            pinnedHeader
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    selectedDayUtilityRow
+                    moveRibbon
+                    if shouldShowMoveHint {
+                        MoveHintCallout()
+                            .transition(.move(edge: .top).combined(with: .opacity))
                     }
-                    .padding(.horizontal, contentHorizontalPadding)
+                    sharedScheduleMessages
+                    calendarIntegrationStatus
+                    calendarLoadingStatus
+                    selectedDayContent
+                }
+                .padding(.horizontal, contentHorizontalPadding)
+                .padding(.top, 16)
+                .padding(.bottom, 120)
+                .background(alignment: .top) {
+                    GeometryReader { proxy in
+                        Color.clear
+                            .preference(
+                                key: ScheduleScrollOffsetPreferenceKey.self,
+                                value: proxy.frame(in: .named(scrollCoordinateSpaceName)).minY
+                            )
+                    }
                 }
             }
-            .padding(.bottom, 120)
-            .background(alignment: .top) {
-                GeometryReader { proxy in
-                    Color.clear
-                        .preference(
-                            key: ScheduleScrollOffsetPreferenceKey.self,
-                            value: proxy.frame(in: .named(scrollCoordinateSpaceName)).minY
-                        )
-                }
-            }
+            .coordinateSpace(name: scrollCoordinateSpaceName)
         }
-        .coordinateSpace(name: scrollCoordinateSpaceName)
         .onPreferenceChange(ScheduleScrollOffsetPreferenceKey.self) { offset in
             topPullDistance = max(offset, 0)
         }
-
     }
 
+
+    private var pinnedHeader: some View {
+        VStack(spacing: 0) {
+            dateHeader
+                .padding(.bottom, 12)
+
+            Divider()
+                .opacity(0.1)
+        }
+        .background {
+            Color.clear
+                .background(.ultraThinMaterial)
+                .ignoresSafeArea(edges: .top)
+        }
+    }
+
+
     private var dateHeader: some View {
-        TimeHeaderView(
-            selectedDate: selectedDate,
-            weekStripDates: weekStripDates,
-            calendar: calendar,
-            horizontalPadding: contentHorizontalPadding,
-            dateHasItems: { date in
-                appEnvironment.scheduleRepository.hasBlocks(on: date, in: blocks, calendar: calendar) ||
-                appEnvironment.timeCalendarManager.summary(for: date, calendar: calendar).hasEvents
+        VStack(spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                Button {
+                    appEnvironment.appState.showDashboard()
+                } label: {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Theme.primaryAccent)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Circle())
+                        .background(Theme.primaryAccent.opacity(0.1))
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel("Open stats")
+
+                Spacer()
+
+                VStack(spacing: 0) {
+                    Text(titleForDate(appEnvironment.appState.selectedDate))
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(Theme.primaryText)
+
+                    Text(subtitleForDate(appEnvironment.appState.selectedDate))
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+
+                Spacer()
+
+                HStack(spacing: 8) {
+                    if canRegenerateSelectedDay {
+                        Button {
+                            regenerateSelectedDay()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(Theme.primaryAccent)
+                                .frame(width: 36, height: 36)
+                                .contentShape(Circle())
+                                .background(Theme.primaryAccent.opacity(0.1))
+                                .clipShape(Circle())
+                        }
+                        .accessibilityLabel("Refresh day from routines")
+                        .transition(.scale.combined(with: .opacity))
+                    }
+
+                    if !calendar.isDateInToday(appEnvironment.appState.selectedDate) {
+                        Button {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                appEnvironment.appState.selectedDate = .now
+                            }
+                            HapticManager.shared.lightImpact()
+                        } label: {
+                            Text("Today")
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .foregroundStyle(Theme.primaryAccent)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(Theme.primaryAccent.opacity(0.1))
+                                .clipShape(Capsule())
+                        }
+                        .transition(.scale.combined(with: .opacity))
+                    }
+
+                    Button {
+                        appEnvironment.appState.showSettings()
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Theme.primaryAccent)
+                            .frame(width: 36, height: 36)
+                            .contentShape(Circle())
+                            .background(Theme.primaryAccent.opacity(0.1))
+                            .clipShape(Circle())
+                    }
+                    .accessibilityLabel("Open settings")
+                }
+
             }
-        )
-        .padding(.top, 8)
+            .padding(.horizontal, contentHorizontalPadding)
+            .padding(.top, 8)
+
+            TimeHeaderView(
+                selectedDate: selectedDate,
+                weekStripDates: weekStripDates,
+                calendar: calendar,
+                horizontalPadding: 0,
+                dateHasItems: { date in
+                    appEnvironment.scheduleRepository.hasBlocks(on: date, in: blocks, calendar: calendar) ||
+                    appEnvironment.timeCalendarManager.summary(for: date, calendar: calendar).hasEvents
+                },
+                showHeadline: false
+            )
+        }
     }
 
     @ViewBuilder
@@ -465,7 +624,7 @@ struct ScheduleView: View {
         do {
             try modelContext.save()
         } catch {
-            assertionFailure("Failed to update checklist item from day timeline: \(error)")
+            logger.error("Failed to update checklist item from day timeline: \(error)")
         }
     }
 
@@ -474,7 +633,7 @@ struct ScheduleView: View {
 
         guard let block = fetchBlock(id: blockID) else {
             expandedChecklistBlockIDs.remove(blockID)
-            timelineErrorMessage = "This time block is no longer available."
+            timelineErrorMessage = String(localized: "This time block is no longer available.")
             return
         }
 
@@ -494,12 +653,25 @@ struct ScheduleView: View {
                 to: nextStatus,
                 in: modelContext
             )
+
+            // Check for daily completion
+            if nextStatus == .completed {
+                let dayBlocks = daySnapshot.blocks
+                let remainingPlanned = dayBlocks.filter { $0.status == .planned && $0.id != blockID }.count
+                if remainingPlanned == 0 && !dayBlocks.isEmpty {
+                    withAnimation {
+                        showDailyConfetti = true
+                    }
+                }
+            }
+
             Task {
                 await appEnvironment.syncReminder(for: block, using: modelContext)
             }
+
         } catch {
-            timelineErrorMessage = "Unable to update this block right now."
-            assertionFailure("Failed to update block completion from day timeline: \(error)")
+            timelineErrorMessage = String(localized: "Unable to update this block right now.")
+            logger.error("Failed to update block completion from day timeline: \(error)")
         }
     }
 
@@ -524,7 +696,7 @@ struct ScheduleView: View {
                     Button("Resolve Conflicts", action: resolveConflictsAction)
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .buttonStyle(.borderedProminent)
-                        .tint(Theme.primaryPurple)
+                        .tint(Theme.primaryAccent)
                         .controlSize(.small)
                 }
 
@@ -551,7 +723,7 @@ struct ScheduleView: View {
                             .font(.system(size: 12, weight: .bold, design: .rounded))
                     }
                     .buttonStyle(.bordered)
-                    .tint(Theme.primaryPurple)
+                    .tint(Theme.primaryAccent)
                     .controlSize(.small)
                 }
             }
@@ -582,37 +754,46 @@ struct ScheduleView: View {
 
     @ViewBuilder
     private var selectedDayContent: some View {
-        DayTimelineView(
-            date: appEnvironment.appState.selectedDate,
-            blocks: dayTimelineBlocks,
-            structuralItems: dayTimelineStructuralItems,
-            calendarEvents: dayCalendarEvents,
-            blockConflictsByID: selectedDayPlanningGuidance.blockConflictsByID,
-            expandedChecklistBlockIDs: expandedChecklistBlockIDs,
-            dayStartHour: dayStartHour,
-            calendar: calendar,
-            onEdit: { blockID in
-                presentEditor(for: blockID)
-            },
-            onToggleCompletion: { blockID in
-                toggleCompletion(for: blockID)
-            },
-            onToggleStructuralItemCompletion: { itemKind in
-                toggleBuiltInTimelineItemCompletion(itemKind)
-            },
-            onToggleChecklistExpansion: { blockID in
-                toggleChecklistExpansion(for: blockID)
-            },
-            onToggleChecklistItem: { blockID, itemID in
-                toggleChecklistItem(for: blockID, itemID: itemID)
-            },
-            onMoveBlock: { blockID, startDate in
-                rescheduleBlock(blockID, to: startDate)
-            },
-            onCreateBlock: { startDate in
-                presentNewBlockEditor(startingAt: startDate)
-            }
-        )
+        if dayTimelineBlocks.isEmpty && dayCalendarEvents.isEmpty {
+            DayTimelineEmptyState(
+                date: appEnvironment.appState.selectedDate,
+                onPlan: {
+                    presentNewBlockEditor(for: appEnvironment.appState.selectedDate)
+                }
+            )
+        } else {
+            DayTimelineView(
+                date: appEnvironment.appState.selectedDate,
+                blocks: dayTimelineBlocks,
+                structuralItems: dayTimelineStructuralItems,
+                calendarEvents: dayCalendarEvents,
+                blockConflictsByID: selectedDayPlanningGuidance.blockConflictsByID,
+                expandedChecklistBlockIDs: expandedChecklistBlockIDs,
+                dayStartHour: dayStartHour,
+                calendar: calendar,
+                onEdit: { blockID in
+                    presentEditor(for: blockID)
+                },
+                onToggleCompletion: { blockID in
+                    toggleCompletion(for: blockID)
+                },
+                onToggleStructuralItemCompletion: { itemKind in
+                    toggleBuiltInTimelineItemCompletion(itemKind)
+                },
+                onToggleChecklistExpansion: { blockID in
+                    toggleChecklistExpansion(for: blockID)
+                },
+                onToggleChecklistItem: { blockID, itemID in
+                    toggleChecklistItem(for: blockID, itemID: itemID)
+                },
+                onMoveBlock: { blockID, startDate in
+                    rescheduleBlock(blockID, to: startDate)
+                },
+                onCreateBlock: { startDate in
+                    presentNewBlockEditor(startingAt: startDate)
+                }
+            )
+        }
     }
 
     private var monthlyOverviewCard: some View {
@@ -728,7 +909,7 @@ struct ScheduleView: View {
                     title: "No routines yet",
                     message: "Create a routine first, then regenerate this day when you want repeating blocks added.",
                     systemImage: "square.on.square",
-                    tint: Theme.primaryPurple
+                    tint: Theme.primaryAccent
                 )
                 isRegenerating = false
                 return
@@ -748,11 +929,11 @@ struct ScheduleView: View {
                     ? "No routines match \(appEnvironment.appState.selectedDate.formatted(.dateTime.weekday(.wide))) yet."
                     : "Routine-backed planned blocks were refreshed for the selected day.",
                 systemImage: regeneratedBlocks.isEmpty ? "calendar.badge.exclamationmark" : "arrow.clockwise.circle.fill",
-                tint: regeneratedBlocks.isEmpty ? .orange : Theme.primaryPurple
+                tint: regeneratedBlocks.isEmpty ? .orange : Theme.primaryAccent
             )
         } catch {
-            regenerateErrorMessage = "Unable to regenerate this day right now."
-            assertionFailure("Failed to regenerate schedule blocks: \(error)")
+            regenerateErrorMessage = String(localized: "Unable to regenerate this day right now.")
+            logger.error("Failed to regenerate schedule blocks: \(error)")
         }
 
         isRegenerating = false
@@ -777,7 +958,7 @@ struct ScheduleView: View {
                     title: "No overlaps found",
                     message: "The selected day does not have overlapping planned blocks to resolve.",
                     systemImage: "checkmark.circle",
-                    tint: Theme.primaryPurple
+                    tint: Theme.primaryAccent
                 )
                 return
             }
@@ -790,11 +971,11 @@ struct ScheduleView: View {
                 title: "Conflicts resolved",
                 message: "\(resolvedBlocks.count) block\(resolvedBlocks.count == 1 ? "" : "s") shifted forward to remove overlaps.",
                 systemImage: "arrow.right.circle.fill",
-                tint: Theme.primaryPurple
+                tint: Theme.primaryAccent
             )
         } catch {
-            timelineErrorMessage = "Unable to resolve overlaps right now."
-            assertionFailure("Failed to resolve schedule conflicts: \(error)")
+            timelineErrorMessage = String(localized: "Unable to resolve overlaps right now.")
+            logger.error("Failed to resolve schedule conflicts: \(error)")
         }
     }
 
@@ -851,12 +1032,12 @@ struct ScheduleView: View {
 
         guard let block = fetchBlock(id: blockID) else {
             expandedChecklistBlockIDs.remove(blockID)
-            timelineErrorMessage = "This time block is no longer available."
+            timelineErrorMessage = String(localized: "This time block is no longer available.")
             return
         }
 
         guard block.status == .planned else {
-            timelineErrorMessage = "Only planned blocks can be retimed on the timeline."
+            timelineErrorMessage = String(localized: "Only planned blocks can be retimed on the timeline.")
             return
         }
 
@@ -875,11 +1056,11 @@ struct ScheduleView: View {
                 title: "Time updated",
                 message: "\"\(blockTitle)\" now starts at \(startDate.formatted(date: .omitted, time: .shortened)).",
                 systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90",
-                tint: Theme.primaryPurple
+                tint: Theme.primaryAccent
             )
         } catch {
-            timelineErrorMessage = "Unable to update this block's time right now."
-            assertionFailure("Failed to reschedule block on timeline: \(error)")
+            timelineErrorMessage = String(localized: "Unable to update this block's time right now.")
+            logger.error("Failed to reschedule block on timeline: \(error)")
         }
     }
 
@@ -985,12 +1166,12 @@ struct ScheduleView: View {
 
         guard let block = fetchBlock(id: blockID) else {
             expandedChecklistBlockIDs.remove(blockID)
-            setMoveError("This time block is no longer available.", for: errorTarget)
+            setMoveError(String(localized: "This time block is no longer available."), for: errorTarget)
             return
         }
 
         guard block.status == .planned else {
-            setMoveError("Only planned blocks can be moved to another day.", for: errorTarget)
+            setMoveError(String(localized: "Only planned blocks can be moved to another day."), for: errorTarget)
             return
         }
 
@@ -1017,8 +1198,8 @@ struct ScheduleView: View {
             )
             appEnvironment.appState.selectedDate = destinationDate
         } catch {
-            setMoveError("Unable to move this block right now.", for: errorTarget)
-            assertionFailure("Failed to move schedule block: \(error)")
+            setMoveError(String(localized: "Unable to move this block right now."), for: errorTarget)
+            logger.error("Failed to move schedule block: \(error)")
         }
     }
 
@@ -1041,7 +1222,7 @@ struct ScheduleView: View {
     private func presentEditor(for blockID: UUID) {
         guard let block = fetchBlock(id: blockID) else {
             expandedChecklistBlockIDs.remove(blockID)
-            timelineErrorMessage = "This time block is no longer available."
+            timelineErrorMessage = String(localized: "This time block is no longer available.")
             return
         }
 
@@ -1125,10 +1306,10 @@ struct ScheduleView: View {
             Image(systemName: systemImage)
         }
         .font(.system(size: 11, weight: .bold, design: .rounded))
-        .foregroundStyle(Theme.primaryPurple)
+        .foregroundStyle(Theme.primaryAccent)
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-        .background(Theme.primaryPurple.opacity(0.1))
+        .background(Theme.primaryAccent.opacity(0.1))
         .clipShape(Capsule())
     }
 
@@ -1156,6 +1337,22 @@ struct ScheduleView: View {
         }
     }
 
+    private func titleForDate(_ date: Date) -> String {
+        if calendar.isDateInToday(date) {
+            return String(localized: "Today")
+        } else if calendar.isDateInTomorrow(date) {
+            return String(localized: "Tomorrow")
+        } else if calendar.isDateInYesterday(date) {
+            return String(localized: "Yesterday")
+        } else {
+            return date.formatted(.dateTime.weekday(.wide))
+        }
+    }
+
+    private func subtitleForDate(_ date: Date) -> String {
+        date.formatted(.dateTime.month(.wide).day())
+    }
+
     private func collapseToDay() {
         overviewLayer = .collapsed
     }
@@ -1178,13 +1375,7 @@ private struct ScheduleEditorRoute: Identifiable {
 
 
 
-private struct ScheduleFeedbackBannerState: Identifiable {
-    let id: UUID
-    let title: String
-    let message: String
-    let systemImage: String
-    let tint: Color
-}
+
 
 private enum ScheduleOverviewLayer {
     case collapsed
@@ -1204,224 +1395,4 @@ private struct ScheduleScrollOffsetPreferenceKey: PreferenceKey {
 
 private enum ScheduleMoveErrorTarget {
     case drag
-}
-
-private struct ScheduleFeedbackBanner: View {
-    let state: ScheduleFeedbackBannerState
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            Image(systemName: state.systemImage)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 30, height: 30)
-                .background(Circle().fill(state.tint))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(state.title)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.primaryText)
-
-                Text(state.message)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(state.tint.opacity(0.1))
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(state.tint.opacity(0.16), lineWidth: 1)
-        }
-    }
-}
-
-private struct CalendarIntegrationBanner: View {
-    let title: String
-    let message: String
-    var actionTitle: String?
-    var action: (() -> Void)?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 10) {
-                Image(systemName: "calendar.badge.clock")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Color.blue)
-
-                Text(title)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.primaryText)
-            }
-
-            Text(message)
-                .font(.system(size: 12, weight: .medium, design: .rounded))
-                .foregroundStyle(Theme.secondaryText)
-
-            if let actionTitle, let action {
-                Button(actionTitle, action: action)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.blue)
-                    .controlSize(.small)
-            }
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.blue.opacity(0.08))
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(Color.blue.opacity(0.16), lineWidth: 1)
-        }
-    }
-}
-
-private struct CalendarEventRow: View {
-    let event: TimeCalendarEvent
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(event.title)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
-                        .lineLimit(2)
-
-                    Text(timeText)
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Theme.secondaryText)
-                }
-
-                Spacer(minLength: 0)
-
-                Text("Read only")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.blue)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .background(Color.blue.opacity(0.1))
-                    .clipShape(Capsule())
-            }
-
-            HStack(spacing: 8) {
-                Label(event.sourceTitle, systemImage: "calendar")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundStyle(Color.blue)
-
-                if let location = event.location {
-                    Label(location, systemImage: "mappin.and.ellipse")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(Theme.secondaryText)
-                        .lineLimit(1)
-                }
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.blue.opacity(0.06))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(Color.blue.opacity(0.12), lineWidth: 1)
-        }
-    }
-
-    private var timeText: String {
-        if event.isAllDay {
-            return "All day"
-        }
-
-        let start = event.startDate.formatted(date: .omitted, time: .shortened)
-        let end = event.endDate.formatted(date: .omitted, time: .shortened)
-        return "\(start) - \(end)"
-    }
-}
-
-private struct TimeBlockDragPreviewView: View {
-    let block: TimeBlock
-    let destinationDate: Date?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: categorySymbol)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 32, height: 32)
-                    .background(tintColor)
-                    .clipShape(Circle())
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(block.title)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
-                        .lineLimit(1)
-
-                    Text(timeRangeText)
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Theme.secondaryText)
-                }
-            }
-
-            if let destinationDate {
-                Divider()
-
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.right.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.primaryPurple)
-
-                    Text("Moving to \(destinationDate.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryPurple)
-                }
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 8)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(Theme.primaryPurple.opacity(0.2), lineWidth: 1)
-        }
-        .frame(width: 280)
-    }
-
-    private var categorySymbol: String {
-        switch block.category {
-        case .focus: return "scope"
-        case .personal: return "figure.walk"
-        case .admin: return "tray.full.fill"
-        case .routine: return "repeat"
-        case .custom: return "square.grid.2x2.fill"
-        }
-    }
-
-    private var tintColor: Color {
-        switch block.category {
-        case .focus: return Theme.primaryPurple
-        case .personal: return Color(hex: "F59E0B")
-        case .admin: return Color(hex: "0EA5E9")
-        case .routine: return Color(hex: "10B981")
-        case .custom: return Color(hex: "64748B")
-        }
-    }
-
-    private var timeRangeText: String {
-        let start = block.startDate.formatted(date: .omitted, time: .shortened)
-        let end = block.endDate.formatted(date: .omitted, time: .shortened)
-        return "\(start) - \(end)"
-    }
 }
