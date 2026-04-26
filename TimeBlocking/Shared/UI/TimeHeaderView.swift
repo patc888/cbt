@@ -37,8 +37,7 @@ struct TimeHeaderView<Leading: View, Trailing: View>: View {
                 weekDates: weekStripDates,
                 dateHasItems: dateHasItems
             )
-            .frame(height: 100)
-            .padding(.horizontal, horizontalPadding)
+            .frame(height: 90)
             .padding(.bottom, 4)
         }
     }

@@ -527,7 +527,6 @@ struct ScheduleView: View {
         )
         .background {
             Color.clear
-                .background(.ultraThinMaterial)
                 .ignoresSafeArea(edges: .top)
         }
     }

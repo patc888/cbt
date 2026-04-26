@@ -34,8 +34,7 @@ struct WeekStripView: View {
                         .id(Calendar.current.startOfDay(for: date))
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.vertical, 3)
                 .onAppear {
                     proxy.scrollTo(Calendar.current.startOfDay(for: selectedDate), anchor: .center)
                 }
@@ -46,6 +45,7 @@ struct WeekStripView: View {
                 }
             }
         }
+        .safeAreaPadding(.horizontal, 20)
     }
 }
 
@@ -57,7 +57,7 @@ struct WeekStripDayView: View {
     let namespace: Namespace.ID
     
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 6) {
             Text(date.formatted(.dateTime.weekday(.abbreviated)))
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundColor(isSelected ? .white.opacity(0.8) : Theme.secondaryText)
@@ -88,7 +88,7 @@ struct WeekStripDayView: View {
                 .frame(width: 5, height: 5)
         }
         .frame(width: 54)
-        .padding(.vertical, 14)
+        .padding(.vertical, 6)
         .background {
             if isSelected {
                 RoundedRectangle(cornerRadius: 32, style: .continuous)
