@@ -230,11 +230,12 @@ struct DashboardView: View {
                 }
                 .frame(maxWidth: 600)
             }
-            .padding(.top, 64)
-            .padding(.bottom, 100)
+            .padding(.top, 44)
+            .padding(.bottom, 40)
 
             topBar
         }
+        .ignoresSafeArea()
         .statusBarHidden(true)
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)

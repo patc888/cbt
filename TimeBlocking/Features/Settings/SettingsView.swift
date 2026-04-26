@@ -35,15 +35,14 @@ struct SettingsView: View {
                     .frame(maxWidth: 600)
                 }
                 .frame(maxWidth: 600)
-                .padding(.top, 36) // Adjust for close button area
+                .padding(.top, 44)
 
                 navigationArrow
             }
-            .navigationTitle("")
-#if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar(.hidden, for: .navigationBar)
-#endif
+            .ignoresSafeArea()
+            .statusBarHidden(true)
+            .toolbar(.hidden, for: .navigationBar, .bottomBar, .tabBar)
+            .toolbarBackground(.hidden, for: .navigationBar, .bottomBar, .tabBar)
         }
         .confirmationDialog("Reset Data", isPresented: $showingResetOptions, titleVisibility: .visible) {
             Button("Reset to Empty", role: .destructive) {
@@ -76,21 +75,7 @@ struct SettingsView: View {
 
     private var mainContent: some View {
         VStack(spacing: 28) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Settings")
-                        .font(.system(size: 34, weight: .black, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
-                    
-                    Text("Customize your experience")
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
-                        .foregroundStyle(Theme.secondaryText)
-                }
-                
-                Spacer()
-            }
-            .padding(.top, 20)
-            .padding(.horizontal, 4)
+            /* Large title removed and moved to top bar */
 
             if appPreferences == nil {
                 TimeSettingsSection(
@@ -144,19 +129,27 @@ struct SettingsView: View {
     }
 
     private var navigationArrow: some View {
-        Button(action: {
-            HapticManager.shared.lightImpact()
-            appEnvironment.appState.showScheduleHome()
-        }) {
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .black))
-                .foregroundStyle(Theme.primaryAccent)
-                .frame(width: 32, height: 32)
-                .background(Theme.primaryAccent.opacity(0.12))
-                .clipShape(Circle())
+        HStack(spacing: 8) {
+            Spacer()
+            
+            Text("Settings")
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundStyle(Theme.primaryText)
+            
+            Button(action: {
+                HapticManager.shared.lightImpact()
+                appEnvironment.appState.showScheduleHome()
+            }) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundStyle(Theme.primaryAccent)
+                    .frame(width: 32, height: 32)
+                    .background(Theme.primaryAccent.opacity(0.12))
+                    .clipShape(Circle())
+            }
         }
-        .padding(.trailing, 24)
-        .padding(.top, 24)
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
     }
 
     private func updatePreferences(_ update: (AppPreferences) -> Void) {
