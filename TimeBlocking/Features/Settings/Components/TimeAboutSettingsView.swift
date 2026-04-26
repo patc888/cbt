@@ -59,33 +59,6 @@ struct TimeAboutSettingsView: View {
                 }
             }
 
-            TimeSettingsSection(
-                title: "Spread the Word",
-                subtitle: "Help us grow the community",
-                icon: "heart.fill"
-            ) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Button(action: { openExternalURL("itms-apps://itunes.apple.com/app/id6759693729?action=write-review") }) {
-                        TimeSettingsRow(icon: "star", title: "Rate on App Store") {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(Theme.secondaryText)
-                        }
-                    }
-                    .buttonStyle(.plain)
-
-                    Divider()
-
-                    ShareLink(item: URL(string: "https://apps.apple.com/app/id6759693729")!) {
-                        TimeSettingsRow(icon: "square.and.arrow.up", title: "Share TimeBlocking") {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(Theme.secondaryText)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
 
             TimeSettingsSection(
                 title: "Data Management",

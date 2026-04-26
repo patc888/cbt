@@ -230,7 +230,7 @@ struct DashboardView: View {
                 }
                 .frame(maxWidth: 600)
             }
-            .padding(.top, 44)
+            .padding(.top, 120)
             .padding(.bottom, 40)
 
             topBar
@@ -245,26 +245,34 @@ struct DashboardView: View {
     }
 
     private var topBar: some View {
-        HStack(spacing: 8) {
-            Button(action: {
-                HapticManager.shared.lightImpact()
-                appEnvironment.appState.showScheduleHome()
-            }) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(Theme.primaryAccent)
-                    .padding(8)
-                    .contentShape(Rectangle())
-            }
-            
+        ZStack {
             Text("Stats")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(.system(size: 32, weight: .bold, design: .rounded))
                 .foregroundStyle(Theme.primaryText)
             
-            Spacer()
+            HStack {
+                Button(action: {
+                    HapticManager.shared.lightImpact()
+                    appEnvironment.appState.showScheduleHome()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(Theme.primaryAccent)
+                        .frame(width: 36, height: 36)
+                        .background(Theme.primaryAccent.opacity(0.1))
+                        .clipShape(Circle())
+                }
+                Spacer()
+            }
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 12)
+        .padding(.horizontal, 24)
+        .padding(.top, 60)
+        .padding(.bottom, 16)
+        .background {
+            Color.clear
+                .background(.ultraThinMaterial)
+                .ignoresSafeArea(edges: .top)
+        }
     }
 }
 

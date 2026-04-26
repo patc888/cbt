@@ -23,27 +23,25 @@ struct SettingsView: View {
     @State private var notificationAccessState: TimeNotificationManager.AccessState = .notDetermined
 
     var body: some View {
-        NavigationStack {
-            ZStack(alignment: .topTrailing) {
-                AuroraBackground()
-                    .ignoresSafeArea()
+        ZStack(alignment: .top) {
+            AuroraBackground()
+                .ignoresSafeArea()
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        mainContent
-                    }
-                    .frame(maxWidth: 600)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    mainContent
                 }
                 .frame(maxWidth: 600)
-                .padding(.top, 44)
-
-                navigationArrow
+                .padding(.top, 120)
+                .padding(.bottom, 40)
             }
-            .ignoresSafeArea()
-            .statusBarHidden(true)
-            .toolbar(.hidden, for: .navigationBar, .bottomBar, .tabBar)
-            .toolbarBackground(.hidden, for: .navigationBar, .bottomBar, .tabBar)
+            .frame(maxWidth: .infinity)
+
+            topBar
         }
+        .ignoresSafeArea()
+        .statusBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar, .bottomBar, .tabBar)
         .confirmationDialog("Reset Data", isPresented: $showingResetOptions, titleVisibility: .visible) {
             Button("Reset to Empty", role: .destructive) {
                 resetAllDataToEmpty()
@@ -75,8 +73,6 @@ struct SettingsView: View {
 
     private var mainContent: some View {
         VStack(spacing: 28) {
-            /* Large title removed and moved to top bar */
-
             if appPreferences == nil {
                 TimeSettingsSection(
                     title: "Setup",
@@ -125,31 +121,38 @@ struct SettingsView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.bottom, 32)
     }
 
-    private var navigationArrow: some View {
-        HStack(spacing: 8) {
-            Spacer()
-            
+    private var topBar: some View {
+        ZStack(alignment: .center) {
             Text("Settings")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(.system(size: 32, weight: .bold, design: .rounded))
                 .foregroundStyle(Theme.primaryText)
             
-            Button(action: {
-                HapticManager.shared.lightImpact()
-                appEnvironment.appState.showScheduleHome()
-            }) {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .black))
-                    .foregroundStyle(Theme.primaryAccent)
-                    .frame(width: 32, height: 32)
-                    .background(Theme.primaryAccent.opacity(0.12))
-                    .clipShape(Circle())
+            HStack {
+                Spacer()
+                
+                Button {
+                    HapticManager.shared.lightImpact()
+                    appEnvironment.appState.showScheduleHome()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Theme.primaryAccent)
+                        .frame(width: 36, height: 36)
+                        .background(Theme.primaryAccent.opacity(0.1))
+                        .clipShape(Circle())
+                }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
+        .padding(.horizontal, 24)
+        .padding(.top, 60)
+        .padding(.bottom, 16)
+        .background {
+            Color.clear
+                .background(.ultraThinMaterial)
+                .ignoresSafeArea(edges: .top)
+        }
     }
 
     private func updatePreferences(_ update: (AppPreferences) -> Void) {
