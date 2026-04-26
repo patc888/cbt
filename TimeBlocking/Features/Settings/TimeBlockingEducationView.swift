@@ -29,7 +29,9 @@ struct TimeBlockingEducationView: View {
                     TBTipsPage().tag(EducationPage.tips.rawValue)
                     TBConclusionPage().tag(EducationPage.conclusion.rawValue)
                 }
+                #if os(iOS)
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                #endif
                 .onChange(of: currentPage) { _, _ in
                     HapticManager.shared.lightImpact()
                 }
@@ -39,7 +41,7 @@ struct TimeBlockingEducationView: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .navigation) {
                 Button(action: {
                     HapticManager.shared.lightImpact()
                     dismiss()
@@ -53,7 +55,9 @@ struct TimeBlockingEducationView: View {
                 }
             }
         }
+#if os(iOS)
         .toolbar(.visible, for: .navigationBar)
+#endif
     }
     
     private var bottomBar: some View {

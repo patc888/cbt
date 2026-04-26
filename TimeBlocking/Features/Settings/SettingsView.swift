@@ -47,8 +47,14 @@ struct SettingsView: View {
             }
             .ignoresSafeArea()
         }
+#if os(iOS)
         .statusBarHidden(true)
+#endif
+#if os(iOS)
         .toolbar(.hidden, for: .navigationBar, .bottomBar, .tabBar)
+#else
+        .toolbar(.hidden, for: .windowToolbar)
+#endif
         .confirmationDialog("Reset Data", isPresented: $showingResetOptions, titleVisibility: .visible) {
             Button("Reset to Empty", role: .destructive) {
                 resetAllDataToEmpty()

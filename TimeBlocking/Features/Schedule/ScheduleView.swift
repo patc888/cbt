@@ -329,8 +329,10 @@ struct ScheduleView: View {
                 activeDragOverlay
             }
             .navigationTitle("")
+#if os(iOS)
             .navigationBarHidden(true)
             .navigationBarTitleDisplayMode(.inline)
+#endif
             .sheet(item: $editorRoute) { route in
                 editorSheet(for: route)
             }
@@ -692,9 +694,11 @@ struct ScheduleView: View {
                 .padding()
             }
             .navigationTitle("Planning Guidance")
+#if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         isShowingPlanningGuidance = false
                     }

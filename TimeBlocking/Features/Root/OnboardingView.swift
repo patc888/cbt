@@ -93,7 +93,9 @@ struct OnboardingView: View {
                         .tag(index)
                     }
                 }
+                #if os(iOS)
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                #endif
                 
                 // Custom Indicators
                 HStack(spacing: 8) {

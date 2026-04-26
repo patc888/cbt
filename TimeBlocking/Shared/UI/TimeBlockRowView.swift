@@ -69,175 +69,114 @@ struct TimeBlockRowView: View {
     }
 
     var body: some View {
-        let isCompleted = block.status == .completed
+        mainStack
+    }
 
+    private var mainStack: some View {
         ZStack {
-            VStack(alignment: .leading, spacing: sortedChecklistItems.isEmpty || !isChecklistExpanded ? 0 : 16) {
-                HStack(spacing: 16) {
-                    // Premium Icon Tile
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .fill(
-                                accentColor.opacity(isCompleted ? 0.6 : 1.0)
-                            )
-                            .frame(width: 64, height: 64)
-                            .adaptiveShadow(color: accentColor.opacity(isCompleted ? 0 : 0.4), radius: 12, x: 0, y: 6)
-                        
-                        Image(systemName: categoryIcon)
-                            .font(.system(size: 30, weight: .bold))
-                            .foregroundColor(.white)
-                            .opacity(isCompleted ? 0.6 : 1.0)
-                            .adaptiveShadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text(block.title)
-                                .font(.system(size: 21, weight: .black, design: .rounded))
-                                .foregroundStyle(isCompleted || fillProgress > 0.8 ? .secondary : .primary)
-                                .lineLimit(1)
-                                .strikethrough(isCompleted || fillProgress > 0.8)
-                                .opacity(isCompleted || fillProgress > 0.8 ? 0.6 : 1.0)
-                            
-                            if block.isPinned {
-                                Image(systemName: "pin.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(.orange)
-                            }
-                        }
-                        
-                        Text(block.category.title.uppercased())
-                            .font(.system(size: 11, weight: .black, design: .rounded))
-                            .kerning(1.2)
-                            .foregroundStyle(accentColor.opacity(0.8))
-                    }
-
-                        HStack(spacing: 6) {
-                            Text(timeRangeText)
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
-                                .foregroundStyle(Theme.secondaryText)
-                            
-                            if let conflictSummary {
-                                Text("•")
-                                    .foregroundStyle(Theme.secondaryText.opacity(0.5))
-                                Text(conflictSummary.badgeText)
-                                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                                    .foregroundStyle(.orange)
-                            }
-                        }
-
-                    Spacer(minLength: 0)
-
-                    // Completion Control / Drag Handle Area
-                    HStack(spacing: 12) {
-                        if supportsDrag && !isCompleted {
-                            dragHandle
-                        }
-
-                        Button {
-                            handleComplete()
-                        } label: {
-                            ZStack {
-                                if isCompleted || fillProgress > 0.9 {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 36, weight: .black))
-                                        .foregroundColor(.green)
-                                        .matchedGeometryEffect(id: "status", in: animation)
-                                        .transition(.scale.combined(with: .opacity))
-                                } else {
-                                    Circle()
-                                        .stroke(accentColor.opacity(0.3), lineWidth: 3)
-                                        .frame(width: 36, height: 36)
-                                        .overlay(
-                                            Image(systemName: "plus")
-                                                .font(.system(size: 18, weight: .black))
-                                                .foregroundColor(accentColor.opacity(0.7))
-                                        )
-                                        .matchedGeometryEffect(id: "status", in: animation)
-                                }
-                            }
-                            .scaleEffect(fillProgress > 0.9 ? 1.15 : 1.0)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(isAnimating)
-                    }
-                }
-
-                if !sortedChecklistItems.isEmpty && isChecklistExpanded {
-                    inlineChecklist
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background {
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .fill(
-                            isCompleted
-                            ? (colorScheme == .dark ? Color.white.opacity(0.04) : Color.black.opacity(0.03))
-                            : (colorScheme == .light ? Color.white : Color(.secondarySystemGroupedBackground))
-                        )
-                    
-                    if fillProgress > 0 {
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .fill(
-                                accentColor.opacity(0.08)
-                            )
-                            .scaleEffect(x: fillProgress, anchor: .leading)
-                    }
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .shadow(color: Color.black.opacity(isCompleted ? 0 : (colorScheme == .dark ? 0.15 : 0)), radius: colorScheme == .dark ? 10 : 0, x: 0, y: colorScheme == .dark ? 4 : 0)
-            .overlay {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(isCompleted ? Color.primary.opacity(0.04) : accentColor.opacity(0.12), lineWidth: 1.2)
-            }
-            .scaleEffect(bounceScale)
-            .opacity(isDragging ? 0.3 : 1)
+            mainRowContent
             
             if showConfetti {
                 ConfettiView()
                     .allowsHitTesting(false)
             }
         }
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button(block.isPinned ? "Unpin" : "Pin") {
-                block.isPinned.toggle()
-                saveChanges()
-            }
-            .tint(.orange)
+    }
 
-            Button(block.status == .completed ? "Planned" : "Complete") {
-                toggleCompletion()
-            }
-            .tint(.green)
-        }
-        .contextMenu {
-            if let onEdit {
-                Button("Edit", systemImage: "pencil") {
-                    onEdit()
-                }
-            }
 
-            Button(block.isPinned ? "Unpin" : "Pin", systemImage: block.isPinned ? "pin.slash" : "pin") {
-                block.isPinned.toggle()
-                saveChanges()
-            }
-
-            Button(block.status == .completed ? "Mark as Planned" : "Mark as Completed", systemImage: "checkmark.circle") {
-                toggleCompletion()
+    private var mainRowContent: some View {
+        VStack(alignment: .leading, spacing: sortedChecklistItems.isEmpty || !isChecklistExpanded ? 0 : 16) {
+            rowHeader
+            if !sortedChecklistItems.isEmpty && isChecklistExpanded {
+                inlineChecklist
             }
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isCompleted)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(block.title), \(block.category.title)")
-        .accessibilityValue("\(isCompleted ? "Completed" : "Planned"), \(timeRangeText)")
-        .accessibilityAddTraits(isCompleted ? [.isButton, .isSelected] : [.isButton])
-        .accessibilityAction {
-            handleComplete()
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(rowBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(block.status == .completed ? 0 : (colorScheme == .dark ? 0.15 : 0)), radius: colorScheme == .dark ? 10 : 0, x: 0, y: colorScheme == .dark ? 4 : 0)
+        .overlay { rowBorder }
+        .scaleEffect(bounceScale)
+        .opacity(isDragging ? 0.3 : 1)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: block.status == .completed)
+    }
+
+    private var rowHeader: some View {
+        TimeBlockHeaderView(
+            block: block,
+            accentColor: accentColor,
+            categoryIcon: categoryIcon,
+            timeRangeText: timeRangeText,
+            conflictSummary: conflictSummary,
+            supportsDrag: supportsDrag,
+            isDragging: isDragging,
+            fillProgress: fillProgress,
+            handleComplete: { handleComplete() },
+            dragHandle: AnyView(dragHandle)
+        )
+    }
+
+    private var rowBorder: some View {
+        RoundedRectangle(cornerRadius: 24, style: .continuous)
+            .stroke(block.status == .completed ? Color.primary.opacity(0.04) : accentColor.opacity(0.12), lineWidth: 1.2)
+    }
+
+
+
+
+
+
+    private var rowBackground: some View {
+        let isCompleted = block.status == .completed
+        return ZStack(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(
+                    isCompleted
+                    ? (colorScheme == .dark ? Color.white.opacity(0.04) : Color.black.opacity(0.03))
+                    : (colorScheme == .light ? Color.white : Theme.cardBackground)
+                )
+            
+            if fillProgress > 0 {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(accentColor.opacity(0.08))
+                    .scaleEffect(x: fillProgress, anchor: .leading)
+            }
         }
     }
+
+    @ViewBuilder
+    private var swipeActions: some View {
+        Button(block.isPinned ? "Unpin" : "Pin") {
+            block.isPinned.toggle()
+            saveChanges()
+        }
+        .tint(.orange)
+
+        Button(block.status == .completed ? "Planned" : "Complete") {
+            toggleCompletion()
+        }
+        .tint(.green)
+    }
+
+    @ViewBuilder
+    private var contextMenuContent: some View {
+        if let onEdit {
+            Button("Edit", systemImage: "pencil") {
+                onEdit()
+            }
+        }
+
+        Button(block.isPinned ? "Unpin" : "Pin", systemImage: block.isPinned ? "pin.slash" : "pin") {
+            block.isPinned.toggle()
+            saveChanges()
+        }
+
+        Button(block.status == .completed ? "Mark as Planned" : "Mark as Completed", systemImage: "checkmark.circle") {
+            toggleCompletion()
+        }
+    }
+
 
     private var sortedChecklistItems: [BlockChecklistItem] {
         (block.checklistItems ?? []).sorted { lhs, rhs in

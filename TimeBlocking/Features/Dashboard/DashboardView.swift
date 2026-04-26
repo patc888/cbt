@@ -247,7 +247,9 @@ struct DashboardView: View {
             topBar
         }
         .ignoresSafeArea()
+#if os(iOS)
         .statusBarHidden(true)
+#endif
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .bottomBar)
