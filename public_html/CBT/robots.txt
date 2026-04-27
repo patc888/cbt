@@ -1,4 +1,4 @@
 User-agent: *
-Allow: /CBT/
+Allow: /TimeBlocking/
 
-Sitemap: https://xeo.com/CBT/sitemap.xml
+Sitemap: https://xeo.com/TimeBlocking/sitemap.xml

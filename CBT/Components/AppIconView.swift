@@ -8,7 +8,7 @@ struct AppIconView: View {
     var size: CGFloat = 60
     var isTabIcon: Bool = false
 
-    private let brandPurple = Color(red: 156/255, green: 128/255, blue: 252/255)
+    private let brandBlue = Color(red: 0/255, green: 122/255, blue: 255/255)
 
     var body: some View {
         if isTabIcon {
@@ -16,7 +16,7 @@ struct AppIconView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: size, height: size)
-                .foregroundColor(brandPurple)
+                .foregroundColor(brandBlue)
         } else {
             actualIconOrFallback
         }
@@ -78,52 +78,43 @@ struct AppIconView: View {
     #endif
 
     private var codeDrawnIcon: some View {
-        let dialSize = size * 0.45
+        let dialSize = size * 0.75
 
         return ZStack {
             RoundedRectangle(cornerRadius: size * 0.225)
-                .fill(brandPurple)
+                .fill(LinearGradient(
+                    gradient: Gradient(colors: [Color(red: 45/255, green: 156/255, blue: 240/255), Color(red: 0/255, green: 102/255, blue: 204/255)]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                ))
                 .frame(width: size, height: size)
 
-            VStack(spacing: 0) {
-                ZStack {
+            Circle()
+                .fill(Color.white.opacity(0.3))
+                .frame(width: dialSize, height: dialSize)
+                .blur(radius: size * 0.05)
+
+            VStack(spacing: size * 0.08) {
+                HStack(spacing: size * 0.25) {
                     Circle()
-                        .fill(Color.white.opacity(0.3))
-                        .frame(width: dialSize, height: dialSize)
-
-                    Capsule()
-                        .fill(brandPurple)
-                        .frame(width: dialSize * 0.12, height: dialSize * 0.45)
-                        .offset(y: -dialSize * 0.1)
-                        .rotationEffect(.degrees(-30))
+                        .fill(Color.black)
+                        .frame(width: size * 0.12, height: size * 0.12)
+                    Circle()
+                        .fill(Color.black)
+                        .frame(width: size * 0.12, height: size * 0.12)
                 }
-                .padding(.top, size * 0.15)
 
-                Spacer()
-
-                VStack(spacing: size * 0.08) {
-                    HStack(spacing: size * 0.4) {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: size * 0.11, height: size * 0.11)
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: size * 0.11, height: size * 0.11)
-                    }
-
-                    Path { path in
-                        let width = size * 0.3
-                        let height = size * 0.12
-                        path.move(to: CGPoint(x: 0, y: 0))
-                        path.addQuadCurve(
-                            to: CGPoint(x: width, y: 0),
-                            control: CGPoint(x: width / 2, y: height)
-                        )
-                    }
-                    .stroke(Color.white, style: StrokeStyle(lineWidth: size * 0.04, lineCap: .round))
-                    .frame(width: size * 0.3, height: size * 0.12)
+                Path { path in
+                    let width = size * 0.2
+                    let height = size * 0.08
+                    path.move(to: CGPoint(x: 0, y: 0))
+                    path.addQuadCurve(
+                        to: CGPoint(x: width, y: 0),
+                        control: CGPoint(x: width / 2, y: height)
+                    )
                 }
-                .padding(.bottom, size * 0.15)
+                .stroke(Color.black, style: StrokeStyle(lineWidth: size * 0.05, lineCap: .round))
+                .frame(width: size * 0.2, height: size * 0.08)
             }
         }
     }

@@ -2,30 +2,113 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Unlock your private CBT records with Face ID.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>CBT uses your location to show where you performed exercises and track mood patterns across different environments.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>CBT uses your location to show where you performed exercises and track mood patterns across different environments.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>CBT uses the camera to let you add photos to your journal entries and capture reflections.</string>
+	<string>Add photos to your journal entries.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>CBT uses the photo library to let you add existing photos to your journal entries and capture reflections.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>CBT uses the photo library to let you save reflections and journal entries.</string>
+	<string>Add existing photos to your journal entries.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>CBT uses the microphone to let you record voice journals and affirmations.</string>
-	<key>LSApplicationCategoryType</key>
-	<string>public.app-category.healthcare-fitness</string>
+	<string>Record voice journals and affirmations.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>UIApplicationSceneManifest</key>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.healthcare-fitness</string>
+	<key>CFBundleIcons</key>
 	<dict>
-		<key>UIApplicationSupportsMultipleScenes</key>
-		<false/>
-		<key>UISceneConfigurations</key>
-		<dict/>
+		<key>CFBundleAlternateIcons</key>
+		<dict>
+			<key>AppIcon-Feather</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIcon-Feather</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>AppIcon-Stealth</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIcon-Stealth</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+		</dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>AppIcon 2</string>
+			</array>
+			<key>UIPrerenderedIcon</key>
+			<false/>
+		</dict>
 	</dict>
+	<key>CFBundleIcons~ipad</key>
+	<dict>
+		<key>CFBundleAlternateIcons</key>
+		<dict>
+			<key>AppIcon-Feather</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIcon-Feather</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>AppIcon-Stealth</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIcon-Stealth</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+		</dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>AppIcon 2</string>
+			</array>
+			<key>UIPrerenderedIcon</key>
+			<false/>
+		</dict>
+	</dict>
+
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
 </dict>
 </plist>

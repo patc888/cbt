@@ -14,7 +14,7 @@ class SecurityManager: ObservableObject {
     static let shared = SecurityManager()
 
     init() {
-        checkBiometrics()
+        // Biometrics check moved to app start task to prevent launch blocking
     }
 
     func checkBiometrics() {

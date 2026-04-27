@@ -1,0 +1,43 @@
+import SwiftUI
+
+struct DismissButton: View {
+    enum Style {
+        case chevron
+        case xmarkCircle(background: Color, foreground: Color)
+    }
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(ThemeManager.self) private var themeManager
+
+    var style: Style = .chevron
+
+    var body: some View {
+        Button(action: { dismiss() }) {
+            switch style {
+            case .chevron:
+                Image(systemName: "chevron.right")
+                    .font(.system(.body, weight: .bold))
+                    .foregroundStyle(themeManager.selectedColor)
+                    .padding(8)
+                    .accessibilityLabel("Go back")
+            case let .xmarkCircle(background, foreground):
+                ZStack {
+                    Circle()
+                        .fill(background)
+                    Image(systemName: "xmark")
+                        .font(.system(.body, weight: .bold))
+                        .foregroundStyle(foreground)
+                }
+                .frame(width: 44, height: 44)
+                .accessibilityLabel("Dismiss")
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(minWidth: 44, minHeight: 44)
+        .contentShape(Rectangle())
+#if targetEnvironment(macCatalyst)
+        .focusable(true)
+        .keyboardShortcut(.cancelAction)
+#endif
+    }
+}
