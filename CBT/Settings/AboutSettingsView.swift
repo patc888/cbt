@@ -40,6 +40,20 @@ struct AboutSettingsView: View {
             }
             .padding(.top, 4)
             .buttonStyle(PlainButtonStyle())
+
+            Divider()
+                .padding(.leading, 16)
+
+            NavigationLink(destination: DataResetOptionsView()) {
+                HStack {
+                    Image(systemName: "person.badge.minus")
+                    Text(String(localized: "Delete Account & Data"))
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                }
+                .foregroundStyle(Theme.errorRed)
+            }
+            .padding(.top, 4)
+            .buttonStyle(PlainButtonStyle())
         }
         .sheet(isPresented: $showingLegalInfo) {
             LegalView()

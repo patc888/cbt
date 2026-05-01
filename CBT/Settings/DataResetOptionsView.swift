@@ -1,7 +1,9 @@
 import SwiftUI
+import SwiftData
 
 struct DataResetOptionsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
 
     private var isCloudSyncEnabled: Bool { DataResetManager.isCloudSyncEnabled }
@@ -11,6 +13,7 @@ struct DataResetOptionsView: View {
     @State private var cloudConfirmText = ""
     @State private var isProcessing = false
     @State private var errorMessage: String?
+    @State private var localResetErrorMessage: String?
     
     var body: some View {
         ZStack {
@@ -40,7 +43,7 @@ struct DataResetOptionsView: View {
                                     .font(.headline)
                                     .foregroundStyle(Theme.errorRed)
 
-                                Text("Clears local data, preferences, and notifications stored on this device. This action cannot be undone.")
+                                Text(localResetDescription)
                                     .font(.subheadline)
                                     .foregroundStyle(Theme.secondaryText)
                                     .multilineTextAlignment(.leading)
@@ -112,6 +115,11 @@ struct DataResetOptionsView: View {
         } message: {
             Text("This will delete all local app data, preferences, and reminders stored on this device.")
         }
+        .alert("Reset Unavailable", isPresented: Binding(get: { localResetErrorMessage != nil }, set: { if !$0 { localResetErrorMessage = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(localResetErrorMessage ?? "")
+        }
         .sheet(isPresented: $showingCloudSheet) {
             NavigationStack {
                 Form {
@@ -174,26 +182,74 @@ struct DataResetOptionsView: View {
     }
     
     private func performLocalWipe() {
-        DataResetManager.shared.requestLocalWipe()
-        dismiss()
+        guard !DataResetManager.isCloudSyncEnabled else {
+            localResetErrorMessage = "Local-only reset is unavailable while iCloud sync is active. Use Reset Everywhere to delete synced records from iCloud and this device."
+            return
+        }
+
+        Task { await wipeData(propagatesThroughCloudKit: false) }
     }
     
     private func performGlobalWipe() async {
+        await wipeData(propagatesThroughCloudKit: true)
+    }
+
+    @MainActor
+    private func wipeData(propagatesThroughCloudKit: Bool) async {
         isProcessing = true
         errorMessage = nil
+
         do {
-            try await DataResetManager.shared.deleteCloudData()
-            await MainActor.run {
-                isProcessing = false
-                showingCloudSheet = false
-                DataResetManager.shared.requestLocalWipe()
-                dismiss()
+            try deleteAllSwiftDataRecords()
+            DataResetManager.shared.resetLocalPreferences()
+            await ReminderManager.shared.cancelAllCBTReminders()
+
+            if propagatesThroughCloudKit {
+                CloudSyncMonitor.shared.refreshAccountStatus()
             }
+
+            isProcessing = false
+            showingCloudSheet = false
+            NotificationCenter.default.post(name: .didResetData, object: nil)
+            dismiss()
         } catch {
-            await MainActor.run {
-                isProcessing = false
-                errorMessage = "Failed to delete iCloud data: \(error.localizedDescription)"
-            }
+            isProcessing = false
+            errorMessage = propagatesThroughCloudKit
+                ? "Failed to delete iCloud data: \(error.localizedDescription)"
+                : "Failed to reset this device: \(error.localizedDescription)"
+        }
+    }
+
+    @MainActor
+    private func deleteAllSwiftDataRecords() throws {
+        for record in try modelContext.fetch(FetchDescriptor<MoodEntry>()) {
+            modelContext.delete(record)
+        }
+
+        for record in try modelContext.fetch(FetchDescriptor<ThoughtRecord>()) {
+            modelContext.delete(record)
+        }
+
+        for record in try modelContext.fetch(FetchDescriptor<ExerciseCompletion>()) {
+            modelContext.delete(record)
+        }
+
+        for record in try modelContext.fetch(FetchDescriptor<JournalEntry>()) {
+            modelContext.delete(record)
+        }
+
+        for settings in try modelContext.fetch(FetchDescriptor<UserSettings>()) {
+            modelContext.delete(settings)
+        }
+
+        try modelContext.save()
+    }
+
+    private var localResetDescription: String {
+        if isCloudSyncEnabled {
+            "Unavailable while iCloud sync is active because deleting local SwiftData records can sync deletions to iCloud."
+        } else {
+            "Clears local data, preferences, and notifications stored on this device. This action cannot be undone."
         }
     }
 }

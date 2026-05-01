@@ -155,18 +155,6 @@ private struct SettingsContent: View {
 
             AboutSettingsView()
 
-            NavigationLink(destination: DataResetOptionsView()) {
-                HStack {
-                    Image(systemName: "person.badge.minus")
-                        .foregroundStyle(Theme.errorRed)
-                    Text(String(localized: "Delete Account & Data"))
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundStyle(Theme.errorRed)
-                }
-            }
-            .padding(.top, 4)
-            .buttonStyle(PlainButtonStyle())
-
             PrivacyFooter()
                 .padding(.top, 16)
 

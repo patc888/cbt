@@ -63,10 +63,9 @@ final class CloudSyncMonitor {
     private var accountStatus: CKAccountStatus = .couldNotDetermine
     private var isSyncing = false
     private var refreshTask: Task<Void, Never>?
+    private var hasSetupObservers = false
     
-    private init() {
-        setupObservers()
-    }
+    private init() {}
 
     deinit {
         NotificationCenter.default.removeObserver(self)
@@ -74,10 +73,14 @@ final class CloudSyncMonitor {
     
     /// Starts monitoring iCloud account status. Called explicitly after app boot to prevent launch traps.
     func startMonitoring() {
+        guard !hasSetupObservers else { return }
+        hasSetupObservers = true
+        setupObservers()
         refreshAccountStatus()
     }
     
     private func setupObservers() {
+        // CloudKit sync events from NSPersistentCloudKitContainer (used by SwiftData under the hood)
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleSyncEvent(_:)),
@@ -85,6 +88,7 @@ final class CloudSyncMonitor {
             object: nil
         )
         
+        // iCloud account changes
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(refreshAccountStatus),
@@ -92,13 +96,22 @@ final class CloudSyncMonitor {
             object: nil
         )
         
-        // Also refresh on foreground to catch account changes
+        // Refresh on foreground to catch account changes
+        #if canImport(UIKit)
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(refreshAccountStatus),
             name: UIApplication.didBecomeActiveNotification,
             object: nil
         )
+        #else
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(refreshAccountStatus),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        #endif
     }
     
     @objc func refreshAccountStatus() {
@@ -111,7 +124,7 @@ final class CloudSyncMonitor {
         refreshTask?.cancel()
         refreshTask = Task {
             do {
-                let container = CKContainer(identifier: "iCloud.com.melichan.CBT")
+                let container = CKContainer(identifier: SharedPersistence.cloudKitContainerID)
                 let status = try await container.accountStatus()
                 if Task.isCancelled { return }
                 

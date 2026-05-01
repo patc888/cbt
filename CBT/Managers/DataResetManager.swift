@@ -12,6 +12,10 @@ extension Notification.Name {
 final class DataResetManager {
     nonisolated static let shared = DataResetManager()
     private nonisolated static let cloudSyncKey = "com.melichan.CBT.cloudSyncEnabled"
+    private nonisolated static let localPreferenceKeys = [
+        cloudSyncKey,
+        "lastCloudSyncDate"
+    ]
     
     nonisolated static var isCloudSyncEnabled: Bool {
         get {
@@ -26,10 +30,16 @@ final class DataResetManager {
     }
     
     func requestLocalWipe() {
-        // Mocked for compilation; implementation removed for safety during launch
+        NotificationCenter.default.post(name: .requestDataReset, object: nil)
     }
 
     func deleteCloudData() async throws {
-        // Mocked for compilation; implementation removed for safety during launch
+        requestLocalWipe()
+    }
+
+    func resetLocalPreferences() {
+        for key in Self.localPreferenceKeys {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
     }
 }
