@@ -3,30 +3,25 @@ import SwiftUI
 struct TimeSettingsSection<Content: View>: View {
     let title: String
     let content: () -> Content
-
-    init(
-        title: String,
-        @ViewBuilder content: @escaping () -> Content
-    ) {
+    
+    init(title: String, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
         self.content = content
     }
-
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: title.isEmpty ? 0 : 16) {
+        VStack(alignment: .leading, spacing: title.isEmpty ? 0 : 10) {
             if !title.isEmpty {
                 Text(title)
-                    .font(.system(size: 25, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.primaryText)
-                    .padding(.horizontal, 4)
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundColor(Theme.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-
-            VStack(alignment: .leading, spacing: 16) {
-                content()
-            }
+            
+            content()
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .cardStyle()
     }
 }
@@ -37,7 +32,7 @@ struct TimeSettingsRow<Content: View>: View {
     let title: String
     let subtitle: String?
     let content: () -> Content
-
+    
     init(
         icon: String? = nil,
         iconColor: Color? = nil,
@@ -51,35 +46,36 @@ struct TimeSettingsRow<Content: View>: View {
         self.subtitle = subtitle
         self.content = content
     }
-
+    
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .center, spacing: 10) {
             if let icon = icon {
                 Image(systemName: icon)
                     .foregroundStyle(iconColor ?? Theme.primaryAccent)
                     .font(.system(size: 18))
                     .frame(width: 24)
             }
-
+            
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 16, weight: .medium, design: .rounded))
                     .foregroundStyle(Theme.primaryText)
-
+                    .fixedSize(horizontal: false, vertical: true)
+                
                 if let subtitle = subtitle {
                     Text(subtitle)
                         .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Theme.secondaryText)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
-
+            .layoutPriority(1)
+            
             Spacer()
-
+            
             content()
                 .layoutPriority(1)
         }
-        .padding(.vertical, 4)
     }
 }
 
@@ -194,10 +190,114 @@ struct WhatIsTimeBlockingCard: View {
     }
 }
 
-struct TimeScaleButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+struct TimeTopHeadlineView: View {
+    let title: String
+    var subtitle: String? = nil
+    var size: CGFloat = 28
+    
+    var body: some View {
+        HStack {
+            Spacer()
+            VStack(spacing: 2) {
+                Text(title)
+                    .font(.system(size: size, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.primaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
+            Spacer()
+        }
+        .frame(height: 44)
+    }
+}
+
+
+
+struct TimeDismissButton: View {
+    enum Style {
+        case chevron
+        case chevronLeft
+        case xmarkCircle(background: Color, foreground: Color)
+    }
+
+    @Environment(\.dismiss) private var dismiss
+
+    var style: Style = .chevron
+    var accessibilityLabel: String = "Close"
+    var accessibilityHint: String = "Dismisses this screen"
+    var enableHaptics: Bool = true
+
+    var body: some View {
+        Button(action: dismissAction) {
+            switch style {
+            case .chevron:
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Theme.primaryAccent)
+                    .padding(8)
+            case .chevronLeft:
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Theme.primaryAccent)
+                    .padding(8)
+            case let .xmarkCircle(background, foreground):
+                ZStack {
+                    Circle()
+                        .fill(background)
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(foreground)
+                }
+                .frame(width: 44, height: 44)
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(minWidth: 44, minHeight: 44)
+        .contentShape(Rectangle())
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint(accessibilityHint)
+#if targetEnvironment(macCatalyst)
+        .focusable(true)
+        .keyboardShortcut(.cancelAction)
+#endif
+    }
+
+    private func dismissAction() {
+        if enableHaptics {
+            HapticManager.shared.lightImpact()
+        }
+        dismiss()
+    }
+}
+
+struct VersionFooterView: View {
+    private var appVersionText: String {
+        let shortVersion = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.0.0"
+        let buildVersion = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+        
+        #if DEBUG
+        if let buildVersion, !buildVersion.isEmpty {
+            return "Version \(shortVersion) (\(buildVersion))"
+        }
+        #endif
+        
+        return "Version \(shortVersion)"
+    }
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(appVersionText)
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(Theme.secondaryText)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 4)
     }
 }

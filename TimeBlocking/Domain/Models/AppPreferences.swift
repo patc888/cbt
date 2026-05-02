@@ -35,57 +35,57 @@ enum Weekday: Int, CaseIterable, Codable, Identifiable {
 
 enum AppColorTheme: String, CaseIterable, Codable, Identifiable {
     case purple = "Purple"
-    case pink = "Pink"
     case blue = "Blue"
-    case orange = "Orange"
-    case green = "Green"
     case emerald = "Emerald"
-    case gold = "Gold"
     case red = "Red"
     case indigo = "Indigo"
-    case teal = "Teal"
-    case cyan = "Cyan"
     case rose = "Rose"
     case lavender = "Lavender"
-    case slate = "Slate"
+    case amber = "Amber"
+    case fuchsia = "Fuchsia"
+    case crimson = "Crimson"
+    case forest = "Forest"
+    case ocean = "Ocean"
+    case berry = "Berry"
+    case coral = "Coral"
     
     var id: String { rawValue }
     
     var primaryHex: String {
         switch self {
         case .purple: return "9C80FC"
-        case .pink: return "FF8FB1"
         case .blue: return "007AFF"
-        case .orange: return "FF9F43"
-        case .green: return "86E3CE"
         case .emerald: return "2ECC71"
-        case .gold: return "F6C852"
         case .red: return "FF4D4D"
         case .indigo: return "818CF8"
-        case .teal: return "2DD4BF"
-        case .cyan: return "67E8F9"
         case .rose: return "F472B6"
         case .lavender: return "C084FC"
-        case .slate: return "94A3B8"
+        case .amber: return "F59E0B"
+        case .fuchsia: return "E879F9"
+        case .crimson: return "DC143C"
+        case .forest: return "228B22"
+        case .ocean: return "0077BE"
+        case .berry: return "C71585"
+        case .coral: return "FF7F50"
         }
     }
     
     var secondaryHex: String {
         switch self {
         case .purple: return "8B5CF6"
-        case .pink: return "FF6B9D"
         case .blue: return "0056B3"
-        case .orange: return "F57C00"
-        case .green: return "5DBEA3"
         case .emerald: return "10B981"
-        case .gold: return "FF9F0A"
         case .red: return "D63031"
         case .indigo: return "6366F1"
-        case .teal: return "14B8A6"
-        case .cyan: return "06B6D4"
         case .rose: return "E11D48"
         case .lavender: return "A855F7"
-        case .slate: return "64748B"
+        case .amber: return "D97706"
+        case .fuchsia: return "C026D3"
+        case .crimson: return "990000"
+        case .forest: return "006400"
+        case .ocean: return "005A8D"
+        case .berry: return "8B008B"
+        case .coral: return "E9967A"
         }
     }
 }
@@ -121,6 +121,7 @@ final class AppPreferences {
     var isImmersive: Bool? = true
     var hapticsEnabled: Bool? = true
     var appLockEnabled: Bool? = false
+    var isPremium: Bool? = false
     var hasSeenOnboarding: Bool = false
     var createdAt: Date = Date.now
 
@@ -139,6 +140,7 @@ final class AppPreferences {
         isImmersive: Bool? = true,
         hapticsEnabled: Bool? = true,
         appLockEnabled: Bool? = false,
+        isPremium: Bool? = false,
         hasSeenOnboarding: Bool = false,
         createdAt: Date = .now,
 
@@ -156,6 +158,7 @@ final class AppPreferences {
         self.isImmersive = isImmersive
         self.hapticsEnabled = hapticsEnabled
         self.appLockEnabled = appLockEnabled
+        self.isPremium = isPremium
         self.hasSeenOnboarding = hasSeenOnboarding
         self.createdAt = createdAt
 

@@ -3,22 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Blocking — Master Your Day</title>
-    <meta name="description" content="Take control of your productivity with Time Blocking. The ultimate app for focused, intentional scheduling.">
+    <title>Time Blocking — Master Your Day, One Block at a Time</title>
+    <meta name="description" content="The ultimate time management app designed to help you stay focused, eliminate distractions, and achieve your most ambitious goals.">
+
+    <link rel="icon" type="image/png" href="app-icon.png">
+    <link rel="apple-touch-icon" href="app-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #050505;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --text-primary: #ffffff;
-            --text-secondary: #a1a1a6;
-            --accent-color: #7c69ff;
-            --accent-gradient: linear-gradient(135deg, #7c69ff 0%, #3b82f6 100%);
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary: #FF4D4D;
+            --primary-dark: #D63031;
+            --bg-dark: #050508;
+            --bg-card: #14141a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #FF4D4D;
+            --border: rgba(255, 255, 255, 0.08);
         }
 
         * {
@@ -28,10 +30,10 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             line-height: 1.6;
+            color: var(--text-main);
+            background-color: var(--bg-dark);
             overflow-x: hidden;
         }
 
@@ -41,40 +43,46 @@
         }
 
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 0 24px;
         }
 
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s;
+        }
+
         /* Nav */
+        header {
+            padding: 24px 0;
+            position: absolute;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+        }
+
         nav {
-            padding: 30px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: relative;
-            z-index: 10;
         }
 
         .logo {
             display: flex;
             align-items: center;
             gap: 12px;
-            text-decoration: none;
-            color: var(--text-primary);
+            font-weight: 800;
+            font-size: 1.5rem;
+            font-family: 'Outfit', sans-serif;
         }
 
         .logo img {
             width: 40px;
             height: 40px;
             border-radius: 10px;
-        }
-
-        .logo span {
-            font-family: 'Outfit', sans-serif;
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
+            box-shadow: 0 4px 12px rgba(255, 77, 77, 0.2);
         }
 
         .nav-links {
@@ -83,192 +91,410 @@
         }
 
         .nav-links a {
-            text-decoration: none;
-            color: var(--text-secondary);
             font-size: 14px;
-            font-weight: 500;
-            transition: color 0.2s;
+            font-weight: 600;
+            color: var(--text-muted);
         }
 
         .nav-links a:hover {
-            color: var(--text-primary);
+            color: var(--primary);
         }
 
         /* Hero */
         .hero {
-            padding: 120px 0 80px;
+            padding: 160px 0 100px;
+            background: radial-gradient(circle at top right, rgba(255, 77, 77, 0.1), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(255, 77, 77, 0.05), transparent 40%);
             text-align: center;
-            position: relative;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -100px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(124, 105, 255, 0.15) 0%, transparent 70%);
-            z-index: 0;
-            pointer-events: none;
         }
 
         .hero h1 {
-            font-size: 64px;
+            font-size: 4rem;
             line-height: 1.1;
             margin-bottom: 24px;
             letter-spacing: -2px;
-            background: linear-gradient(180deg, #fff 0%, #a1a1a6 100%);
+            background: linear-gradient(to bottom, #ffffff, #cbd5e1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .hero p {
-            font-size: 20px;
-            color: var(--text-secondary);
-            max-width: 600px;
-            margin: 0 auto 40px;
-            font-weight: 400;
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 650px;
+            margin: 0 auto 48px;
         }
 
         .cta-button {
-            display: inline-block;
-            padding: 16px 32px;
-            background: var(--accent-gradient);
-            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 18px;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 10px 30px rgba(124, 105, 255, 0.3);
+            padding: 18px 36px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: 0 10px 30px rgba(255, 77, 77, 0.3);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 40px rgba(124, 105, 255, 0.4);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(255, 77, 77, 0.4);
         }
 
-        /* Features */
-        .features {
-            padding: 100px 0;
+        /* Device Mockups (similar to Weight Tracker) */
+        .device-cluster {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            height: 450px;
+            margin: 80px auto 0;
+        }
+
+        .device {
+            background: #1a1a20;
+            border: 2px solid #2a2a35;
+            position: absolute;
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .device-screen {
+            background: #050508;
+            flex: 1;
+            position: relative;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Mac Mockup */
+        .mac-group {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .device-mac {
+            width: 550px;
+            height: 340px;
+            border-radius: 18px;
+            border-width: 10px;
+        }
+
+        .mac-stand {
+            width: 140px;
+            height: 45px;
+            background: linear-gradient(180deg, #2a2a35 0%, #1a1a20 100%);
+            border-radius: 0 0 10px 10px;
+            position: relative;
+            top: -2px;
+        }
+
+        /* iPad Mockup */
+        .device-ipad {
+            width: 240px;
+            height: 320px;
+            border-radius: 14px;
+            border-width: 8px;
+            z-index: 2;
+            top: 60px;
+            left: 50%;
+            transform: translateX(140px);
+        }
+
+        /* iPhone Mockup */
+        .device-iphone {
+            width: 110px;
+            height: 230px;
+            border-radius: 16px;
+            border-width: 5px;
+            z-index: 3;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-260px);
+        }
+
+        /* Abstract UI Elements */
+        .ui-line { height: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 4px; margin-bottom: 10px; }
+        .ui-block { height: 40px; background: rgba(255, 77, 77, 0.15); border-radius: 8px; border-left: 3px solid var(--primary); margin-bottom: 8px; }
+        .ui-dot { width: 10px; height: 10px; background: var(--primary); border-radius: 50%; }
+
+        /* Features Section */
+        .features-section {
+            padding: 120px 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-header h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            letter-spacing: -1.5px;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 32px;
         }
 
-        .feature-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
             padding: 40px;
-            border-radius: 24px;
-            transition: border-color 0.3s, transform 0.3s;
+            border-radius: 28px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .feature-card:hover {
-            border-color: var(--glass-border);
-            transform: translateY(-5px);
+        .card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(255, 77, 77, 0.3);
+            background: #1a1a24;
         }
 
-        .feature-card h3 {
-            font-size: 24px;
+        .icon-box {
+            width: 56px;
+            height: 56px;
+            background: rgba(255, 77, 77, 0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            color: var(--primary);
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
             margin-bottom: 16px;
         }
 
-        .feature-card p {
-            color: var(--text-secondary);
-            font-size: 16px;
+        .card p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1.6;
         }
 
         /* Footer */
         footer {
-            padding: 80px 0 40px;
-            border-top: 1px solid var(--border-color);
+            padding: 100px 0 40px;
+            border-top: 1px solid var(--border);
             text-align: center;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
         }
 
         .footer-links {
             display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
             justify-content: center;
-            gap: 40px;
-            margin-bottom: 30px;
         }
 
         .footer-links a {
-            text-decoration: none;
-            color: var(--text-secondary);
             font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
         }
 
         .footer-links a:hover {
-            color: var(--text-primary);
+            color: var(--primary);
         }
 
         .copyright {
-            color: #555;
+            color: #444;
             font-size: 12px;
-        }
-
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .hero, .feature-card {
-            animation: fadeIn 0.8s ease-out forwards;
+            margin-top: 20px;
         }
 
         @media (max-width: 768px) {
-            .hero h1 { font-size: 40px; }
+            .hero h1 { font-size: 2.8rem; }
             .nav-links { display: none; }
+            .device-cluster { transform: scale(0.6); height: 280px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <nav>
-            <a href="#" class="logo">
+    <header>
+        <div class="container">
+            <nav>
+                <a href="#" class="logo">
+                    <img src="app-icon.png" alt="Time Blocking Icon">
+                    <span>Time Blocking</span>
+                </a>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="support.html">Support</a>
+                    <a href="privacy.html">Privacy</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Master Your Day.<br>One Block at a Time.</h1>
+            <p>Ditch the infinite to-do list. Commit to your goals with visual time blocking designed for deep focus and intentional productivity.</p>
+            
+            <a href="https://apps.apple.com/app/time-blocking/idXXXXXXXXXX" class="cta-button">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.1 2.48-1.34.03-1.77-.79-3.29-.79-1.53 0-2.01.77-3.27.82-1.31.05-2.31-1.32-3.14-2.53C4.25 17 2.97 12.01 4.65 9.1c.83-1.44 2.31-2.36 3.93-2.38 1.23-.02 2.39.83 3.15.83.75 0 2.15-.99 3.6-.84 1.54.06 2.76.62 3.56 1.77-3.04 1.83-2.55 6.18.52 7.24-.61 1.54-1.39 3.03-2.2 4.28zM15.47 5.4c-.67.81-1.47 1.39-2.31 1.3-1.01-.11-1.92-.89-1.53-1.92.42-1.11 1.54-1.89 2.45-1.76.84.12 1.63.92 1.39 2.38z"/>
+                </svg>
+                Download on the App Store
+            </a>
+
+            <div class="device-cluster">
+                <!-- Mac Group -->
+                <div class="mac-group">
+                    <div class="device device-mac">
+                        <div class="device-screen">
+                            <div style="display:flex; gap:12px; height:100%;">
+                                <div style="width:30%; background:rgba(255,255,255,0.03); border-radius:8px; padding:12px;">
+                                    <div class="ui-line" style="width:60%"></div>
+                                    <div class="ui-line" style="width:80%"></div>
+                                    <div class="ui-line" style="width:40%"></div>
+                                </div>
+                                <div style="flex:1;">
+                                    <div class="ui-block"></div>
+                                    <div class="ui-block" style="background:rgba(255,77,77,0.08); border-left-color:rgba(255,77,77,0.3)"></div>
+                                    <div class="ui-block"></div>
+                                    <div class="ui-block"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mac-stand"></div>
+                </div>
+
+                <!-- iPad -->
+                <div class="device device-ipad">
+                    <div class="device-screen">
+                        <div class="ui-line" style="margin-bottom:20px;"></div>
+                        <div class="ui-block"></div>
+                        <div class="ui-block"></div>
+                        <div class="ui-block"></div>
+                        <div class="ui-block"></div>
+                    </div>
+                </div>
+
+                <!-- iPhone -->
+                <div class="device device-iphone">
+                    <div class="device-screen">
+                        <div style="display:flex; justify-content:center; margin-bottom:15px;"><div class="ui-dot"></div></div>
+                        <div class="ui-block"></div>
+                        <div class="ui-block"></div>
+                        <div class="ui-block"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Everything You Need</h2>
+                <p>Powerful tools designed with a clean, minimal interface to keep you focused on what matters.</p>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="icon-box">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    </div>
+                    <h3>Visual Timeline</h3>
+                    <p>See your entire day at a glance. Organized blocks help you visualize your progress and eliminate decision fatigue.</p>
+                </div>
+
+                <div class="card">
+                    <div class="icon-box">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                    <h3>Routines & Templates</h3>
+                    <p>Save your ideal daily rhythms as templates. One tap to apply your entire routine to any day in the future.</p>
+                </div>
+
+                <div class="card">
+                    <div class="icon-box">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    </div>
+                    <h3>Privacy First</h3>
+                    <p>Your data is yours. Securely synced via iCloud with full FaceID/Passcode support. No tracking, no accounts.</p>
+                </div>
+
+                <div class="card">
+                    <div class="icon-box">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    </div>
+                    <h3>Deep Analytics</h3>
+                    <p>Understand where your time goes. Track completion rates and distribution across focus, admin, and personal categories.</p>
+                </div>
+
+                <div class="card">
+                    <div class="icon-box">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    </div>
+                    <h3>Smart Reminders</h3>
+                    <p>Stay on track with notifications that nudge you when a new block starts, keeping you moving through your day.</p>
+                </div>
+
+                <div class="card">
+                    <div class="icon-box">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    <h3>Multi-Device Sync</h3>
+                    <p>Optimized for iPhone, iPad, and Mac. Your schedule follows you everywhere, beautifully adapted for every screen.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="logo">
                 <img src="app-icon.png" alt="Time Blocking Icon">
                 <span>Time Blocking</span>
-            </a>
-            <div class="nav-links">
-                <a href="#features">Features</a>
-                <a href="support.html">Support</a>
-                <a href="privacy.html">Privacy</a>
             </div>
-        </nav>
-
-        <section class="hero">
-            <h1>Master Your Day. <br>One Block at a Time.</h1>
-            <p>The ultimate time management app designed to help you stay focused, eliminate distractions, and achieve your most ambitious goals.</p>
-            <a href="#" class="cta-button">Coming Soon to the App Store</a>
-        </section>
-
-        <section class="features" id="features">
-            <div class="feature-card">
-                <h3>Visual Focus</h3>
-                <p>See your entire day at a glance. Organized blocks help you visualize your progress and stay on track.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Intentional Scheduling</h3>
-                <p>Move away from endless to-do lists. Dedicate specific time slots to the tasks that matter most.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Zero Distractions</h3>
-                <p>Designed with a clean, minimal interface to keep your mind clear and your focus sharp.</p>
-            </div>
-        </section>
-
-        <footer>
             <div class="footer-links">
+                <a href="#">Home</a>
+                <a href="#features">Features</a>
                 <a href="support.html">Support</a>
                 <a href="privacy.html">Privacy Policy</a>
                 <a href="terms.html">Terms of Service</a>
             </div>
+            
+            <a href="https://apps.apple.com/app/time-blocking/idXXXXXXXXXX" class="cta-button" style="margin-top: 10px; padding: 12px 24px; font-size: 0.9rem; border-radius: 12px;">
+                Download on the App Store
+            </a>
+            
             <p class="copyright">&copy; 2026 Meli Apps. All rights reserved.</p>
-        </footer>
-    </div>
+        </div>
+    </footer>
 </body>
 </html>

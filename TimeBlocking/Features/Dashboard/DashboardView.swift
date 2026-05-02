@@ -83,15 +83,9 @@ struct DashboardView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    HStack {
-                        Spacer()
-                        Text("Stats")
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
-                            .foregroundStyle(Theme.primaryText)
-                        Spacer()
-                    }
-                    .padding(.top, 12)
-                    .padding(.bottom, 4)
+                    TimeTopHeadlineView(title: "Stats")
+                        .padding(.top, 12)
+                        .padding(.bottom, 4)
 
                     TimeCard {
                         VStack(alignment: .leading, spacing: 16) {

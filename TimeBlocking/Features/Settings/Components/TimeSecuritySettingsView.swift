@@ -18,7 +18,7 @@ struct TimeSecuritySettingsView: View {
             title: "Security"
         ) {
             VStack(spacing: 0) {
-                TimeSettingsRow(icon: "faceid", iconColor: Theme.primaryAccent, title: "Lock app") {
+                TimeSettingsRow(icon: "faceid", iconColor: Theme.primaryAccent, title: "Lock app with Face ID or passcode") {
                     SegmentedToggle(
                         isOn: Binding(
                             get: { preferences?.appLockEnabled ?? false },
@@ -47,7 +47,7 @@ struct TimeSecuritySettingsView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "info.circle.fill")
                             .font(.system(size: 14))
-                        Text("Why your data is private")
+                        Text("Why your schedule data is private")
                             .font(.system(size: 14, weight: .medium, design: .rounded))
                         Spacer()
                     }
@@ -86,11 +86,9 @@ struct TimePrivacyInfoPopup: View {
                     .foregroundStyle(Theme.primaryAccent)
                     .padding(.bottom, 8)
                 
-                Text("Your Data is Private")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.primaryText)
+                TimeTopHeadlineView(title: "Your Data is Private")
                 
-                Text("We believe your schedule and focus data belongs only to you. This app is designed with privacy at its core.")
+                Text("We believe your schedule and focus data is personal. This app is designed with privacy at its core.")
                     .font(.system(size: 16, design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Theme.secondaryText)

@@ -82,7 +82,7 @@ enum Theme {
     static var categoryPersonal: Color { Color(hex: "F59E0B") } // Amber
     static var categoryAdmin: Color { Color(hex: "0EA5E9") }    // Sky
     static var categoryRoutine: Color { Color(hex: "10B981") }  // Emerald
-    static var categoryCustom: Color { Color(hex: "64748B") }   // Slate
+    static var categoryCustom: Color { Color(hex: "6366F1") }   // Indigo
 
     static func color(for category: TimeBlockCategory) -> Color {
         switch category {
@@ -135,6 +135,33 @@ struct AuroraBackground: View {
             }
         }
         .ignoresSafeArea()
+    }
+}
+
+struct ThemedBackground: View {
+    var body: some View {
+        if Theme.isImmersive {
+            AuroraBackground()
+        } else {
+            Theme.backgroundColor
+        }
+    }
+}
+
+// MARK: - Layout Metrics Extension
+public struct ResponsiveMaxWidthModifier: ViewModifier {
+    public let maxWidth: CGFloat
+    
+    public func body(content: Content) -> some View {
+        content
+            .frame(maxWidth: maxWidth, alignment: .center)
+            .frame(maxWidth: .infinity, alignment: .center)
+    }
+}
+
+public extension View {
+    func responsiveMaxWidth(maxWidth: CGFloat = 720) -> some View {
+        self.modifier(ResponsiveMaxWidthModifier(maxWidth: maxWidth))
     }
 }
 

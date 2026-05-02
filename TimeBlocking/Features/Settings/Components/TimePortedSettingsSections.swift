@@ -164,8 +164,7 @@ struct TimeNotificationsSettingsView: View {
                 iconColor: reminderState == .denied ? .orange : Theme.primaryAccent,
                 title: "Reminder Status"
             ) {
-                Text(reminderState.label)
-                    .timeSettingsValueStyle()
+                TimeSettingsDropdownButton(value: reminderState.label, isExpanded: false)
             }
 
             if shouldShowDetails {
@@ -201,7 +200,7 @@ struct TimeNotificationsSettingsView: View {
                     iconColor: Theme.primaryAccent,
                     title: "Reminder Time"
                 ) {
-                    Menu(leadTimeText) {
+                    Menu {
                         ForEach([0, 5, 10, 15, 30, 60], id: \.self) { minutes in
                             Button(minutes == 0 ? "At block start" : "\(minutes) min before") {
                                 onUpdate {
@@ -210,8 +209,9 @@ struct TimeNotificationsSettingsView: View {
                                 onLeadTimeChanged()
                             }
                         }
+                    } label: {
+                        TimeSettingsDropdownButton(value: leadTimeText, isExpanded: false)
                     }
-                    .timeSettingsValueStyle()
                 }
             }
         }

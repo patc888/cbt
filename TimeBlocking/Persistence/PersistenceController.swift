@@ -17,7 +17,7 @@ struct PersistenceController {
             ScheduleTemplate.self,
             AppPreferences.self,
         ],
-        version: .init(4, 0, 0)
+        version: .init(5, 0, 0)
     )
 
     static let shared = PersistenceController()

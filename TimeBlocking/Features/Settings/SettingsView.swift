@@ -18,34 +18,39 @@ struct SettingsView: View {
         preferences.first
     }
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    private var metrics: LayoutMetrics { LayoutMetrics.metrics(for: horizontalSizeClass) }
+
     @Environment(\.dismiss) private var dismiss
     @State private var showingResetOptions = false
+    @State private var showingSubscription = false
     @State private var notificationAccessState: TimeNotificationManager.AccessState = .notDetermined
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .top) {
-                AuroraBackground()
+            ZStack(alignment: .topTrailing) {
+                ThemedBackground()
                     .ignoresSafeArea()
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 0) {
                         mainContent
                     }
-                    .frame(maxWidth: 600)
-                    .padding(.top, 60)
-                    .padding(.bottom, 40)
+                    .responsiveMaxWidth(maxWidth: metrics.contentMaxWidth)
                 }
-                .frame(maxWidth: .infinity)
-
-                HStack {
-                    Spacer()
-                    closeButton
-                }
-                .padding(.trailing, 24)
                 .padding(.top, 60)
+
+                closeButton
+                    .padding(.trailing, 20)
+                    .padding(.top, 60)
             }
             .ignoresSafeArea()
+            .navigationTitle("")
+#if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
+#endif
         }
 #if os(iOS)
         .statusBarHidden(true)
@@ -67,14 +72,22 @@ struct SettingsView: View {
             Text("Choose whether to clear everything to a blank app or wipe current data and restore the sample schedule.")
         }
         .task {
+            await subscriptionManager.checkSubscriptionStatus()
+            syncSubscriptionStatus()
             await refreshNotificationAccessState()
         }
+        .onChange(of: subscriptionManager.isPremium) { _, _ in
+            syncSubscriptionStatus()
+        }
+        .timeSubscriptionPresentation(isPresented: $showingSubscription)
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else {
                 return
             }
 
             Task {
+                await subscriptionManager.checkSubscriptionStatus()
+                syncSubscriptionStatus()
                 await refreshNotificationAccessState()
 
                 if appPreferences?.notificationsEnabled ?? false {
@@ -86,15 +99,9 @@ struct SettingsView: View {
 
     private var mainContent: some View {
         VStack(spacing: 16) {
-            HStack {
-                Spacer()
-                Text("Settings")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.primaryText)
-                Spacer()
-            }
-            .padding(.top, 12)
-            .padding(.bottom, 4)
+            TimeTopHeadlineView(title: "Settings")
+                .padding(.top, 12)
+                .padding(.bottom, 4)
 
             if appPreferences == nil {
                 TimeSettingsSection(
@@ -114,6 +121,11 @@ struct SettingsView: View {
                     onUpdate: updatePreferences
                 )
 
+                SubscriptionSettingsView(
+                    subscriptionManager: subscriptionManager,
+                    onPresentPaywall: presentSubscription
+                )
+
                 TimeAppearanceSettingsView(
                     preferences: appPreferences,
                     onUpdate: updatePreferences
@@ -122,9 +134,6 @@ struct SettingsView: View {
                 TimeSecuritySettingsView(
                     preferences: appPreferences
                 )
-
-                WhatIsTimeBlockingCard()
-                    .padding(.top, 8)
 
                 TimeNotificationsSettingsView(
                     preferences: appPreferences,
@@ -135,27 +144,23 @@ struct SettingsView: View {
                     onOpenSystemSettings: openNotificationSettings
                 )
 
+                TimeDataManagementSettingsView()
+
                 TimeAboutSettingsView {
                     HapticManager.shared.mediumImpact()
                     showingResetOptions = true
                 }
+                .padding(.bottom, 24)
+
+                VersionFooterView()
+                    .padding(.bottom, 40)
             }
         }
         .padding(.horizontal, 16)
     }
 
     private var closeButton: some View {
-        Button {
-            HapticManager.shared.lightImpact()
-            appEnvironment.appState.showScheduleHome()
-        } label: {
-            Image(systemName: "xmark")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Theme.primaryAccent)
-                .frame(width: 36, height: 36)
-                .background(Theme.primaryAccent.opacity(0.1))
-                .clipShape(Circle())
-        }
+        TimeDismissButton(style: .chevron)
     }
 
     private func updatePreferences(_ update: (AppPreferences) -> Void) {
@@ -168,6 +173,19 @@ struct SettingsView: View {
         appEnvironment.syncPreferencesToUserDefaults(using: modelContext)
     }
 
+    private func presentSubscription() {
+        showingSubscription = true
+    }
+
+    private func syncSubscriptionStatus() {
+        guard let appPreferences else {
+            return
+        }
+
+        appPreferences.isPremium = subscriptionManager.isPremium
+        try? appEnvironment.preferencesStore.save(appPreferences, in: modelContext)
+        appEnvironment.syncPreferencesToUserDefaults(using: modelContext)
+    }
 
     private func setNotificationsEnabled(_ isEnabled: Bool) {
         Task {
@@ -226,5 +244,20 @@ struct SettingsView: View {
                 logger.error("Failed to reset data to sample: \(error.localizedDescription, privacy: .public)")
             }
         }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func timeSubscriptionPresentation(isPresented: Binding<Bool>) -> some View {
+#if os(macOS)
+        sheet(isPresented: isPresented) {
+            SubscriptionView()
+        }
+#else
+        fullScreenCover(isPresented: isPresented) {
+            SubscriptionView()
+        }
+#endif
     }
 }

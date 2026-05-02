@@ -137,6 +137,7 @@ final class AppEnvironment {
         UserDefaults.standard.set(prefs.isImmersive ?? true, forKey: "appThemeImmersive")
         UserDefaults.standard.set(prefs.appTheme?.rawValue, forKey: "userTheme")
         UserDefaults.standard.set(prefs.hapticsEnabled ?? true, forKey: "hapticsEnabled")
+        UserDefaults.standard.set(prefs.isPremium ?? false, forKey: "hasPro")
     }
 
 
@@ -195,6 +196,7 @@ final class AppEnvironment {
         preferences.selectedColorTheme = .red
         preferences.isImmersive = true
         preferences.hapticsEnabled = true
+        preferences.isPremium = false
     }
 
     private func applySamplePreferences(to preferences: AppPreferences) {
@@ -208,6 +210,7 @@ final class AppEnvironment {
         preferences.selectedColorTheme = .red
         preferences.isImmersive = true
         preferences.hapticsEnabled = true
+        preferences.isPremium = false
     }
 
     private var bootstrapState: AppBootstrapState? {

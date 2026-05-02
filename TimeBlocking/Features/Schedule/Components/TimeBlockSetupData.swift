@@ -59,7 +59,7 @@ extension AddTimeBlockView {
         case .personal: return "personal-amber"
         case .admin: return "admin-sky"
         case .routine: return "routine-mint"
-        case .custom: return "custom-slate"
+        case .custom: return "custom-indigo"
         }
     }
 
@@ -103,8 +103,8 @@ extension AddTimeBlockView {
             SetupAccentOption(id: "personal-coral", title: "Coral", tintColor: Color(hex: "F97316"), category: .personal),
             SetupAccentOption(id: "routine-mint", title: "Mint", tintColor: Color(hex: "10B981"), category: .routine),
             SetupAccentOption(id: "routine-teal", title: "Teal", tintColor: Color(hex: "14B8A6"), category: .routine),
-            SetupAccentOption(id: "custom-slate", title: "Slate", tintColor: Color(hex: "64748B"), category: .custom),
-            SetupAccentOption(id: "custom-stone", title: "Stone", tintColor: Color(hex: "78716C"), category: .custom)
+            SetupAccentOption(id: "custom-indigo", title: "Indigo", tintColor: Color(hex: "6366F1"), category: .custom),
+            SetupAccentOption(id: "custom-fuchsia", title: "Fuchsia", tintColor: Color(hex: "E879F9"), category: .custom)
         ]
     }
 
@@ -210,7 +210,7 @@ extension TimeBlockCategory {
         case .routine:
             "Green"
         case .custom:
-            "Slate"
+            "Indigo"
         }
     }
 
@@ -225,7 +225,7 @@ extension TimeBlockCategory {
         case .routine:
             Color(hex: "10B981")
         case .custom:
-            Color(hex: "64748B")
+            Color(hex: "6366F1")
         }
     }
 }

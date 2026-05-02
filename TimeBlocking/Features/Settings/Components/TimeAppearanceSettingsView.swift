@@ -13,50 +13,34 @@ struct TimeAppearanceSettingsView: View {
         TimeSettingsSection(
             title: "Appearance"
         ) {
-            TimeSettingsRow(
-                icon: "circle.lefthalf.filled",
-                iconColor: Theme.primaryAccent,
-                title: "App Theme"
-            ) {
-                TimeSegmentedToggle(
-                    selection: Binding(
-                        get: { preferences?.appTheme ?? .system },
-                        set: { newValue in
-                            onUpdate { $0.appTheme = newValue }
-                        }
-
-                    ),
-                    options: AppTheme.allCases,
-                    titleKey: \.rawValue,
-                    namespace: appearanceNamespace
-                )
-                .frame(maxWidth: 220)
-            }
-
+            TimeSegmentedToggle(
+                selection: Binding(
+                    get: { preferences?.appTheme ?? .system },
+                    set: { newValue in
+                        onUpdate { $0.appTheme = newValue }
+                    }
+                ),
+                options: AppTheme.allCases,
+                titleKey: \.rawValue,
+                namespace: appearanceNamespace
+            )
+            .padding(.bottom, 8)
+            
             accentColorPicker
-
-            TimeSettingsRow(
-                icon: "sparkles",
-                iconColor: Theme.primaryAccent,
-                title: "Background Style"
-            ) {
+            
+            TimeSettingsRow(title: "Full Color Theme") {
                 TimeSegmentedToggle(
                     isOn: Binding(
                         get: { preferences?.isImmersive ?? true },
                         set: { newValue in
                             onUpdate { $0.isImmersive = newValue }
                         }
-
                     ),
                     namespace: fullColorNamespace
                 )
             }
 
-            TimeSettingsRow(
-                icon: "checkmark.circle",
-                iconColor: Theme.primaryAccent,
-                title: "Show Completed"
-            ) {
+            TimeSettingsRow(title: "Show Completed") {
                 TimeSegmentedToggle(
                     isOn: Binding(
                         get: { preferences?.showsCompletedBlocks ?? true },
@@ -68,18 +52,13 @@ struct TimeAppearanceSettingsView: View {
                 )
             }
 
-            TimeSettingsRow(
-                icon: "hand.tap.fill",
-                iconColor: Theme.primaryAccent,
-                title: "Haptics"
-            ) {
+            TimeSettingsRow(title: "Haptics") {
                 TimeSegmentedToggle(
                     isOn: Binding(
                         get: { preferences?.hapticsEnabled ?? true },
                         set: { newValue in
                             onUpdate { $0.hapticsEnabled = newValue }
                         }
-
                     ),
                     namespace: hapticNamespace
                 )
@@ -89,18 +68,9 @@ struct TimeAppearanceSettingsView: View {
     
     private var accentColorPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
-                Image(systemName: "paintpalette.fill")
-                    .foregroundStyle(Theme.primaryAccent)
-                    .font(.system(size: 18))
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Accent Color")
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
-                }
-            }
+            Text("Accent Color")
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundStyle(Theme.primaryText)
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {

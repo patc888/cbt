@@ -21,7 +21,7 @@ struct TimeSchedulingSettingsView: View {
             iconColor: Theme.primaryAccent,
             title: "Default Block Length"
         ) {
-            Menu("\(preferences?.defaultBlockDurationMinutes ?? 60) min") {
+            Menu {
                 ForEach([15, 30, 45, 60, 90, 120, 180], id: \.self) { minutes in
                     Button("\(minutes) min") {
                         onUpdate {
@@ -29,8 +29,9 @@ struct TimeSchedulingSettingsView: View {
                         }
                     }
                 }
+            } label: {
+                TimeSettingsDropdownButton(value: "\(preferences?.defaultBlockDurationMinutes ?? 60) min", isExpanded: false)
             }
-            .timeSettingsValueStyle()
         }
     }
 
@@ -40,7 +41,7 @@ struct TimeSchedulingSettingsView: View {
             iconColor: Theme.primaryAccent,
             title: "Day Start Hour"
         ) {
-            Menu("\(preferences?.dayStartHour ?? 6):00") {
+            Menu {
                 ForEach(0..<24, id: \.self) { hour in
                     Button(String(format: "%02d:00", hour)) {
                         onUpdate {
@@ -48,8 +49,9 @@ struct TimeSchedulingSettingsView: View {
                         }
                     }
                 }
+            } label: {
+                TimeSettingsDropdownButton(value: "\(preferences?.dayStartHour ?? 6):00", isExpanded: false)
             }
-            .timeSettingsValueStyle()
         }
     }
 
@@ -59,7 +61,7 @@ struct TimeSchedulingSettingsView: View {
             iconColor: Theme.primaryAccent,
             title: "Week Starts On"
         ) {
-            Menu(preferences?.firstWeekday.title ?? Weekday.monday.title) {
+            Menu {
                 ForEach(Weekday.allCases) { weekday in
                     Button(weekday.title) {
                         onUpdate {
@@ -67,8 +69,9 @@ struct TimeSchedulingSettingsView: View {
                         }
                     }
                 }
+            } label: {
+                TimeSettingsDropdownButton(value: preferences?.firstWeekday.title ?? Weekday.monday.title, isExpanded: false)
             }
-            .timeSettingsValueStyle()
         }
     }
 }
