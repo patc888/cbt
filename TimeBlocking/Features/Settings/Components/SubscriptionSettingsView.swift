@@ -18,6 +18,7 @@ struct SubscriptionSettingsView: View {
                     title: "Full Access",
                     subtitle: "Unlimited planning, routines, and sync across all your devices.",
                     ctaTitle: "Update to Full Access",
+                    footnote: nil,
                     action: onPresentPaywall,
                     isLoading: subscriptionManager.isLoading
                 )

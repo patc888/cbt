@@ -2,7 +2,7 @@ import os
 import SwiftData
 import SwiftUI
 
-private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "AddTimeBlockView")
+private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "AddTimeBlockView")
 
 struct TimeBlockEditorDraft: Identifiable {
     let id: UUID

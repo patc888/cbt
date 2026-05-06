@@ -4,7 +4,7 @@ import os
 
 @ModelActor
 final actor BootstrapActor {
-    private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "BootstrapActor")
+    private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "BootstrapActor")
     func prepareAppFoundation(
         preferencesStore: AppPreferencesStore,
         scheduleRepository: ScheduleRepository,

@@ -3,7 +3,7 @@ import Observation
 import os
 import SwiftData
 
-private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "AppEnvironment")
+private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "AppEnvironment")
 
 enum AppBootstrapState: String {
     case empty

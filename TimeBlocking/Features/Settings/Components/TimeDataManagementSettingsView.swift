@@ -3,7 +3,7 @@ import SwiftData
 import UniformTypeIdentifiers
 import os
 
-private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "TimeDataManagementSettingsView")
+private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "TimeDataManagementSettingsView")
 
 struct DataBackupDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }

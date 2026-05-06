@@ -32,7 +32,7 @@ struct SubscriptionView: View {
 
     init(config: SubscriptionConfig = .mock) {
         self.config = config
-        _selectedPlanID = State(initialValue: SubscriptionProductIDs.yearly)
+        _selectedPlanID = State(initialValue: SubscriptionProductIDs.lifetime)
     }
 
     var body: some View {
@@ -72,9 +72,9 @@ struct SubscriptionView: View {
             if subscriptionManager.availableProducts.isEmpty {
                 Task {
                     await subscriptionManager.loadProducts()
-                    if selectedPlanID == nil || selectedPlanID == SubscriptionProductIDs.yearly,
-                       let yearlyProduct {
-                        selectedPlanID = yearlyProduct.id
+                    if selectedPlanID == nil || selectedPlanID == SubscriptionProductIDs.lifetime,
+                       let firstProduct = subscriptionManager.availableProducts.first {
+                        selectedPlanID = firstProduct.id
                     }
                 }
             }

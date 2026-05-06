@@ -128,6 +128,13 @@ struct TimePaywallTemplateView: View {
                         .font(.system(.subheadline, design: .rounded, weight: .medium))
                         .foregroundStyle(.secondary)
 
+                    if let errorMessage, !errorMessage.isEmpty {
+                        Text(errorMessage)
+                            .font(.system(.caption, design: .rounded, weight: .medium))
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(.secondary)
+                    }
+
                     Button(String(localized: "Try Again")) {
                         HapticManager.shared.mediumImpact()
                         onTryAgain()
@@ -161,17 +168,17 @@ struct TimePaywallTemplateView: View {
                 .padding()
             } else if useTwoUpLayout {
                 VStack(spacing: 16) {
-                    HStack(spacing: 16) {
-                        if let yearlyProduct {
-                            TimeStoreProductCardView(
-                                product: yearlyProduct,
-                                isSelected: selectedPlanID == yearlyProduct.id,
-                                isFullWidth: false,
-                                isRecommended: true,
-                                action: { onSelectPlan(yearlyProduct.id) }
-                            )
-                        }
+                    if let lifetimeProduct {
+                        TimeStoreProductCardView(
+                            product: lifetimeProduct,
+                            isSelected: selectedPlanID == lifetimeProduct.id,
+                            isFullWidth: true,
+                            isRecommended: false,
+                            action: { onSelectPlan(lifetimeProduct.id) }
+                        )
+                    }
 
+                    HStack(spacing: 16) {
                         if let monthlyProduct {
                             TimeStoreProductCardView(
                                 product: monthlyProduct,
@@ -181,31 +188,31 @@ struct TimePaywallTemplateView: View {
                                 action: { onSelectPlan(monthlyProduct.id) }
                             )
                         }
-                    }
 
-                    if let lifetimeProduct {
-                        TimeStoreProductCardView(
-                            product: lifetimeProduct,
-                            isSelected: selectedPlanID == lifetimeProduct.id,
-                            isFullWidth: true,
-                            isRecommended: false,
-                            action: { onSelectPlan(lifetimeProduct.id) }
-                        )
+                        if let yearlyProduct {
+                            TimeStoreProductCardView(
+                                product: yearlyProduct,
+                                isSelected: selectedPlanID == yearlyProduct.id,
+                                isFullWidth: false,
+                                isRecommended: true,
+                                action: { onSelectPlan(yearlyProduct.id) }
+                            )
+                        }
                     }
                 }
             } else {
                 VStack(spacing: 12) {
-                    HStack(spacing: 12) {
-                        if let yearlyProduct {
-                            TimeStoreProductCardView(
-                                product: yearlyProduct,
-                                isSelected: selectedPlanID == yearlyProduct.id,
-                                isFullWidth: false,
-                                isRecommended: true,
-                                action: { onSelectPlan(yearlyProduct.id) }
-                            )
-                        }
+                    if let lifetimeProduct {
+                        TimeStoreProductCardView(
+                            product: lifetimeProduct,
+                            isSelected: selectedPlanID == lifetimeProduct.id,
+                            isFullWidth: true,
+                            isRecommended: false,
+                            action: { onSelectPlan(lifetimeProduct.id) }
+                        )
+                    }
 
+                    HStack(spacing: 12) {
                         if let monthlyProduct {
                             TimeStoreProductCardView(
                                 product: monthlyProduct,
@@ -215,16 +222,16 @@ struct TimePaywallTemplateView: View {
                                 action: { onSelectPlan(monthlyProduct.id) }
                             )
                         }
-                    }
 
-                    if let lifetimeProduct {
-                        TimeStoreProductCardView(
-                            product: lifetimeProduct,
-                            isSelected: selectedPlanID == lifetimeProduct.id,
-                            isFullWidth: true,
-                            isRecommended: false,
-                            action: { onSelectPlan(lifetimeProduct.id) }
-                        )
+                        if let yearlyProduct {
+                            TimeStoreProductCardView(
+                                product: yearlyProduct,
+                                isSelected: selectedPlanID == yearlyProduct.id,
+                                isFullWidth: false,
+                                isRecommended: true,
+                                action: { onSelectPlan(yearlyProduct.id) }
+                            )
+                        }
                     }
                 }
             }

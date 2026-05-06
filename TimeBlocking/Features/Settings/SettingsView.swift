@@ -5,7 +5,7 @@ import SwiftUI
 import UIKit
 #endif
 
-private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "SettingsView")
+private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "SettingsView")
 
 struct SettingsView: View {
     @Environment(AppEnvironment.self) private var appEnvironment

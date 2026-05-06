@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import os
 
-private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "TimeBlockChecklists")
+private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "TimeBlockChecklists")
 
 struct DraftChecklistItem: Identifiable {
     let id: UUID

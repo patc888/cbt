@@ -16,11 +16,7 @@ final class SubscriptionManager: ObservableObject {
     @Published var errorMessage: String?
     @Published var lastLoadError: String?
 
-    let productIdentifiers: [String] = [
-        SubscriptionProductIDs.monthly,
-        SubscriptionProductIDs.yearly,
-        SubscriptionProductIDs.lifetime
-    ]
+    let productIdentifiers = SubscriptionProductIDs.displayOrder
 
     private var updateListenerTask: Task<Void, Error>?
 
@@ -51,15 +47,15 @@ final class SubscriptionManager: ObservableObject {
         errorMessage = nil
         lastLoadError = nil
 
+        print("DEBUG: StoreKit: Requesting products for identifiers: \(self.productIdentifiers)")
         logger.debug("StoreKit: Requesting products for identifiers: \(self.productIdentifiers)")
 
         do {
             let products = try await Product.products(for: productIdentifiers)
+            print("DEBUG: StoreKit: Successfully fetched \(products.count) products.")
             logger.info("StoreKit: Successfully fetched \(products.count) products.")
 
-            #if DEBUG
-            print("DEBUG: IDs requested: \(productIdentifiers), count returned: \(products.count), returned product IDs: \(products.map { $0.id })")
-            #endif
+            print("DEBUG: StoreKit: Returned product IDs: \(products.map { $0.id })")
 
             for product in products {
                 logger.debug("StoreKit: Received product [ID: \(product.id)] [Name: \(product.displayName)]")
@@ -68,9 +64,17 @@ final class SubscriptionManager: ObservableObject {
             availableProducts = products.sorted { product1, product2 in
                 Self.productSortRank(product1.id) < Self.productSortRank(product2.id)
             }
+            let returnedProductIDs = Set(products.map(\.id))
+            let missingProductIDs = SubscriptionProductIDs.displayOrder.filter { !returnedProductIDs.contains($0) }
+            if !missingProductIDs.isEmpty {
+                errorMessage = "Missing StoreKit products: \(missingProductIDs.joined(separator: ", "))"
+                logger.error("StoreKit: Missing products: \(missingProductIDs.joined(separator: ", "))")
+            }
+            print("DEBUG: StoreKit: availableProducts count after sorting: \(availableProducts.count)")
             isLoading = false
             await checkSubscriptionStatus()
         } catch {
+            print("DEBUG: StoreKit: Failed to load products. Error: \(error)")
             logger.error("StoreKit: Failed to load products. Error: \(error.localizedDescription)")
             errorMessage = "Failed to load subscription options: \(error.localizedDescription)"
             lastLoadError = error.localizedDescription
@@ -202,11 +206,11 @@ final class SubscriptionManager: ObservableObject {
 
     nonisolated private static func productSortRank(_ productID: String) -> Int {
         switch productID {
-        case SubscriptionProductIDs.monthly:
-            0
-        case SubscriptionProductIDs.yearly:
-            1
         case SubscriptionProductIDs.lifetime:
+            0
+        case SubscriptionProductIDs.monthly:
+            1
+        case SubscriptionProductIDs.yearly:
             2
         default:
             3
@@ -261,12 +265,14 @@ enum SubscriptionError: Error {
 }
 
 struct SubscriptionProductIDs {
+    static let lifetime = "com.xeo.timeblocking.lifetime"
     static let monthly = "com.xeo.timeblocking.monthly"
     static let yearly = "com.xeo.timeblocking.yearly"
-    static let lifetime = "com.xeo.timeblocking.lifetime"
+
+    static let displayOrder = [lifetime, monthly, yearly]
 
     static var all: Set<String> {
-        [monthly, yearly, lifetime]
+        Set(displayOrder)
     }
 }
 
@@ -316,10 +322,11 @@ extension SubscriptionConfig {
         title: "Full Access",
         subtitle: "One subscription for all your devices with unlimited time blocking.",
         plans: [
-            SubscriptionPlan(id: SubscriptionProductIDs.yearly, label: "Yearly", price: "", billingFrequency: "", badge: "50% OFF", isRecommended: true),
-            SubscriptionPlan(id: SubscriptionProductIDs.monthly, label: "Monthly", price: "", billingFrequency: "")
+            SubscriptionPlan(id: SubscriptionProductIDs.lifetime, label: "Lifetime Access", price: "", billingFrequency: ""),
+            SubscriptionPlan(id: SubscriptionProductIDs.monthly, label: "Monthly", price: "", billingFrequency: ""),
+            SubscriptionPlan(id: SubscriptionProductIDs.yearly, label: "Yearly", price: "", billingFrequency: "", badge: "50% OFF", isRecommended: true)
         ],
-        oneTimeOption: SubscriptionPlan(id: SubscriptionProductIDs.lifetime, label: "Lifetime Access", price: "", billingFrequency: ""),
+        oneTimeOption: nil,
         features: [
             SubscriptionFeature(icon: "calendar.badge.clock", title: "Unlimited Planning", description: "Create as many time blocks, routines, and plans as you need."),
             SubscriptionFeature(icon: "chart.line.uptrend.xyaxis", title: "Productivity Insights", description: "See patterns in your focus time and completed blocks."),

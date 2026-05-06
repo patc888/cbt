@@ -5,8 +5,8 @@ import SwiftData
 import os
 
 struct PersistenceController {
-    private static let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "Persistence")
-    private static let cloudKitContainerIdentifier = "iCloud.com.melichan.TimeBlocking"
+    private static let logger = Logger(subsystem: "com.xeo.timeblocking", category: "Persistence")
+    private static let cloudKitContainerIdentifier = "iCloud.com.xeo.timeblocking"
     private static let forceNoCloudKitEnvironmentKey = "TIMEBLOCKING_FORCE_NO_CLOUDKIT"
 
     static let schema = Schema(

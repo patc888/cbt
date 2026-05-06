@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 import os
 
-private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "DataTransferManager")
+private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "DataTransferManager")
 
 struct DataBackup: Codable {
     let version: String
