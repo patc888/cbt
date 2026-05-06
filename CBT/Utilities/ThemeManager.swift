@@ -8,7 +8,7 @@ import AppKit
 
 @Observable
 final class ThemeManager {
-    var selectedTheme: AppColorTheme = .cyan {
+    var selectedTheme: AppColorTheme = .standard {
         didSet { saveTheme() }
     }
 

@@ -1,16 +1,15 @@
 {
   "images" : [
     {
+      "filename" : "AppIconFeatherPreview.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "AppIcon-Feather@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "AppIcon-Feather@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

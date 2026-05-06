@@ -24,9 +24,9 @@ struct SecuritySettingsView: View {
         SettingsSection(title: "Security") {
             VStack(spacing: 0) {
                 SettingsRow(
-                    icon: "faceid",
+                    icon: "lock.shield",
                     iconColor: themeManager.selectedColor,
-                    title: "Lock app with Face ID or passcode",
+                    title: "App lock",
                     subtitle: appLockSubtitle
                 ) {
                     SegmentedToggle(
@@ -116,7 +116,7 @@ struct PrivacyInfoPopup: View {
             VStack(alignment: .leading, spacing: 16) {
                 PrivacyPoint(icon: "nosign", text: "No trackers or 3rd party analytics")
                 PrivacyPoint(icon: "internaldrive.fill", text: "Stored locally on this device while sync is unavailable")
-                PrivacyPoint(icon: "lock.fill", text: "Face ID or passcode protection is available on device")
+                PrivacyPoint(icon: "lock.fill", text: "Device-level security helps protect local data")
                 PrivacyPoint(icon: "person.badge.shield.checkmark.fill", text: "We never sell or share your data")
             }
             .padding(.horizontal, 24)

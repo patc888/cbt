@@ -4,7 +4,7 @@ import SwiftData
 /// App settings model for CBT
 @Model
 final class UserSettings {
-    var singletonID: String
+    var singletonID: String = "default"
     var uuid: UUID? = UUID()
     
     /// Appearance Settings

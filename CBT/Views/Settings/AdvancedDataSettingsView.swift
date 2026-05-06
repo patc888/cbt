@@ -8,15 +8,6 @@ struct AdvancedDataSettingsView: View {
     @State private var moodEntries: [MoodEntry] = []
     @State private var thoughtRecords: [ThoughtRecord] = []
     @State private var viewModel = AdvancedDataSettingsViewModel()
-    @State private var showICloudInfo = false
-
-    private var syncStatus: CloudSyncMonitor.SyncStatus {
-        CloudSyncMonitor.shared.status
-    }
-
-    private var needsICloudSetup: Bool {
-        syncStatus == .noAccount || syncStatus == .disabled
-    }
 
     var body: some View {
         ZStack {
@@ -24,77 +15,6 @@ struct AdvancedDataSettingsView: View {
             
             ScrollView {
                 VStack(spacing: 16) {
-                    SettingsSection(title: "Cloud Sync Status") {
-                        HStack(spacing: 12) {
-                            Image(systemName: needsICloudSetup ? "icloud.slash" : (syncStatus == .synced ? "checkmark.icloud.fill" : syncStatus.iconName))
-                                .font(.system(size: 24))
-                                .foregroundStyle(needsICloudSetup ? Theme.errorRed : (syncStatus == .synced ? Theme.successGreen : syncStatus.color))
-                                .frame(width: 32)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(needsICloudSetup ? String(localized: "Cloud Sync Off") : syncStatus.localizedDescription)
-                                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                                    .foregroundStyle(Theme.primaryText)
-                                
-                                if syncStatus != .synced {
-                                    if let lastSync = CloudSyncMonitor.shared.lastSyncDate {
-                                        Text(String(localized: "Last synced: \(lastSync.formatted(date: .abbreviated, time: .shortened))"))
-                                            .font(.system(size: 12, design: .rounded))
-                                            .foregroundStyle(Theme.secondaryText)
-                                    } else if needsICloudSetup {
-                                        Text(String(localized: "iPhone, iPad, and Mac sync. Backs up your data and stays private to you."))
-                                            .font(.system(size: 12, design: .rounded))
-                                            .foregroundStyle(Theme.secondaryText)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    } else {
-                                        Text(String(localized: "Never synced"))
-                                            .font(.system(size: 12, design: .rounded))
-                                            .foregroundStyle(Theme.secondaryText)
-                                    }
-                                }
-                            }
-                            Spacer()
-                            
-                            HStack(spacing: 16) {
-                                if needsICloudSetup {
-                                    Button {
-                                        withAnimation(.easeInOut(duration: 0.3)) {
-                                            showICloudInfo.toggle()
-                                        }
-                                    } label: {
-                                        Image(systemName: "info.circle")
-                                            .font(.system(size: 18))
-                                            .foregroundStyle(themeManager.primaryColor)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-
-                                if syncStatus == .syncing {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                } else {
-                                    Button {
-                                        CloudSyncMonitor.shared.refreshAccountStatus()
-                                        HapticManager.shared.lightImpact()
-                                    } label: {
-                                        Image(systemName: "arrow.clockwise")
-                                            .font(.system(size: 14, weight: .bold))
-                                            .foregroundStyle(themeManager.primaryColor)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-
-                        if needsICloudSetup && showICloudInfo {
-                            ICloudSyncSignInReminder()
-                                .padding(.bottom, 12)
-                                .transition(.opacity.animation(.easeInOut(duration: 0.2)))
-                        }
-                    }
-
                     SettingsSection(title: "Advanced Data") {
                         NavigationLink(destination: DataExportView()) {
                             SettingsRow(

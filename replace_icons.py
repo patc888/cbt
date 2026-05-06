@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-source_img = "/Users/melichan/.gemini/antigravity/brain/53ddb93d-c3a4-42f9-9e89-9552161720aa/media__1777320089806.png"
+source_img = "/Users/melichan/.gemini/antigravity/brain/62903b1b-e694-444a-ab18-093138eb455e/media__1777744790176.png"
 
 images_to_replace = [
     "CBT/Assets.xcassets/AppIcon-Stealth.appiconset/AppIcon-Stealth-167.png",

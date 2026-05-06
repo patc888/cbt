@@ -45,7 +45,7 @@ struct LockView: View {
                         .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                     
-                    Text("Your CBT records are private.\nUnlock with Face ID or passcode.")
+                    Text("Your CBT records are private.")
                         .font(.system(size: 16, weight: .medium, design: .rounded))
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.white.opacity(0.9))
@@ -59,7 +59,7 @@ struct LockView: View {
                     securityManager.authenticate()
                 }) {
                     HStack(spacing: 12) {
-                        Image(systemName: "faceid")
+                        Image(systemName: "lock.open.fill")
                             .font(.system(size: 20, weight: .bold))
                         Text("Unlock App")
                             .font(.system(size: 18, weight: .bold, design: .rounded))

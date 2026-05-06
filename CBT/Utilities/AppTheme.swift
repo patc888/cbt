@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 
 enum AppColorTheme: String, CaseIterable, Identifiable {
+    case standard = "Standard"
     case cyan = "Cyan"
     case blue = "Blue"
     case purple = "Purple"
@@ -17,6 +18,7 @@ enum AppColorTheme: String, CaseIterable, Identifiable {
 
     var primaryHex: String {
         switch self {
+        case .standard: return "84CBFB"
         case .blue: return "007AFF"
         case .purple: return "9C80FC"
         case .pink: return "FF8FB1"
@@ -32,6 +34,7 @@ enum AppColorTheme: String, CaseIterable, Identifiable {
 
     var secondaryHex: String {
         switch self {
+        case .standard: return "1193D0"
         case .blue: return "0056B3"
         case .purple: return "8B5CF6"
         case .pink: return "FF6B9D"

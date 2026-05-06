@@ -6,11 +6,7 @@ struct DataResetOptionsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
 
-    private var isCloudSyncEnabled: Bool { DataResetManager.isCloudSyncEnabled }
-
     @State private var showingLocalConfirm = false
-    @State private var showingCloudSheet = false
-    @State private var cloudConfirmText = ""
     @State private var isProcessing = false
     @State private var errorMessage: String?
     @State private var localResetErrorMessage: String?
@@ -53,42 +49,6 @@ struct DataResetOptionsView: View {
                         .buttonStyle(.plain)
                     }
 
-                    if isCloudSyncEnabled {
-                        SettingsSection(title: "Reset Everywhere") {
-                            Button {
-                                HapticManager.shared.mediumImpact()
-                                cloudConfirmText = ""
-                                showingCloudSheet = true
-                            } label: {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Reset Everywhere (Delete iCloud Data)")
-                                        .font(.headline)
-                                        .foregroundStyle(Theme.errorRed)
-
-                                    Text("Permanently deletes your data from this device and removes synced records from your private iCloud. This affects all synced devices. This action is permanent and cannot be undone.")
-                                        .font(.subheadline)
-                                        .foregroundStyle(Theme.secondaryText)
-                                        .multilineTextAlignment(.leading)
-                                }
-                                .padding(.vertical, 8)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    } else {
-                        SettingsSection(title: "iCloud Reset") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Unavailable in the current data mode")
-                                    .font(.headline)
-                                    .foregroundStyle(themeManager.primaryColor)
-
-                                Text("Cloud sync is currently turned off, so CBT cannot delete data from iCloud or other devices from this screen.")
-                                    .font(.subheadline)
-                                    .foregroundStyle(Theme.secondaryText)
-                                    .multilineTextAlignment(.leading)
-                            }
-                            .padding(.vertical, 8)
-                        }
-                    }
                 }
                 .padding()
                 .responsiveMaxWidth()
@@ -120,82 +80,14 @@ struct DataResetOptionsView: View {
         } message: {
             Text(localResetErrorMessage ?? "")
         }
-        .sheet(isPresented: $showingCloudSheet) {
-            NavigationStack {
-                Form {
-                    Section {
-                        Text("DANGER: This will permanently delete your entire CBT history from this device AND from iCloud storage.")
-                            .font(.callout)
-                            .foregroundStyle(.red)
-                            .fontWeight(.semibold)
-                        
-                        Text("This action is irreversible and will immediately remove your data from all other synchronized devices.")
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.secondaryText)
-                        
-                        Text("Please type DELETE below to confirm.")
-                            .font(.caption)
-                            .foregroundStyle(Theme.secondaryText)
-                        
-                        TextField("Type DELETE to confirm", text: $cloudConfirmText)
-                        #if os(iOS)
-                            .textInputAutocapitalization(.characters)
-                            .autocorrectionDisabled()
-                        #endif
-                    }
-                    
-                    if let errorMessage {
-                        Section {
-                            Text(errorMessage)
-                                .foregroundStyle(.red)
-                        }
-                    }
-                    
-                    Section {
-                        Button(role: .destructive) {
-                            Task { await performGlobalWipe() }
-                        } label: {
-                            HStack {
-                                Spacer()
-                                Text("Permanently Delete Data")
-                                    .fontWeight(.semibold)
-                                Spacer()
-                            }
-                        }
-                        .disabled(cloudConfirmText.uppercased() != "DELETE")
-                    }
-                }
-                .navigationTitle("Confirm iCloud Deletion")
-                #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-                #endif
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { showingCloudSheet = false }
-                    }
-                }
-            }
-            #if os(iOS)
-            .presentationDetents([.medium, .large])
-            #endif
-        }
     }
     
     private func performLocalWipe() {
-        guard !DataResetManager.isCloudSyncEnabled else {
-            localResetErrorMessage = "Local-only reset is unavailable while iCloud sync is active. Use Reset Everywhere to delete synced records from iCloud and this device."
-            return
-        }
-
-        Task { await wipeData(propagatesThroughCloudKit: false) }
-    }
-    
-    private func performGlobalWipe() async {
-        await wipeData(propagatesThroughCloudKit: true)
+        Task { await wipeData() }
     }
 
     @MainActor
-    private func wipeData(propagatesThroughCloudKit: Bool) async {
+    private func wipeData() async {
         isProcessing = true
         errorMessage = nil
 
@@ -204,19 +96,12 @@ struct DataResetOptionsView: View {
             DataResetManager.shared.resetLocalPreferences()
             await ReminderManager.shared.cancelAllCBTReminders()
 
-            if propagatesThroughCloudKit {
-                CloudSyncMonitor.shared.refreshAccountStatus()
-            }
-
             isProcessing = false
-            showingCloudSheet = false
             NotificationCenter.default.post(name: .didResetData, object: nil)
             dismiss()
         } catch {
             isProcessing = false
-            errorMessage = propagatesThroughCloudKit
-                ? "Failed to delete iCloud data: \(error.localizedDescription)"
-                : "Failed to reset this device: \(error.localizedDescription)"
+            errorMessage = "Failed to reset this device: \(error.localizedDescription)"
         }
     }
 
@@ -246,10 +131,6 @@ struct DataResetOptionsView: View {
     }
 
     private var localResetDescription: String {
-        if isCloudSyncEnabled {
-            "Unavailable while iCloud sync is active because deleting local SwiftData records can sync deletions to iCloud."
-        } else {
-            "Clears local data, preferences, and notifications stored on this device. This action cannot be undone."
-        }
+        "Clears local data, preferences, and notifications stored on this device. This action cannot be undone."
     }
 }

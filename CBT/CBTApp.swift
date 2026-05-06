@@ -2,6 +2,25 @@ import SwiftUI
 import SwiftData
 import OSLog
 
+private struct CloudSettingsSyncObserver: View {
+    @Query private var settingsList: [UserSettings]
+
+    private var syncState: CloudSettingsSnapshot? {
+        guard let settings = settingsList.first else { return nil }
+        return CloudSettingsSnapshot(settings: settings)
+    }
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
+            .task(id: syncState) {
+                guard let settings = settingsList.first else { return }
+                CloudSettingsManager.shared.syncOnLocalChange(settings: settings)
+            }
+    }
+}
+
 @main
 struct CBTApp: App {
     // MARK: - Model Container Bootstrap
@@ -18,37 +37,30 @@ struct CBTApp: App {
     )
 
     private static let modelContainerBootstrap: ModelContainerBootstrap = {
-        let shouldUseCloudKit = DataResetManager.isCloudSyncEnabled
-
-        if !shouldUseCloudKit {
-            do {
-                let container = try SharedPersistence.makeModelContainer(cloudKitEnabled: false)
-                logger.info("[SwiftData] Successfully using local store because CloudKit sync is disabled")
-                return ModelContainerBootstrap(container: container, cloudKitEnabled: false, recoveryMessage: nil)
-            } catch {
-                logger.info("[SwiftData] Local store failed while CloudKit sync was disabled: \(error.localizedDescription)")
-            }
-        }
-
-        // MARK: - Attempt 1: Default store + CloudKit sync (ideal path)
+        // MARK: - Attempt 1: App Group location + CloudKit sync
         do {
-            let container = try SharedPersistence.makeModelContainer(cloudKitEnabled: true)
-            logger.info("[SwiftData] Successfully using default store + CloudKit")
+            let container = try ModelContainerRecovery(
+                schema: SharedPersistence.schema,
+                groupID: AppConfiguration.appGroupIdentifier
+            )
+            .makeModelContainer()
+            logger.info("[SwiftData] Successfully using App Group + CloudKit store")
             return ModelContainerBootstrap(container: container, cloudKitEnabled: true, recoveryMessage: nil)
         } catch {
-            logger.info("[SwiftData] Default + CloudKit failed: \(error.localizedDescription)")
+            logger.info("[SwiftData] App Group + CloudKit failed: \(String(describing: error), privacy: .public)")
         }
 
-        // MARK: - Attempt 2: Default store, no CloudKit (offline fallback)
+        // MARK: - Attempt 2: App Group location without CloudKit
         do {
             let container = try SharedPersistence.makeModelContainer(cloudKitEnabled: false)
-            logger.info("[SwiftData] Successfully using default local store (CloudKit disabled)")
-            return ModelContainerBootstrap(container: container, cloudKitEnabled: false, recoveryMessage: nil)
+            logger.info("[SwiftData] Successfully using App Group local store")
+            return ModelContainerBootstrap(container: container, cloudKitEnabled: false, recoveryMessage: "CBT couldn't start iCloud sync and is temporarily using local storage. Your data will stay on this device until iCloud storage opens successfully.")
         } catch {
-            logger.info("[SwiftData] Default local store failed: \(error.localizedDescription)")
+            logger.info("[SwiftData] App Group local store failed: \(error.localizedDescription)")
         }
 
-        // MARK: - Attempt 3: In-memory recovery (last resort)
+        // Last resort: show the app instead of crashing if the persistent store
+        // cannot be opened on this launch.
         do {
             let container = try SharedPersistence.makeInMemoryModelContainer()
             return ModelContainerBootstrap(
@@ -80,9 +92,9 @@ struct CBTApp: App {
     init() {
         _storageRecoveryMessage = State(initialValue: Self.modelContainerBootstrap.recoveryMessage)
 
-        // Start CloudKit sync monitoring early
-        if Self.modelContainerBootstrap.cloudKitEnabled {
-            CloudSyncMonitor.shared.startMonitoring()
+        if let modelContainer = Self.modelContainerBootstrap.container {
+            let cloudManager = CloudSettingsManager.shared
+            cloudManager.modelContainer = modelContainer
         }
     }
 
@@ -96,8 +108,6 @@ struct CBTApp: App {
                 }
             }
             .task {
-                // Perform non-blocking biometrics check after launch
-                try? await Task.sleep(for: .milliseconds(200))
                 securityManager.checkBiometrics()
             }
             .environment(themeManager)
@@ -129,6 +139,10 @@ struct CBTApp: App {
             .environment(themeManager)
             .modelContainer(modelContainer)
             .overlay {
+                CloudSettingsSyncObserver()
+                    .allowsHitTesting(false)
+            }
+            .overlay {
                 if securityManager.isLocked {
                     SecurityCoverRoot()
                         .environment(themeManager)
@@ -139,10 +153,6 @@ struct CBTApp: App {
                 if newPhase == .active {
                     if !hasCheckedLockOnLaunch {
                         hasCheckedLockOnLaunch = true
-                    }
-                    // Refresh sync status when foregrounding
-                    if Self.modelContainerBootstrap.cloudKitEnabled {
-                        CloudSyncMonitor.shared.refreshAccountStatus()
                     }
                 }
             }

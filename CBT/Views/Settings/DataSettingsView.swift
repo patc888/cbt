@@ -44,119 +44,212 @@ struct DataSettingsView: View {
 }
 
 struct DataSettingsSection: View {
+    @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
-    @State private var showICloudInfo = false
-
-    private var syncStatus: CloudSyncMonitor.SyncStatus {
-        CloudSyncMonitor.shared.status
-    }
-
-    private var needsICloudSetup: Bool {
-        syncStatus == .noAccount || syncStatus == .disabled
-    }
-
-    private var syncSubtitle: String? {
-        syncStatus == .synced ? nil : String(localized: "iPhone, iPad, and Mac sync. Backs up your data and stays private to you.")
-    }
+    @State private var viewModel = AdvancedDataSettingsViewModel()
+    @State private var showingAdvancedDataOptions = false
+    @State private var showingStorageAudit = false
 
     var body: some View {
         SettingsSection(title: "Data") {
-            SettingsRow(
-                icon: "icloud.fill",
-                iconColor: themeManager.primaryColor,
-                title: needsICloudSetup ? String(localized: "iCloud Sync (Off)") : String(localized: "iCloud Sync"),
-                subtitle: syncSubtitle
-            ) {
-                HStack(spacing: 12) {
-                    if needsICloudSetup {
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                showICloudInfo.toggle()
-                            }
-                        } label: {
-                            Image(systemName: "info.circle")
-                                .font(.system(size: 18))
-                                .foregroundStyle(themeManager.primaryColor)
-                        }
-                        .buttonStyle(.plain)
+            SettingsRow(icon: "icloud.fill", iconColor: themeManager.primaryColor, title: "iCloud Sync", subtitle: "Sync between iPhone, iPad, and Mac") {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(Theme.successGreen)
+            }
+            
+            Button {
+                HapticManager.shared.lightImpact()
+                showingAdvancedDataOptions = true
+            } label: {
+                SettingsRow(
+                    icon: "slider.horizontal.3",
+                    iconColor: themeManager.primaryColor,
+                    title: "Advanced Data Options",
+                    subtitle: "Import, export, and manage backups"
+                ) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .sheet(isPresented: $showingAdvancedDataOptions) {
+            advancedDataOptionsSheet
+        }
+        .alert("Restore Error", isPresented: Binding(get: { viewModel.errorMessage != nil }, set: { if !$0 { viewModel.errorMessage = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.errorMessage ?? "An unknown error occurred.")
+        }
+        .alert("Import Result", isPresented: $viewModel.showImportSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Backup restored successfully.")
+        }
+        .confirmationDialog("Delete all data?", isPresented: $viewModel.showingDeleteDialog, titleVisibility: .visible) {
+            Button("Delete All Data", role: .destructive) {
+                viewModel.deleteMode = .deleteOnly
+                viewModel.showingDeleteConfirmation = true
+            }
+
+            Button("Delete All + Cancel Reminders", role: .destructive) {
+                viewModel.deleteMode = .deleteAndCancelReminders
+                viewModel.showingDeleteConfirmation = true
+            }
+
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This permanently removes your records from this device.")
+        }
+        .alert("Final Confirmation", isPresented: $viewModel.showingDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {
+                HapticManager.shared.lightImpact()
+            }
+            Button("Delete", role: .destructive) {
+                HapticManager.shared.destructiveAction()
+                viewModel.deleteAllData(mode: viewModel.deleteMode, modelContext: modelContext)
+            }
+        } message: {
+            Text("This action cannot be undone.")
+        }
+        .fileImporter(
+            isPresented: $viewModel.showingFileImporter,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first else { return }
+                Task {
+                    await viewModel.importData(from: url, container: modelContext.container)
+                }
+            case .failure(let error):
+                viewModel.errorMessage = "Could not select file: \(error.localizedDescription)"
+            }
+        }
+        .fileExporter(
+            isPresented: $viewModel.showingFileExporter,
+            document: viewModel.exportDocument,
+            contentType: .json,
+            defaultFilename: "CBT_Backup.json"
+        ) { result in
+            switch result {
+            case .success:
+                HapticManager.shared.success()
+            case .failure(let error):
+                viewModel.errorMessage = "Failed to export data: \(error.localizedDescription)"
+            }
+            viewModel.exportDocument = nil
+        }
+    }
+
+    private var advancedDataOptionsSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    advancedDataOptionsContent
+                        .padding(.horizontal, 16)
+                    storageAuditRow
+                        .padding(.horizontal, 16)
+                }
+                .padding(.vertical, 20)
+            }
+            .background(Theme.secondaryBackground)
+            .navigationTitle("Advanced Data Options")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") {
+                        HapticManager.shared.lightImpact()
+                        showingAdvancedDataOptions = false
                     }
-
-                    Image(systemName: syncStatus == .synced ? "checkmark.icloud.fill" : (needsICloudSetup ? "icloud.slash" : syncStatus.iconName))
-                        .font(.system(size: syncStatus == .synced ? 20 : 16, weight: .semibold))
-                        .foregroundStyle(syncStatus == .synced ? Theme.successGreen : (needsICloudSetup ? Theme.errorRed : syncStatus.color))
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundStyle(themeManager.primaryColor)
                 }
             }
-
-            if needsICloudSetup && showICloudInfo {
-                ICloudSyncSignInReminder()
-                    .padding(.top, 4)
-                    .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+            .navigationDestination(isPresented: $showingStorageAudit) {
+                SyncStatusView()
+                    .environment(themeManager)
             }
+        }
+        .presentationDetents([.large])
+    }
 
-            Divider()
-                .padding(.vertical, 8)
-
-            NavigationLink(destination: DataExportView()) {
+    private var storageAuditRow: some View {
+        SettingsSection(title: "Diagnostics") {
+            Button {
+                HapticManager.shared.lightImpact()
+                showingStorageAudit = true
+            } label: {
                 SettingsRow(
-                    icon: "square.and.arrow.up.fill",
+                    icon: "internaldrive.fill",
                     iconColor: themeManager.primaryColor,
-                    title: "Export Data",
-                    subtitle: "Portability and backups"
+                    title: "Sync & Storage Audit",
+                    subtitle: "Scan for orphan files, repair database, and check iCloud status"
                 ) {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Theme.secondaryText)
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PlainButtonStyle())
+        }
+    }
 
-            NavigationLink(destination: AdvancedDataSettingsView()) {
-                SettingsRow(
-                    icon: "gearshape.2.fill",
-                    iconColor: themeManager.primaryColor,
-                    title: "Advanced Data",
-                    subtitle: "Exports and data management"
-                ) {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.secondaryText)
+    private var advancedDataOptionsContent: some View {
+        SettingsSection(title: "Data") {
+            SettingsRow(icon: "externaldrive.fill", iconColor: themeManager.primaryColor, title: "Export Backup (.json)", subtitle: "Full record snapshot to Files or iCloud") {
+                Button("Export") {
+                    HapticManager.shared.mediumImpact()
+                    Task {
+                        await viewModel.exportData(container: modelContext.container)
+                    }
                 }
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundColor(themeManager.primaryColor)
             }
-            .buttonStyle(.plain)
-        }
-    }
-}
 
-struct ICloudSyncSignInReminder: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "To enable sync, sign in to iCloud and allow CBT to use iCloud Drive."))
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundStyle(Theme.primaryText)
-                .fixedSize(horizontal: false, vertical: true)
+            sectionHeaderLabel("IMPORT")
 
-            VStack(alignment: .leading, spacing: 6) {
-                instructionRow(String(localized: "Open the system Settings app."))
-                instructionRow(String(localized: "Sign in to your Apple ID."))
-                instructionRow(String(localized: "Turn on iCloud Drive for CBT."))
+            SettingsRow(icon: "square.and.arrow.down", iconColor: themeManager.primaryColor, title: "Import Backup", subtitle: "Merge records from a CBT JSON backup") {
+                Button("JSON File") {
+                    HapticManager.shared.mediumImpact()
+                    viewModel.showingFileImporter = true
+                }
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundColor(themeManager.primaryColor)
             }
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
-        .accessibilityElement(children: .combine)
-    }
 
-    private func instructionRow(_ text: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Theme.successGreen)
-                .accessibilityHidden(true)
+            sectionHeaderLabel("DELETE")
 
-            Text(text)
+            SettingsRow(icon: "trash", iconColor: Theme.errorRed, title: "Delete All Data", subtitle: "Remove all local and synced CBT records") {
+                Button("Delete") {
+                    HapticManager.shared.mediumImpact()
+                    viewModel.showingDeleteDialog = true
+                }
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundColor(.red)
+            }
+
+            Text("This cannot be undone.")
                 .font(.system(size: 12, design: .rounded))
                 .foregroundStyle(Theme.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 4)
         }
+    }
+
+    @ViewBuilder
+    private func sectionHeaderLabel(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 11, weight: .heavy))
+            .foregroundStyle(Theme.secondaryText)
+            .tracking(1)
+            .padding(.leading, 12)
+            .padding(.bottom, 4)
+            .accessibilityAddTraits(.isHeader)
     }
 }

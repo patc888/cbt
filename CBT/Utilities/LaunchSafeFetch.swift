@@ -21,6 +21,8 @@ extension ExerciseCompletion: CreatedAtRecord {}
 extension JournalEntry: CreatedAtRecord {}
 
 enum LaunchSafeFetch {
+    private static let disableHomeDashboardFetches = true
+
     @MainActor
     static func moodEntries(
         from context: ModelContext,
@@ -124,6 +126,11 @@ enum LaunchSafeFetch {
         from context: ModelContext,
         logger: Logger = AppLogger.make(category: "LaunchSafeFetch")
     ) -> HomeDashboardSnapshot {
+        if disableHomeDashboardFetches {
+            logger.debug("Home dashboard SwiftData snapshot disabled for stabilization build")
+            return .empty
+        }
+
         guard
             let firstVisibleDate = visibleDates.min(),
             let lastVisibleDate = visibleDates.max()
