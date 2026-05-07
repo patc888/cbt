@@ -8,55 +8,28 @@ struct RootView: View {
     @Query private var preferences: [AppPreferences]
     @StateObject private var securityManager = SecurityManager.shared
 
+    private var appPreferences: AppPreferences? {
+        preferences.first
+    }
+
+    private var isAppLockEnabled: Bool {
+        appPreferences?.appLockEnabled ?? false
+    }
+
+    private var appColorScheme: ColorScheme? {
+        appPreferences?.appThemeValue.colorScheme
+    }
+
 
     var body: some View {
-        @Bindable var appState = appEnvironment.appState
-
-        ZStack {
-            VStack(spacing: 0) {
-                if appEnvironment.isFallback {
-                    HStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 14, weight: .bold))
-                        Text("Temporary Storage Mode: Changes will not be saved")
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
-                        Spacer()
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(.orange)
-                    .foregroundStyle(.white)
-                    .adaptiveShadow(color: .black.opacity(0.1), radius: 5, y: 2)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                }
-
-
-                ScheduleView()
-            }
-            .background {
-                AuroraBackground()
-                    .ignoresSafeArea()
-            }
-
-        }
+        rootContent
 #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
 #endif
-        .overlay(alignment: .bottomTrailing) {
-            if appState.presentedSheet == nil {
-                floatingActionButton(
-                    systemImage: "plus"
-                ) {
-                    appState.isPresentingAddModal = true
-                }
-                .padding(.trailing, 24)
-                .padding(.bottom, 36)
-                .transition(.scale.combined(with: .opacity))
-            }
-        }
+        .overlay(alignment: .bottomTrailing, content: addButtonOverlay)
         .sheet(item: Binding<TimePresentedSheet?>(
-            get: { appState.presentedSheet == .templates ? .templates : nil },
-            set: { if $0 == nil && appState.presentedSheet == .templates { appState.presentedSheet = nil } }
+            get: { appEnvironment.appState.presentedSheet == .templates ? .templates : nil },
+            set: { if $0 == nil && appEnvironment.appState.presentedSheet == .templates { appEnvironment.appState.presentedSheet = nil } }
         )) { _ in
             secondarySurface(
                 title: "Routines",
@@ -65,45 +38,18 @@ struct RootView: View {
                 TemplatesView()
             }
         }
-        .overlay {
-            if appState.presentedSheet != nil && appState.presentedSheet != .templates {
-                Color.black.opacity(0.15)
-                    .ignoresSafeArea()
-                    .transition(.opacity)
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                            appState.showScheduleHome()
-                        }
-                    }
-                    .zIndex(5)
-            }
-        }
-        .overlay {
-            Group {
-                if appState.presentedSheet == .dashboard {
-                    DashboardView()
-                        .transition(.move(edge: .leading))
-                        .adaptiveShadow(color: .black.opacity(0.1), radius: 20, x: 10, y: 0)
-                }
-
-                if appState.presentedSheet == .settings {
-                    SettingsView()
-                        .transition(.move(edge: .trailing))
-                        .adaptiveShadow(color: .black.opacity(0.1), radius: 20, x: -10, y: 0)
-                }
-            }
-            .zIndex(10)
-        }
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: appState.presentedSheet)
-        .onChange(of: appState.selectedSection) { _, newSection in
+        .overlay(content: dimmingOverlay)
+        .overlay(content: sidePanelOverlay)
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: appEnvironment.appState.presentedSheet)
+        .onChange(of: appEnvironment.appState.selectedSection) { _, newSection in
             switch newSection {
-            case .dashboard: appState.showDashboard()
-            case .templates: appState.showTemplates()
-            case .schedule: appState.showScheduleHome()
+            case .dashboard: appEnvironment.appState.showDashboard()
+            case .templates: appEnvironment.appState.showTemplates()
+            case .schedule: appEnvironment.appState.showScheduleHome()
             }
         }
         .task {
-            if preferences.first?.appLockEnabled ?? false {
+            if isAppLockEnabled {
                 securityManager.lock()
                 securityManager.authenticate()
             }
@@ -114,33 +60,111 @@ struct RootView: View {
                     await appEnvironment.resyncNotifications(using: modelContext)
                 }
 
-                if preferences.first?.appLockEnabled ?? false {
+                if isAppLockEnabled {
                     securityManager.authenticate()
                 }
             } else if newPhase == .background || newPhase == .inactive {
-                if preferences.first?.appLockEnabled ?? false {
+                if isAppLockEnabled {
                     securityManager.lock()
                 }
             }
         }
-        .preferredColorScheme(preferences.first?.appTheme?.colorScheme)
-        .overlay {
-            if (preferences.first?.appLockEnabled ?? false) && securityManager.isLocked {
-                LockView()
-                    .transition(.opacity)
-                    .zIndex(100)
+        .preferredColorScheme(appColorScheme)
+        .overlay(content: securityOverlay)
+    }
+
+    private var rootContent: some View {
+        ZStack {
+            VStack(spacing: 0) {
+                fallbackBanner
+                ScheduleView()
             }
-            
-            // Privacy blur when app is in switcher
-            if (preferences.first?.appLockEnabled ?? false) && scenePhase != .active {
-                Color.clear
-                    .background(.ultraThinMaterial)
+            .background {
+                AuroraBackground()
                     .ignoresSafeArea()
-                    .zIndex(101)
             }
         }
     }
 
+    @ViewBuilder
+    private var fallbackBanner: some View {
+        if appEnvironment.isFallback {
+            HStack(spacing: 12) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 14, weight: .bold))
+                Text("Temporary Storage Mode: Changes will not be saved")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(.orange)
+            .foregroundStyle(.white)
+            .adaptiveShadow(color: .black.opacity(0.1), radius: 5, y: 2)
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+
+    @ViewBuilder
+    private func addButtonOverlay() -> some View {
+        if appEnvironment.appState.presentedSheet == nil {
+            floatingActionButton(systemImage: "plus") {
+                appEnvironment.appState.isPresentingAddModal = true
+            }
+            .padding(.trailing, 24)
+            .padding(.bottom, 36)
+            .transition(.scale.combined(with: .opacity))
+        }
+    }
+
+    @ViewBuilder
+    private func dimmingOverlay() -> some View {
+        if appEnvironment.appState.presentedSheet != nil && appEnvironment.appState.presentedSheet != .templates {
+            Color.black.opacity(0.15)
+                .ignoresSafeArea()
+                .transition(.opacity)
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        appEnvironment.appState.showScheduleHome()
+                    }
+                }
+                .zIndex(5)
+        }
+    }
+
+    @ViewBuilder
+    private func sidePanelOverlay() -> some View {
+        Group {
+            if appEnvironment.appState.presentedSheet == .dashboard {
+                DashboardView()
+                    .transition(.move(edge: .leading))
+                    .adaptiveShadow(color: .black.opacity(0.1), radius: 20, x: 10, y: 0)
+            }
+
+            if appEnvironment.appState.presentedSheet == .settings {
+                SettingsView()
+                    .transition(.move(edge: .trailing))
+                    .adaptiveShadow(color: .black.opacity(0.1), radius: 20, x: -10, y: 0)
+            }
+        }
+        .zIndex(10)
+    }
+
+    @ViewBuilder
+    private func securityOverlay() -> some View {
+        if isAppLockEnabled && securityManager.isLocked {
+            LockView()
+                .transition(.opacity)
+                .zIndex(100)
+        }
+
+        if isAppLockEnabled && scenePhase != .active {
+            Color.clear
+                .background(.ultraThinMaterial)
+                .ignoresSafeArea()
+                .zIndex(101)
+        }
+    }
 
     private func floatingActionButton(
         systemImage: String,

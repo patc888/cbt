@@ -2,7 +2,7 @@ import os
 import SwiftData
 import SwiftUI
 
-private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "TimeBlockRowView")
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "TimeBlockRowView")
 
 struct TimeBlockRowView: View {
     @Environment(AppEnvironment.self) private var appEnvironment

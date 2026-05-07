@@ -47,20 +47,20 @@ struct SubscriptionView: View {
     
     // MARK: - Products Mapping
     private var yearlyProduct: Product? {
-        subscriptionManager.availableProducts.first(where: { $0.id == "com.xeo.timeblocking.yearly" })
+        subscriptionManager.product(for: .yearly)
     }
     private var monthlyProduct: Product? {
-        subscriptionManager.availableProducts.first(where: { $0.id == "com.xeo.timeblocking.monthly" })
+        subscriptionManager.product(for: .monthly)
     }
     private var lifetimeProduct: Product? {
-        subscriptionManager.availableProducts.first(where: { $0.id == "com.xeo.timeblocking.lifetime" })
+        subscriptionManager.product(for: .lifetime)
     }
     
     // MARK: - Init
     init(config: SubscriptionConfig = .mock) {
         self.config = config
         // Default initialized plan, we will update it based on loading if needed.
-        _selectedPlanID = State(initialValue: "com.xeo.timeblocking.yearly")
+        _selectedPlanID = State(initialValue: "com.melichan.timeblocking.yearly")
     }
     
     var body: some View {
@@ -108,11 +108,10 @@ struct SubscriptionView: View {
                 Task {
                     await subscriptionManager.loadProducts()
                     // Sync selection if yearly isn't primary ID
-                    if selectedPlanID == nil || selectedPlanID == "com.xeo.timeblocking.yearly",
-                       let yearly = yearlyProduct {
-                        selectedPlanID = yearly.id
-                    }
+                    selectDefaultPlanIfNeeded()
                 }
+            } else {
+                selectDefaultPlanIfNeeded()
             }
         }
         .onChange(of: subscriptionManager.isPremium) { _, isPremium in
@@ -161,7 +160,7 @@ struct SubscriptionView: View {
                     
                     Button(String(localized: "Try Again")) {
                         HapticManager.shared.mediumImpact()
-                        Task { await subscriptionManager.loadProducts() }
+                        Task { await subscriptionManager.loadProducts(force: true) }
                     }
                     .buttonStyle(.bordered)
                 }
@@ -411,7 +410,7 @@ struct SubscriptionView: View {
     private func handleCTAPress() {
         HapticManager.shared.mediumImpact()
         // Find the fallback to yearly if not set
-        let planID = selectedPlanID ?? yearlyProduct?.id ?? ""
+        let planID = selectedPlanID ?? yearlyProduct?.id ?? subscriptionManager.availableProducts.first?.id ?? ""
         guard let productToPurchase = subscriptionManager.availableProducts.first(where: { $0.id == planID }) else {
             return
         }
@@ -443,11 +442,11 @@ struct SubscriptionView: View {
                 }
             }
         } else if actionID == "terms" {
-            if let url = URL(string: "https://xeo.com/TimeBlocking/terms.html") {
+            if let url = URL(string: "https://melichan.com/TimeBlocking/terms.html") {
                 openURL(url)
             }
         } else if actionID == "privacy" {
-            if let url = URL(string: "https://xeo.com/TimeBlocking/privacy.html") {
+            if let url = URL(string: "https://melichan.com/TimeBlocking/privacy.html") {
                 openURL(url)
             }
         }
@@ -457,6 +456,15 @@ struct SubscriptionView: View {
         guard let appPreferences else { return }
         appPreferences.isPremium = subscriptionManager.isPremium
         try? modelContext.save()
+    }
+
+    private func selectDefaultPlanIfNeeded() {
+        if let selectedPlanID,
+           subscriptionManager.availableProducts.contains(where: { $0.id == selectedPlanID }) {
+            return
+        }
+
+        selectedPlanID = yearlyProduct?.id ?? monthlyProduct?.id ?? lifetimeProduct?.id ?? subscriptionManager.availableProducts.first?.id
     }
 }
 

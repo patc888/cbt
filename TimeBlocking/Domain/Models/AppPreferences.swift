@@ -112,35 +112,50 @@ final class AppPreferences {
     var id: String = "app-preferences"
     var defaultBlockDurationMinutes: Int = 60
     var dayStartHour: Int = 6
-    var firstWeekday: Weekday = Weekday.monday
-    var notificationsEnabled: Bool? = false
-    var notificationLeadTimeMinutes: Int? = 0
-    var showsCompletedBlocks: Bool? = true
-    var appTheme: AppTheme? = AppTheme.system
-    var selectedColorTheme: AppColorTheme? = AppColorTheme.red
-    var isImmersive: Bool? = true
-    var hapticsEnabled: Bool? = true
-    var appLockEnabled: Bool? = false
-    var isPremium: Bool? = false
+    var firstWeekday: Int = Weekday.monday.rawValue
+    var notificationsEnabled: Bool = false
+    var notificationLeadTimeMinutes: Int = 0
+    var showsCompletedBlocks: Bool = true
+    var appTheme: String = AppTheme.system.rawValue
+    var selectedColorTheme: String = AppColorTheme.red.rawValue
+    var isImmersive: Bool = true
+    var hapticsEnabled: Bool = true
+    var appLockEnabled: Bool = false
+    var isPremium: Bool = false
     var hasSeenOnboarding: Bool = false
     var createdAt: Date = Date.now
 
     var updatedAt: Date = Date.now
+
+    var firstWeekdayValue: Weekday {
+        get { Weekday(rawValue: firstWeekday) ?? .monday }
+        set { firstWeekday = newValue.rawValue }
+    }
+
+    var appThemeValue: AppTheme {
+        get { AppTheme(rawValue: appTheme) ?? .system }
+        set { appTheme = newValue.rawValue }
+    }
+
+    var selectedColorThemeValue: AppColorTheme {
+        get { AppColorTheme(rawValue: selectedColorTheme) ?? .red }
+        set { selectedColorTheme = newValue.rawValue }
+    }
 
     init(
         id: String = "app-preferences",
         defaultBlockDurationMinutes: Int = 60,
         dayStartHour: Int = 6,
         firstWeekday: Weekday = .monday,
-        notificationsEnabled: Bool? = false,
-        notificationLeadTimeMinutes: Int? = 0,
-        showsCompletedBlocks: Bool? = true,
-        appTheme: AppTheme? = .system,
-        selectedColorTheme: AppColorTheme? = .red,
-        isImmersive: Bool? = true,
-        hapticsEnabled: Bool? = true,
-        appLockEnabled: Bool? = false,
-        isPremium: Bool? = false,
+        notificationsEnabled: Bool = false,
+        notificationLeadTimeMinutes: Int = 0,
+        showsCompletedBlocks: Bool = true,
+        appTheme: AppTheme = .system,
+        selectedColorTheme: AppColorTheme = .red,
+        isImmersive: Bool = true,
+        hapticsEnabled: Bool = true,
+        appLockEnabled: Bool = false,
+        isPremium: Bool = false,
         hasSeenOnboarding: Bool = false,
         createdAt: Date = .now,
 
@@ -149,12 +164,12 @@ final class AppPreferences {
         self.id = id
         self.defaultBlockDurationMinutes = defaultBlockDurationMinutes
         self.dayStartHour = dayStartHour
-        self.firstWeekday = firstWeekday
+        self.firstWeekday = firstWeekday.rawValue
         self.notificationsEnabled = notificationsEnabled
         self.notificationLeadTimeMinutes = notificationLeadTimeMinutes
         self.showsCompletedBlocks = showsCompletedBlocks
-        self.appTheme = appTheme
-        self.selectedColorTheme = selectedColorTheme
+        self.appTheme = appTheme.rawValue
+        self.selectedColorTheme = selectedColorTheme.rawValue
         self.isImmersive = isImmersive
         self.hapticsEnabled = hapticsEnabled
         self.appLockEnabled = appLockEnabled

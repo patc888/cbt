@@ -3,7 +3,7 @@ import os
 import SwiftData
 import SwiftUI
 
-private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "DashboardView")
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "DashboardView")
 
 struct DashboardView: View {
     @Environment(AppEnvironment.self) private var appEnvironment

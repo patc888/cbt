@@ -5,10 +5,9 @@ import SwiftUI
 import Combine
 import os.log
 
-private let logger = Logger(subsystem: "com.xeo.TimeBlocking", category: "StoreKit")
-
 @MainActor
 class SubscriptionManager: ObservableObject {
+    nonisolated static let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "StoreKit")
     static let shared = SubscriptionManager()
     
     @Published var subscriptionStatus: SubscriptionStatus = .unknown
@@ -20,13 +19,57 @@ class SubscriptionManager: ObservableObject {
     
     var modelContainer: ModelContainer?
     
-    let productIdentifiers = [
-        "com.xeo.timeblocking.monthly",
-        "com.xeo.timeblocking.yearly",
-        "com.xeo.timeblocking.lifetime"
-    ]
+    enum ProductKind: Int, CaseIterable {
+        case yearly
+        case monthly
+        case lifetime
 
-    private let lifetimeProductIdentifier = "com.xeo.timeblocking.lifetime"
+        nonisolated var canonicalIdentifier: String {
+            switch self {
+            case .yearly:
+                "com.melichan.timeblocking.yearly"
+            case .monthly:
+                "com.melichan.timeblocking.monthly"
+            case .lifetime:
+                "com.melichan.timeblocking.lifetime"
+            }
+        }
+
+        nonisolated var legacyIdentifier: String {
+            switch self {
+            case .yearly:
+                "com.xeo.timeblocking.yearly"
+            case .monthly:
+                "com.xeo.timeblocking.monthly"
+            case .lifetime:
+                "com.xeo.timeblocking.lifetime"
+            }
+        }
+
+        nonisolated var candidateIdentifiers: [String] {
+            [canonicalIdentifier, legacyIdentifier]
+        }
+
+        nonisolated func matches(productIdentifier: String) -> Bool {
+            let normalizedID = productIdentifier.lowercased()
+            if candidateIdentifiers.contains(where: { $0.lowercased() == normalizedID }) {
+                return true
+            }
+
+            switch self {
+            case .yearly:
+                return normalizedID.contains("yearly") || normalizedID.contains("annual")
+            case .monthly:
+                return normalizedID.contains("monthly") || normalizedID.contains("month")
+            case .lifetime:
+                return normalizedID.contains("lifetime")
+            }
+        }
+    }
+
+    var productIdentifiers: [String] {
+        ProductKind.allCases.flatMap(\.candidateIdentifiers)
+    }
     
     private var updateListenerTask: Task<Void, Error>?
     
@@ -51,32 +94,36 @@ class SubscriptionManager: ObservableObject {
     
     func loadProducts(force: Bool = false) async {
         if isLoading { return }
-        if !force && !availableProducts.isEmpty { return } // Avoid fetch storms
+        if !force && !availableProducts.isEmpty { return }
         
         isLoading = true
         errorMessage = nil
         lastLoadError = nil
         
-        logger.info("Requesting products for identifiers: \(self.productIdentifiers, privacy: .public)")
+        let requestedIDs = productIdentifiers
+        Self.logger.info("Requesting products for identifiers: \(requestedIDs, privacy: .public)")
         
         do {
-            let products = try await Product.products(for: productIdentifiers)
-            logger.info("Successfully fetched \(products.count) products.")
-            
-            logger.debug("IDs requested: \(self.productIdentifiers, privacy: .public), count returned: \(products.count), returned product IDs: \(products.map { $0.id }, privacy: .public)")
+            let products = try await fetchProducts(for: requestedIDs)
+            Self.logger.info("Successfully fetched \(products.count) products.")
             
             for product in products {
-                logger.info("Received product [ID: \(product.id, privacy: .public)] [Name: \(product.displayName, privacy: .public)]")
+                Self.logger.info("Received product [ID: \(product.id, privacy: .public)] [Name: \(product.displayName, privacy: .public)]")
             }
             
-            self.availableProducts = products.sorted { product1, product2 in
-                // Sort by price, monthly first
-                product1.id.contains("monthly") && !product2.id.contains("monthly")
+            if products.isEmpty {
+                let bundleID = Bundle.main.bundleIdentifier ?? "unknown"
+                let message = "No StoreKit products returned for bundle \(bundleID) and IDs: \(requestedIDs.joined(separator: ", "))"
+                Self.logger.error("\(message, privacy: .public)")
+                self.errorMessage = String(localized: "Unable to load subscription options. Please try again.")
+                self.lastLoadError = message
             }
+
+            self.availableProducts = products.sortedByStoreOrder()
             self.isLoading = false
             await checkSubscriptionStatus()
         } catch {
-            logger.error("Failed to load products: \(error.localizedDescription)")
+            Self.logger.error("Failed to load products: \(error.localizedDescription)")
             self.errorMessage = "Failed to load subscription options: \(error.localizedDescription)"
             self.lastLoadError = error.localizedDescription
             self.isLoading = false
@@ -141,9 +188,9 @@ class SubscriptionManager: ObservableObject {
         
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result {
-                if productIdentifiers.contains(transaction.productID) {
+                if Self.productKind(for: transaction.productID) != nil {
                     if transaction.revocationDate == nil && (transaction.expirationDate == nil || transaction.expirationDate! > Date()) {
-                        if transaction.productID == lifetimeProductIdentifier {
+                        if Self.productKind(for: transaction.productID) == .lifetime {
                             hasLifetimeAccessNow = true
                         }
                         status = .subscribed
@@ -185,11 +232,11 @@ class SubscriptionManager: ObservableObject {
                 }
                 if didChange {
                     try context.save()
-                    logger.info("Synced AppPreferences entitlement cache → premium: \(isPremium)")
+                    Self.logger.info("Synced AppPreferences entitlement cache → premium: \(isPremium)")
                 }
             }
         } catch {
-            logger.error("Failed to sync AppPreferences entitlement cache: \(error.localizedDescription)")
+            Self.logger.error("Failed to sync AppPreferences entitlement cache: \(error.localizedDescription)")
             self.errorMessage = "Failed to synchronize local settings: \(error.localizedDescription)"
         }
     }
@@ -205,7 +252,7 @@ class SubscriptionManager: ObservableObject {
                         await self?.checkSubscriptionStatus()
                     }
                 } catch {
-                    logger.error("Transaction verification failed: \(error.localizedDescription)")
+                    Self.logger.error("Transaction verification failed: \(error.localizedDescription)")
                 }
             }
         }
@@ -217,6 +264,47 @@ class SubscriptionManager: ObservableObject {
             throw SubscriptionError.failedVerification
         case .verified(let safe):
             return safe
+        }
+    }
+
+    nonisolated static func productKind(for productIdentifier: String) -> ProductKind? {
+        ProductKind.allCases.first { $0.matches(productIdentifier: productIdentifier) }
+    }
+
+    func product(for kind: ProductKind) -> Product? {
+        availableProducts.first { product in
+            kind.matches(productIdentifier: product.id)
+        }
+    }
+
+    private func fetchProducts(for identifiers: [String]) async throws -> [Product] {
+        let maxAttempts = 3
+
+        for attempt in 1...maxAttempts {
+            let products = try await Product.products(for: identifiers)
+            if !products.isEmpty || attempt == maxAttempts {
+                return products
+            }
+
+            Self.logger.warning("StoreKit returned no products on attempt \(attempt, privacy: .public). Retrying.")
+            try await Task.sleep(for: .milliseconds(350 * attempt))
+        }
+
+        return []
+    }
+}
+
+private extension Array where Element == Product {
+    func sortedByStoreOrder() -> [Product] {
+        sorted { lhs, rhs in
+            let lhsOrder = SubscriptionManager.productKind(for: lhs.id)?.rawValue ?? Int.max
+            let rhsOrder = SubscriptionManager.productKind(for: rhs.id)?.rawValue ?? Int.max
+
+            if lhsOrder != rhsOrder {
+                return lhsOrder < rhsOrder
+            }
+
+            return lhs.price < rhs.price
         }
     }
 }
@@ -271,10 +359,10 @@ extension SubscriptionConfig {
         title: String(localized: "Full Access"),
         subtitle: String(localized: "One subscription for all your devices with unlimited time blocking."),
         plans: [
-            SubscriptionPlan(id: "com.xeo.timeblocking.yearly", label: String(localized: "Yearly"), price: "", billingFrequency: String(localized: "per year"), isRecommended: true),
-            SubscriptionPlan(id: "com.xeo.timeblocking.monthly", label: String(localized: "Monthly"), price: "", billingFrequency: String(localized: "per month"))
+            SubscriptionPlan(id: "com.melichan.timeblocking.yearly", label: String(localized: "Yearly"), price: "", billingFrequency: String(localized: "per year"), isRecommended: true),
+            SubscriptionPlan(id: "com.melichan.timeblocking.monthly", label: String(localized: "Monthly"), price: "", billingFrequency: String(localized: "per month"))
         ],
-        oneTimeOption: SubscriptionPlan(id: "com.xeo.timeblocking.lifetime", label: String(localized: "Lifetime"), price: "", billingFrequency: String(localized: "one-time payment")),
+        oneTimeOption: SubscriptionPlan(id: "com.melichan.timeblocking.lifetime", label: String(localized: "Lifetime"), price: "", billingFrequency: String(localized: "one-time payment")),
         features: [
             SubscriptionFeature(icon: "calendar.badge.clock", title: String(localized: "Unlimited Planning"), description: String(localized: "Create as many time blocks, routines, and plans as you need.")),
             SubscriptionFeature(icon: "chart.line.uptrend.xyaxis", title: String(localized: "Productivity Insights"), description: String(localized: "See patterns in your focus time and completed blocks.")),

@@ -2,7 +2,7 @@ import os
 import SwiftData
 import SwiftUI
 
-private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "ScheduleView")
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "ScheduleView")
 
 struct ScheduleView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
@@ -48,7 +48,7 @@ struct ScheduleView: View {
     private let weeklyRevealThreshold: CGFloat = 56
 
     private var firstWeekday: Int {
-        preferences.first?.firstWeekday.rawValue ?? Weekday.monday.rawValue
+        preferences.first?.firstWeekdayValue.rawValue ?? Weekday.monday.rawValue
     }
 
     private var showsCompletedBlocks: Bool {

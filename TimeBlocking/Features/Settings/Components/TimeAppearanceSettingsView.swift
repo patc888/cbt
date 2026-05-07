@@ -15,9 +15,9 @@ struct TimeAppearanceSettingsView: View {
         ) {
             TimeSegmentedToggle(
                 selection: Binding(
-                    get: { preferences?.appTheme ?? .system },
+                    get: { preferences?.appThemeValue ?? .system },
                     set: { newValue in
-                        onUpdate { $0.appTheme = newValue }
+                        onUpdate { $0.appThemeValue = newValue }
                     }
                 ),
                 options: AppTheme.allCases,
@@ -86,7 +86,7 @@ struct TimeAppearanceSettingsView: View {
     }
     
     private func colorThemeButton(for theme: AppColorTheme) -> some View {
-        let isSelected = (preferences?.selectedColorTheme ?? .red) == theme
+        let isSelected = (preferences?.selectedColorThemeValue ?? .red) == theme
         
         return ZStack {
             if isSelected {
@@ -103,7 +103,7 @@ struct TimeAppearanceSettingsView: View {
         .frame(width: 38, height: 38)
         .onTapGesture {
             HapticManager.shared.lightImpact()
-            onUpdate { $0.selectedColorTheme = theme }
+            onUpdate { $0.selectedColorThemeValue = theme }
         }
 
         .scaleEffect(isSelected ? 1.05 : 1.0)

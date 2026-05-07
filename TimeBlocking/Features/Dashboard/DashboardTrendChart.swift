@@ -3,7 +3,7 @@ import os
 import SwiftData
 import SwiftUI
 
-private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "DashboardTrendChart")
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "DashboardTrendChart")
 
 struct DashboardTrendChart: View {
     @Environment(\.modelContext) private var modelContext

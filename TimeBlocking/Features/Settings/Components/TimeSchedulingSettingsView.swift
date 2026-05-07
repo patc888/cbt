@@ -65,12 +65,12 @@ struct TimeSchedulingSettingsView: View {
                 ForEach(Weekday.allCases) { weekday in
                     Button(weekday.title) {
                         onUpdate {
-                            $0.firstWeekday = weekday
+                            $0.firstWeekdayValue = weekday
                         }
                     }
                 }
             } label: {
-                TimeSettingsDropdownButton(value: preferences?.firstWeekday.title ?? Weekday.monday.title, isExpanded: false)
+                TimeSettingsDropdownButton(value: preferences?.firstWeekdayValue.title ?? Weekday.monday.title, isExpanded: false)
             }
         }
     }

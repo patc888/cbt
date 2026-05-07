@@ -2,7 +2,7 @@ import os
 import SwiftUI
 import SwiftData
 
-private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "TimeSecuritySettingsView")
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "TimeSecuritySettingsView")
 
 struct TimeSecuritySettingsView: View {
     @Environment(\.colorScheme) private var colorScheme

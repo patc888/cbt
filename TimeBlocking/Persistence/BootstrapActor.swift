@@ -4,7 +4,7 @@ import os
 
 @ModelActor
 final actor BootstrapActor {
-    private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "BootstrapActor")
+    private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "BootstrapActor")
     func prepareAppFoundation(
         preferencesStore: AppPreferencesStore,
         scheduleRepository: ScheduleRepository,
@@ -56,10 +56,10 @@ final actor BootstrapActor {
         preferences.notificationLeadTimeMinutes = 0
         preferences.defaultBlockDurationMinutes = 45
         preferences.dayStartHour = 7
-        preferences.firstWeekday = .monday
+        preferences.firstWeekdayValue = .monday
         preferences.showsCompletedBlocks = false
-        preferences.appTheme = .system
-        preferences.selectedColorTheme = .red
+        preferences.appThemeValue = .system
+        preferences.selectedColorThemeValue = .red
         preferences.isImmersive = true
         preferences.hapticsEnabled = true
         

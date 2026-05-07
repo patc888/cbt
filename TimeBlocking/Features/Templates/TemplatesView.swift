@@ -3,7 +3,7 @@ import os
 import SwiftData
 import SwiftUI
 
-private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "TemplatesView")
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "TemplatesView")
 
 struct TemplateEditorDraft: Identifiable {
     let id: UUID

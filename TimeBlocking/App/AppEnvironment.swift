@@ -3,7 +3,7 @@ import Observation
 import os
 import SwiftData
 
-private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "AppEnvironment")
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "AppEnvironment")
 
 enum AppBootstrapState: String {
     case empty
@@ -133,11 +133,11 @@ final class AppEnvironment {
     func syncPreferencesToUserDefaults(using modelContext: ModelContext) {
         guard let prefs = try? preferencesStore.fetchOrCreate(in: modelContext) else { return }
 
-        UserDefaults.standard.set(prefs.selectedColorTheme?.rawValue, forKey: "appColorTheme")
-        UserDefaults.standard.set(prefs.isImmersive ?? true, forKey: "appThemeImmersive")
-        UserDefaults.standard.set(prefs.appTheme?.rawValue, forKey: "userTheme")
-        UserDefaults.standard.set(prefs.hapticsEnabled ?? true, forKey: "hapticsEnabled")
-        UserDefaults.standard.set(prefs.isPremium ?? false, forKey: "hasPro")
+        UserDefaults.standard.set(prefs.selectedColorThemeValue.rawValue, forKey: "appColorTheme")
+        UserDefaults.standard.set(prefs.isImmersive, forKey: "appThemeImmersive")
+        UserDefaults.standard.set(prefs.appThemeValue.rawValue, forKey: "userTheme")
+        UserDefaults.standard.set(prefs.hapticsEnabled, forKey: "hapticsEnabled")
+        UserDefaults.standard.set(prefs.isPremium, forKey: "hasPro")
     }
 
 
@@ -188,12 +188,12 @@ final class AppEnvironment {
     private func applyDefaultPreferences(to preferences: AppPreferences) {
         preferences.defaultBlockDurationMinutes = 60
         preferences.dayStartHour = 6
-        preferences.firstWeekday = .monday
+        preferences.firstWeekdayValue = .monday
         preferences.notificationsEnabled = false
         preferences.notificationLeadTimeMinutes = 0
         preferences.showsCompletedBlocks = true
-        preferences.appTheme = .system
-        preferences.selectedColorTheme = .red
+        preferences.appThemeValue = .system
+        preferences.selectedColorThemeValue = .red
         preferences.isImmersive = true
         preferences.hapticsEnabled = true
         preferences.isPremium = false
@@ -204,10 +204,10 @@ final class AppEnvironment {
         preferences.notificationLeadTimeMinutes = 0
         preferences.defaultBlockDurationMinutes = 45
         preferences.dayStartHour = 7
-        preferences.firstWeekday = .monday
+        preferences.firstWeekdayValue = .monday
         preferences.showsCompletedBlocks = false
-        preferences.appTheme = .system
-        preferences.selectedColorTheme = .red
+        preferences.appThemeValue = .system
+        preferences.selectedColorThemeValue = .red
         preferences.isImmersive = true
         preferences.hapticsEnabled = true
         preferences.isPremium = false

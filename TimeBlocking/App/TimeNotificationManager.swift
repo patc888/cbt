@@ -61,7 +61,7 @@ final class TimeNotificationManager {
     ) async {
         let identifier = notificationIdentifier(for: block)
 
-        guard isAuthorized, preferences.notificationsEnabled ?? false else {
+        guard isAuthorized, preferences.notificationsEnabled else {
             center.removePendingNotificationRequests(withIdentifiers: [identifier])
             return
         }
@@ -77,7 +77,7 @@ final class TimeNotificationManager {
             return
         }
 
-        let leadTimeMinutes = max(preferences.notificationLeadTimeMinutes ?? 0, 0)
+        let leadTimeMinutes = max(preferences.notificationLeadTimeMinutes, 0)
         let triggerDate = block.startDate.addingTimeInterval(TimeInterval(leadTimeMinutes * -60))
 
         guard triggerDate > now else {
@@ -138,7 +138,7 @@ final class TimeNotificationManager {
             .map(\.identifier)
             .filter { $0.hasPrefix(identifierPrefix) }
 
-        let notificationsEnabled = preferences.notificationsEnabled ?? false
+        let notificationsEnabled = preferences.notificationsEnabled
         let isAuthorized = notificationsEnabled ? await requestAuthorizationIfNeeded() : false
 
         if !isAuthorized || !notificationsEnabled {
@@ -151,7 +151,7 @@ final class TimeNotificationManager {
         let validRequestIDs = Set(
             blocks
                 .filter { block in
-                    let leadTimeMinutes = max(preferences.notificationLeadTimeMinutes ?? 0, 0)
+                    let leadTimeMinutes = max(preferences.notificationLeadTimeMinutes, 0)
                     let triggerDate = block.startDate.addingTimeInterval(TimeInterval(leadTimeMinutes * -60))
                     let trimmedTitle = block.title.trimmingCharacters(in: .whitespacesAndNewlines)
                     return block.status == .planned &&

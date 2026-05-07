@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 import os
 
-private let logger = Logger(subsystem: "com.xeo.timeblocking", category: "DataTransferManager")
+private let logger = Logger(subsystem: "com.melichan.TimeBlocking", category: "DataTransferManager")
 
 struct DataBackup: Codable {
     let version: String
@@ -162,12 +162,12 @@ final class DataTransferManager {
                     id: p.id,
                     defaultBlockDurationMinutes: p.defaultBlockDurationMinutes,
                     dayStartHour: p.dayStartHour,
-                    firstWeekday: p.firstWeekday,
+                    firstWeekday: p.firstWeekdayValue,
                     notificationsEnabled: p.notificationsEnabled,
                     notificationLeadTimeMinutes: p.notificationLeadTimeMinutes,
                     showsCompletedBlocks: p.showsCompletedBlocks,
-                    appTheme: p.appTheme,
-                    selectedColorTheme: p.selectedColorTheme,
+                    appTheme: p.appThemeValue,
+                    selectedColorTheme: p.selectedColorThemeValue,
                     isImmersive: p.isImmersive,
                     hapticsEnabled: p.hapticsEnabled,
                     appLockEnabled: p.appLockEnabled,
@@ -288,15 +288,15 @@ final class DataTransferManager {
             let prefs = existing ?? AppPreferences(id: dto.id)
             prefs.defaultBlockDurationMinutes = dto.defaultBlockDurationMinutes
             prefs.dayStartHour = dto.dayStartHour
-            prefs.firstWeekday = dto.firstWeekday
-            prefs.notificationsEnabled = dto.notificationsEnabled
-            prefs.notificationLeadTimeMinutes = dto.notificationLeadTimeMinutes
-            prefs.showsCompletedBlocks = dto.showsCompletedBlocks
-            prefs.appTheme = dto.appTheme
-            prefs.selectedColorTheme = dto.selectedColorTheme
-            prefs.isImmersive = dto.isImmersive
-            prefs.hapticsEnabled = dto.hapticsEnabled
-            prefs.appLockEnabled = dto.appLockEnabled
+            prefs.firstWeekdayValue = dto.firstWeekday
+            prefs.notificationsEnabled = dto.notificationsEnabled ?? prefs.notificationsEnabled
+            prefs.notificationLeadTimeMinutes = dto.notificationLeadTimeMinutes ?? prefs.notificationLeadTimeMinutes
+            prefs.showsCompletedBlocks = dto.showsCompletedBlocks ?? prefs.showsCompletedBlocks
+            prefs.appThemeValue = dto.appTheme ?? prefs.appThemeValue
+            prefs.selectedColorThemeValue = dto.selectedColorTheme ?? prefs.selectedColorThemeValue
+            prefs.isImmersive = dto.isImmersive ?? prefs.isImmersive
+            prefs.hapticsEnabled = dto.hapticsEnabled ?? prefs.hapticsEnabled
+            prefs.appLockEnabled = dto.appLockEnabled ?? prefs.appLockEnabled
             prefs.hasSeenOnboarding = dto.hasSeenOnboarding
             prefs.createdAt = dto.createdAt
             prefs.updatedAt = dto.updatedAt
