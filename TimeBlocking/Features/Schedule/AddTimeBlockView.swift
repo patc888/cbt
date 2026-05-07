@@ -88,6 +88,9 @@ struct AddTimeBlockView: View {
     @Query private var preferences: [AppPreferences]
     @Query(sort: \BrainDumpItem.updatedAt, order: .reverse) private var brainDumpItems: [BrainDumpItem]
     @Query(sort: \ScheduleTemplate.sortOrder) private var templates: [ScheduleTemplate]
+    @Query private var allBlocks: [TimeBlock]
+
+    @State private var showingSubscription = false
 
     @State private var title: String
     @State private var selectedDate: Date
@@ -233,6 +236,7 @@ struct AddTimeBlockView: View {
                 }
             )
         }
+        .timeSubscriptionPresentation(isPresented: $showingSubscription)
     }
 
     private var isEditing: Bool {
@@ -583,6 +587,14 @@ struct AddTimeBlockView: View {
     }
 
     private func saveBlock() {
+        // Enforce 10-block limit for non-premium users
+        let isPremium = preferences.first?.isPremium ?? false
+        if !isPremium && !isEditing && allBlocks.count >= 10 {
+            HapticManager.shared.warning()
+            showingSubscription = true
+            return
+        }
+
         do {
             if let editingBlockID {
                 guard let block = fetchBlock(id: editingBlockID) else {

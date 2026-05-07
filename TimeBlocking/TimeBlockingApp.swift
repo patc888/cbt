@@ -5,6 +5,11 @@ import SwiftData
 @main
 struct TimeBlockingApp: App {
     @State private var appEnvironment = AppEnvironment()
+    
+    init() {
+        // Initialize subscription manager at app launch to start listening for transactions
+        _ = SubscriptionManager.shared
+    }
 
     var body: some Scene {
         WindowGroup {
