@@ -14,15 +14,20 @@ final class UserSettings {
     /// Security Settings
     var appLockEnabled: Bool? = false
     
+    /// Subscription Settings
+    var isPremium: Bool? = false
+    
     init(
         hapticsEnabled: Bool = true,
         appLockEnabled: Bool = false,
+        isPremium: Bool = false,
         singletonID: String = "default"
     ) {
         self.singletonID = singletonID
         self.uuid = UUID()
         self.hapticsEnabled = hapticsEnabled
         self.appLockEnabled = appLockEnabled
+        self.isPremium = isPremium
     }
 }
 

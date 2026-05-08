@@ -3,6 +3,11 @@ import SwiftUI
 struct LegalView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ThemeManager.self) private var themeManager
+    
+    private var appVersionText: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.4"
+        return "Version \(version)"
+    }
 
     var body: some View {
         NavigationStack {
@@ -33,7 +38,7 @@ struct LegalView: View {
                             }
                         }
                         
-                        Text("Version 1.0.0")
+                        Text(appVersionText)
                             .font(.system(.caption, design: .rounded))
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 16)

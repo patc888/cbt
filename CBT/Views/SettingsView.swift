@@ -91,6 +91,8 @@ private struct SettingsContent: View {
             .padding(.horizontal, 16)
             .padding(.top, 12)
             
+            SubscriptionSettingsView()
+
             AppearanceSettingsView(
                 hapticsEnabled: viewModel.hapticsEnabled,
                 currentIcon: viewModel.currentIcon,
@@ -190,7 +192,7 @@ struct PrivacyFooter: View {
 
 private struct VersionFooterView: View {
     private var appVersionText: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.4"
         return "Version \(version)"
     }
 
