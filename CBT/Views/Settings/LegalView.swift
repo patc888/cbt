@@ -5,7 +5,7 @@ struct LegalView: View {
     @Environment(ThemeManager.self) private var themeManager
     
     private var appVersionText: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.4"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.5"
         return "Version \(version)"
     }
 

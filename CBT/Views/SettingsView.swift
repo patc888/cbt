@@ -192,7 +192,7 @@ struct PrivacyFooter: View {
 
 private struct VersionFooterView: View {
     private var appVersionText: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.4"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.5"
         return "Version \(version)"
     }
 
