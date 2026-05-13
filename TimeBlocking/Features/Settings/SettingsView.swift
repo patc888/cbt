@@ -29,7 +29,7 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .topTrailing) {
+            ZStack(alignment: closeButtonAlignment) {
                 ThemedBackground()
                     .ignoresSafeArea()
 
@@ -42,8 +42,8 @@ struct SettingsView: View {
                 .padding(.top, 60)
 
                 closeButton
-                    .padding(.trailing, 20)
-                    .padding(.top, 60)
+                    .padding(closeButtonPaddingEdges, 20)
+                    .padding(.top, closeButtonTopPadding)
             }
             .ignoresSafeArea()
             .navigationTitle("")
@@ -160,7 +160,45 @@ struct SettingsView: View {
     }
 
     private var closeButton: some View {
-        TimeDismissButton(style: .chevron)
+        Button {
+            HapticManager.shared.lightImpact()
+            appEnvironment.appState.showScheduleHome()
+        } label: {
+            Image(systemName: closeButtonSystemImage)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(Theme.primaryAccent)
+                .frame(width: 36, height: 36)
+                .background(Theme.primaryAccent.opacity(0.1))
+                .clipShape(Circle())
+        }
+        .accessibilityLabel("Close Settings")
+        .accessibilityHint("Returns to the schedule")
+    }
+
+    private var closeButtonAlignment: Alignment {
+        shouldUseMacSettingsChrome ? .topLeading : .topTrailing
+    }
+
+    private var closeButtonPaddingEdges: Edge.Set {
+        shouldUseMacSettingsChrome ? .leading : .trailing
+    }
+
+    private var closeButtonTopPadding: CGFloat {
+        shouldUseMacSettingsChrome ? 20 : 60
+    }
+
+    private var closeButtonSystemImage: String {
+        shouldUseMacSettingsChrome ? "xmark" : "chevron.right"
+    }
+
+    private var shouldUseMacSettingsChrome: Bool {
+#if os(macOS)
+        true
+#elseif os(iOS)
+        ProcessInfo.processInfo.isMacCatalystApp || ProcessInfo.processInfo.isiOSAppOnMac
+#else
+        false
+#endif
     }
 
     private func updatePreferences(_ update: (AppPreferences) -> Void) {
@@ -246,5 +284,3 @@ struct SettingsView: View {
         }
     }
 }
-
-

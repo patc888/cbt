@@ -232,6 +232,7 @@ struct TimeDismissButton: View {
     var accessibilityLabel: String = "Close"
     var accessibilityHint: String = "Dismisses this screen"
     var enableHaptics: Bool = true
+    var onDismiss: (() -> Void)? = nil
 
     var body: some View {
         Button(action: dismissAction) {
@@ -272,7 +273,12 @@ struct TimeDismissButton: View {
         if enableHaptics {
             HapticManager.shared.lightImpact()
         }
-        dismiss()
+
+        if let onDismiss {
+            onDismiss()
+        } else {
+            dismiss()
+        }
     }
 }
 

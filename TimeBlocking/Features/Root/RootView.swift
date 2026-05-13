@@ -119,7 +119,9 @@ struct RootView: View {
 
     @ViewBuilder
     private func dimmingOverlay() -> some View {
-        if appEnvironment.appState.presentedSheet != nil && appEnvironment.appState.presentedSheet != .templates {
+        let shouldDim = appEnvironment.appState.presentedSheet != nil
+            && appEnvironment.appState.presentedSheet != .templates
+        if shouldDim {
             Color.black.opacity(0.15)
                 .ignoresSafeArea()
                 .transition(.opacity)
@@ -139,15 +141,51 @@ struct RootView: View {
                 DashboardView()
                     .transition(.move(edge: .leading))
                     .adaptiveShadow(color: .black.opacity(0.1), radius: 20, x: 10, y: 0)
+                    .gesture(
+                        DragGesture(minimumDistance: 50)
+                            .onEnded { value in
+                                if value.translation.width < -80 {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                        appEnvironment.appState.showScheduleHome()
+                                    }
+                                }
+                            }
+                )
             }
 
-            if appEnvironment.appState.presentedSheet == .settings {
+            if shouldPresentSettingsAsPopup && appEnvironment.appState.presentedSheet == .settings {
+                SettingsView()
+                    .frame(width: 540, height: 720)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .adaptiveShadow(color: .black.opacity(0.18), radius: 24, y: 12)
+                    .transition(.scale(scale: 0.96).combined(with: .opacity))
+            } else if appEnvironment.appState.presentedSheet == .settings {
                 SettingsView()
                     .transition(.move(edge: .trailing))
                     .adaptiveShadow(color: .black.opacity(0.1), radius: 20, x: -10, y: 0)
+                    .gesture(
+                        DragGesture(minimumDistance: 50)
+                            .onEnded { value in
+                                if value.translation.width > 80 {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                        appEnvironment.appState.showScheduleHome()
+                                    }
+                                }
+                            }
+                    )
             }
         }
         .zIndex(10)
+    }
+
+    private var shouldPresentSettingsAsPopup: Bool {
+#if os(macOS)
+        true
+#elseif os(iOS)
+        ProcessInfo.processInfo.isMacCatalystApp || ProcessInfo.processInfo.isiOSAppOnMac
+#else
+        false
+#endif
     }
 
     @ViewBuilder

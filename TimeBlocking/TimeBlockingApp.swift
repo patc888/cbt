@@ -13,12 +13,18 @@ struct TimeBlockingApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(appEnvironment)
-                .modelContainer(appEnvironment.persistenceController?.container ?? PersistenceController.shared.container)
-                .task {
-                    await appEnvironment.initialize()
+            Group {
+                if appEnvironment.isReady, let persistenceController = appEnvironment.persistenceController {
+                    RootView()
+                        .environment(appEnvironment)
+                        .modelContainer(persistenceController.container)
+                } else {
+                    LoadingView()
                 }
+            }
+            .task {
+                await appEnvironment.initialize()
+            }
         }
     }
 }

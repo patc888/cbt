@@ -81,7 +81,7 @@ final class AppEnvironment {
             logger.error("Failed to initialize app environment: \(error)")
             // Fallback to a guaranteed (in-memory) state if even createAsync fails catastrophically
             if persistenceController == nil {
-                self.persistenceController = .shared // This is the old sync fallback
+                self.persistenceController = try? PersistenceController(inMemory: true)
                 self.isReady = true
             }
         }
