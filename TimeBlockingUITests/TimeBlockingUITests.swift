@@ -25,17 +25,66 @@ final class TimeBlockingUITests: XCTestCase {
     @MainActor
     func testExample() throws {
         // UI tests must launch the application that they test.
-        let app = XCUIApplication()
+        let app = configuredApp()
         app.launch()
 
         // Use XCTAssert and related functions to verify your tests produce the correct results.
     }
 
     @MainActor
+    func testPrimaryButtonsDoNotCrash() throws {
+        let app = configuredApp()
+        app.launch()
+        ensureMainWindowVisible(in: app)
+
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
+        XCTAssertTrue(app.buttons["settingsButton"].waitForExistence(timeout: 20))
+
+        tapIfPresent(app.buttons["statsButton"])
+        tapIfPresent(app.buttons["closeStatsButton"])
+
+        tapIfPresent(app.buttons["settingsButton"])
+        tapIfPresent(app.buttons["closeSettingsButton"])
+
+        tapIfPresent(app.buttons["addBlockButton"])
+        tapIfPresent(app.buttons["Cancel"])
+
+        XCTAssertEqual(app.state, .runningForeground)
+    }
+
+    @MainActor
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
+            configuredApp().launch()
         }
+    }
+
+    @MainActor
+    private func configuredApp() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchEnvironment["TIMEBLOCKING_FORCE_NO_CLOUDKIT"] = "1"
+        return app
+    }
+
+    @MainActor
+    private func tapIfPresent(_ element: XCUIElement) {
+        guard element.waitForExistence(timeout: 5), element.isHittable else {
+            return
+        }
+
+        element.tap()
+    }
+
+    @MainActor
+    private func ensureMainWindowVisible(in app: XCUIApplication) {
+        #if os(macOS)
+        guard !app.buttons["settingsButton"].waitForExistence(timeout: 2) else {
+            return
+        }
+
+        app.activate()
+        app.typeKey("n", modifierFlags: [.command])
+        #endif
     }
 }

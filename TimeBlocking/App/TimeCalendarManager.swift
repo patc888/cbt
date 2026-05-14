@@ -49,6 +49,7 @@ final class TimeCalendarManager {
     private(set) var events: [TimeCalendarEvent] = []
     private(set) var loadedInterval: DateInterval?
     private(set) var isLoading = false
+    private(set) var isRequestingAccess = false
     private(set) var lastErrorMessage: String?
 
     init(eventStore: EKEventStore = EKEventStore()) {
@@ -70,6 +71,10 @@ final class TimeCalendarManager {
             refreshAuthorizationStatus()
             return
         }
+
+        isRequestingAccess = true
+        lastErrorMessage = nil
+        defer { isRequestingAccess = false }
 
         do {
             let granted = try await eventStore.requestFullAccessToEvents()

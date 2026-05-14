@@ -111,6 +111,8 @@ struct RootView: View {
             floatingActionButton(systemImage: "plus") {
                 appEnvironment.appState.isPresentingAddModal = true
             }
+            .accessibilityLabel("Add Block")
+            .accessibilityIdentifier("addBlockButton")
             .padding(.trailing, 24)
             .padding(.bottom, 36)
             .transition(.scale.combined(with: .opacity))

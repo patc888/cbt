@@ -512,6 +512,8 @@ struct ScheduleView: View {
                         .background(Theme.primaryAccent.opacity(0.1))
                         .clipShape(Circle())
                 }
+                .accessibilityLabel("Stats")
+                .accessibilityIdentifier("statsButton")
             },
             trailingActions: {
                 Button {
@@ -525,6 +527,8 @@ struct ScheduleView: View {
                         .background(Theme.primaryAccent.opacity(0.1))
                         .clipShape(Circle())
                 }
+                .accessibilityLabel("Settings")
+                .accessibilityIdentifier("settingsButton")
             }
         )
         .background {
@@ -806,6 +810,7 @@ struct ScheduleView: View {
                 title: "Show Apple Calendar events",
                 message: "Grant calendar access to overlay device events alongside your time blocks in Day and Week views.",
                 actionTitle: "Enable Calendar",
+                isActionInProgress: appEnvironment.timeCalendarManager.isRequestingAccess,
                 action: requestCalendarAccess
             )
         case .denied:

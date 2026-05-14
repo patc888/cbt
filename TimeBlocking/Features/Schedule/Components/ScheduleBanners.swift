@@ -47,6 +47,7 @@ struct CalendarIntegrationBanner: View {
     let title: String
     let message: String
     var actionTitle: String?
+    var isActionInProgress = false
     var action: (() -> Void)?
 
     var body: some View {
@@ -66,10 +67,20 @@ struct CalendarIntegrationBanner: View {
                 .foregroundStyle(Theme.secondaryText)
 
             if let actionTitle, let action {
-                Button(actionTitle, action: action)
+                Button(action: action) {
+                    HStack(spacing: 6) {
+                        if isActionInProgress {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+
+                        Text(isActionInProgress ? "Requesting..." : actionTitle)
+                    }
+                }
                     .buttonStyle(.borderedProminent)
                     .tint(Color.blue)
                     .controlSize(.small)
+                    .disabled(isActionInProgress)
             }
         }
         .padding(12)

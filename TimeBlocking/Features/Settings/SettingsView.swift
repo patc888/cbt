@@ -172,6 +172,7 @@ struct SettingsView: View {
                 .clipShape(Circle())
         }
         .accessibilityLabel("Close Settings")
+        .accessibilityIdentifier("closeSettingsButton")
         .accessibilityHint("Returns to the schedule")
     }
 

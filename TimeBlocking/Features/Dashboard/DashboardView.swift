@@ -264,6 +264,8 @@ struct DashboardView: View {
                     .background(Theme.primaryAccent.opacity(0.1))
                     .clipShape(Circle())
             }
+            .accessibilityLabel("Close Stats")
+            .accessibilityIdentifier("closeStatsButton")
             Spacer()
         }
         .padding(.horizontal, 24)
@@ -276,4 +278,3 @@ struct DashboardView: View {
         .environment(AppEnvironment(persistenceController: .preview))
         .modelContainer(PersistenceController.preview.container)
 }
-

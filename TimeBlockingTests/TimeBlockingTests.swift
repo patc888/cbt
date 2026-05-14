@@ -180,11 +180,11 @@ struct TimeBlockingTests {
 
         #expect(preferences.defaultBlockDurationMinutes == 45)
         #expect(preferences.dayStartHour == 7)
-        #expect(preferences.firstWeekday == Weekday.monday)
+        #expect(preferences.firstWeekdayValue == Weekday.monday)
         #expect(preferences.showsCompletedBlocks == false)
 
         #expect(templates.map(\ScheduleTemplate.name) == [
-            "Morning Planning"
+            "Daily Strategy"
         ])
 
         let expectedWeekdayMask = 0
@@ -198,27 +198,29 @@ struct TimeBlockingTests {
         let generatedTodayBlocks = blocks.filter {
             $0.template != nil && calendar.isDate($0.startDate, inSameDayAs: today)
         }
-        let prepBlock = try #require(blocks.first { $0.title == "Prep for Team Check-In" })
-        let lunchWalkBlock = try #require(blocks.first { $0.title == "Lunch Walk" })
+        let focusBlock = try #require(blocks.first { $0.title == "Client Focus: Core Project" })
+        let adminBlock = try #require(blocks.first { $0.title == "Admin & Invoicing" })
+        let planningBlock = try #require(blocks.first { $0.title == "Tomorrow's Plan" })
         let weekday = calendar.component(.weekday, from: today)
         let expectedGeneratedCount = (expectedWeekdayMask & (1 << (weekday - 1))) != 0 ? 1 : 0
 
         #expect(blocks.count == expectedGeneratedCount + 3)
         #expect(generatedTodayBlocks.count == expectedGeneratedCount)
-        #expect(calendar.isDate(prepBlock.startDate, inSameDayAs: today))
-        #expect(prepBlock.template == nil)
-        #expect(prepBlock.notes == "Example block with a checklist so the day view demonstrates step-by-step progress.")
-        #expect(lunchWalkBlock.status == TimeBlockStatus.completed)
+        #expect(calendar.isDate(focusBlock.startDate, inSameDayAs: today))
+        #expect(focusBlock.template == nil)
+        #expect(focusBlock.notes == "High-leverage work for my primary client. No distractions allowed.")
+        #expect(adminBlock.template == nil)
+        #expect(planningBlock.status == TimeBlockStatus.completed)
         #expect(checklistItems.map(\BlockChecklistItem.title) == [
-            "Review agenda",
-            "Update blockers",
-            "Capture next actions"
+            "Send weekly invoices",
+            "Review expense reports",
+            "Update project tracker"
         ])
-        #expect(checklistItems.allSatisfy { $0.timeBlock?.id == prepBlock.id })
+        #expect(checklistItems.allSatisfy { $0.timeBlock?.id == adminBlock.id })
 
         if (expectedWeekdayMask & (1 << (weekday - 1))) != 0 {
             #expect(generatedTodayBlocks.map(\TimeBlock.title) == [
-                "Morning Planning"
+                "Daily Strategy"
             ])
         } else {
             #expect(generatedTodayBlocks.isEmpty)
@@ -262,7 +264,7 @@ struct TimeBlockingTests {
         #expect(preferences.count == 1)
         #expect(preferences.first?.defaultBlockDurationMinutes == 90)
         #expect(preferences.first?.dayStartHour == 5)
-        #expect(preferences.first?.firstWeekday == Weekday.sunday)
+        #expect(preferences.first?.firstWeekdayValue == Weekday.sunday)
         #expect(preferences.first?.showsCompletedBlocks == true)
         #expect(templates.isEmpty)
         #expect(blocks.count == 1)
