@@ -3,6 +3,9 @@ import SwiftData
 import OSLog
 
 private struct CloudSettingsSyncObserver: View {
+    private static let logger = AppLogger.make(category: "CloudSettingsSyncObserver")
+
+    @Environment(\.modelContext) private var modelContext
     @Query private var settingsList: [UserSettings]
 
     private var syncState: CloudSettingsSnapshot? {
@@ -15,9 +18,18 @@ private struct CloudSettingsSyncObserver: View {
             .frame(width: 0, height: 0)
             .accessibilityHidden(true)
             .task(id: syncState) {
-                guard let settings = settingsList.first else { return }
-                CloudSettingsManager.shared.syncOnLocalChange(settings: settings)
+                await syncSettings()
             }
+    }
+
+    @MainActor
+    private func syncSettings() async {
+        do {
+            let settings = try settingsList.first ?? UserSettings.fetchOrCreate(in: modelContext)
+            CloudSettingsManager.shared.syncOnLocalChange(settings: settings)
+        } catch {
+            Self.logger.error("Failed to bootstrap cloud settings sync: \(error.localizedDescription, privacy: .private)")
+        }
     }
 }
 
@@ -96,6 +108,15 @@ struct CBTApp: App {
             let cloudManager = CloudSettingsManager.shared
             cloudManager.modelContainer = modelContainer
         }
+
+        UserDefaults.standard.set(
+            Self.modelContainerBootstrap.cloudKitEnabled,
+            forKey: AppConfiguration.cloudKitEnabledKey
+        )
+        UserDefaults.standard.set(
+            Self.modelContainerBootstrap.cloudKitEnabled ? "cloudKit" : "local",
+            forKey: AppConfiguration.persistenceModeKey
+        )
     }
 
     var body: some Scene {

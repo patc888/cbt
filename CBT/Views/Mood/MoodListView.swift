@@ -4,6 +4,7 @@ import os
 
 struct MoodListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(ThemeManager.self) private var themeManager
     @State private var entries: [MoodEntry] = []
     @State private var showingNewEntry = false
@@ -95,6 +96,10 @@ struct MoodListView: View {
         }
         .onChange(of: showingNewEntry) { _, isPresented in
             guard !isPresented else { return }
+            Task { await refreshEntries() }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
             Task { await refreshEntries() }
         }
     }

@@ -24,7 +24,7 @@ struct HomeView: View {
                     TopHeadlineView(
                         title: String(localized: "Daily Plan"),
                         subtitle: String(localized: "Step by step toward balance"),
-                        alignment: .leading
+                        leading: { StreakToolbarButton() }
                     )
                     .padding(.horizontal, 16)
 
@@ -118,6 +118,7 @@ struct HomeDashboardContent: View {
     @Binding var selectedMoodForFlow: MoodColor?
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(ThemeManager.self) private var themeManager
     @State private var viewModel = HomeDashboardViewModel()
     @State private var refreshNonce = 0
@@ -270,6 +271,10 @@ struct HomeDashboardContent: View {
         }
         .onChange(of: showingNewThoughtRecord) { _, isPresented in
             guard !isPresented else { return }
+            refreshNonce &+= 1
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
             refreshNonce &+= 1
         }
         .task(id: DashboardRefreshToken(

@@ -37,7 +37,7 @@ struct InsightsView: View {
 
             DeferredRenderView {
                 VStack {
-                    TopHeadlineView(title: String(localized: "Insights"))
+                    TopHeadlineView(title: String(localized: "Insights"), leading: { StreakToolbarButton() })
                         .padding(.horizontal)
                     Spacer()
                 }
@@ -79,6 +79,7 @@ private struct InsightsDashboardContent: View {
     @Binding var attemptingAddThought: Bool
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @State private var moodEntries: [MoodEntry] = []
     @State private var thoughtRecords: [ThoughtRecord] = []
     @State private var exerciseCompletions: [ExerciseCompletion] = []
@@ -100,14 +101,14 @@ private struct InsightsDashboardContent: View {
         Group {
             if viewModel.isCalculating {
                 VStack {
-                    TopHeadlineView(title: String(localized: "Insights"))
+                    TopHeadlineView(title: String(localized: "Insights"), leading: { StreakToolbarButton() })
                     Spacer()
                     InsightsLoadingStateView()
                     Spacer()
                 }
             } else if moodEntries.isEmpty && thoughtRecords.isEmpty && exerciseCompletions.isEmpty && journalEntries.isEmpty {
                 VStack(spacing: 0) {
-                    TopHeadlineView(title: String(localized: "Insights"))
+                    TopHeadlineView(title: String(localized: "Insights"), leading: { StreakToolbarButton() })
                         .padding(.horizontal, 16)
                     
                     InsightsEmptyStateView(
@@ -118,7 +119,7 @@ private struct InsightsDashboardContent: View {
             } else {
                 ScrollView {
                     VStack(spacing: 14) {
-                        TopHeadlineView(title: String(localized: "Insights"))
+                        TopHeadlineView(title: String(localized: "Insights"), leading: { StreakToolbarButton() })
 
                         insightsContent
                     }
@@ -136,6 +137,10 @@ private struct InsightsDashboardContent: View {
         }
         .task {
             await refreshFetchedModels()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            Task { await refreshFetchedModels() }
         }
     }
 

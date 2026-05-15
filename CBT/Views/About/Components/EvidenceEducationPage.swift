@@ -96,3 +96,20 @@ struct EvidenceEducationPage: View {
         }
     }
 }
+
+private struct BulletPoint: View {
+    let text: String
+    @Environment(ThemeManager.self) private var themeManager
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Circle()
+                .fill(themeManager.selectedColor)
+                .frame(width: 6, height: 6)
+
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(Theme.secondaryText)
+        }
+    }
+}

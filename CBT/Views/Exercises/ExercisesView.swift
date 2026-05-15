@@ -10,7 +10,8 @@ struct ExercisesView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     TopHeadlineView(
                         title: "Exercises",
-                        subtitle: "Tap once to start any practice"
+                        subtitle: "Tap once to start any practice",
+                        leading: { StreakToolbarButton() }
                     )
                     
                     ExercisesSkeleton()
@@ -33,6 +34,7 @@ struct ExercisesView: View {
 
 private struct ExercisesDashboardContent: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(ThemeManager.self) private var themeManager
     @State private var completions: [ExerciseCompletion] = []
 
@@ -79,7 +81,8 @@ private struct ExercisesDashboardContent: View {
                 VStack(alignment: .leading, spacing: 16) {
                     TopHeadlineView(
                         title: "Exercises",
-                        subtitle: "Tap once to start any practice"
+                        subtitle: "Tap once to start any practice",
+                        leading: { StreakToolbarButton() }
                     )
 
                     quickToolsSection
@@ -158,6 +161,10 @@ private struct ExercisesDashboardContent: View {
         }
         .task {
             await refreshCompletions()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            Task { await refreshCompletions() }
         }
     }
 

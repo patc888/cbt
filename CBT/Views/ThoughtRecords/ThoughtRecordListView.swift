@@ -4,6 +4,7 @@ import os
 
 struct ThoughtRecordListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(ThemeManager.self) private var themeManager
     @State private var records: [ThoughtRecord] = []
     @State private var showingNewRecord = false
@@ -95,6 +96,10 @@ struct ThoughtRecordListView: View {
         }
         .onChange(of: showingNewRecord) { _, isPresented in
             guard !isPresented else { return }
+            Task { await refreshRecords() }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
             Task { await refreshRecords() }
         }
     }

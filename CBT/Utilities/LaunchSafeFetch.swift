@@ -21,7 +21,7 @@ extension ExerciseCompletion: CreatedAtRecord {}
 extension JournalEntry: CreatedAtRecord {}
 
 enum LaunchSafeFetch {
-    private static let disableHomeDashboardFetches = true
+    private static let disableHomeDashboardFetches = false
 
     @MainActor
     static func moodEntries(

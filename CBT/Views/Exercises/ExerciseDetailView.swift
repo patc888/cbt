@@ -62,7 +62,7 @@ struct ExerciseDetailView: View {
                         accent: accent,
                         onStartWithTimer: {
                             startExerciseSession(withTimer: true)
-                            withAnimation { currentStep += 1 }
+                            moveToNextStep(startsSession: false)
                         },
                         onJumpToBreathing: exercise.breathingPattern == nil ? nil : {
                             HapticManager.shared.mediumImpact()
@@ -106,13 +106,10 @@ struct ExerciseDetailView: View {
                     totalPages: totalPages,
                     accent: accent,
                     onBack: {
-                        withAnimation { currentStep -= 1 }
+                        moveToPreviousStep()
                     },
                     onNext: {
-                        if currentStep == 0 {
-                            startExerciseSession()
-                        }
-                        withAnimation { currentStep += 1 }
+                        moveToNextStep()
                     },
                     onFinish: markComplete
                 )
@@ -144,6 +141,23 @@ struct ExerciseDetailView: View {
         var tag = index + 1
         if exercise.breathingPattern != nil { tag += 1 }
         return tag
+    }
+
+    private func moveToPreviousStep() {
+        guard currentStep > 0 else { return }
+        withAnimation {
+            currentStep = max(0, currentStep - 1)
+        }
+    }
+
+    private func moveToNextStep(startsSession: Bool = true) {
+        guard currentStep < totalPages - 1 else { return }
+        if startsSession, currentStep == 0 {
+            startExerciseSession()
+        }
+        withAnimation {
+            currentStep = min(totalPages - 1, currentStep + 1)
+        }
     }
 
     private func responseBinding(for index: Int) -> Binding<String> {

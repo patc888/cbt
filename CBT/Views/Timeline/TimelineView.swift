@@ -14,7 +14,7 @@ struct TimelineView: View {
 
             DeferredRenderView {
                 VStack {
-                    TopHeadlineView(title: "Timeline")
+                    TopHeadlineView(title: "Timeline", leading: { StreakToolbarButton() })
                         .padding(.horizontal)
                     Spacer()
                 }
@@ -82,6 +82,7 @@ struct TimelineDashboardContent: View {
     @Binding var attemptingAddThought: Bool
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(ThemeManager.self) private var themeManager
     @State private var moodEntries: [MoodEntry] = []
     @State private var thoughtRecords: [ThoughtRecord] = []
@@ -105,7 +106,7 @@ struct TimelineDashboardContent: View {
         Group {
             if viewModel.isInitialized && viewModel.groupedItems.isEmpty {
                 VStack(spacing: 20) {
-                    TopHeadlineView(title: "Timeline")
+                    TopHeadlineView(title: "Timeline", leading: { StreakToolbarButton() })
                         .padding(.horizontal)
 
                     Spacer()
@@ -179,7 +180,7 @@ struct TimelineDashboardContent: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
-                        TopHeadlineView(title: "Timeline")
+                    TopHeadlineView(title: "Timeline", leading: { StreakToolbarButton() })
 
                         ForEach(viewModel.groupedItems, id: \.key) { date, items in
                             Section {
@@ -234,6 +235,10 @@ struct TimelineDashboardContent: View {
         }
         .onChange(of: showingAddThought) { _, isPresented in
             guard !isPresented else { return }
+            Task { await refreshFetchedModels() }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
             Task { await refreshFetchedModels() }
         }
     }

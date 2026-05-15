@@ -49,7 +49,8 @@ struct JournalView: View {
                 VStack(spacing: 10) {
                     TopHeadlineView(
                         title: String(localized: "Journal"),
-                        subtitle: String(localized: "Track mood and thoughts in one place")
+                        subtitle: String(localized: "Track mood and thoughts in one place"),
+                        leading: { StreakToolbarButton() }
                     )
 
                     SegmentedToggle(

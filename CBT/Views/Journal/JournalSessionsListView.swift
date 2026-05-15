@@ -4,6 +4,7 @@ import SwiftData
 // MARK: - Sessions List
 struct JournalSessionsListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
     @State private var entries: [JournalEntry] = []
@@ -52,6 +53,10 @@ struct JournalSessionsListView: View {
         }
         .task {
             await refreshEntries()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            Task { await refreshEntries() }
         }
     }
 

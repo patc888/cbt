@@ -136,19 +136,17 @@ struct MoodCheckinView: View {
     
     private func nextStep() {
         HapticManager.shared.selection()
+        guard currentStep < totalSteps - 1 else { return }
         withAnimation {
-            if currentStep < totalSteps - 1 {
-                currentStep += 1
-            }
+            currentStep = min(totalSteps - 1, currentStep + 1)
         }
     }
     
     private func previousStep() {
         HapticManager.shared.selection()
+        guard currentStep > 0 else { return }
         withAnimation {
-            if currentStep > 0 {
-                currentStep -= 1
-            }
+            currentStep = max(0, currentStep - 1)
         }
     }
     
@@ -192,4 +190,3 @@ private struct ProgressBar: View {
         .accessibilityHidden(true)
     }
 }
-

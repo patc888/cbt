@@ -46,15 +46,21 @@ struct DataSettingsView: View {
 struct DataSettingsSection: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
+    @AppStorage(AppConfiguration.cloudKitEnabledKey) private var isCloudKitStoreEnabled = false
     @State private var viewModel = AdvancedDataSettingsViewModel()
     @State private var showingAdvancedDataOptions = false
     @State private var showingStorageAudit = false
 
     var body: some View {
         SettingsSection(title: "Data") {
-            SettingsRow(icon: "icloud.fill", iconColor: themeManager.primaryColor, title: "iCloud Sync", subtitle: "Sync between iPhone, iPad, and Mac") {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(Theme.successGreen)
+            SettingsRow(
+                icon: "icloud.fill",
+                iconColor: themeManager.primaryColor,
+                title: "iCloud Sync",
+                subtitle: cloudSyncSubtitle
+            ) {
+                Image(systemName: isCloudKitStoreEnabled ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundColor(isCloudKitStoreEnabled ? Theme.successGreen : .orange)
             }
             
             Button {
@@ -142,6 +148,14 @@ struct DataSettingsSection: View {
             }
             viewModel.exportDocument = nil
         }
+    }
+
+    private var cloudSyncSubtitle: String {
+        if isCloudKitStoreEnabled {
+            return "Syncing between iPhone, iPad, and Mac"
+        }
+
+        return "Temporarily using local storage until iCloud is available"
     }
 
     private var advancedDataOptionsSheet: some View {
