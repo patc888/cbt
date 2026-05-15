@@ -13,7 +13,7 @@ struct TimelineView: View {
             ThemedBackground().ignoresSafeArea()
 
             DeferredRenderView {
-                VStack {
+                VStack(spacing: 12) {
                     TopHeadlineView(title: "Timeline", leading: { StreakToolbarButton() })
                         .padding(.horizontal)
                     Spacer()
@@ -75,7 +75,7 @@ struct TimelineView: View {
 
 // MARK: - Subviews
 
-struct TimelineDashboardContent: View {
+private struct TimelineDashboardContent: View {
     @Binding var showingAddMood: Bool
     @Binding var showingAddThought: Bool
     @Binding var attemptingAddMood: Bool
@@ -105,7 +105,7 @@ struct TimelineDashboardContent: View {
     var body: some View {
         Group {
             if viewModel.isInitialized && viewModel.groupedItems.isEmpty {
-                VStack(spacing: 20) {
+                VStack(spacing: 12) {
                     TopHeadlineView(title: "Timeline", leading: { StreakToolbarButton() })
                         .padding(.horizontal)
 
@@ -179,8 +179,8 @@ struct TimelineDashboardContent: View {
                 .frame(maxWidth: .infinity)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
-                    TopHeadlineView(title: "Timeline", leading: { StreakToolbarButton() })
+                    LazyVStack(spacing: 12, pinnedViews: [.sectionHeaders]) {
+                        TopHeadlineView(title: "Timeline", leading: { StreakToolbarButton() })
 
                         ForEach(viewModel.groupedItems, id: \.key) { date, items in
                             Section {

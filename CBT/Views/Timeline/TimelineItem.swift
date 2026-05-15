@@ -51,7 +51,7 @@ extension TimelineItem {
     }
 
     static func exercise(_ completion: ExerciseCompletion) -> TimelineItem {
-        let exercise = ExerciseLibrary.shared.exercise(withID: completion.exerciseID)
+        let exercise = ExerciseService.shared.exercise(withID: completion.exerciseID)
 
         return TimelineItem(
             id: "ex-\(completion.id)",

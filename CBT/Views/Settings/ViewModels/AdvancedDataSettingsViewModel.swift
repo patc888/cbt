@@ -34,8 +34,12 @@ final class AdvancedDataSettingsViewModel {
     var errorMessage: String?
     var showImportSuccess = false
     var activeBackupOperation: BackupOperation?
+    
+    var showingPDFExporter = false
+    var pdfExportDocument: PDFExportDocument?
 
     private let dataExportService = DataExportService()
+    private let pdfExportService = PDFExportService()
     private let dataImportService = DataImportService()
 
     @MainActor
@@ -51,6 +55,21 @@ final class AdvancedDataSettingsViewModel {
             errorMessage = "Could not export data. \(error.localizedDescription)"
         }
 
+        activeBackupOperation = nil
+    }
+
+    @MainActor
+    func exportPDFReport(modelContext: ModelContext) async {
+        guard activeBackupOperation == nil else { return }
+        
+        do {
+            let fileURL = try pdfExportService.exportPDFReportURL(from: modelContext)
+            pdfExportDocument = PDFExportDocument(fileURL: fileURL)
+            showingPDFExporter = true
+        } catch {
+            errorMessage = "Could not generate PDF report. \(error.localizedDescription)"
+        }
+        
         activeBackupOperation = nil
     }
 

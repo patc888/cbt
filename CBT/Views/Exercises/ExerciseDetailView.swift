@@ -115,7 +115,9 @@ struct ExerciseDetailView: View {
                 )
             }
         }
-        .navigationTitle(exercise.title)
+
+        .navigationTitle("")
+        .toolbar(.hidden, for: .navigationBar)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif

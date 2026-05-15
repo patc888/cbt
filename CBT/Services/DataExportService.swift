@@ -72,7 +72,7 @@ struct DataExportService {
     }
 
     @MainActor
-    private func makePayload(from modelContext: ModelContext) throws -> CBTDataExportPayload {
+    func makePayload(from modelContext: ModelContext) throws -> CBTDataExportPayload {
         let moodDescriptor = FetchDescriptor<MoodEntry>(
             predicate: #Predicate<MoodEntry> { $0.isDeleted == false },
             sortBy: [SortDescriptor(\MoodEntry.createdAt)]

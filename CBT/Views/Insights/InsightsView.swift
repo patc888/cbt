@@ -100,7 +100,7 @@ private struct InsightsDashboardContent: View {
     var body: some View {
         Group {
             if viewModel.isCalculating {
-                VStack {
+                VStack(spacing: 12) {
                     TopHeadlineView(title: String(localized: "Insights"), leading: { StreakToolbarButton() })
                     Spacer()
                     InsightsLoadingStateView()
@@ -118,10 +118,43 @@ private struct InsightsDashboardContent: View {
                 }
             } else {
                 ScrollView {
-                    VStack(spacing: 14) {
+                    VStack(spacing: 12) {
                         TopHeadlineView(title: String(localized: "Insights"), leading: { StreakToolbarButton() })
 
-                        insightsContent
+                        InsightsStreaksCard(
+                            currentStreak: viewModel.currentStreak,
+                            longestStreak: viewModel.longestStreak
+                        )
+
+                        InsightsMilestonesCard(
+                            timeRange: $timeRange,
+                            milestonesCompleted: viewModel.milestonesCompleted,
+                            consistencyProgress: viewModel.consistencyProgress,
+                            activeDaysCount: viewModel.activeDaysCount
+                        )
+
+                        InsightsTrendsCard(
+                            timeRange: timeRange,
+                            dailyMoodAverages: viewModel.dailyMoodAverages,
+                            averageMood: viewModel.averageMood,
+                            averageIntensityImprovement: viewModel.averageIntensityImprovement,
+                            moodVolatilityLast30Days: viewModel.moodVolatilityLast30Days,
+                            moodGoalValue: moodGoalValue
+                        )
+
+                        InsightsWeeklyOverviewCard(
+                            weeklyMoodAverages: viewModel.weeklyMoodAverages,
+                            moodGoalValue: moodGoalValue
+                        )
+
+                        InsightsGoalProgressSection(
+                            snapshot: viewModel.dashboardSnapshot,
+                            moodGoalValue: moodGoalValue
+                        )
+
+                        InsightsTopMetricsSection(
+                            snapshot: viewModel.dashboardSnapshot
+                        )
                     }
                     .padding(.horizontal, 16)
                     .padding(.bottom, LayoutMetrics.floatingToolbarBottomInset + 12)
@@ -142,53 +175,6 @@ private struct InsightsDashboardContent: View {
             guard newPhase == .active else { return }
             Task { await refreshFetchedModels() }
         }
-    }
-
-    @ViewBuilder
-    private var insightsContent: some View {
-        InsightsStreaksCard(
-            currentStreak: viewModel.currentStreak,
-            longestStreak: viewModel.longestStreak
-        )
-
-        InsightsMilestonesCard(
-            timeRange: $timeRange,
-            milestonesCompleted: viewModel.milestonesCompleted,
-            consistencyProgress: viewModel.consistencyProgress,
-            activeDaysCount: viewModel.activeDaysCount
-        )
-
-        InsightsTrendsCard(
-            timeRange: timeRange,
-            dailyMoodAverages: viewModel.dailyMoodAverages,
-            averageMood: viewModel.averageMood,
-            averageIntensityImprovement: viewModel.averageIntensityImprovement,
-            moodVolatilityLast30Days: viewModel.moodVolatilityLast30Days,
-            moodGoalValue: moodGoalValue
-        )
-
-        InsightsWeeklyOverviewCard(
-            weeklyMoodAverages: viewModel.weeklyMoodAverages,
-            moodGoalValue: moodGoalValue
-        )
-
-        InsightsGoalProgressSection(
-            activeDaysCount: viewModel.activeDaysCount,
-            consistencyGoalTarget: viewModel.consistencyGoalTarget,
-            consistencyProgress: viewModel.consistencyProgress,
-            moodGoalValue: moodGoalValue,
-            moodGoalProgress: viewModel.moodGoalProgress,
-            averageIntensityImprovement: viewModel.averageIntensityImprovement,
-            thoughtGoalProgress: viewModel.thoughtGoalProgress,
-            exerciseGoalTarget: viewModel.exerciseGoalTarget,
-            exerciseProgress: viewModel.exerciseProgress
-        )
-
-        InsightsTopMetricsSection(
-            topEmotions: viewModel.topEmotions,
-            topTriggers: viewModel.topTriggers,
-            topDistortions: viewModel.topDistortions
-        )
     }
 
     @MainActor

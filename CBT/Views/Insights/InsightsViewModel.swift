@@ -307,4 +307,27 @@ final class InsightsViewModel {
             self.isCalculating = false
         }
     }
+
+    var dashboardSnapshot: InsightsDashboardSnapshot {
+        InsightsDashboardSnapshot(
+            activeDaysCount: activeDaysCount,
+            dailyMoodAverages: dailyMoodAverages,
+            weeklyMoodAverages: weeklyMoodAverages,
+            moodVolatilityLast30Days: moodVolatilityLast30Days,
+            currentStreak: currentStreak,
+            longestStreak: longestStreak,
+            averageMood: averageMood,
+            averageIntensityImprovement: averageIntensityImprovement,
+            consistencyGoalTarget: consistencyGoalTarget,
+            consistencyProgress: consistencyProgress,
+            moodGoalProgress: moodGoalProgress,
+            thoughtGoalProgress: thoughtGoalProgress,
+            exerciseGoalTarget: exerciseGoalTarget,
+            exerciseProgress: exerciseProgress,
+            milestonesCompleted: milestonesCompleted,
+            topEmotions: topEmotions,
+            topTriggers: topTriggers,
+            topDistortions: topDistortions
+        )
+    }
 }

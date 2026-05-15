@@ -3,18 +3,15 @@ import SwiftUI
 
 struct TopHeadlineView<Leading: View, Trailing: View>: View {
     let title: String
-    var subtitle: String? = nil
     let leading: Leading
     let trailing: Trailing
 
     init(
         title: String,
-        subtitle: String? = nil,
         @ViewBuilder leading: () -> Leading,
         @ViewBuilder trailing: () -> Trailing
     ) {
         self.title = title
-        self.subtitle = subtitle
         self.leading = leading()
         self.trailing = trailing()
     }
@@ -29,21 +26,12 @@ struct TopHeadlineView<Leading: View, Trailing: View>: View {
                 }
 
                 // Centered Title
-                VStack(spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundStyle(DSTheme.primaryText)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-
-                    if let subtitle, !subtitle.isEmpty {
-                        Text(subtitle)
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundStyle(DSTheme.secondaryText)
-                            .lineLimit(1)
-                    }
-                }
-                .frame(maxWidth: .infinity)
+                Text(title)
+                    .font(.system(size: 24, weight: .bold, design: .rounded)) // Slightly smaller to be more premium
+                    .foregroundStyle(DSTheme.primaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity)
 
                 // Trailing Content
                 HStack {
@@ -53,26 +41,26 @@ struct TopHeadlineView<Leading: View, Trailing: View>: View {
             }
             .frame(height: 44)
             .padding(.top, 12)
-            .padding(.bottom, 8)
+            .padding(.bottom, 4) // Reduced bottom padding for a tighter look
         }
     }
 }
 
 extension TopHeadlineView where Leading == EmptyView, Trailing == EmptyView {
-    init(title: String, subtitle: String? = nil) {
-        self.init(title: title, subtitle: subtitle, leading: { EmptyView() }, trailing: { EmptyView() })
+    init(title: String) {
+        self.init(title: title, leading: { EmptyView() }, trailing: { EmptyView() })
     }
 }
 
 extension TopHeadlineView where Leading == EmptyView {
-    init(title: String, subtitle: String? = nil, @ViewBuilder trailing: () -> Trailing) {
-        self.init(title: title, subtitle: subtitle, leading: { EmptyView() }, trailing: trailing)
+    init(title: String, @ViewBuilder trailing: () -> Trailing) {
+        self.init(title: title, leading: { EmptyView() }, trailing: trailing)
     }
 }
 
 extension TopHeadlineView where Trailing == EmptyView {
-    init(title: String, subtitle: String? = nil, @ViewBuilder leading: () -> Leading) {
-        self.init(title: title, subtitle: subtitle, leading: leading, trailing: { EmptyView() })
+    init(title: String, @ViewBuilder leading: () -> Leading) {
+        self.init(title: title, leading: leading, trailing: { EmptyView() })
     }
 }
 

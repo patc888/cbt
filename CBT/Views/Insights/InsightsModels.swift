@@ -29,3 +29,24 @@ struct TriggerCount: Identifiable {
     let name: String
     let count: Int
 }
+
+struct InsightsDashboardSnapshot: Sendable {
+    let activeDaysCount: Int
+    let dailyMoodAverages: [DailyMoodAverage]
+    let weeklyMoodAverages: [WeeklyMoodAverage]
+    let moodVolatilityLast30Days: Double?
+    let currentStreak: Int
+    let longestStreak: Int
+    let averageMood: Double?
+    let averageIntensityImprovement: Int?
+    let consistencyGoalTarget: Int
+    let consistencyProgress: Double
+    let moodGoalProgress: Double
+    let thoughtGoalProgress: Double
+    let exerciseGoalTarget: Int
+    let exerciseProgress: Double
+    let milestonesCompleted: Int
+    let topEmotions: [EmotionCount]
+    let topTriggers: [TriggerCount]
+    let topDistortions: [DistortionCount]
+}

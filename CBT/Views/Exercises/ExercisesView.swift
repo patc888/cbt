@@ -7,10 +7,9 @@ struct ExercisesView: View {
             ThemedBackground().ignoresSafeArea()
 
             DeferredRenderView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 12) {
                     TopHeadlineView(
                         title: "Exercises",
-                        subtitle: "Tap once to start any practice",
                         leading: { StreakToolbarButton() }
                     )
                     
@@ -38,7 +37,7 @@ private struct ExercisesDashboardContent: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var completions: [ExerciseCompletion] = []
 
-    private let exerciseLibrary = ExerciseLibrary.shared
+    private let exerciseService = ExerciseService.shared
     @State private var viewModel = ExercisesViewModel()
     @State private var selectedCategory: String = "All"
 
@@ -47,11 +46,11 @@ private struct ExercisesDashboardContent: View {
     init() {}
 
     private var exercises: [Exercise] {
-        exerciseLibrary.exercises
+        exerciseService.exercises
     }
 
     private var categories: [String] {
-        exerciseLibrary.categories()
+        exerciseService.categories()
     }
 
     private var categoryFilters: [String] {
@@ -78,10 +77,9 @@ private struct ExercisesDashboardContent: View {
             ThemedBackground().ignoresSafeArea()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 12) {
                     TopHeadlineView(
                         title: "Exercises",
-                        subtitle: "Tap once to start any practice",
                         leading: { StreakToolbarButton() }
                     )
 

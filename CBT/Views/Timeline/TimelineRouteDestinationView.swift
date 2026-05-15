@@ -21,7 +21,7 @@ struct TimelineRouteDestinationView: View {
                 missingContent(title: "Thought Record Not Found", systemImage: "brain")
             }
         case .exercise(let exerciseID):
-            if let exercise = ExerciseLibrary.shared.exercise(withID: exerciseID) {
+            if let exercise = ExerciseService.shared.exercise(withID: exerciseID) {
                 ExerciseDetailView(exercise: exercise)
             } else {
                 missingContent(title: "Exercise Not Found", systemImage: "exclamationmark.triangle")

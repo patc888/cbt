@@ -2,6 +2,35 @@ import SwiftUI
 import SwiftData
 
 struct JournalView: View {
+    var body: some View {
+        ZStack {
+            ThemedBackground().ignoresSafeArea()
+
+            DeferredRenderView {
+                VStack(spacing: 12) {
+                    TopHeadlineView(
+                        title: String(localized: "Journal"),
+                        leading: { StreakToolbarButton() }
+                    )
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+            } content: {
+                JournalDashboardContent()
+            }
+        }
+        .navigationTitle("")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
+    }
+}
+
+// MARK: - Subviews
+
+private struct JournalDashboardContent: View {
     enum JournalTab: String, CaseIterable, Identifiable {
         case mood = "Mood"
         case thoughts = "Thoughts"
@@ -39,68 +68,55 @@ struct JournalView: View {
             }
         }
     }
+    
     @State private var selectedTab: JournalTab = .mood
     
     var body: some View {
-        ZStack {
-            ThemedBackground().ignoresSafeArea()
+        VStack(spacing: 0) {
+            VStack(spacing: 12) {
+                TopHeadlineView(
+                    title: String(localized: "Journal"),
+                    leading: { StreakToolbarButton() }
+                )
 
-            VStack(spacing: 0) {
-                VStack(spacing: 10) {
-                    TopHeadlineView(
-                        title: String(localized: "Journal"),
-                        subtitle: String(localized: "Track mood and thoughts in one place"),
-                        leading: { StreakToolbarButton() }
-                    )
+                SegmentedToggle(
+                    selection: $selectedTab,
+                    options: JournalTab.allCases,
+                    titleKey: \.localizedName
+                )
 
-                    SegmentedToggle(
-                        selection: $selectedTab,
-                        options: JournalTab.allCases,
-                        titleKey: \.localizedName
-                    )
-
-                    HStack(alignment: .center, spacing: 8) {
-                        Image(systemName: selectedTab.icon)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Theme.primaryColor)
-                        Text(selectedTab.subtitle)
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundStyle(Theme.secondaryText)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(Theme.cardBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Theme.secondaryText.opacity(0.12), lineWidth: 0.8)
-                    )
+                HStack(alignment: .center, spacing: 8) {
+                    Image(systemName: selectedTab.icon)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Theme.primaryColor)
+                    Text(selectedTab.subtitle)
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
-                .responsiveMaxWidth()
-                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Theme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Theme.secondaryText.opacity(0.12), lineWidth: 0.8)
+                )
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            .responsiveMaxWidth()
+            .frame(maxWidth: .infinity)
 
-                DeferredRenderView {
-                    Spacer()
-                } content: {
-                    switch selectedTab {
-                    case .mood:
-                        MoodListView()
-                    case .thoughts:
-                        ThoughtRecordListView()
-                    case .sessions:
-                        JournalSessionsListView()
-                    }
-                }
+            switch selectedTab {
+            case .mood:
+                MoodListView()
+            case .thoughts:
+                ThoughtRecordListView()
+            case .sessions:
+                JournalSessionsListView()
             }
         }
-        .navigationTitle("")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
-        #endif
     }
 }

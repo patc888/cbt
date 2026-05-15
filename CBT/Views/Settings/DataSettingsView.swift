@@ -24,6 +24,24 @@ struct JSONExportDocument: FileDocument {
     }
 }
 
+struct PDFExportDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.pdf] }
+    var fileURL: URL
+
+    init(fileURL: URL) {
+        self.fileURL = fileURL
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        self.fileURL = URL(fileURLWithPath: "/")
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        let data = try Data(contentsOf: fileURL)
+        return FileWrapper(regularFileWithContents: data)
+    }
+}
+
 struct DataSettingsView: View {
     var body: some View {
         ScrollView {
@@ -148,6 +166,20 @@ struct DataSettingsSection: View {
             }
             viewModel.exportDocument = nil
         }
+        .fileExporter(
+            isPresented: $viewModel.showingPDFExporter,
+            document: viewModel.pdfExportDocument,
+            contentType: .pdf,
+            defaultFilename: "CBT_Progress_Report.pdf"
+        ) { result in
+            switch result {
+            case .success:
+                HapticManager.shared.success()
+            case .failure(let error):
+                viewModel.errorMessage = "Failed to export PDF: \(error.localizedDescription)"
+            }
+            viewModel.pdfExportDocument = nil
+        }
     }
 
     private var cloudSyncSubtitle: String {
@@ -220,6 +252,22 @@ struct DataSettingsSection: View {
                     HapticManager.shared.mediumImpact()
                     Task {
                         await viewModel.exportData(container: modelContext.container)
+                    }
+                }
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundColor(themeManager.primaryColor)
+            }
+
+            SettingsRow(
+                icon: "doc.richtext.fill",
+                iconColor: themeManager.primaryColor,
+                title: "Therapist PDF Report",
+                subtitle: "Beautiful summary of recent mood & thoughts"
+            ) {
+                Button("Generate") {
+                    HapticManager.shared.mediumImpact()
+                    Task {
+                        await viewModel.exportPDFReport(modelContext: modelContext)
                     }
                 }
                 .font(.system(size: 14, weight: .bold, design: .rounded))

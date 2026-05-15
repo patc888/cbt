@@ -19,35 +19,30 @@ struct HomeView: View {
         ZStack {
             ThemedBackground().ignoresSafeArea()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+            DeferredRenderView(
+                isEnabled: scenePhase == .active,
+                delay: .milliseconds(250)
+            ) {
+                VStack(alignment: .leading, spacing: 12) {
                     TopHeadlineView(
                         title: String(localized: "Daily Plan"),
-                        subtitle: String(localized: "Step by step toward balance"),
                         leading: { StreakToolbarButton() }
                     )
                     .padding(.horizontal, 16)
-
-                    DeferredRenderView(
-                        isEnabled: scenePhase == .active,
-                        delay: .milliseconds(250)
-                    ) {
-                        HomeDashboardPlaceholder()
-                    } content: {
-                        HomeDashboardContent(
-                            selectedTab: $selectedTab,
-                            selectedDate: $selectedDate,
-                            showingNewMoodEntry: $showingNewMoodEntry,
-                            showingNewThoughtRecord: $showingNewThoughtRecord,
-                            attemptingNewMoodEntry: $attemptingNewMoodEntry,
-                            attemptingNewThoughtRecord: $attemptingNewThoughtRecord,
-                            showingTipModal: $showingTipModal,
-                            selectedMoodForFlow: $selectedMoodForFlow
-                        )
-                    }
+                    
+                    HomeDashboardPlaceholder()
                 }
-                .responsiveMaxWidth()
-                .frame(maxWidth: .infinity)
+            } content: {
+                HomeDashboardContent(
+                    selectedTab: $selectedTab,
+                    selectedDate: $selectedDate,
+                    showingNewMoodEntry: $showingNewMoodEntry,
+                    showingNewThoughtRecord: $showingNewThoughtRecord,
+                    attemptingNewMoodEntry: $attemptingNewMoodEntry,
+                    attemptingNewThoughtRecord: $attemptingNewThoughtRecord,
+                    showingTipModal: $showingTipModal,
+                    selectedMoodForFlow: $selectedMoodForFlow
+                )
             }
             .accessibilityIdentifier("home-scroll-view")
             .safeAreaInset(edge: .bottom) {
@@ -96,7 +91,7 @@ private struct HomeDashboardPlaceholder: View {
 
 // MARK: - Subviews
 
-struct HomeDashboardContent: View {
+private struct HomeDashboardContent: View {
     private struct DashboardRefreshToken: Equatable {
         let day: Date
         let nonce: Int
@@ -146,124 +141,72 @@ struct HomeDashboardContent: View {
     var body: some View {
         let calendar = Calendar.current
 
-        VStack(alignment: .leading, spacing: 16) {
-            WeekStripView(selectedDate: $selectedDate, weekDates: Self.dashboardWeekDates) { date in
-                viewModel.activeDates.contains(calendar.startOfDay(for: date))
-            }
-            .padding(.top, 8)
-            .opacity(viewModel.isInitialized ? 1 : 0.6)
-
+        ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if !viewModel.isInitialized {
-                    HomeDashboardSkeleton()
-                } else {
-                    PlanCard(
-                        title: String(localized: "Mood Check-In"),
-                        subtitle: String(localized: "Capture how you feel right now."),
-                        trailingSymbol: "face.smiling",
-                        completionState: viewModel.completionSnapshot.state(for: .moodCheckIn)
-                    ) {
-                        VStack(spacing: 0) {
-                            Divider()
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(String(localized: "Start quick check-in"))
-                                        .font(.system(.subheadline, design: .rounded).weight(.bold))
-                                        .foregroundStyle(Theme.primaryText)
-                                    Text(String(localized: "Takes about 1 minute"))
-                                        .font(.system(.caption, design: .rounded).weight(.medium))
-                                        .foregroundStyle(Theme.secondaryText)
+                TopHeadlineView(
+                    title: String(localized: "Daily Plan"),
+                    leading: { StreakToolbarButton() }
+                )
+                .padding(.horizontal, 16)
+
+                WeekStripView(selectedDate: $selectedDate, weekDates: Self.dashboardWeekDates) { date in
+                    viewModel.activeDates.contains(calendar.startOfDay(for: date))
+                }
+                .padding(.top, 8)
+                .opacity(viewModel.isInitialized ? 1 : 0.6)
+
+                VStack(alignment: .leading, spacing: 16) {
+                    if !viewModel.isInitialized {
+                        HomeDashboardSkeleton()
+                    } else {
+                    MoodCheckInPlanCard(
+                        completionState: viewModel.completionSnapshot.state(for: .moodCheckIn),
+                        action: { showingNewMoodEntry = true }
+                    )
+
+                    ThoughtRecordPlanCard(
+                        completionState: viewModel.completionSnapshot.state(for: .thoughtRecord),
+                        action: { showingNewThoughtRecord = true }
+                    )
+
+                    ExercisesPlanCard(
+                        completionState: viewModel.completionSnapshot.state(for: .exercises),
+                        action: { selectedTab = .exercises }
+                    )
+
+                    BreathingResetPlanCard(
+                        completionState: viewModel.completionSnapshot.state(for: .breathingReset),
+                        action: {
+                            BreathingPresenter.shared.present(
+                                durationSeconds: 60,
+                                autoStart: true,
+                                onComplete: {
+                                    withAnimation {
+                                        viewModel.markItemAsDone(.breathingReset, for: selectedDate)
+                                    }
                                 }
-                                Spacer()
-                                Image(systemName: "arrow.right.circle.fill")
-                                    .font(.title3)
-                                    .foregroundStyle(themeManager.selectedColor)
-                            }
-                            .padding(.top, 12)
+                            )
                         }
-                    } action: {
-                        showingNewMoodEntry = true
-                    }
-                    .accessibilityIdentifier("home-plan-mood-check-in")
+                    )
 
-                    PlanCard(
-                        title: String(localized: "Thought Record"),
-                        subtitle: String(localized: "Challenge one difficult thought."),
-                        trailingSymbol: "brain",
-                        completionState: viewModel.completionSnapshot.state(for: .thoughtRecord)
-                    ) {
-                        showingNewThoughtRecord = true
-                    }
-
-                    PlanCard(
-                        title: String(localized: "Exercises"),
-                        subtitle: String(localized: "Practice one CBT tool."),
-                        trailingSymbol: "figure.mind.and.body",
-                        completionState: viewModel.completionSnapshot.state(for: .exercises)
-                    ) {
-                        selectedTab = .exercises
-                    }
-
-                    PlanCard(
-                        title: String(localized: "Breathing Reset"),
-                        subtitle: String(localized: "Calm your body in 60 seconds"),
-                        trailingSymbol: "wind",
-                        completionState: viewModel.completionSnapshot.state(for: .breathingReset)
-                    ) {
-                        BreathingPresenter.shared.present(
-                            durationSeconds: 60,
-                            autoStart: true,
-                            onComplete: {
-                                withAnimation {
-                                    viewModel.markItemAsDone(.breathingReset, for: selectedDate)
-                                }
-                            }
-                        )
-                    }
-
-                    PlanCard(
-                        title: String(localized: "Tip of the Day"),
-                        subtitle: String(localized: "Open a quick CBT reminder."),
-                        trailingSymbol: "lightbulb",
-                        completionState: viewModel.completionSnapshot.state(for: .tipOfTheDay)
-                    ) {
-                        showingTipModal = true
+                    TipOfTheDayPlanCard(
+                        completionState: viewModel.completionSnapshot.state(for: .tipOfTheDay),
+                        action: { showingTipModal = true }
+                    )
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 12)
+            .responsiveMaxWidth()
+            .frame(maxWidth: .infinity)
         }
         .sheet(isPresented: $showingTipModal, onDismiss: { 
             withAnimation {
                 viewModel.markItemAsDone(.tipOfTheDay, for: selectedDate)
             }
         }) {
-            FeatureModalPresenter {
-                DSFeatureModal(
-                    title: String(localized: "Tip for Today"),
-                    subtitle: String(localized: "Try naming one thought before reacting. Even a short pause can make the next step clearer."),
-                    bullets: [
-                        DSBullet(icon: "brain", text: String(localized: "Notice the thought")),
-                        DSBullet(icon: "arrow.triangle.2.circlepath", text: String(localized: "Check for alternatives")),
-                        DSBullet(icon: "checkmark.circle", text: String(localized: "Choose a small next action"))
-                    ],
-                    primaryTitle: String(localized: "Got it"),
-                    primaryAction: {
-                        HapticManager.shared.lightImpact()
-                        showingTipModal = false
-                    },
-                    secondaryTitle: String(localized: "Close"),
-                    secondaryAction: {
-                        HapticManager.shared.lightImpact()
-                        showingTipModal = false
-                    },
-                    closeAction: {
-                        HapticManager.shared.lightImpact()
-                        showingTipModal = false
-                    }
-                )
-            }
+            TipOfTheDayModal(isPresented: $showingTipModal)
         }
         .onChange(of: showingNewMoodEntry) { _, isPresented in
             guard !isPresented else { return }

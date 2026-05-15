@@ -18,9 +18,16 @@ struct SettingsView: View {
             ThemedBackground().ignoresSafeArea()
 
             DeferredRenderView {
-                VStack { Spacer() }
+                VStack(spacing: 12) {
+                    TopHeadlineView(
+                        title: String(localized: "Settings"),
+                        leading: { StreakToolbarButton() }
+                    )
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
             } content: {
-                SettingsContent(showsDismissControl: showsDismissControl)
+                SettingsDashboardContent(showsDismissControl: showsDismissControl)
             }
 
             if showsDismissControl {
@@ -53,7 +60,7 @@ struct SettingsView: View {
     }
 }
 
-private struct SettingsContent: View {
+private struct SettingsDashboardContent: View {
     let showsDismissControl: Bool
     @State private var viewModel = SettingsViewModel()
     
@@ -81,7 +88,7 @@ private struct SettingsContent: View {
 
     @ViewBuilder
     private var mainContent: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             TopHeadlineView(
                 title: String(localized: "Settings"),
                 leading: { StreakToolbarButton() }
