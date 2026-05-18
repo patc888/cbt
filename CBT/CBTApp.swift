@@ -41,6 +41,7 @@ struct CBTApp: App {
         let container: ModelContainer?
         let cloudKitEnabled: Bool
         let recoveryMessage: String?
+        let cloudKitFailureReason: String?
     }
 
     private static let logger = Logger(
@@ -57,18 +58,24 @@ struct CBTApp: App {
             )
             .makeModelContainer()
             logger.info("[SwiftData] Successfully using App Group + CloudKit store")
-            return ModelContainerBootstrap(container: container, cloudKitEnabled: true, recoveryMessage: nil)
+            return ModelContainerBootstrap(container: container, cloudKitEnabled: true, recoveryMessage: nil, cloudKitFailureReason: nil)
         } catch {
             logger.info("[SwiftData] App Group + CloudKit failed: \(String(describing: error), privacy: .public)")
-        }
+            let cloudKitFailureReason = Self.userVisibleCloudKitFailureReason(from: error)
 
-        // MARK: - Attempt 2: App Group location without CloudKit
-        do {
-            let container = try SharedPersistence.makeModelContainer(cloudKitEnabled: false)
-            logger.info("[SwiftData] Successfully using App Group local store")
-            return ModelContainerBootstrap(container: container, cloudKitEnabled: false, recoveryMessage: "CBT couldn't start iCloud sync and is temporarily using local storage. Your data will stay on this device until iCloud storage opens successfully.")
-        } catch {
-            logger.info("[SwiftData] App Group local store failed: \(error.localizedDescription)")
+            // MARK: - Attempt 2: App Group location without CloudKit
+            do {
+                let container = try SharedPersistence.makeModelContainer(cloudKitEnabled: false)
+                logger.info("[SwiftData] Successfully using App Group local store")
+                return ModelContainerBootstrap(
+                    container: container,
+                    cloudKitEnabled: false,
+                    recoveryMessage: "CBT couldn't start iCloud sync and is temporarily using local storage. Your data will stay on this device until iCloud storage opens successfully.",
+                    cloudKitFailureReason: cloudKitFailureReason
+                )
+            } catch {
+                logger.info("[SwiftData] App Group local store failed: \(error.localizedDescription)")
+            }
         }
 
         // Last resort: show the app instead of crashing if the persistent store
@@ -78,13 +85,15 @@ struct CBTApp: App {
             return ModelContainerBootstrap(
                 container: container,
                 cloudKitEnabled: false,
-                recoveryMessage: "CBT couldn't open its persistent store and started in temporary recovery mode. Changes may not persist until you relaunch the app."
+                recoveryMessage: "CBT couldn't open its persistent store and started in temporary recovery mode. Changes may not persist until you relaunch the app.",
+                cloudKitFailureReason: "The persistent store could not be opened, so CBT started in temporary recovery mode."
             )
         } catch {
             return ModelContainerBootstrap(
                 container: nil,
                 cloudKitEnabled: false,
-                recoveryMessage: "CBT couldn't open its data store. Relaunch the app. If the problem continues, restart the device or reinstall the app."
+                recoveryMessage: "CBT couldn't open its data store. Relaunch the app. If the problem continues, restart the device or reinstall the app.",
+                cloudKitFailureReason: "The persistent store could not be opened."
             )
         }
     }()
@@ -117,6 +126,16 @@ struct CBTApp: App {
             Self.modelContainerBootstrap.cloudKitEnabled ? "cloudKit" : "local",
             forKey: AppConfiguration.persistenceModeKey
         )
+        if let recoveryMessage = Self.modelContainerBootstrap.recoveryMessage {
+            UserDefaults.standard.set(recoveryMessage, forKey: AppConfiguration.cloudKitRecoveryMessageKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: AppConfiguration.cloudKitRecoveryMessageKey)
+        }
+        if let failureReason = Self.modelContainerBootstrap.cloudKitFailureReason {
+            UserDefaults.standard.set(failureReason, forKey: AppConfiguration.cloudKitFailureReasonKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: AppConfiguration.cloudKitFailureReasonKey)
+        }
     }
 
     var body: some Scene {
@@ -177,6 +196,27 @@ struct CBTApp: App {
                     }
                 }
             }
+    }
+
+    private static func userVisibleCloudKitFailureReason(from error: Error) -> String {
+        if ModelContainerRecovery.isLikelySchemaConflict(error) {
+            return "CloudKit storage could not start because the local data model appears incompatible with the synced CloudKit schema."
+        }
+
+        let nsError = error as NSError
+        let details = [
+            nsError.localizedDescription,
+            nsError.localizedFailureReason
+        ]
+        .compactMap { $0 }
+        .filter { !$0.isEmpty }
+        .joined(separator: " ")
+
+        if details.isEmpty {
+            return "CloudKit storage could not start. CBT is using local storage for this launch."
+        }
+
+        return "CloudKit storage could not start: \(details)"
     }
 
     // MARK: - Storage Unavailable

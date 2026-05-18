@@ -40,6 +40,9 @@ struct DataImportService {
         var existingThoughtsByID = try fetchExistingThoughtRecords(in: modelContext)
         var existingCompletionsByID = try fetchExistingExerciseCompletions(in: modelContext)
         var existingJournalsByID = try fetchExistingJournalEntries(in: modelContext)
+        var existingPlannedActivitiesByID = try fetchExistingPlannedActivities(in: modelContext)
+        var existingAssessmentLogsByID = try fetchExistingAssessmentLogs(in: modelContext)
+        var existingPersonalityAssessmentLogsByID = try fetchExistingPersonalityAssessmentLogs(in: modelContext)
 
         // Mood entries
         for entry in payload.moodEntries {
@@ -120,6 +123,68 @@ struct DataImportService {
             }
         }
 
+        if let plannedActivities = payload.plannedActivities {
+            for activity in plannedActivities {
+                if let existingActivity = existingPlannedActivitiesByID[activity.id] {
+                    update(existingActivity, from: activity)
+                } else {
+                    let plannedActivity = PlannedActivity(
+                        id: activity.id,
+                        createdAt: activity.createdAt,
+                        title: activity.title,
+                        activityDescription: activity.activityDescription,
+                        category: PlannedActivity.normalizedCategory(activity.category),
+                        scheduledDate: activity.scheduledDate,
+                        predictedEnjoyment: PlannedActivity.clampRating(activity.predictedEnjoyment),
+                        actualEnjoyment: activity.actualEnjoyment.map(PlannedActivity.clampRating),
+                        isCompleted: activity.isCompleted,
+                        completedAt: activity.completedAt,
+                        notes: activity.notes
+                    )
+                    modelContext.insert(plannedActivity)
+                    existingPlannedActivitiesByID[activity.id] = plannedActivity
+                }
+            }
+        }
+
+        if let assessmentLogs = payload.assessmentLogs {
+            for log in assessmentLogs {
+                if let existingLog = existingAssessmentLogsByID[log.id] {
+                    update(existingLog, from: log)
+                } else {
+                    let assessmentLog = AssessmentLog(
+                        id: log.id,
+                        date: log.date,
+                        assessmentType: log.assessmentType,
+                        score: log.score,
+                        scoreValue: log.scoreValue
+                    )
+                    modelContext.insert(assessmentLog)
+                    existingAssessmentLogsByID[log.id] = assessmentLog
+                }
+            }
+        }
+
+        if let personalityAssessmentLogs = payload.personalityAssessmentLogs {
+            for log in personalityAssessmentLogs {
+                if let existingLog = existingPersonalityAssessmentLogsByID[log.id] {
+                    update(existingLog, from: log)
+                } else {
+                    let personalityLog = PersonalityAssessmentLog(
+                        id: log.id,
+                        date: log.date,
+                        opennessScore: log.opennessScore,
+                        conscientiousnessScore: log.conscientiousnessScore,
+                        extraversionScore: log.extraversionScore,
+                        agreeablenessScore: log.agreeablenessScore,
+                        neuroticismScore: log.neuroticismScore
+                    )
+                    modelContext.insert(personalityLog)
+                    existingPersonalityAssessmentLogsByID[log.id] = personalityLog
+                }
+            }
+        }
+
         try modelContext.save()
     }
     
@@ -137,6 +202,24 @@ struct DataImportService {
 
     private func fetchExistingJournalEntries(in modelContext: ModelContext) throws -> [UUID: JournalEntry] {
         try existingRecordsByID(from: modelContext.fetch(FetchDescriptor<JournalEntry>()))
+    }
+
+    private func fetchExistingPlannedActivities(in modelContext: ModelContext) throws -> [UUID: PlannedActivity] {
+        try existingRecordsByID(from: modelContext.fetch(FetchDescriptor<PlannedActivity>()))
+    }
+
+    private func fetchExistingAssessmentLogs(in modelContext: ModelContext) throws -> [UUID: AssessmentLog] {
+        Dictionary(
+            try modelContext.fetch(FetchDescriptor<AssessmentLog>()).map { ($0.id, $0) },
+            uniquingKeysWith: { _, latest in latest }
+        )
+    }
+
+    private func fetchExistingPersonalityAssessmentLogs(in modelContext: ModelContext) throws -> [UUID: PersonalityAssessmentLog] {
+        Dictionary(
+            try modelContext.fetch(FetchDescriptor<PersonalityAssessmentLog>()).map { ($0.id, $0) },
+            uniquingKeysWith: { _, latest in latest }
+        )
     }
 
     private func existingRecordsByID<T: SoftDeletableRecord>(from items: [T]) throws -> [UUID: T] {
@@ -182,5 +265,35 @@ struct DataImportService {
         journal.sourceID = entry.sourceID
         journal.durationSeconds = entry.durationSeconds
         journal.isDeleted = false
+    }
+
+    private func update(_ activity: PlannedActivity, from export: PlannedActivityExport) {
+        activity.createdAt = export.createdAt
+        activity.title = export.title
+        activity.activityDescription = export.activityDescription
+        activity.category = PlannedActivity.normalizedCategory(export.category)
+        activity.scheduledDate = export.scheduledDate
+        activity.predictedEnjoyment = PlannedActivity.clampRating(export.predictedEnjoyment)
+        activity.actualEnjoyment = export.actualEnjoyment.map(PlannedActivity.clampRating)
+        activity.isCompleted = export.isCompleted
+        activity.completedAt = export.completedAt
+        activity.notes = export.notes
+        activity.isDeleted = false
+    }
+
+    private func update(_ log: AssessmentLog, from export: AssessmentLogExport) {
+        log.date = export.date
+        log.assessmentType = export.assessmentType
+        log.score = export.score
+        log.scoreValue = export.scoreValue
+    }
+
+    private func update(_ log: PersonalityAssessmentLog, from export: PersonalityAssessmentLogExport) {
+        log.date = export.date
+        log.opennessScore = export.opennessScore
+        log.conscientiousnessScore = export.conscientiousnessScore
+        log.extraversionScore = export.extraversionScore
+        log.agreeablenessScore = export.agreeablenessScore
+        log.neuroticismScore = export.neuroticismScore
     }
 }

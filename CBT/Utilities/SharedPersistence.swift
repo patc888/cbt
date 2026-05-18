@@ -11,6 +11,9 @@ enum SharedPersistence {
         ThoughtRecord.self,
         ExerciseCompletion.self,
         JournalEntry.self,
+        PlannedActivity.self,
+        AssessmentLog.self,
+        PersonalityAssessmentLog.self,
     ])
 
     // MARK: - Factory
@@ -45,7 +48,11 @@ enum SharedPersistence {
             )
         }
 
-        return try ModelContainer(for: schema, configurations: [configuration])
+        return try ModelContainer(
+            for: schema,
+            migrationPlan: CBTModelMigrationPlan.self,
+            configurations: [configuration]
+        )
     }
 
     /// Uses the app's own Application Support directory instead of an App Group.
@@ -65,6 +72,10 @@ enum SharedPersistence {
     /// Creates a purely in-memory container (for tests or as a last-resort recovery).
     static func makeInMemoryModelContainer() throws -> ModelContainer {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
-        return try ModelContainer(for: schema, configurations: [configuration])
+        return try ModelContainer(
+            for: schema,
+            migrationPlan: CBTModelMigrationPlan.self,
+            configurations: [configuration]
+        )
     }
 }

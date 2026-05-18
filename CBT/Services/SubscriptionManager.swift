@@ -119,13 +119,6 @@ final class SubscriptionManager {
         
         await MainActor.run {
             self.subscriptionStatus = status
-            
-            // Update internal state via UserDefaults/CloudKit if needed
-            let isPremiumNow = (status == .subscribed)
-            if NSUbiquitousKeyValueStore.default.bool(forKey: "hasPro") != isPremiumNow {
-                NSUbiquitousKeyValueStore.default.set(isPremiumNow, forKey: "hasPro")
-                NSUbiquitousKeyValueStore.default.synchronize()
-            }
         }
     }
     

@@ -7,6 +7,7 @@ struct DataResetOptionsView: View {
     @Environment(ThemeManager.self) private var themeManager
 
     @State private var showingLocalConfirm = false
+    @State private var showingCloudConfirm = false
     @State private var isProcessing = false
     @State private var errorMessage: String?
     @State private var localResetErrorMessage: String?
@@ -49,6 +50,26 @@ struct DataResetOptionsView: View {
                         .buttonStyle(.plain)
                     }
 
+                    SettingsSection(title: "Reset iCloud") {
+                        Button {
+                            HapticManager.shared.destructiveAction()
+                            showingCloudConfirm = true
+                        } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Delete Synced iCloud Data")
+                                    .font(.headline)
+                                    .foregroundStyle(Theme.errorRed)
+
+                                Text(cloudResetDescription)
+                                    .font(.subheadline)
+                                    .foregroundStyle(Theme.secondaryText)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            .padding(.vertical, 8)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                 }
                 .padding()
                 .responsiveMaxWidth()
@@ -75,6 +96,14 @@ struct DataResetOptionsView: View {
         } message: {
             Text("This will delete all local app data, preferences, and reminders stored on this device.")
         }
+        .alert("Delete Synced iCloud Data?", isPresented: $showingCloudConfirm) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete iCloud + Local Data", role: .destructive) {
+                performCloudWipe()
+            }
+        } message: {
+            Text("This deletes CBT's private CloudKit sync zones and cloud-backed app settings, then clears this device. This cannot be undone.")
+        }
         .alert("Reset Unavailable", isPresented: Binding(get: { localResetErrorMessage != nil }, set: { if !$0 { localResetErrorMessage = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -84,6 +113,10 @@ struct DataResetOptionsView: View {
     
     private func performLocalWipe() {
         Task { await wipeData() }
+    }
+
+    private func performCloudWipe() {
+        Task { await wipeCloudAndLocalData() }
     }
 
     @MainActor
@@ -106,6 +139,27 @@ struct DataResetOptionsView: View {
     }
 
     @MainActor
+    private func wipeCloudAndLocalData() async {
+        isProcessing = true
+        errorMessage = nil
+        localResetErrorMessage = nil
+
+        do {
+            try await DataResetManager.shared.deleteCloudDataAndLocalStore()
+            try deleteAllSwiftDataRecords()
+            DataResetManager.shared.resetLocalPreferences()
+            await ReminderManager.shared.cancelAllCBTReminders()
+
+            isProcessing = false
+            NotificationCenter.default.post(name: .didResetData, object: nil)
+            dismiss()
+        } catch {
+            isProcessing = false
+            localResetErrorMessage = "Failed to delete synced iCloud data: \(error.localizedDescription)"
+        }
+    }
+
+    @MainActor
     private func deleteAllSwiftDataRecords() throws {
         for record in try modelContext.fetch(FetchDescriptor<MoodEntry>()) {
             modelContext.delete(record)
@@ -123,6 +177,18 @@ struct DataResetOptionsView: View {
             modelContext.delete(record)
         }
 
+        for record in try modelContext.fetch(FetchDescriptor<PlannedActivity>()) {
+            modelContext.delete(record)
+        }
+
+        for record in try modelContext.fetch(FetchDescriptor<AssessmentLog>()) {
+            modelContext.delete(record)
+        }
+
+        for record in try modelContext.fetch(FetchDescriptor<PersonalityAssessmentLog>()) {
+            modelContext.delete(record)
+        }
+
         for settings in try modelContext.fetch(FetchDescriptor<UserSettings>()) {
             modelContext.delete(settings)
         }
@@ -132,5 +198,9 @@ struct DataResetOptionsView: View {
 
     private var localResetDescription: String {
         "Clears local data, preferences, and notifications stored on this device. This action cannot be undone."
+    }
+
+    private var cloudResetDescription: String {
+        "Deletes CBT's private CloudKit sync data and cloud-backed settings, then clears this device. Requires an available iCloud account."
     }
 }

@@ -46,6 +46,17 @@ struct TopHeadlineView<Leading: View, Trailing: View>: View {
     }
 }
 
+struct AppScreenHeadline: View {
+    let title: String
+
+    var body: some View {
+        TopHeadlineView(
+            title: title,
+            leading: { StreakToolbarButton() }
+        )
+    }
+}
+
 extension TopHeadlineView where Leading == EmptyView, Trailing == EmptyView {
     init(title: String) {
         self.init(title: title, leading: { EmptyView() }, trailing: { EmptyView() })
@@ -225,7 +236,7 @@ private struct StreakSheet: View {
             }
         }
         #if os(iOS)
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
         #endif
     }
 
@@ -265,10 +276,14 @@ private struct StreakSummaryCard: View {
                             .font(.system(.title3, design: .rounded).weight(.bold))
                             .foregroundStyle(DSTheme.primaryText)
                             .monospacedDigit()
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.8)
+                            .fixedSize(horizontal: false, vertical: true)
 
                         Text(snapshot.currentStreak == 0 ? "Log one activity today to start." : "Next milestone is getting closer.")
                             .font(DSTypography.caption)
                             .foregroundStyle(DSTheme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
 
@@ -283,21 +298,32 @@ private struct StreakStatsRow: View {
     let snapshot: StreakSnapshot
 
     var body: some View {
-        HStack(spacing: 12) {
-            DSMetricCard(
-                title: "Current",
-                value: "\(snapshot.currentStreak)",
-                icon: "flame.fill",
-                subtitle: snapshot.currentStreak == 1 ? "day" : "days"
-            )
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                metricCards
+            }
 
-            DSMetricCard(
-                title: "Longest",
-                value: "\(snapshot.longestStreak)",
-                icon: "trophy.fill",
-                subtitle: snapshot.longestStreak == 1 ? "day" : "days"
-            )
+            VStack(spacing: 12) {
+                metricCards
+            }
         }
+    }
+
+    @ViewBuilder
+    private var metricCards: some View {
+        DSMetricCard(
+            title: "Current",
+            value: "\(snapshot.currentStreak)",
+            icon: "flame.fill",
+            subtitle: snapshot.currentStreak == 1 ? "day" : "days"
+        )
+
+        DSMetricCard(
+            title: "Longest",
+            value: "\(snapshot.longestStreak)",
+            icon: "trophy.fill",
+            subtitle: snapshot.longestStreak == 1 ? "day" : "days"
+        )
     }
 }
 
@@ -338,16 +364,19 @@ private struct StreakCalendarMonth: View {
     var body: some View {
         DSCardContainer {
             VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Text(monthTitle)
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundStyle(DSTheme.primaryText)
+                ViewThatFits(in: .horizontal) {
+                    HStack {
+                        monthHeaderTitle
 
-                    Spacer()
+                        Spacer()
 
-                    Label("Active", systemImage: "checkmark.circle.fill")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(themeManager.selectedColor)
+                        activeLegend
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        monthHeaderTitle
+                        activeLegend
+                    }
                 }
 
                 HStack(spacing: 0) {
@@ -371,6 +400,23 @@ private struct StreakCalendarMonth: View {
                 }
             }
         }
+    }
+
+    private var monthHeaderTitle: some View {
+        Text(monthTitle)
+            .font(.system(size: 18, weight: .bold, design: .rounded))
+            .foregroundStyle(DSTheme.primaryText)
+            .lineLimit(2)
+            .minimumScaleFactor(0.8)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var activeLegend: some View {
+        Label("Active", systemImage: "checkmark.circle.fill")
+            .font(.system(size: 12, weight: .bold, design: .rounded))
+            .foregroundStyle(themeManager.selectedColor)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
     }
 }
 

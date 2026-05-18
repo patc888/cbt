@@ -32,13 +32,15 @@ struct DSSectionHeader<Trailing: View>: View {
                 Text(title)
                     .font(DSTypography.sectionHeader)
                     .foregroundStyle(DSTheme.primaryText)
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .minimumScaleFactor(0.6)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
                         .font(DSTypography.caption)
                         .foregroundStyle(DSTheme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             Spacer(minLength: DSSpacing.small)
@@ -91,12 +93,21 @@ struct DSListRow<Trailing: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: DSSpacing.medium) {
+        ViewThatFits(in: .horizontal) {
+            horizontalLayout
+            verticalLayout
+        }
+        .frame(minHeight: 44)
+    }
+
+    private var leadingContent: some View {
+        HStack(alignment: .top, spacing: DSSpacing.medium) {
             if let icon {
                 Image(systemName: icon)
                     .font(.system(size: 18))
                     .foregroundStyle(iconColor ?? DSTheme.secondaryText)
                     .frame(width: 24)
+                    .padding(.top, 1)
                     .accessibilityHidden(true)
             }
 
@@ -104,6 +115,7 @@ struct DSListRow<Trailing: View>: View {
                 Text(title)
                     .font(DSTypography.listLabel)
                     .foregroundStyle(DSTheme.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
@@ -113,11 +125,28 @@ struct DSListRow<Trailing: View>: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var horizontalLayout: some View {
+        HStack(alignment: .center, spacing: DSSpacing.medium) {
+            leadingContent
 
             trailing
                 .foregroundStyle(DSTheme.secondaryText)
         }
-        .frame(minHeight: 44)
+    }
+
+    private var verticalLayout: some View {
+        VStack(alignment: .leading, spacing: DSSpacing.small) {
+            leadingContent
+
+            HStack {
+                Spacer(minLength: 0)
+                trailing
+                    .foregroundStyle(DSTheme.secondaryText)
+            }
+        }
     }
 }
 
@@ -184,8 +213,9 @@ struct DSMetricCard: View {
                 Text(title)
                     .font(DSTypography.cardTitle)
                     .tracking(1)
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .minimumScaleFactor(0.7)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(accent)
             .textCase(.uppercase)
@@ -200,7 +230,8 @@ struct DSMetricCard: View {
                 Text(subtitle)
                     .font(DSTypography.caption)
                     .foregroundStyle(accent.opacity(0.85))
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(14)

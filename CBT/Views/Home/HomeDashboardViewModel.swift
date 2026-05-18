@@ -9,6 +9,7 @@ nonisolated enum DailyPlanItem: Hashable, Sendable {
     case exercises
     case breathingReset
     case tipOfTheDay
+    case activityPlanner
 }
 
 nonisolated struct DailyPlanCompletionSnapshot: Sendable {
@@ -19,7 +20,8 @@ nonisolated struct DailyPlanCompletionSnapshot: Sendable {
         .thoughtRecord: .incomplete,
         .exercises: .incomplete,
         .breathingReset: .incomplete,
-        .tipOfTheDay: .notTracked
+        .tipOfTheDay: .notTracked,
+        .activityPlanner: .incomplete
     ])
     
     func state(for item: DailyPlanItem) -> PlanCardCompletionState {

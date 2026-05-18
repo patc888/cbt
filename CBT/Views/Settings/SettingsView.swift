@@ -19,10 +19,7 @@ struct SettingsView: View {
 
             DeferredRenderView {
                 VStack(spacing: 12) {
-                    TopHeadlineView(
-                        title: String(localized: "Settings"),
-                        leading: { StreakToolbarButton() }
-                    )
+                    AppScreenHeadline(title: String(localized: "Settings"))
                     Spacer()
                 }
                 .padding(.horizontal, 16)
@@ -89,10 +86,7 @@ private struct SettingsDashboardContent: View {
     @ViewBuilder
     private var mainContent: some View {
         VStack(spacing: 12) {
-            TopHeadlineView(
-                title: String(localized: "Settings"),
-                leading: { StreakToolbarButton() }
-            )
+            AppScreenHeadline(title: String(localized: "Settings"))
             .padding(.horizontal, 16)
             
             SubscriptionSettingsView()

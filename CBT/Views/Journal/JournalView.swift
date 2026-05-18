@@ -8,10 +8,7 @@ struct JournalView: View {
 
             DeferredRenderView {
                 VStack(spacing: 12) {
-                    TopHeadlineView(
-                        title: String(localized: "Journal"),
-                        leading: { StreakToolbarButton() }
-                    )
+                    AppScreenHeadline(title: String(localized: "Journal"))
                     Spacer()
                 }
                 .padding(.horizontal, 16)
@@ -74,10 +71,7 @@ private struct JournalDashboardContent: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 12) {
-                TopHeadlineView(
-                    title: String(localized: "Journal"),
-                    leading: { StreakToolbarButton() }
-                )
+                AppScreenHeadline(title: String(localized: "Journal"))
 
                 SegmentedToggle(
                     selection: $selectedTab,

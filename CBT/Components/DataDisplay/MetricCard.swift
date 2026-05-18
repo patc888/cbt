@@ -40,8 +40,9 @@ struct MetricCard: View {
             Text(title.uppercased())
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
+                .lineLimit(2)
                 .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
 
             Text(value)
                 .font(.title.weight(.bold))
@@ -54,6 +55,7 @@ struct MetricCard: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, minHeight: 132, alignment: .leading)
@@ -132,9 +134,10 @@ struct MiniStatCard: View {
                     .font(.system(size: 12, weight: .bold))
                 Text(title)
                     .font(.system(size: 11, weight: .heavy))
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .minimumScaleFactor(0.7)
                     .tracking(1.0)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(
                 iconGradient != nil && state == .neutral
@@ -154,6 +157,8 @@ struct MiniStatCard: View {
                     Text(unit)
                         .font(.system(size: 11, weight: .bold))
                         .foregroundColor(displayValueColor.opacity(0.8))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
             }
         }

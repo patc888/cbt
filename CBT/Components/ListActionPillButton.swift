@@ -17,6 +17,8 @@ struct ListActionPillButton: View {
             Text(title)
                 .font(font)
                 .foregroundColor(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(Theme.cardBackground)

@@ -1,4 +1,5 @@
 import Foundation
+import CloudKit
 import OSLog
 
 extension Notification.Name {
@@ -31,12 +32,104 @@ final class DataResetManager {
     }
 
     func deleteCloudData() async throws {
+        try await purgePrivateCloudKitDatabase()
+        clearCloudKeyValueStore()
         requestLocalWipe()
+    }
+
+    func deleteCloudDataAndLocalStore() async throws {
+        try await purgePrivateCloudKitDatabase()
+        clearCloudKeyValueStore()
     }
 
     func resetLocalPreferences() {
         for key in Self.localPreferenceKeys {
             UserDefaults.standard.removeObject(forKey: key)
+        }
+    }
+
+    private func purgePrivateCloudKitDatabase() async throws {
+        let container = AppConfiguration.cloudKitContainer
+        let status = try await container.accountStatus()
+
+        guard status == .available else {
+            throw DataResetError.cloudAccountUnavailable(statusDescription(for: status))
+        }
+
+        let database = container.privateCloudDatabase
+        let zones = try await database.allRecordZones()
+        let deletableZones = zones.filter { $0.zoneID != CKRecordZone.default().zoneID }
+
+        for zone in deletableZones {
+            _ = try await database.deleteRecordZone(withID: zone.zoneID)
+        }
+    }
+
+    private func clearCloudKeyValueStore() {
+        let store = NSUbiquitousKeyValueStore.default
+        for key in [
+            "hapticsEnabled",
+            "appLockEnabled",
+            "currentIcon"
+        ] {
+            store.removeObject(forKey: key)
+        }
+        store.synchronize()
+    }
+
+    private func statusDescription(for status: CKAccountStatus) -> String {
+        switch status {
+        case .available:
+            return "Available"
+        case .noAccount:
+            return "No iCloud Account"
+        case .restricted:
+            return "Restricted"
+        case .couldNotDetermine:
+            return "Could Not Determine"
+        case .temporarilyUnavailable:
+            return "Temporarily Unavailable"
+        @unknown default:
+            return "Unknown"
+        }
+    }
+}
+
+enum DataResetError: LocalizedError {
+    case cloudAccountUnavailable(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .cloudAccountUnavailable(let status):
+            return "CloudKit data could not be deleted because iCloud is not available. Account status: \(status)."
+        }
+    }
+}
+
+private extension CKDatabase {
+    func allRecordZones() async throws -> [CKRecordZone] {
+        try await withCheckedThrowingContinuation { continuation in
+            fetchAllRecordZones { zones, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: zones ?? [])
+                }
+            }
+        }
+    }
+
+    func deleteRecordZone(withID zoneID: CKRecordZone.ID) async throws -> CKRecordZone.ID {
+        try await withCheckedThrowingContinuation { continuation in
+            delete(withRecordZoneID: zoneID) { deletedZoneID, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if let deletedZoneID {
+                    continuation.resume(returning: deletedZoneID)
+                } else {
+                    continuation.resume(returning: zoneID)
+                }
+            }
         }
     }
 }

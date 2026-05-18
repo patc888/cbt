@@ -65,6 +65,7 @@ struct DataSettingsSection: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
     @AppStorage(AppConfiguration.cloudKitEnabledKey) private var isCloudKitStoreEnabled = false
+    @AppStorage(AppConfiguration.cloudKitFailureReasonKey) private var cloudKitFailureReason = ""
     @State private var viewModel = AdvancedDataSettingsViewModel()
     @State private var showingAdvancedDataOptions = false
     @State private var showingStorageAudit = false
@@ -187,7 +188,11 @@ struct DataSettingsSection: View {
             return "Syncing between iPhone, iPad, and Mac"
         }
 
-        return "Temporarily using local storage until iCloud is available"
+        if !cloudKitFailureReason.isEmpty {
+            return "Using local storage: \(cloudKitFailureReason)"
+        }
+
+        return "Using local storage until iCloud is available"
     }
 
     private var advancedDataOptionsSheet: some View {

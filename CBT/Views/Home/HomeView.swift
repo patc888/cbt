@@ -24,10 +24,7 @@ struct HomeView: View {
                 delay: .milliseconds(250)
             ) {
                 VStack(alignment: .leading, spacing: 12) {
-                    TopHeadlineView(
-                        title: String(localized: "Daily Plan"),
-                        leading: { StreakToolbarButton() }
-                    )
+                    AppScreenHeadline(title: String(localized: "Daily Plan"))
                     .padding(.horizontal, 16)
                     
                     HomeDashboardPlaceholder()
@@ -143,10 +140,7 @@ private struct HomeDashboardContent: View {
 
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                TopHeadlineView(
-                    title: String(localized: "Daily Plan"),
-                    leading: { StreakToolbarButton() }
-                )
+                AppScreenHeadline(title: String(localized: "Daily Plan"))
                 .padding(.horizontal, 16)
 
                 WeekStripView(selectedDate: $selectedDate, weekDates: Self.dashboardWeekDates) { date in
@@ -192,6 +186,11 @@ private struct HomeDashboardContent: View {
                     TipOfTheDayPlanCard(
                         completionState: viewModel.completionSnapshot.state(for: .tipOfTheDay),
                         action: { showingTipModal = true }
+                    )
+
+                    ActivityPlannerPlanCard(
+                        completionState: viewModel.completionSnapshot.state(for: .activityPlanner),
+                        action: { selectedTab = .exercises } // It's in the Exercises tab
                     )
                     }
                 }

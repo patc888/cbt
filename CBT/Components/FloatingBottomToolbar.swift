@@ -3,6 +3,7 @@ import SwiftUI
 enum FloatingTab: String, CaseIterable, Hashable {
     case home = "Home"
     case insights = "Insights"
+    case assessments = "Assess"
     case exercises = "Exercises"
     case journal = "Journal"
     case settings = "Settings"
@@ -11,6 +12,7 @@ enum FloatingTab: String, CaseIterable, Hashable {
         switch self {
         case .home: return "house"
         case .insights: return "chart.line.uptrend.xyaxis"
+        case .assessments: return "checklist"
         case .exercises: return "figure.mind.and.body"
         case .journal: return "book.pages"
         case .settings: return "gearshape"
@@ -75,6 +77,7 @@ struct FloatingBottomToolbar: View {
                                 Text(tab.rawValue)
                                     .font(.system(size: 10, weight: selectedTab == tab ? .bold : .medium, design: .rounded))
                                     .lineLimit(1)
+                                    .minimumScaleFactor(0.75)
                             }
                             .foregroundStyle(selectedTab == tab ? themeManager.selectedColor : Theme.secondaryText)
                             .frame(maxWidth: .infinity)
@@ -85,7 +88,7 @@ struct FloatingBottomToolbar: View {
                         .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
                     }
                 }
-                .frame(height: 64)
+                .frame(minHeight: 64)
                 .background(Theme.cardBackground)
                 .clipShape(Capsule())
                 .overlay(

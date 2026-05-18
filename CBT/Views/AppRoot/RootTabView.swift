@@ -46,6 +46,18 @@ struct RootTabView: View {
                 .toolbar(.hidden, for: .tabBar)
                 #endif
 
+                tabContent(for: .assessments) {
+                    NavigationStack {
+                        AssessmentsView()
+                    }
+                }
+                .tag(FloatingTab.assessments)
+                #if os(iOS) && !targetEnvironment(macCatalyst)
+                .toolbar(.hidden, for: .tabBar)
+                #elseif os(iOS)
+                .toolbar(.hidden, for: .tabBar)
+                #endif
+
                 tabContent(for: .exercises) {
                     NavigationStack {
                         ExercisesView()

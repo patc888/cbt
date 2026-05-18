@@ -21,7 +21,10 @@ enum CBTVersionedSchemaV1: VersionedSchema {
             MoodEntry.self,
             ThoughtRecord.self,
             ExerciseCompletion.self,
-            JournalEntry.self
+            JournalEntry.self,
+            PlannedActivity.self,
+            AssessmentLog.self,
+            PersonalityAssessmentLog.self
         ]
     }
 }

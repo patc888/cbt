@@ -8,10 +8,7 @@ struct ExercisesView: View {
 
             DeferredRenderView {
                 VStack(alignment: .leading, spacing: 12) {
-                    TopHeadlineView(
-                        title: "Exercises",
-                        leading: { StreakToolbarButton() }
-                    )
+                    AppScreenHeadline(title: "Exercises")
                     
                     ExercisesSkeleton()
                         .padding(.horizontal)
@@ -78,10 +75,7 @@ private struct ExercisesDashboardContent: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    TopHeadlineView(
-                        title: "Exercises",
-                        leading: { StreakToolbarButton() }
-                    )
+                    AppScreenHeadline(title: "Exercises")
 
                     quickToolsSection
 
@@ -181,6 +175,37 @@ private struct ExercisesDashboardContent: View {
 
     private var quickToolsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
+            sectionTitle("Behavioral Activation")
+            
+            NavigationLink(destination: ActivityPlannerView()) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Activity Planner")
+                                .font(.system(.headline, design: .rounded).weight(.bold))
+                                .foregroundStyle(Theme.primaryText)
+                            Text("Schedule 'nourishing' tasks to boost mood")
+                                .font(.system(.subheadline, design: .rounded))
+                                .foregroundStyle(Theme.secondaryText)
+                        }
+                        Spacer()
+                        Image(systemName: "calendar.badge.clock")
+                            .font(.system(size: 24))
+                            .foregroundStyle(themeManager.selectedColor)
+                    }
+                    
+                    HStack {
+                        Image(systemName: "arrow.up.right.circle.fill")
+                        Text("Rate Predicted vs. Actual Enjoyment")
+                            .font(.system(.caption, design: .rounded).weight(.bold))
+                    }
+                    .foregroundStyle(themeManager.selectedColor)
+                }
+                .padding(Theme.paddingMedium)
+                .cardStyle()
+            }
+            .buttonStyle(.plain)
+
             sectionTitle("Quick Tools & Mindset")
 
             VStack(spacing: 8) {

@@ -14,7 +14,7 @@ struct TimelineView: View {
 
             DeferredRenderView {
                 VStack(spacing: 12) {
-                    TopHeadlineView(title: "Timeline", leading: { StreakToolbarButton() })
+                    AppScreenHeadline(title: "Timeline")
                         .padding(.horizontal)
                     Spacer()
                 }
@@ -106,7 +106,7 @@ private struct TimelineDashboardContent: View {
         Group {
             if viewModel.isInitialized && viewModel.groupedItems.isEmpty {
                 VStack(spacing: 12) {
-                    TopHeadlineView(title: "Timeline", leading: { StreakToolbarButton() })
+                    AppScreenHeadline(title: "Timeline")
                         .padding(.horizontal)
 
                     Spacer()
@@ -180,7 +180,7 @@ private struct TimelineDashboardContent: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12, pinnedViews: [.sectionHeaders]) {
-                        TopHeadlineView(title: "Timeline", leading: { StreakToolbarButton() })
+                        AppScreenHeadline(title: "Timeline")
 
                         ForEach(viewModel.groupedItems, id: \.key) { date, items in
                             Section {

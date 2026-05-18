@@ -13,6 +13,7 @@ struct SyncStatusView: View {
         ScrollView {
             VStack(spacing: 16) {
                 cloudHealthSection
+                syncAuditSection
                 dbAuditSection
                 mediaCleanupSection
             }
@@ -48,10 +49,39 @@ struct SyncStatusView: View {
                     .foregroundStyle(statusColor(for: auditService.cloudAccountStatus))
             }
 
+            SettingsRow(icon: "externaldrive.fill", iconColor: themeManager.primaryColor, title: "Storage Mode") {
+                Text(auditService.persistenceMode)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(auditService.persistenceMode == "CloudKit" ? Theme.successGreen : .orange)
+            }
+
+            if !auditService.cloudKitFallbackReason.isEmpty {
+                diagnosticMessage(
+                    icon: "exclamationmark.triangle.fill",
+                    text: auditService.cloudKitFallbackReason,
+                    color: .orange
+                )
+            }
+
+            if !auditService.cloudKitRecoveryMessage.isEmpty {
+                diagnosticMessage(
+                    icon: "info.circle.fill",
+                    text: auditService.cloudKitRecoveryMessage,
+                    color: Theme.secondaryText
+                )
+            }
+
             SettingsRow(icon: "clock.fill", iconColor: themeManager.primaryColor, title: "Last Checked") {
                 Text(auditService.lastSyncTime)
                     .font(.system(size: 14, design: .rounded))
                     .foregroundStyle(Theme.secondaryText)
+            }
+
+            SettingsRow(icon: "arrow.triangle.2.circlepath.icloud.fill", iconColor: themeManager.primaryColor, title: "Latest Sync Event") {
+                Text(auditService.lastCloudKitEventSummary)
+                    .font(.system(size: 13, design: .rounded))
+                    .foregroundStyle(eventColor)
+                    .multilineTextAlignment(.trailing)
             }
 
             Button {
@@ -63,6 +93,63 @@ struct SyncStatusView: View {
                 }
             }
             .buttonStyle(PlainButtonStyle())
+        }
+    }
+
+    private func diagnosticMessage(icon: String, text: String, color: Color) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 13))
+                .foregroundStyle(color)
+            Text(text)
+                .font(.system(size: 13, design: .rounded))
+                .foregroundStyle(Theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+    }
+
+    private var syncAuditSection: some View {
+        SettingsSection(title: "Sync Verification") {
+            Button {
+                HapticManager.shared.mediumImpact()
+                auditService.auditSyncHealth(context: modelContext)
+            } label: {
+                SettingsRow(
+                    icon: "checkmark.icloud.fill",
+                    iconColor: themeManager.primaryColor,
+                    title: "Run Sync Audit",
+                    subtitle: "Check CloudKit reachability, record inventory, duplicate IDs, and live import/export events"
+                ) {
+                    if auditService.isCheckingSync {
+                        ProgressView()
+                            .tint(themeManager.primaryColor)
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            .disabled(auditService.isCheckingSync)
+
+            if !auditService.syncAuditResults.isEmpty {
+                ForEach(auditService.syncAuditResults, id: \.self) { result in
+                    HStack(spacing: 8) {
+                        Image(systemName: result.hasPrefix("Issue:") || result.hasPrefix("Using local fallback") || result.hasPrefix("CloudKit private database error") ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(result.hasPrefix("Issue:") || result.hasPrefix("Using local fallback") || result.hasPrefix("CloudKit private database error") ? .orange : Theme.successGreen)
+                        Text(result)
+                            .font(.system(size: 13, design: .rounded))
+                            .foregroundStyle(Theme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                }
+            }
         }
     }
 
@@ -211,5 +298,18 @@ struct SyncStatusView: View {
         case "Checking...": return Theme.secondaryText
         default: return .orange
         }
+    }
+
+    private var eventColor: Color {
+        if auditService.lastCloudKitEventSummary.contains("failed")
+            || auditService.lastCloudKitEventSummary.contains("without success") {
+            return .orange
+        }
+
+        if auditService.lastCloudKitEventSummary.contains("completed") {
+            return Theme.successGreen
+        }
+
+        return Theme.secondaryText
     }
 }

@@ -37,7 +37,7 @@ struct InsightsView: View {
 
             DeferredRenderView {
                 VStack {
-                    TopHeadlineView(title: String(localized: "Insights"), leading: { StreakToolbarButton() })
+                    AppScreenHeadline(title: String(localized: "Insights"))
                         .padding(.horizontal)
                     Spacer()
                 }
@@ -101,14 +101,14 @@ private struct InsightsDashboardContent: View {
         Group {
             if viewModel.isCalculating {
                 VStack(spacing: 12) {
-                    TopHeadlineView(title: String(localized: "Insights"), leading: { StreakToolbarButton() })
+                    AppScreenHeadline(title: String(localized: "Insights"))
                     Spacer()
                     InsightsLoadingStateView()
                     Spacer()
                 }
             } else if moodEntries.isEmpty && thoughtRecords.isEmpty && exerciseCompletions.isEmpty && journalEntries.isEmpty {
                 VStack(spacing: 0) {
-                    TopHeadlineView(title: String(localized: "Insights"), leading: { StreakToolbarButton() })
+                    AppScreenHeadline(title: String(localized: "Insights"))
                         .padding(.horizontal, 16)
                     
                     InsightsEmptyStateView(
@@ -119,7 +119,7 @@ private struct InsightsDashboardContent: View {
             } else {
                 ScrollView {
                     VStack(spacing: 12) {
-                        TopHeadlineView(title: String(localized: "Insights"), leading: { StreakToolbarButton() })
+                        AppScreenHeadline(title: String(localized: "Insights"))
 
                         InsightsStreaksCard(
                             currentStreak: viewModel.currentStreak,

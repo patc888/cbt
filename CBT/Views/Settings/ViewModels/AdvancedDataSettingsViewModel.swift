@@ -102,11 +102,13 @@ final class AdvancedDataSettingsViewModel {
             let thoughtRecords = try modelContext.fetch(FetchDescriptor<ThoughtRecord>())
             let completions = try modelContext.fetch(FetchDescriptor<ExerciseCompletion>())
             let journalEntries = try modelContext.fetch(FetchDescriptor<JournalEntry>())
+            let plannedActivities = try modelContext.fetch(FetchDescriptor<PlannedActivity>())
 
             for record in moodEntries { modelContext.delete(record) }
             for record in thoughtRecords { modelContext.delete(record) }
             for record in completions { modelContext.delete(record) }
             for record in journalEntries { modelContext.delete(record) }
+            for record in plannedActivities { modelContext.delete(record) }
 
             try modelContext.save()
 

@@ -62,11 +62,19 @@ struct ModelContainerRecovery {
     }
 
     private func makePreferredContainer(storeURL: URL?) throws -> ModelContainer {
-        try ModelContainer(for: schema, configurations: [preferredConfiguration(storeURL: storeURL)])
+        try ModelContainer(
+            for: schema,
+            migrationPlan: CBTModelMigrationPlan.self,
+            configurations: [preferredConfiguration(storeURL: storeURL)]
+        )
     }
 
     private func makeLocalOnlyContainer(storeURL: URL?) throws -> ModelContainer {
-        try ModelContainer(for: schema, configurations: [localOnlyConfiguration(storeURL: storeURL)])
+        try ModelContainer(
+            for: schema,
+            migrationPlan: CBTModelMigrationPlan.self,
+            configurations: [localOnlyConfiguration(storeURL: storeURL)]
+        )
     }
 
     private func preferredConfiguration(storeURL: URL?) -> ModelConfiguration {

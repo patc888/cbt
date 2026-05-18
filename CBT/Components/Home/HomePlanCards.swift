@@ -100,3 +100,18 @@ struct TipOfTheDayPlanCard: View {
         }
     }
 }
+struct ActivityPlannerPlanCard: View {
+    let completionState: PlanCardCompletionState
+    let action: () -> Void
+
+    var body: some View {
+        PlanCard(
+            title: String(localized: "Activity Planner"),
+            subtitle: String(localized: "Schedule and reflect on nourishing tasks."),
+            trailingSymbol: "calendar.badge.clock",
+            completionState: completionState
+        ) {
+            action()
+        }
+    }
+}

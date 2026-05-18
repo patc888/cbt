@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import CloudKit
+import CoreData
 import os.log
 
 private let storageAuditLogger = Logger(subsystem: "com.melichan.CBT", category: "StorageAudit")
@@ -22,15 +23,30 @@ struct OrphanAsset: Identifiable {
 @Observable
 final class StorageAuditService {
     private let fileManager: FileManager
+    @ObservationIgnored private var cloudKitEventObserver: NSObjectProtocol?
 
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
+        observeCloudKitEvents()
+    }
+
+    deinit {
+        if let cloudKitEventObserver {
+            NotificationCenter.default.removeObserver(cloudKitEventObserver)
+        }
     }
 
     // MARK: Cloud / DB audit
     var isAuditing = false
+    var isCheckingSync = false
     var auditResults: [String] = []
+    var syncAuditResults: [String] = []
     var cloudAccountStatus: String = "Checking..."
+    var cloudKitReachabilityStatus: String = "Not checked"
+    var lastCloudKitEventSummary: String = "No SwiftData CloudKit events observed this launch."
+    var persistenceMode: String = "Checking..."
+    var cloudKitFallbackReason: String = ""
+    var cloudKitRecoveryMessage: String = ""
     var lastSyncTime: String = "Unknown"
 
     // MARK: Orphan file scan
@@ -42,7 +58,18 @@ final class StorageAuditService {
 
     var auditNeedsRepair: Bool {
         auditResults.contains { result in
-            !result.hasPrefix("Database is healthy.")
+            result.hasPrefix("Repaired")
+                || result.hasPrefix("Found")
+                || result.hasPrefix("Audit failed")
+                || result.contains("duplicate")
+        }
+    }
+
+    var syncNeedsAttention: Bool {
+        syncAuditResults.contains { result in
+            result.hasPrefix("Issue:")
+                || result.hasPrefix("CloudKit private database error")
+                || result.hasPrefix("Using local fallback")
         }
     }
 
@@ -65,6 +92,8 @@ final class StorageAuditService {
     // MARK: - CloudKit Status
 
     func checkCloudStatus() {
+        refreshPersistenceStatus()
+
         AppConfiguration.cloudKitContainer.accountStatus { [weak self] status, error in
             guard let service = self else { return }
             Task { @MainActor in
@@ -87,6 +116,159 @@ final class StorageAuditService {
         formatter.dateStyle = .short
         formatter.timeStyle = .short
         self.lastSyncTime = formatter.string(from: Date())
+    }
+
+    func auditSyncHealth(context: ModelContext) {
+        guard !isCheckingSync else { return }
+        isCheckingSync = true
+        syncAuditResults.removeAll()
+
+        Task {
+            refreshPersistenceStatus()
+
+            var results: [String] = []
+            results.append("Storage mode: \(persistenceMode)")
+
+            if persistenceMode != "CloudKit" {
+                let reason = cloudKitFallbackReason.isEmpty ? "CloudKit is not active for this launch." : cloudKitFallbackReason
+                results.append("Using local fallback: \(reason)")
+            }
+
+            let reachability = await checkPrivateDatabaseReachability()
+            cloudKitReachabilityStatus = reachability
+            results.append(reachability)
+            results.append(contentsOf: localRecordInventoryResults(context: context))
+            results.append("Latest sync event: \(lastCloudKitEventSummary)")
+
+            if lastCloudKitEventSummary.hasPrefix("No SwiftData CloudKit events") {
+                results.append("Issue: No SwiftData CloudKit import/export event has been observed during this launch. Create or edit a record, then refresh this audit to confirm export activity.")
+            }
+
+            syncAuditResults = results
+            isCheckingSync = false
+        }
+    }
+
+    private func refreshPersistenceStatus() {
+        let defaults = UserDefaults.standard
+        let isCloudKitEnabled = defaults.bool(forKey: AppConfiguration.cloudKitEnabledKey)
+        let mode = defaults.string(forKey: AppConfiguration.persistenceModeKey)
+
+        if isCloudKitEnabled || mode == "cloudKit" {
+            persistenceMode = "CloudKit"
+        } else {
+            persistenceMode = "Local Fallback"
+        }
+
+        cloudKitFallbackReason = defaults.string(forKey: AppConfiguration.cloudKitFailureReasonKey) ?? ""
+        cloudKitRecoveryMessage = defaults.string(forKey: AppConfiguration.cloudKitRecoveryMessageKey) ?? ""
+    }
+
+    private func observeCloudKitEvents() {
+        cloudKitEventObserver = NotificationCenter.default.addObserver(
+            forName: NSPersistentCloudKitContainer.eventChangedNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            MainActor.assumeIsolated {
+                self?.handleCloudKitEvent(notification)
+            }
+        }
+    }
+
+    private func handleCloudKitEvent(_ notification: Notification) {
+        guard let event = notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event else {
+            return
+        }
+
+        let eventType: String
+        switch event.type {
+        case .setup:
+            eventType = "setup"
+        case .import:
+            eventType = "import"
+        case .export:
+            eventType = "export"
+        @unknown default:
+            eventType = "unknown"
+        }
+
+        if let error = event.error {
+            lastCloudKitEventSummary = "CloudKit \(eventType) failed: \(error.localizedDescription)"
+            return
+        }
+
+        if event.endDate == nil {
+            lastCloudKitEventSummary = "CloudKit \(eventType) in progress"
+        } else if event.succeeded {
+            lastCloudKitEventSummary = "CloudKit \(eventType) completed"
+        } else {
+            lastCloudKitEventSummary = "CloudKit \(eventType) ended without success"
+        }
+    }
+
+    private func checkPrivateDatabaseReachability() async -> String {
+        await withCheckedContinuation { continuation in
+            AppConfiguration.cloudKitContainer.privateCloudDatabase.fetchAllRecordZones { zones, error in
+                if let error {
+                    continuation.resume(returning: "CloudKit private database error: \(error.localizedDescription)")
+                } else {
+                    continuation.resume(returning: "CloudKit private database reachable. Zones visible: \(zones?.count ?? 0).")
+                }
+            }
+        }
+    }
+
+    private func localRecordInventoryResults(context: ModelContext) -> [String] {
+        do {
+            let moodEntries = try context.fetch(FetchDescriptor<MoodEntry>())
+            let thoughtRecords = try context.fetch(FetchDescriptor<ThoughtRecord>())
+            let completions = try context.fetch(FetchDescriptor<ExerciseCompletion>())
+            let journalEntries = try context.fetch(FetchDescriptor<JournalEntry>())
+            let plannedActivities = try context.fetch(FetchDescriptor<PlannedActivity>())
+            let assessmentLogs = try context.fetch(FetchDescriptor<AssessmentLog>())
+            let personalityLogs = try context.fetch(FetchDescriptor<PersonalityAssessmentLog>())
+            let settings = try context.fetch(FetchDescriptor<UserSettings>())
+
+            var results = [
+                activeCountLine("Mood entries", records: moodEntries),
+                activeCountLine("Thought records", records: thoughtRecords),
+                activeCountLine("Exercise completions", records: completions),
+                activeCountLine("Journal entries", records: journalEntries),
+                activeCountLine("Planned activities", records: plannedActivities),
+                "Assessment logs: \(assessmentLogs.count)",
+                "Personality assessment logs: \(personalityLogs.count)",
+                "User settings records: \(settings.count)"
+            ]
+
+            appendDuplicateIDCheck("Mood entries", ids: moodEntries.map(\.id), to: &results)
+            appendDuplicateIDCheck("Thought records", ids: thoughtRecords.map(\.id), to: &results)
+            appendDuplicateIDCheck("Exercise completions", ids: completions.map(\.id), to: &results)
+            appendDuplicateIDCheck("Journal entries", ids: journalEntries.map(\.id), to: &results)
+            appendDuplicateIDCheck("Planned activities", ids: plannedActivities.map(\.id), to: &results)
+            appendDuplicateIDCheck("Assessment logs", ids: assessmentLogs.map(\.id), to: &results)
+            appendDuplicateIDCheck("Personality assessment logs", ids: personalityLogs.map(\.id), to: &results)
+
+            if settings.count > 1 {
+                results.append("Issue: Found \(settings.count) UserSettings records. Run database repair to collapse duplicates.")
+            }
+
+            return results
+        } catch {
+            return ["Issue: Could not inspect local synced records: \(error.localizedDescription)"]
+        }
+    }
+
+    private func activeCountLine<Record: SoftDeletableRecord>(_ label: String, records: [Record]) -> String {
+        let activeCount = records.filter { !$0.isDeleted }.count
+        return "\(label): \(activeCount) active / \(records.count) total"
+    }
+
+    private func appendDuplicateIDCheck(_ label: String, ids: [UUID], to results: inout [String]) {
+        let duplicateCount = ids.count - Set(ids).count
+        if duplicateCount > 0 {
+            results.append("Issue: \(label) contains \(duplicateCount) duplicate id value\(duplicateCount == 1 ? "" : "s").")
+        }
     }
 
     // MARK: - DB Orphan Repair

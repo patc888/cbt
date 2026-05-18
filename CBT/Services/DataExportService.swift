@@ -42,6 +42,38 @@ nonisolated struct JournalEntryExport: Codable, Sendable {
     let durationSeconds: Int?
 }
 
+nonisolated struct PlannedActivityExport: Codable, Sendable {
+    let id: UUID
+    let createdAt: Date
+    let title: String
+    let activityDescription: String
+    let category: String
+    let scheduledDate: Date
+    let predictedEnjoyment: Int
+    let actualEnjoyment: Int?
+    let isCompleted: Bool
+    let completedAt: Date?
+    let notes: String?
+}
+
+nonisolated struct AssessmentLogExport: Codable, Sendable {
+    let id: UUID
+    let date: Date
+    let assessmentType: String
+    let score: Int
+    let scoreValue: Double?
+}
+
+nonisolated struct PersonalityAssessmentLogExport: Codable, Sendable {
+    let id: UUID
+    let date: Date
+    let opennessScore: Double
+    let conscientiousnessScore: Double
+    let extraversionScore: Double
+    let agreeablenessScore: Double
+    let neuroticismScore: Double
+}
+
 nonisolated struct CBTDataExportPayload: Codable, Sendable {
     let exportedAt: String
     let appVersion: String?
@@ -49,6 +81,9 @@ nonisolated struct CBTDataExportPayload: Codable, Sendable {
     let thoughtRecords: [ThoughtRecordExport]
     let exerciseCompletions: [ExerciseCompletionExport]
     let journalEntries: [JournalEntryExport]?
+    let plannedActivities: [PlannedActivityExport]?
+    let assessmentLogs: [AssessmentLogExport]?
+    let personalityAssessmentLogs: [PersonalityAssessmentLogExport]?
 }
 
 struct DataExportService {
@@ -88,6 +123,16 @@ struct DataExportService {
         let journalDescriptor = FetchDescriptor<JournalEntry>(
             predicate: #Predicate<JournalEntry> { $0.isDeleted == false },
             sortBy: [SortDescriptor(\JournalEntry.createdAt)]
+        )
+        let plannedActivityDescriptor = FetchDescriptor<PlannedActivity>(
+            predicate: #Predicate<PlannedActivity> { $0.isDeleted == false },
+            sortBy: [SortDescriptor(\PlannedActivity.scheduledDate)]
+        )
+        let assessmentDescriptor = FetchDescriptor<AssessmentLog>(
+            sortBy: [SortDescriptor(\AssessmentLog.date)]
+        )
+        let personalityAssessmentDescriptor = FetchDescriptor<PersonalityAssessmentLog>(
+            sortBy: [SortDescriptor(\PersonalityAssessmentLog.date)]
         )
 
         let moodEntries = try modelContext.fetch(moodDescriptor).map {
@@ -139,13 +184,54 @@ struct DataExportService {
             )
         }
 
+        let plannedActivities = try modelContext.fetch(plannedActivityDescriptor).map {
+            PlannedActivityExport(
+                id: $0.id,
+                createdAt: $0.createdAt,
+                title: $0.title,
+                activityDescription: $0.activityDescription,
+                category: $0.category,
+                scheduledDate: $0.scheduledDate,
+                predictedEnjoyment: PlannedActivity.clampRating($0.predictedEnjoyment),
+                actualEnjoyment: $0.actualEnjoyment.map(PlannedActivity.clampRating),
+                isCompleted: $0.isCompleted,
+                completedAt: $0.completedAt,
+                notes: $0.notes
+            )
+        }
+
+        let assessmentLogs = try modelContext.fetch(assessmentDescriptor).map {
+            AssessmentLogExport(
+                id: $0.id,
+                date: $0.date,
+                assessmentType: $0.assessmentType,
+                score: $0.score,
+                scoreValue: $0.scoreValue
+            )
+        }
+
+        let personalityAssessmentLogs = try modelContext.fetch(personalityAssessmentDescriptor).map {
+            PersonalityAssessmentLogExport(
+                id: $0.id,
+                date: $0.date,
+                opennessScore: $0.opennessScore,
+                conscientiousnessScore: $0.conscientiousnessScore,
+                extraversionScore: $0.extraversionScore,
+                agreeablenessScore: $0.agreeablenessScore,
+                neuroticismScore: $0.neuroticismScore
+            )
+        }
+
         return CBTDataExportPayload(
             exportedAt: Self.makeExportDateString(),
             appVersion: Self.appVersion,
             moodEntries: moodEntries,
             thoughtRecords: thoughtRecords,
             exerciseCompletions: exerciseCompletions,
-            journalEntries: journalEntries
+            journalEntries: journalEntries,
+            plannedActivities: plannedActivities,
+            assessmentLogs: assessmentLogs,
+            personalityAssessmentLogs: personalityAssessmentLogs
         )
     }
 

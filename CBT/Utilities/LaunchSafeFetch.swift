@@ -19,6 +19,7 @@ extension MoodEntry: CreatedAtRecord {}
 extension ThoughtRecord: CreatedAtRecord {}
 extension ExerciseCompletion: CreatedAtRecord {}
 extension JournalEntry: CreatedAtRecord {}
+extension PlannedActivity: CreatedAtRecord {}
 
 enum LaunchSafeFetch {
     private static let disableHomeDashboardFetches = false
@@ -212,6 +213,20 @@ enum LaunchSafeFetch {
         for date in thoughtDates { activeDates.insert(calendar.startOfDay(for: date)) }
         for date in exerciseDates { activeDates.insert(calendar.startOfDay(for: date)) }
         for date in breathingDates { activeDates.insert(calendar.startOfDay(for: date)) }
+        
+        let activityDates = createdDates(
+            FetchDescriptor<PlannedActivity>(
+                predicate: #Predicate<PlannedActivity> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= windowStart &&
+                    $0.createdAt < windowEnd
+                }
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.activityDates"
+        )
+        for date in activityDates { activeDates.insert(calendar.startOfDay(for: date)) }
 
         let completionSnapshot = DailyPlanCompletionSnapshot(entries: [
             .moodCheckIn: fetchCount(
@@ -263,7 +278,19 @@ enum LaunchSafeFetch {
                 logger: logger,
                 label: "homeDashboardSnapshot.breathingCount"
             ) > 0 ? .completed : .incomplete,
-            .tipOfTheDay: .notTracked
+            .tipOfTheDay: .notTracked,
+            .activityPlanner: fetchCount(
+                FetchDescriptor<PlannedActivity>(
+                    predicate: #Predicate<PlannedActivity> {
+                        $0.isDeleted == false &&
+                        $0.createdAt >= selectedDayStart &&
+                        $0.createdAt < selectedDayEnd
+                    }
+                ),
+                from: context,
+                logger: logger,
+                label: "homeDashboardSnapshot.activityPlannerCount"
+            ) > 0 ? .completed : .incomplete
         ])
 
         return HomeDashboardSnapshot(
