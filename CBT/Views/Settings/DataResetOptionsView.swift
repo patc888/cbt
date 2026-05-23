@@ -20,7 +20,7 @@ struct DataResetOptionsView: View {
                 VStack(spacing: 32) {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Reset Options")
-                            .font(.system(.title2, design: .rounded).weight(.bold))
+                            .font(DSTypography.pageTitle)
                             .foregroundStyle(themeManager.primaryColor)
 
                         Text("Your CBT data is currently stored locally on this device. You can clear the local app database, preferences, and reminders from here.")
@@ -37,7 +37,7 @@ struct DataResetOptionsView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Reset This Device")
-                                    .font(.headline)
+                                    .font(.system(.headline, design: .rounded).weight(.bold))
                                     .foregroundStyle(Theme.errorRed)
 
                                 Text(localResetDescription)
@@ -57,7 +57,7 @@ struct DataResetOptionsView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Delete Synced iCloud Data")
-                                    .font(.headline)
+                                    .font(.system(.headline, design: .rounded).weight(.bold))
                                     .foregroundStyle(Theme.errorRed)
 
                                 Text(cloudResetDescription)
@@ -186,6 +186,26 @@ struct DataResetOptionsView: View {
         }
 
         for record in try modelContext.fetch(FetchDescriptor<PersonalityAssessmentLog>()) {
+            modelContext.delete(record)
+        }
+
+        for record in try modelContext.fetch(FetchDescriptor<ProgramProgress>()) {
+            modelContext.delete(record)
+        }
+
+        for record in try modelContext.fetch(FetchDescriptor<FlexibleJournalEntry>()) {
+            modelContext.delete(record)
+        }
+
+        for record in try modelContext.fetch(FetchDescriptor<MoodCheckIn>()) {
+            modelContext.delete(record)
+        }
+
+        for record in try modelContext.fetch(FetchDescriptor<BreathingSession>()) {
+            modelContext.delete(record)
+        }
+
+        for record in try modelContext.fetch(FetchDescriptor<SafetyPlan>()) {
             modelContext.delete(record)
         }
 

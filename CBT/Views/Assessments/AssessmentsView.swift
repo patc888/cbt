@@ -251,56 +251,59 @@ struct AssessmentsView: View {
     @State private var infoKind: AssessmentKind?
 
     var body: some View {
-        ZStack {
-            ThemedBackground().ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                ThemedBackground().ignoresSafeArea()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    AppScreenHeadline(title: "Assessments")
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        AppScreenHeadline(title: "Assessments")
 
-                    AssessmentDisclaimer()
+                        AssessmentDisclaimer()
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Start")
-                            .font(.system(.headline, design: .rounded).weight(.bold))
-                            .foregroundStyle(Theme.primaryText)
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Start")
+                                .font(.system(.headline, design: .rounded).weight(.bold))
+                                .foregroundStyle(Theme.primaryText)
 
-                        ForEach(AssessmentKind.allCases) { kind in
-                            NavigationLink(value: kind) {
-                                AssessmentStartRow(kind: kind) {
-                                    infoKind = kind
+                            ForEach(AssessmentKind.allCases) { kind in
+                                NavigationLink(value: kind) {
+                                    AssessmentStartRow(kind: kind) {
+                                        infoKind = kind
+                                    }
                                 }
+                                .buttonStyle(.plain)
+                            }
+
+                            NavigationLink {
+                                PersonalityAssessmentView()
+                            } label: {
+                                SelfDiscoveryStartRow()
                             }
                             .buttonStyle(.plain)
                         }
 
-                        NavigationLink {
-                            PersonalityAssessmentView()
-                        } label: {
-                            SelfDiscoveryStartRow()
-                        }
-                        .buttonStyle(.plain)
+                        AssessmentTrendsSection(logs: logs)
                     }
-
-                    AssessmentTrendsSection(logs: logs)
+                    .dsContentLayout()
+                    .padding(.vertical, 18)
                 }
-                .dsContentLayout()
-                .padding(.vertical, 18)
+                .safeAreaInset(edge: .bottom) {
+                    Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
+                }
             }
-            .safeAreaInset(edge: .bottom) {
-                Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
+            .navigationDestination(for: AssessmentKind.self) { kind in
+                AssessmentQuizView(kind: kind)
             }
+            .navigationTitle("")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
+            #endif
         }
-        .navigationDestination(for: AssessmentKind.self) { kind in
-            AssessmentQuizView(kind: kind)
-        }
-        .navigationTitle("")
         .sheet(item: $infoKind) { kind in
             AssessmentInfoSheet(kind: kind)
         }
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
     }
 }
 
@@ -448,6 +451,12 @@ private struct AssessmentQuizView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+        .onAppear {
+            NotificationCenter.default.post(name: .quizFlowDidEnter, object: nil)
+        }
+        .onDisappear {
+            NotificationCenter.default.post(name: .quizFlowDidExit, object: nil)
+        }
     }
 
     private var completedCount: Int {
@@ -765,6 +774,131 @@ private struct AssessmentDisclaimer: View {
     }
 }
 
+private struct SymptomItem: Identifiable {
+    var id: String { description }
+    let description: String
+    let symbolName: String
+}
+
+private struct SeverityLevel: Identifiable {
+    let id = UUID()
+    let label: String
+    let rangeText: String
+    let color: Color
+}
+
+private extension AssessmentKind {
+    var whatItIs: String {
+        switch self {
+        case .gad7:
+            return "The Generalized Anxiety Disorder 7-item (GAD-7) is a widely recognized, clinically validated screening tool. It measures and tracks the frequency and severity of generalized anxiety symptoms over the past two weeks."
+        case .phq8:
+            return "The Patient Health Questionnaire 8-item (PHQ-8) is a standardized, clinically validated tool used worldwide to monitor and measure the severity of depressive symptoms over the past two weeks."
+        case .pss4:
+            return "The Perceived Stress Scale 4-item (PSS-4) is a brief psychological instrument designed to evaluate how unpredictable, uncontrollable, and overloaded you perceive your life circumstances to be."
+        case .maas5:
+            return "The Mindful Attention Awareness Scale 5-item (MAAS-5) measures a core component of mindfulness—specifically, your receptive awareness of and attention to what is taking place in the present moment."
+        }
+    }
+
+    var symptomsCovered: [SymptomItem] {
+        switch self {
+        case .gad7:
+            return [
+                SymptomItem(description: "Feeling nervous, anxious, or on edge", symbolName: "waveform.path.ecg"),
+                SymptomItem(description: "Inability to stop or control worrying", symbolName: "arrow.clockwise"),
+                SymptomItem(description: "Worrying too much about different things", symbolName: "bubbles.and.sparkles"),
+                SymptomItem(description: "Trouble relaxing and physical restlessness", symbolName: "wind"),
+                SymptomItem(description: "Becoming easily annoyed or irritable", symbolName: "exclamationmark.bubble"),
+                SymptomItem(description: "Feeling afraid as if something awful might happen", symbolName: "shield.slash")
+            ]
+        case .phq8:
+            return [
+                SymptomItem(description: "Little interest or pleasure in doing things", symbolName: "star.slash"),
+                SymptomItem(description: "Feeling down, depressed, or hopeless", symbolName: "cloud.rain"),
+                SymptomItem(description: "Trouble sleeping (insomnia or oversleeping)", symbolName: "bed.double"),
+                SymptomItem(description: "Feeling tired or having little energy", symbolName: "bolt.slash"),
+                SymptomItem(description: "Poor appetite or overeating", symbolName: "fork.knife"),
+                SymptomItem(description: "Feeling bad about yourself or like a failure", symbolName: "person.text.rectangle"),
+                SymptomItem(description: "Trouble concentrating on daily activities", symbolName: "target"),
+                SymptomItem(description: "Moving or speaking slowly, or being fidgety", symbolName: "slowmo")
+            ]
+        case .pss4:
+            return [
+                SymptomItem(description: "Feeling unable to control important life events", symbolName: "exclamationmark.shield"),
+                SymptomItem(description: "Confidence in handling personal difficulties", symbolName: "hand.thumbsup"),
+                SymptomItem(description: "Feeling that things are going your way", symbolName: "sun.max"),
+                SymptomItem(description: "Feeling difficulties piling up too high to overcome", symbolName: "barometer")
+            ]
+        case .maas5:
+            return [
+                SymptomItem(description: "Awareness of emotions as they arise", symbolName: "heart.text.square"),
+                SymptomItem(description: "Paying attention to actions to avoid carelessness", symbolName: "hand.raised"),
+                SymptomItem(description: "Staying focused on what is happening now", symbolName: "eye"),
+                SymptomItem(description: "Performing tasks consciously rather than on 'autopilot'", symbolName: "brain"),
+                SymptomItem(description: "Engaging fully in activities without rushing", symbolName: "hourglass.badge.arrow.recenter")
+            ]
+        }
+    }
+
+    var whyItMatters: String {
+        switch self {
+        case .gad7:
+            return "Tracking anxiety symptoms helps you identify specific worries, notice patterns or triggers over time, and evaluate if cognitive reframing or breathing exercises are successfully lowering your daily arousal levels."
+        case .phq8:
+            return "Regular PHQ-8 tracking provides an objective, long-term snapshot of your emotional health, allowing you to recognize true progress and see beyond minor daily ups and downs."
+        case .pss4:
+            return "Measuring your subjective stress load is crucial. The PSS-4 helps you identify when life's demands are exceeding your perceived ability to cope, prompting you to prioritize vital self-care."
+        case .maas5:
+            return "Mindfulness is a key buffer against stress. MAAS-5 tracking shows how often you are living on auto-pilot, encouraging you to anchor in the present moment to reduce excessive worry."
+        }
+    }
+
+    var scoringRangeText: String {
+        switch self {
+        case .gad7:
+            return "Scores range from 0 to 21. Standard clinical cutoffs indicate the severity of anxiety symptoms:"
+        case .phq8:
+            return "Scores range from 0 to 24. Standard clinical cutoffs indicate the severity of depressive symptoms:"
+        case .pss4:
+            return "Scores range from 0 to 16. Higher scores reflect a higher degree of perceived daily stress:"
+        case .maas5:
+            return "Scores represent the average response on a 1-6 scale. Higher average scores indicate higher mindful awareness:"
+        }
+    }
+
+    var severityLevels: [SeverityLevel] {
+        switch self {
+        case .gad7:
+            return [
+                SeverityLevel(label: "Minimal", rangeText: "0 - 4", color: .green),
+                SeverityLevel(label: "Mild", rangeText: "5 - 9", color: .yellow),
+                SeverityLevel(label: "Moderate", rangeText: "10 - 14", color: .orange),
+                SeverityLevel(label: "Severe", rangeText: "15 - 21", color: .red)
+            ]
+        case .phq8:
+            return [
+                SeverityLevel(label: "Minimal", rangeText: "0 - 4", color: .green),
+                SeverityLevel(label: "Mild", rangeText: "5 - 9", color: .yellow),
+                SeverityLevel(label: "Moderate", rangeText: "10 - 14", color: .orange),
+                SeverityLevel(label: "Severe", rangeText: "15 - 24", color: .red)
+            ]
+        case .pss4:
+            return [
+                SeverityLevel(label: "Low", rangeText: "0 - 5", color: .green),
+                SeverityLevel(label: "Moderate", rangeText: "6 - 10", color: .orange),
+                SeverityLevel(label: "High", rangeText: "11 - 16", color: .red)
+            ]
+        case .maas5:
+            return [
+                SeverityLevel(label: "Low", rangeText: "1.0 - 2.9", color: .red),
+                SeverityLevel(label: "Moderate", rangeText: "3.0 - 4.5", color: .orange),
+                SeverityLevel(label: "High", rangeText: "4.6 - 6.0", color: .green)
+            ]
+        }
+    }
+}
+
 private struct AssessmentInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ThemeManager.self) private var themeManager
@@ -774,39 +908,174 @@ private struct AssessmentInfoSheet: View {
         NavigationStack {
             ZStack {
                 ThemedBackground().ignoresSafeArea()
-                
+
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        HStack(spacing: 16) {
-                            Image(systemName: kind.symbolName)
-                                .font(.system(size: 32, weight: .semibold))
-                                .foregroundStyle(themeManager.selectedColor)
-                                .frame(width: 64, height: 64)
-                                .background(themeManager.selectedColor.opacity(0.12), in: Circle())
-                            
-                            VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 20) {
+                        // Immersive Visual Header
+                        VStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(themeManager.selectedColor.opacity(0.12))
+                                    .frame(width: 80, height: 80)
+
+                                Circle()
+                                    .stroke(themeManager.selectedColor.opacity(0.3), lineWidth: 2)
+                                    .frame(width: 90, height: 90)
+
+                                Image(systemName: kind.symbolName)
+                                    .font(.system(size: 36, weight: .bold))
+                                    .foregroundStyle(themeManager.selectedColor)
+                            }
+                            .padding(.top, 10)
+
+                            VStack(spacing: 6) {
                                 Text(kind.title)
                                     .font(.system(.title2, design: .rounded).weight(.bold))
                                     .foregroundStyle(Theme.primaryText)
+
                                 Text(kind.subtitle)
-                                    .font(.system(.subheadline, design: .rounded))
+                                    .font(.system(.subheadline, design: .rounded).weight(.bold))
                                     .foregroundStyle(Theme.secondaryText)
+                                    .multilineTextAlignment(.center)
                             }
                         }
-                        
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, 8)
+
+                        // 1. Overview Section
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("About this Assessment")
-                                .font(.system(.headline, design: .rounded).weight(.bold))
-                                .foregroundStyle(Theme.primaryText)
-                            
-                            Text(kind.detailedDescription)
-                                .font(.system(.body, design: .rounded))
+                            HStack(spacing: 8) {
+                                Image(systemName: "info.circle.fill")
+                                    .foregroundStyle(themeManager.selectedColor)
+                                    .font(.system(.headline, design: .rounded).weight(.bold))
+                                Text("Overview")
+                                    .font(.system(.headline, design: .rounded).weight(.bold))
+                                    .foregroundStyle(Theme.primaryText)
+                            }
+
+                            Text(kind.whatItIs)
+                                .font(.system(.subheadline, design: .rounded))
                                 .foregroundStyle(Theme.secondaryText)
                                 .lineSpacing(4)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         .padding(Theme.paddingMedium)
                         .cardStyle()
+
+                        // 2. What it Tracks Section (with visual list items)
+                        VStack(alignment: .leading, spacing: 14) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "checklist")
+                                    .foregroundStyle(themeManager.selectedColor)
+                                    .font(.system(.headline, design: .rounded).weight(.bold))
+                                Text("What It Tracks")
+                                    .font(.system(.headline, design: .rounded).weight(.bold))
+                                    .foregroundStyle(Theme.primaryText)
+                            }
+
+                            VStack(alignment: .leading, spacing: 10) {
+                                ForEach(kind.symptomsCovered) { item in
+                                    HStack(spacing: 12) {
+                                        Image(systemName: item.symbolName)
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundStyle(themeManager.selectedColor)
+                                            .frame(width: 28, height: 28)
+                                            .background(themeManager.selectedColor.opacity(0.08), in: Circle())
+
+                                        Text(item.description)
+                                            .font(.system(.subheadline, design: .rounded))
+                                            .foregroundStyle(Theme.secondaryText)
+                                            .fixedSize(horizontal: false, vertical: true)
+
+                                        Spacer()
+                                    }
+                                    .padding(.vertical, 2)
+
+                                    if item.id != kind.symptomsCovered.last?.id {
+                                        Divider().opacity(0.4)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(Theme.paddingMedium)
+                        .cardStyle()
+
+                        // 3. Visual Scoring Scale / Timeline
+                        VStack(alignment: .leading, spacing: 14) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "chart.bar.fill")
+                                    .foregroundStyle(themeManager.selectedColor)
+                                    .font(.system(.headline, design: .rounded).weight(.bold))
+                                Text("Scoring & Interpretation")
+                                    .font(.system(.headline, design: .rounded).weight(.bold))
+                                    .foregroundStyle(Theme.primaryText)
+                            }
+
+                            Text(kind.scoringRangeText)
+                                .font(.system(.subheadline, design: .rounded))
+                                .foregroundStyle(Theme.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+
+                            HStack(spacing: 8) {
+                                ForEach(kind.severityLevels) { level in
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Capsule()
+                                            .fill(level.color)
+                                            .frame(height: 8)
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(level.label)
+                                                .font(.system(size: 11, design: .rounded).weight(.bold))
+                                                .foregroundStyle(Theme.primaryText)
+                                                .minimumScaleFactor(0.8)
+                                                .lineLimit(1)
+
+                                            Text(level.rangeText)
+                                                .font(.system(size: 10, design: .rounded))
+                                                .foregroundStyle(Theme.secondaryText)
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                            .padding(.top, 4)
+                        }
+                        .padding(Theme.paddingMedium)
+                        .cardStyle()
+
+                        // 4. Why Track This Card
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "heart.text.square.fill")
+                                    .foregroundStyle(themeManager.selectedColor)
+                                    .font(.system(.headline, design: .rounded).weight(.bold))
+                                Text("Why Track This?")
+                                    .font(.system(.headline, design: .rounded).weight(.bold))
+                                    .foregroundStyle(Theme.primaryText)
+                            }
+
+                            Text(kind.whyItMatters)
+                                .font(.system(.subheadline, design: .rounded))
+                                .foregroundStyle(Theme.secondaryText)
+                                .lineSpacing(4)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(Theme.paddingMedium)
+                        .background(
+                            RoundedRectangle(cornerRadius: Theme.cornerRadiusMedium, style: .continuous)
+                                .fill(themeManager.selectedColor.opacity(0.06))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.cornerRadiusMedium, style: .continuous)
+                                .strokeBorder(themeManager.selectedColor.opacity(0.15), lineWidth: 1)
+                        )
+                        .overlay(
+                            Rectangle()
+                                .fill(themeManager.selectedColor)
+                                .frame(width: 4),
+                            alignment: .leading
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusMedium, style: .continuous))
                     }
                     .padding(24)
                 }

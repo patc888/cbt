@@ -9,7 +9,7 @@ struct ContextStepView: View {
             Section(header: Text("Context (Required)")) {
                 VStack(alignment: .leading) {
                     Text("Situation")
-                        .font(.headline)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
                     Text("What happened? Who were you with? Where were you?")
                         .font(DSTypography.caption)
@@ -24,7 +24,7 @@ struct ContextStepView: View {
                 VStack(alignment: .leading) {
                     HStack {
                         Text("Automatic Thought")
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                         ContextualHelpButton(
                             title: "Automatic Thoughts",

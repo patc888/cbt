@@ -15,7 +15,7 @@ struct InsightsTrendsCard: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
                 Text(String(localized: "Daily Trends"))
-                    .font(.system(.title, design: .rounded).weight(.bold))
+                    .font(DSTypography.sectionTitle)
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
                 Text(String(localized: "LAST \(timeRange.days) DAYS"))

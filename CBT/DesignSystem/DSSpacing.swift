@@ -1,12 +1,12 @@
 import SwiftUI
 
 enum DSSpacing {
-    static let xSmall: CGFloat = 4
-    static let small: CGFloat = 8
-    static let medium: CGFloat = 12
-    static let large: CGFloat = 16
-    static let xLarge: CGFloat = 24
-    static let xxLarge: CGFloat = 28
+    static var xSmall: CGFloat { AppTokens.Spacing.xs }
+    static var small: CGFloat { AppTokens.Spacing.sm }
+    static var medium: CGFloat { AppTokens.Spacing.md }
+    static var large: CGFloat { AppTokens.Spacing.lg }
+    static var xLarge: CGFloat { AppTokens.Spacing.xl }
+    static var xxLarge: CGFloat { AppTokens.Spacing.xxl }
 }
 
 enum DSCornerRadius {

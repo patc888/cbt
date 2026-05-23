@@ -10,7 +10,7 @@ struct EmotionStepView: View {
             Section(header: Text("Emotions & Intensity")) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("What did you feel?")
-                        .font(.headline)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
                     
                     HStack {
@@ -60,7 +60,7 @@ struct EmotionStepView: View {
                 
                 VStack(alignment: .leading, spacing: 12) {
                     Text("How intense was the feeling? (0-100)")
-                        .font(.headline)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
                     Slider(value: $viewModel.intensityBefore, in: 0...100, step: 1)
                         .accessibilityLabel("Intensity before")

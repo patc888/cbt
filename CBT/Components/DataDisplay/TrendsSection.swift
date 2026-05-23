@@ -99,7 +99,7 @@ struct TrendsSection: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
                 Text(title)
-                    .font(.headline)
+                    .font(.system(.headline, design: .rounded).weight(.bold))
                 Spacer()
                 Text(entriesCountText)
                     .font(.caption.weight(.semibold))

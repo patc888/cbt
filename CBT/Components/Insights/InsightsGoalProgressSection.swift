@@ -9,7 +9,7 @@ struct InsightsGoalProgressSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(String(localized: "Goal Progress"))
-                .font(.system(.title, design: .rounded).weight(.bold))
+                .font(DSTypography.sectionTitle)
                 .foregroundStyle(Theme.primaryText)
 
             InsightsGoalProgressCard(

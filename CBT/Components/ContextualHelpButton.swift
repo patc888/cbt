@@ -36,7 +36,7 @@ private struct HelpSheet: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Text(title)
-                        .font(.headline)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
                     Spacer()
                     Button {

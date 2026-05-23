@@ -22,7 +22,7 @@ struct PermissionDeniedView: View {
             
             VStack(spacing: 12) {
                 Text(title)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(DSTypography.pageTitle)
                     .foregroundStyle(Theme.primaryText)
                     .multilineTextAlignment(.center)
                 

@@ -42,7 +42,7 @@ struct DistortionsEducationPage: View {
                     DSCardContainer {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(selected)
-                                .font(.headline)
+                                .font(.system(.headline, design: .rounded).weight(.bold))
                                 .foregroundStyle(themeManager.selectedColor)
                             Text(desc)
                                 .font(.subheadline)

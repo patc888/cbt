@@ -1,13 +1,15 @@
 import SwiftUI
 
 enum DSTypography {
-    static let pageTitle = Font.system(.largeTitle, design: .rounded).weight(.bold)
-    static let sectionTitle = Font.system(.title2, design: .rounded).weight(.bold)
-    static let sectionHeader = Font.system(size: 25, weight: .bold, design: .rounded)
-    static let listLabel = Font.system(size: 16, weight: .medium, design: .rounded)
-    static let cardTitle = Font.system(.caption, design: .rounded).weight(.heavy)
-    static let metricValue = Font.system(.title2, design: .rounded).weight(.bold)
-    static let body = Font.system(.body, design: .rounded)
-    static let caption = Font.system(.caption, design: .rounded).weight(.medium)
-    static let button = Font.system(.headline, design: .rounded)
+    static var pageTitle: Font { AppTokens.Typography.pageTitle.font }
+    static var headerTitle: Font { AppTokens.Typography.headerTitle.font }
+    static var sectionTitle: Font { AppTokens.Typography.sectionTitle.font }
+    static var sectionHeader: Font { AppTokens.Typography.sectionHeader.font }
+    static var listLabel: Font { AppTokens.Typography.listLabel.font }
+    static var cardTitle: Font { AppTokens.Typography.cardTitle.font }
+    static var metricValue: Font { AppTokens.Typography.metricValue.font }
+    static var journalBody: Font { AppTokens.Typography.journalBody.font }
+    static var body: Font { AppTokens.Typography.body.font }
+    static var caption: Font { AppTokens.Typography.caption.font }
+    static var button: Font { AppTokens.Typography.button.font }
 }

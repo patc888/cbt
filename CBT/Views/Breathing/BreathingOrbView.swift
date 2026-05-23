@@ -2,17 +2,19 @@ import SwiftUI
 
 struct BreathingOrbView: View {
     let phase: BreathingPhase
+    let phaseSecondsRemaining: Double
     let isComplete: Bool
     let accent: Color
     let pattern: BreathingPattern
+    let isRunning: Bool
     
     private var circleScale: CGFloat {
         if isComplete { return 1.0 }
         switch phase {
-        case .inhale: return 1.0
-        case .hold1: return 1.0
-        case .exhale: return 0.65
-        case .hold2: return 0.65
+        case .inhale: return 1.04
+        case .hold1: return 1.04
+        case .exhale: return 0.66
+        case .hold2: return 0.66
         }
     }
     
@@ -26,21 +28,42 @@ struct BreathingOrbView: View {
         }
     }
     
+    private var phaseProgress: Double {
+        guard phaseDuration > 0, !isComplete else { return 1 }
+        return min(max(1 - (phaseSecondsRemaining / phaseDuration), 0), 1)
+    }
+
     @State private var isPulsing = false
     
     var body: some View {
         ZStack {
-            // Outer Glow
             Circle()
                 .fill(accent.opacity(glowOpacity))
-                .blur(radius: 40)
-                .scaleEffect(circleScale * (isPulsing ? 1.35 : 1.25))
+                .blur(radius: 42)
+                .scaleEffect(circleScale * (isPulsing ? 1.32 : 1.18))
+
+            Circle()
+                .stroke(accent.opacity(0.12), lineWidth: 16)
+                .frame(width: 306, height: 306)
+
+            Circle()
+                .trim(from: 0, to: phaseProgress)
+                .stroke(
+                    accent,
+                    style: StrokeStyle(lineWidth: 16, lineCap: .round)
+                )
+                .frame(width: 306, height: 306)
+                .rotationEffect(.degrees(-90))
+                .opacity(isComplete ? 0 : 1)
             
-            // Main Orb
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [accent.opacity(0.9), accent.opacity(0.5)],
+                        colors: [
+                            Color.white.opacity(0.92),
+                            accent.opacity(0.78),
+                            accent.opacity(0.46)
+                        ],
                         center: .topLeading,
                         startRadius: 0,
                         endRadius: 180
@@ -52,7 +75,6 @@ struct BreathingOrbView: View {
                         .padding(1)
                 )
                 .overlay(
-                    // Glass highlight
                     Circle()
                         .fill(
                             LinearGradient(
@@ -68,10 +90,18 @@ struct BreathingOrbView: View {
                 .shadow(color: accent.opacity(0.25), radius: 25, x: 0, y: 15)
                 .scaleEffect(circleScale * (isPulsing ? 1.05 : 1.0))
             
-            VStack(spacing: 8) {
-                Text(phaseTitle)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
+            VStack(spacing: 10) {
+                Text(countdownText)
+                    .font(.system(size: 46, weight: .black, design: .rounded))
+                    .monospacedDigit()
                     .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.16), radius: 8, x: 0, y: 4)
+                    .contentTransition(.numericText())
+
+                Text(phaseTitle)
+                    .font(DSTypography.pageTitle)
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.14), radius: 6, x: 0, y: 3)
                     .contentTransition(.opacity)
                 
                 Text(guidanceText)
@@ -81,8 +111,11 @@ struct BreathingOrbView: View {
             }
             .offset(y: -5)
         }
-        .frame(width: 280, height: 280)
-        .animation(.spring(response: phaseDuration, dampingFraction: 0.8), value: phase)
+        .frame(width: 320, height: 320)
+        .animation(.spring(response: min(max(phaseDuration, 0.7), 4), dampingFraction: 0.82), value: phase)
+        .animation(.linear(duration: 0.1), value: phaseSecondsRemaining)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityText)
         .onAppear {
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
                 isPulsing = true
@@ -92,6 +125,7 @@ struct BreathingOrbView: View {
     
     private var phaseTitle: String {
         if isComplete { return "Complete" }
+        if !isRunning { return "Ready" }
         switch phase {
         case .inhale: return "Inhale"
         case .hold1, .hold2: return "Hold"
@@ -101,6 +135,7 @@ struct BreathingOrbView: View {
     
     private var guidanceText: String {
         if isComplete { return "Well done!" }
+        if !isRunning { return "Begin when you are ready" }
         switch phase {
         case .inhale: return pattern.inhaleGuidance
         case .hold1: return pattern.hold1Guidance
@@ -116,5 +151,15 @@ struct BreathingOrbView: View {
         case .hold1: return pattern.hold1Duration
         case .hold2: return pattern.hold2Duration
         }
+    }
+
+    private var countdownText: String {
+        if isComplete { return "Done" }
+        return "\(max(1, Int(ceil(phaseSecondsRemaining))))"
+    }
+
+    private var accessibilityText: String {
+        if isComplete { return "Breathing session complete. Well done." }
+        return "\(phaseTitle). \(countdownText) seconds. \(guidanceText)."
     }
 }

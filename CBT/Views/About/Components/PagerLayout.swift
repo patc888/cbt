@@ -13,7 +13,7 @@ struct PagerLayout<Content: View>: View {
                     
                     VStack(spacing: 8) {
                         Text(title)
-                            .font(.system(.title, design: .rounded).weight(.bold))
+                            .font(DSTypography.pageTitle)
                             .multilineTextAlignment(.center)
                             .foregroundStyle(Theme.primaryText)
                             .padding(.horizontal, 24)

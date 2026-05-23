@@ -1,29 +1,19 @@
 import SwiftUI
 
 struct DSTheme {
-    static let primaryText = Color.primary
-    static let secondaryText = Color.secondary
-    static let tertiaryText = Color.secondary
-    #if canImport(UIKit)
-    static let background = Color(UIColor.secondarySystemBackground)
-    static let cardBackground = Color(UIColor.systemBackground)
-    static let elevatedFill = Color(UIColor.tertiarySystemFill)
-    #elseif canImport(AppKit)
-    static let background = Color(resolvedNSColor: .windowBackgroundColor)
-    static let cardBackground = Color(resolvedNSColor: .controlBackgroundColor)
-    static let elevatedFill = Color(resolvedNSColor: .quaternaryLabelColor).opacity(0.14)
-    #else
-    static let background = Color.secondary.opacity(0.1)
-    static let cardBackground = Color.primary.opacity(0.05)
-    static let elevatedFill = Color.primary.opacity(0.1)
-    #endif
-    static let separator = Color.secondary.opacity(0.16)
+    static var primaryText: Color { AppTokens.Theme.primaryText }
+    static var secondaryText: Color { AppTokens.Theme.secondaryText }
+    static var tertiaryText: Color { AppTokens.Theme.tertiaryText }
+    static var background: Color { AppTokens.Theme.background }
+    static var cardBackground: Color { AppTokens.Theme.cardBackground }
+    static var elevatedFill: Color { AppTokens.Theme.elevatedFill }
+    static var separator: Color { AppTokens.Theme.separator }
 
-    static let success = Color.green
-    static let warning = Color.orange
-    static let destructive = Color.red
+    static var success: Color { AppTokens.Theme.success }
+    static var warning: Color { AppTokens.Theme.warning }
+    static var destructive: Color { AppTokens.Theme.destructive }
 
-    static let cardMaterial: Material = .regularMaterial
+    static var cardMaterial: Material { AppTokens.Theme.cardMaterial }
 }
 
 extension View {

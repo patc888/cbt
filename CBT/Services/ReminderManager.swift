@@ -73,6 +73,7 @@ struct ReminderManager {
         let identifiers = ["daily_mood_reminder", "daily_reflection_reminder"]
         notificationCenter.removePendingNotificationRequests(withIdentifiers: identifiers)
         notificationCenter.removeDeliveredNotifications(withIdentifiers: identifiers)
+        ContextualNotificationService.shared.cancelAllContextualNotifications()
     }
 
     private func notificationSettings() async -> UNNotificationSettings {

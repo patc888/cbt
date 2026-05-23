@@ -63,7 +63,7 @@ struct EvidenceEducationPage: View {
                 DSCardContainer {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("The Weight of Evidence")
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                         
                         Text("Often, we give 'Negative Evidence' (feelings, past mistakes) too much weight. 'Positive Evidence' (facts, recent successes) is often ignored. CBT balances the scale.")
@@ -74,7 +74,7 @@ struct EvidenceEducationPage: View {
                 
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Ask yourself:")
-                        .font(.headline)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
                     
                     BulletPoint(text: "Is there any other way to look at this?")

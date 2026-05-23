@@ -27,11 +27,12 @@ struct TopHeadlineView<Leading: View, Trailing: View>: View {
 
                 // Centered Title
                 Text(title)
-                    .font(.system(size: 24, weight: .bold, design: .rounded)) // Slightly smaller to be more premium
+                    .font(DSTypography.headerTitle)
                     .foregroundStyle(DSTheme.primaryText)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.65)
                     .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 76)
 
                 // Trailing Content
                 HStack {
@@ -39,7 +40,7 @@ struct TopHeadlineView<Leading: View, Trailing: View>: View {
                     trailing
                 }
             }
-            .frame(height: 44)
+            .frame(minHeight: 44)
             .padding(.top, 12)
             .padding(.bottom, 4) // Reduced bottom padding for a tighter look
         }

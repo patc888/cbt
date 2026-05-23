@@ -217,6 +217,12 @@ struct PersonalityAssessmentView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+        .onAppear {
+            NotificationCenter.default.post(name: .quizFlowDidEnter, object: nil)
+        }
+        .onDisappear {
+            NotificationCenter.default.post(name: .quizFlowDidExit, object: nil)
+        }
     }
 
     private var introContent: some View {

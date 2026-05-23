@@ -3,28 +3,30 @@ import SwiftData
 
 struct ExercisesView: View {
     var body: some View {
-        ZStack {
-            ThemedBackground().ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                ThemedBackground().ignoresSafeArea()
 
-            DeferredRenderView {
-                VStack(alignment: .leading, spacing: 12) {
-                    AppScreenHeadline(title: "Exercises")
-                    
-                    ExercisesSkeleton()
-                        .padding(.horizontal)
-                    
-                    Spacer()
+                DeferredRenderView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        AppScreenHeadline(title: "Exercises")
+
+                        ExercisesSkeleton()
+                            .padding(.horizontal)
+
+                        Spacer()
+                    }
+                    .padding(.top, 16)
+                } content: {
+                    ExercisesDashboardContent()
                 }
-                .padding(.top, 16)
-            } content: {
-                ExercisesDashboardContent()
             }
-        }
 #if os(iOS)
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
 #endif
+        }
     }
 }
 
@@ -32,13 +34,15 @@ private struct ExercisesDashboardContent: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.colorScheme) private var colorScheme
     @State private var completions: [ExerciseCompletion] = []
+
+    @Query(filter: #Predicate<ProgramProgress> { $0.programID == "tackling_procrastination" && !$0.isDeleted })
+    private var programProgresses: [ProgramProgress]
 
     private let exerciseService = ExerciseService.shared
     @State private var viewModel = ExercisesViewModel()
     @State private var selectedCategory: String = "All"
-
-
 
     init() {}
 
@@ -136,6 +140,10 @@ private struct ExercisesDashboardContent: View {
                                 }
                             }
                         }
+
+                        if selectedCategory == "All" {
+                            personalGrowthCoursesSection
+                        }
                     }
 
                     Spacer(minLength: 8)
@@ -176,7 +184,7 @@ private struct ExercisesDashboardContent: View {
     private var quickToolsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             sectionTitle("Behavioral Activation")
-            
+
             NavigationLink(destination: ActivityPlannerView()) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
@@ -193,7 +201,7 @@ private struct ExercisesDashboardContent: View {
                             .font(.system(size: 24))
                             .foregroundStyle(themeManager.selectedColor)
                     }
-                    
+
                     HStack {
                         Image(systemName: "arrow.up.right.circle.fill")
                         Text("Rate Predicted vs. Actual Enjoyment")
@@ -214,7 +222,7 @@ private struct ExercisesDashboardContent: View {
                         Image(systemName: "sparkles")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(themeManager.selectedColor)
-                        
+
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Affirmations")
                                 .font(.system(.headline, design: .rounded).weight(.semibold))
@@ -223,7 +231,7 @@ private struct ExercisesDashboardContent: View {
                                 .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(Theme.secondaryText)
                         }
-                        
+
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.system(size: 13, weight: .semibold))
@@ -241,7 +249,7 @@ private struct ExercisesDashboardContent: View {
                         Image(systemName: "brain.head.profile")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(themeManager.selectedColor)
-                        
+
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Distortion Examples")
                                 .font(.system(.headline, design: .rounded).weight(.semibold))
@@ -250,7 +258,7 @@ private struct ExercisesDashboardContent: View {
                                 .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(Theme.secondaryText)
                         }
-                        
+
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.system(size: 13, weight: .semibold))
@@ -269,6 +277,102 @@ private struct ExercisesDashboardContent: View {
             .padding(Theme.paddingMedium)
             .cardStyle()
         }
+    }
+
+    private var personalGrowthCoursesSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionTitle("Personal Growth Courses")
+
+            NavigationLink(destination: ProgramDetailView(program: .tacklingProcrastination)) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .top, spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(themeManager.selectedColor.opacity(0.15))
+                                .frame(width: 44, height: 44)
+                            Image(systemName: "graduationcap.fill")
+                                .font(.system(size: 20))
+                                .foregroundStyle(themeManager.selectedColor)
+                        }
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("Tackling Procrastination")
+                                    .font(.system(.headline, design: .rounded).weight(.bold))
+                                    .foregroundStyle(Theme.primaryText)
+                                Spacer()
+                                Text("3-Day Course")
+                                    .font(.system(.caption2, design: .rounded).weight(.bold))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(themeManager.selectedColor.opacity(0.1))
+                                    .foregroundStyle(themeManager.selectedColor)
+                                    .clipShape(Capsule())
+                            }
+
+                            Text("Overcome avoidance, master emotion regulation, and build momentum.")
+                                .font(.system(.subheadline, design: .rounded))
+                                .foregroundStyle(Theme.secondaryText)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                        }
+                    }
+
+                    let completedDays = programProgresses.first?.completedDays ?? 0
+
+                    VStack(spacing: 8) {
+                        HStack {
+                            Text(completedDays == 3 ? "Course Completed!" : "Progress: Day \(completedDays) of 3")
+                                .font(.system(.caption, design: .rounded).weight(.semibold))
+                                .foregroundStyle(completedDays == 3 ? Theme.successGreen : Theme.secondaryText)
+                            Spacer()
+                            if completedDays == 3 {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(Theme.successGreen)
+                            } else {
+                                Text("\(Int(Double(completedDays) / 3.0 * 100))%")
+                                    .font(.system(.caption, design: .rounded).weight(.bold))
+                                    .foregroundStyle(Theme.secondaryText)
+                            }
+                        }
+
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Theme.trackBackgroundColor(for: colorScheme))
+                                    .frame(height: 6)
+                                Capsule()
+                                    .fill(completedDays == 3 ? Theme.successGreen : themeManager.selectedColor)
+                                    .frame(width: geo.size.width * CGFloat(completedDays) / 3.0, height: 6)
+                            }
+                        }
+                        .frame(height: 6)
+                    }
+                    .padding(.top, 4)
+
+                    HStack {
+                        if completedDays == 3 {
+                            Text("Review Syllabus")
+                                .font(.system(.caption, design: .rounded).weight(.bold))
+                                .foregroundStyle(themeManager.selectedColor)
+                        } else {
+                            Text(completedDays == 0 ? "Start Course" : "Continue Day \(completedDays + 1)")
+                                .font(.system(.caption, design: .rounded).weight(.bold))
+                                .foregroundStyle(themeManager.selectedColor)
+                        }
+                        Spacer()
+                        Image(systemName: "arrow.up.right.circle.fill")
+                            .font(.system(.title3))
+                            .foregroundStyle(themeManager.selectedColor)
+                    }
+                    .padding(.top, 4)
+                }
+                .padding(Theme.paddingMedium)
+                .cardStyle()
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.top, 10)
     }
 
     private func quickToolButton(title: String, durationSeconds: Int) -> some View {

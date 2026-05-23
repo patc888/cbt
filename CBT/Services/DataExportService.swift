@@ -74,6 +74,42 @@ nonisolated struct PersonalityAssessmentLogExport: Codable, Sendable {
     let neuroticismScore: Double
 }
 
+nonisolated struct ProgramProgressExport: Codable, Sendable {
+    let id: UUID
+    let programID: String
+    let completedDays: Int
+    let lastCompletedAt: Date?
+}
+
+nonisolated struct FlexibleJournalEntryExport: Codable, Sendable {
+    let id: UUID
+    let date: Date
+    let templateType: String
+    let responses: [String]
+}
+
+nonisolated struct MoodCheckInExport: Codable, Sendable {
+    let id: UUID
+    let createdAt: Date
+    let moodScore: Int
+    let notes: String?
+}
+
+nonisolated struct BreathingSessionExport: Codable, Sendable {
+    let id: UUID
+    let createdAt: Date
+    let durationSeconds: Int
+}
+
+nonisolated struct SafetyPlanExport: Codable, Sendable {
+    let id: UUID
+    let createdAt: Date
+    let updatedAt: Date
+    let emergencyContacts: [EmergencyContact]
+    let personalWarningSigns: [String]
+    let copingStrategies: [String]
+}
+
 nonisolated struct CBTDataExportPayload: Codable, Sendable {
     let exportedAt: String
     let appVersion: String?
@@ -84,6 +120,11 @@ nonisolated struct CBTDataExportPayload: Codable, Sendable {
     let plannedActivities: [PlannedActivityExport]?
     let assessmentLogs: [AssessmentLogExport]?
     let personalityAssessmentLogs: [PersonalityAssessmentLogExport]?
+    let programProgresses: [ProgramProgressExport]?
+    let flexibleJournalEntries: [FlexibleJournalEntryExport]?
+    let moodCheckIns: [MoodCheckInExport]?
+    let breathingSessions: [BreathingSessionExport]?
+    let safetyPlans: [SafetyPlanExport]?
 }
 
 struct DataExportService {
@@ -133,6 +174,24 @@ struct DataExportService {
         )
         let personalityAssessmentDescriptor = FetchDescriptor<PersonalityAssessmentLog>(
             sortBy: [SortDescriptor(\PersonalityAssessmentLog.date)]
+        )
+        let programProgressDescriptor = FetchDescriptor<ProgramProgress>(
+            predicate: #Predicate<ProgramProgress> { $0.isDeleted == false },
+            sortBy: [SortDescriptor(\ProgramProgress.programID)]
+        )
+        let flexibleJournalDescriptor = FetchDescriptor<FlexibleJournalEntry>(
+            sortBy: [SortDescriptor(\FlexibleJournalEntry.date)]
+        )
+        let moodCheckInDescriptor = FetchDescriptor<MoodCheckIn>(
+            predicate: #Predicate<MoodCheckIn> { $0.isDeleted == false },
+            sortBy: [SortDescriptor(\MoodCheckIn.createdAt)]
+        )
+        let breathingSessionDescriptor = FetchDescriptor<BreathingSession>(
+            predicate: #Predicate<BreathingSession> { $0.isDeleted == false },
+            sortBy: [SortDescriptor(\BreathingSession.createdAt)]
+        )
+        let safetyPlanDescriptor = FetchDescriptor<SafetyPlan>(
+            sortBy: [SortDescriptor(\SafetyPlan.updatedAt, order: .reverse)]
         )
 
         let moodEntries = try modelContext.fetch(moodDescriptor).map {
@@ -222,6 +281,52 @@ struct DataExportService {
             )
         }
 
+        let programProgresses = try modelContext.fetch(programProgressDescriptor).map {
+            ProgramProgressExport(
+                id: $0.id,
+                programID: $0.programID,
+                completedDays: $0.completedDays,
+                lastCompletedAt: $0.lastCompletedAt
+            )
+        }
+
+        let flexibleJournalEntries = try modelContext.fetch(flexibleJournalDescriptor).map {
+            FlexibleJournalEntryExport(
+                id: $0.id,
+                date: $0.date,
+                templateType: $0.templateType,
+                responses: $0.responses
+            )
+        }
+
+        let moodCheckIns = try modelContext.fetch(moodCheckInDescriptor).map {
+            MoodCheckInExport(
+                id: $0.id,
+                createdAt: $0.createdAt,
+                moodScore: $0.moodScore,
+                notes: $0.notes
+            )
+        }
+
+        let breathingSessions = try modelContext.fetch(breathingSessionDescriptor).map {
+            BreathingSessionExport(
+                id: $0.id,
+                createdAt: $0.createdAt,
+                durationSeconds: $0.durationSeconds
+            )
+        }
+
+        let safetyPlans = try modelContext.fetch(safetyPlanDescriptor).map {
+            SafetyPlanExport(
+                id: $0.id,
+                createdAt: $0.createdAt,
+                updatedAt: $0.updatedAt,
+                emergencyContacts: $0.emergencyContacts,
+                personalWarningSigns: $0.personalWarningSigns,
+                copingStrategies: $0.copingStrategies
+            )
+        }
+
         return CBTDataExportPayload(
             exportedAt: Self.makeExportDateString(),
             appVersion: Self.appVersion,
@@ -231,7 +336,12 @@ struct DataExportService {
             journalEntries: journalEntries,
             plannedActivities: plannedActivities,
             assessmentLogs: assessmentLogs,
-            personalityAssessmentLogs: personalityAssessmentLogs
+            personalityAssessmentLogs: personalityAssessmentLogs,
+            programProgresses: programProgresses,
+            flexibleJournalEntries: flexibleJournalEntries,
+            moodCheckIns: moodCheckIns,
+            breathingSessions: breathingSessions,
+            safetyPlans: safetyPlans
         )
     }
 

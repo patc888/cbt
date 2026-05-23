@@ -37,7 +37,7 @@ struct InsightsRankingCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.system(.title, design: .rounded).weight(.bold))
+                .font(DSTypography.sectionTitle)
                 .foregroundStyle(Theme.primaryText)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)

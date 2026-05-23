@@ -12,11 +12,15 @@ struct SettingsSection<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: title.isEmpty ? 0 : 16) {
             if !title.isEmpty {
-                DSSectionHeader(title: title)
+                Text(title)
+                    .font(DSTypography.sectionHeader)
+                    .foregroundColor(Theme.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             
             content()
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
         .cardStyle()

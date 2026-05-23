@@ -7,7 +7,7 @@ struct InsightsStreaksCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(String(localized: "Activity Streaks"))
-                .font(.system(.title, design: .rounded).weight(.bold))
+                .font(DSTypography.sectionTitle)
                 .foregroundStyle(Theme.primaryText)
 
             HStack(spacing: 12) {

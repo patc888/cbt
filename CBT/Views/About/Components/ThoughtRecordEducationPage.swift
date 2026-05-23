@@ -12,7 +12,7 @@ struct ThoughtRecordEducationPage: View {
                 DSCardContainer {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Why write it down?")
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                         
                         Text("Writing down your thoughts helps you step back and see them as 'mental events' rather than absolute facts. This 'de-centering' is key to emotional regulation.")
@@ -50,7 +50,7 @@ struct ThoughtRecordEducationPage: View {
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.headline)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
                     Text(description)
                         .font(.subheadline)

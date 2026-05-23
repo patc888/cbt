@@ -32,29 +32,33 @@ struct InsightsView: View {
     @State private var attemptingAddThought = false
 
     var body: some View {
-        ZStack {
-            ThemedBackground().ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                ThemedBackground().ignoresSafeArea()
 
-            DeferredRenderView {
-                VStack {
-                    AppScreenHeadline(title: String(localized: "Insights"))
-                        .padding(.horizontal)
-                    Spacer()
+                DeferredRenderView {
+                    VStack {
+                        AppScreenHeadline(title: String(localized: "Insights"))
+                            .padding(.horizontal)
+                        Spacer()
+                    }
+                } content: {
+                    InsightsDashboardContent(
+                        timeRange: $timeRange,
+                        moodGoalValue: moodGoalValue,
+                        attemptingAddMood: $attemptingAddMood,
+                        attemptingAddThought: $attemptingAddThought
+                    )
                 }
-            } content: {
-                InsightsDashboardContent(
-                    timeRange: $timeRange,
-                    moodGoalValue: moodGoalValue,
-                    attemptingAddMood: $attemptingAddMood,
-                    attemptingAddThought: $attemptingAddThought
-                )
             }
+            .navigationTitle("")
+            #if os(iOS)
+            .navigationBarBackButtonHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
+            #endif
+            .hideNavigationBar()
         }
-        .navigationTitle("")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
-        #endif
         .sheet(isPresented: $showingAddMood) {
             MoodCheckinView()
         }

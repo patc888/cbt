@@ -17,7 +17,7 @@ struct ConclusionEducationPage: View {
                 DSCardContainer {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("How to use this app:")
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                         
                         VStack(alignment: .leading, spacing: 12) {

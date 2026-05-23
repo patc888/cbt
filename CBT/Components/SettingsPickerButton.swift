@@ -17,7 +17,7 @@ struct SettingsPickerButton: View {
                 Text(value)
                     .font(.system(size: 16, weight: .bold, design: .rounded))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.55)
             }
             
             Image(systemName: "pencil.circle.fill")
@@ -50,7 +50,7 @@ struct SettingsDropdownButton: View {
             Text(value)
                 .font(.system(size: 14, weight: .bold, design: .rounded))
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .minimumScaleFactor(0.55)
             
             Image(systemName: "chevron.up.chevron.down")
                 .font(.system(size: 10, weight: .bold))

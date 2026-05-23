@@ -11,7 +11,7 @@ struct DistortionStepView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Any thinking traps?")
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                         ContextualHelpButton(
                             title: "Cognitive Distortions",

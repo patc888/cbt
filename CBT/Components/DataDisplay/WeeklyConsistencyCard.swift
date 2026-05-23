@@ -81,7 +81,7 @@ struct WeeklyConsistencyCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Weekly Consistency")
-                .font(.headline)
+                .font(.system(.headline, design: .rounded).weight(.bold))
 
             VStack(spacing: 10) {
                 ProgressRing(progress: progress, lineWidth: 14, accentColor: tintColor) {

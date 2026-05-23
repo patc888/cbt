@@ -43,7 +43,7 @@ struct TriangleEducationPage: View {
                 DSCardContainer {
                     VStack(alignment: .leading, spacing: 12) {
                         Text(activeNodeTitle)
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(themeManager.selectedColor)
                         
                         Text(activeNodeDescription)

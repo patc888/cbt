@@ -30,7 +30,7 @@ struct BalancedEducationPage: View {
                 DSCardContainer {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("The Shift")
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                         
                         Text("A balanced thought is grounded in all the evidence. It acknowledges the difficulty while also recognizing your strengths and alternative explanations.")

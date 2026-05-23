@@ -52,7 +52,7 @@ struct JournalEntryDetailView: View {
 
                 // Title
                 Text(entry.title)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(DSTypography.pageTitle)
                     .foregroundStyle(DSTheme.primaryText)
 
                 Divider()

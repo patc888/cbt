@@ -4,6 +4,9 @@ import UserNotifications
 struct AdvancedRemindersView: View {
     @AppStorage("cbt_moodReminderEnabled") private var moodReminderEnabled = false
     @AppStorage("cbt_reflectionReminderEnabled") private var reflectionReminderEnabled = false
+    @AppStorage("cbt_contextualBeforeWorkEnabled") private var contextualBeforeWorkEnabled = false
+    @AppStorage("cbt_contextualDuringCommuteEnabled") private var contextualDuringCommuteEnabled = false
+    @AppStorage("cbt_contextualBeforeBedEnabled") private var contextualBeforeBedEnabled = false
 
     @AppStorage("cbt_moodReminderHour") private var moodReminderHour = 9
     @AppStorage("cbt_moodReminderMinute") private var moodReminderMinute = 0
@@ -27,6 +30,7 @@ struct AdvancedRemindersView: View {
     @State private var showingQuietEndPicker = false
 
     private let reminderManager = ReminderManager.shared
+    private let contextualNotificationService = ContextualNotificationService.shared
     private let moodReminderIdentifier = "daily_mood_reminder"
     private let reflectionReminderIdentifier = "daily_reflection_reminder"
 
@@ -152,6 +156,18 @@ struct AdvancedRemindersView: View {
                 }
             }
 
+            SettingsSection(title: String(localized: "Life Events")) {
+                ForEach(contextualNotificationService.defaultTemplates) { template in
+                    ToggleRow(
+                        icon: icon(for: template),
+                        iconColor: themeManager.primaryColor,
+                        title: template.lifeEvent.title,
+                        subtitle: subtitle(for: template),
+                        isOn: binding(for: template.lifeEvent)
+                    )
+                }
+            }
+
             SettingsSection(title: String(localized: "Quiet Hours")) {
                 ToggleRow(
                     icon: "moon.zzz.fill",
@@ -263,6 +279,57 @@ struct AdvancedRemindersView: View {
         date(hour: quietHoursEndHour, minute: quietHoursEndMinute).timeOnly
     }
 
+    private func binding(for lifeEvent: LifeEvent) -> Binding<Bool> {
+        Binding(
+            get: {
+                switch lifeEvent {
+                case .beforeWork:
+                    return contextualBeforeWorkEnabled
+                case .duringCommute:
+                    return contextualDuringCommuteEnabled
+                case .beforeBed:
+                    return contextualBeforeBedEnabled
+                }
+            },
+            set: { isEnabled in
+                Task {
+                    await handleContextualReminderToggle(lifeEvent, isEnabled: isEnabled)
+                }
+            }
+        )
+    }
+
+    private func icon(for template: NotificationTemplate) -> String {
+        switch template.deepLink {
+        case .breathing:
+            return "wind"
+        case .journal:
+            return "book.pages.fill"
+        case .affirmation:
+            return "sparkles"
+        }
+    }
+
+    private func subtitle(for template: NotificationTemplate) -> String {
+        let triggerLabel: String
+        if let calendarTrigger = template.trigger as? UNCalendarNotificationTrigger,
+           let hour = calendarTrigger.dateComponents.hour,
+           let minute = calendarTrigger.dateComponents.minute {
+            triggerLabel = date(hour: hour, minute: minute).timeOnly
+        } else {
+            triggerLabel = String(localized: "Contextual reminder")
+        }
+
+        switch template.deepLink {
+        case .breathing:
+            return String(localized: "\(triggerLabel) - opens Breathing")
+        case .journal:
+            return String(localized: "\(triggerLabel) - opens Journal")
+        case .affirmation:
+            return String(localized: "\(triggerLabel) - opens Affirmations")
+        }
+    }
+
     private var moodTimeBinding: Binding<Date> {
         Binding(
             get: { date(hour: moodReminderHour, minute: moodReminderMinute) },
@@ -365,6 +432,34 @@ struct AdvancedRemindersView: View {
                 reflectionReminderEnabled = false
             }
             await reminderManager.cancel(reflectionReminderIdentifier)
+        }
+    }
+
+    private func handleContextualReminderToggle(_ lifeEvent: LifeEvent, isEnabled: Bool) async {
+        if isEnabled {
+            let canSchedule = await ensureAuthorizationForScheduling()
+            guard canSchedule, let template = contextualNotificationService.template(for: lifeEvent) else {
+                await setContextualReminder(lifeEvent, isEnabled: false)
+                return
+            }
+
+            await setContextualReminder(lifeEvent, isEnabled: true)
+            try? await contextualNotificationService.schedule(template)
+        } else {
+            await setContextualReminder(lifeEvent, isEnabled: false)
+            contextualNotificationService.cancel(lifeEvent: lifeEvent)
+        }
+    }
+
+    @MainActor
+    private func setContextualReminder(_ lifeEvent: LifeEvent, isEnabled: Bool) {
+        switch lifeEvent {
+        case .beforeWork:
+            contextualBeforeWorkEnabled = isEnabled
+        case .duringCommute:
+            contextualDuringCommuteEnabled = isEnabled
+        case .beforeBed:
+            contextualBeforeBedEnabled = isEnabled
         }
     }
 

@@ -103,7 +103,7 @@ struct PrivacyInfoPopup: View {
                     .padding(.bottom, 8)
                 
                 Text("Your Data is Private")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(DSTypography.pageTitle)
                     .foregroundStyle(Theme.primaryText)
                 
                 Text("We believe your data belongs only to you. This app is designed with privacy at its core.")

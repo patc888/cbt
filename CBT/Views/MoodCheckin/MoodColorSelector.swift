@@ -14,7 +14,7 @@ struct MoodColorSelector: View {
                         .foregroundStyle(DSTheme.primaryText)
                         .multilineTextAlignment(.center)
                     
-                    HStack(spacing: 12) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 12)], spacing: 12) {
                         ForEach(MoodColor.allCases.reversed(), id: \.self) { mood in
                             MoodCircleButton(mood: mood, isSelected: selectedColor == mood) {
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
@@ -23,16 +23,16 @@ struct MoodColorSelector: View {
                             }
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, DSSpacing.large)
                     
                     if let color = selectedColor {
                         Text(color.label)
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(color.color(with: themeManager.selectedColor))
                             .transition(.opacity.combined(with: .scale))
                     } else {
                         Text(" ")
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                     }
                     
                     Button("Continue") {

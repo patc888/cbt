@@ -16,7 +16,7 @@ struct FurtherReadingEducationPage: View {
                 DSCardContainer {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Online Resources")
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                         
                         VStack(alignment: .leading, spacing: 8) {
@@ -44,7 +44,7 @@ struct FurtherReadingEducationPage: View {
                         .foregroundStyle(themeManager.selectedColor)
                         .textCase(.uppercase)
                     Text(title)
-                        .font(.headline)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
                     Text("by \(author)")
                         .font(.caption)

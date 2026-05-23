@@ -7,6 +7,8 @@ extension Notification.Name {
     static let didResetData = Notification.Name("didResetData")
     static let exerciseFlowDidEnter = Notification.Name("exerciseFlowDidEnter")
     static let exerciseFlowDidExit = Notification.Name("exerciseFlowDidExit")
+    static let quizFlowDidEnter = Notification.Name("quizFlowDidEnter")
+    static let quizFlowDidExit = Notification.Name("quizFlowDidExit")
 }
 
 @Observable

@@ -41,7 +41,7 @@ struct InsightsEmptyStateView: View {
                 .padding(.bottom, 8)
 
                 Text(String(localized: "Unlock Your Insights"))
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .font(DSTypography.pageTitle)
                     .foregroundStyle(Theme.primaryText)
 
                 Text(String(localized: "Complete mood check-ins and thought records to see your progress, trends, and breakthroughs over time."))

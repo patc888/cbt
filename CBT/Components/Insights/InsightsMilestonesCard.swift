@@ -12,7 +12,7 @@ struct InsightsMilestonesCard: View {
         VStack(spacing: 16) {
             HStack {
                 Text(String(localized: "Milestones"))
-                    .font(.system(.title, design: .rounded).weight(.bold))
+                    .font(DSTypography.sectionTitle)
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
                 Text("\(milestonesCompleted)/4")

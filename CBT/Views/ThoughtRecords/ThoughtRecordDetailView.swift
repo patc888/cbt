@@ -25,6 +25,26 @@ struct ThoughtRecordDetailView: View {
                         IntensityBadge(title: "After", intensity: record.intensityAfter)
                     }
                 }
+
+                NavigationLink {
+                    CognitiveSandboxView(record: record)
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Open Cognitive Sandbox")
+                            .font(.system(.headline, design: .rounded).weight(.bold))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .bold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .background(Theme.primaryColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
                 
                 // Content
                 DetailSection(title: "Situation") {
@@ -45,7 +65,7 @@ struct ThoughtRecordDetailView: View {
                 if !tags.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Emotions & Distortions")
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                         
                         FlowLayout(spacing: 6) {
@@ -132,7 +152,7 @@ fileprivate struct DetailSection<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.headline)
+                .font(.system(.headline, design: .rounded).weight(.bold))
                 .foregroundStyle(Theme.primaryText)
             content
                 .padding(.horizontal, 4)

@@ -123,7 +123,7 @@ private struct TimelineDashboardContent: View {
                         .padding(.bottom, 8)
 
                         Text("Your Journey Starts Here")
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .font(DSTypography.pageTitle)
                             .foregroundStyle(Theme.primaryText)
 
                         Text("Your timeline will beautifully document your growth, capturing every mood check-in and breakthrough.")

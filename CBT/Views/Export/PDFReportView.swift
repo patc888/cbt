@@ -10,7 +10,7 @@ struct PDFReportView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("CBT Progress Report")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(DSTypography.pageTitle)
                         .foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "brain.head.profile")

@@ -3,25 +3,27 @@ import SwiftData
 
 struct JournalView: View {
     var body: some View {
-        ZStack {
-            ThemedBackground().ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                ThemedBackground().ignoresSafeArea()
 
-            DeferredRenderView {
-                VStack(spacing: 12) {
-                    AppScreenHeadline(title: String(localized: "Journal"))
+                DeferredRenderView {
                     Spacer()
+                } content: {
+                    JournalDashboardContent()
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-            } content: {
-                JournalDashboardContent()
+            }
+            .navigationTitle("")
+#if os(iOS)
+            .navigationBarBackButtonHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
+#endif
+            .hideNavigationBar()
+            .navigationDestination(for: TimelineRoute.self) { route in
+                TimelineRouteDestinationView(route: route)
             }
         }
-        .navigationTitle("")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
-        #endif
     }
 }
 
@@ -32,6 +34,7 @@ private struct JournalDashboardContent: View {
         case mood = "Mood"
         case thoughts = "Thoughts"
         case sessions = "Sessions"
+        case guided = "Guided"
 
         var id: String { rawValue }
 
@@ -40,6 +43,7 @@ private struct JournalDashboardContent: View {
             case .mood: return String(localized: "Mood")
             case .thoughts: return String(localized: "Thoughts")
             case .sessions: return String(localized: "Sessions")
+            case .guided: return String(localized: "Guided")
             }
         }
 
@@ -51,6 +55,8 @@ private struct JournalDashboardContent: View {
                 return String(localized: "Capture situations and reframe automatic thoughts.")
             case .sessions:
                 return String(localized: "Timed practice sessions from exercises and tools.")
+            case .guided:
+                return String(localized: "Template-based reflections for structured journaling.")
             }
         }
 
@@ -62,6 +68,8 @@ private struct JournalDashboardContent: View {
                 return "brain.head.profile"
             case .sessions:
                 return "book.pages"
+            case .guided:
+                return "pencil.and.list.clipboard"
             }
         }
     }
@@ -98,7 +106,6 @@ private struct JournalDashboardContent: View {
                 )
             }
             .padding(.horizontal, 16)
-            .padding(.top, 12)
             .padding(.bottom, 8)
             .responsiveMaxWidth()
             .frame(maxWidth: .infinity)
@@ -110,6 +117,8 @@ private struct JournalDashboardContent: View {
                 ThoughtRecordListView()
             case .sessions:
                 JournalSessionsListView()
+            case .guided:
+                GuidedJournalPickerView()
             }
         }
     }

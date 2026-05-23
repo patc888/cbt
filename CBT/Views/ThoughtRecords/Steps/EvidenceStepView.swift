@@ -10,7 +10,7 @@ struct EvidenceStepView: View {
                 VStack(alignment: .leading) {
                     HStack {
                         Text("Evidence For")
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                         ContextualHelpButton(
                             title: "Evidence For",
@@ -30,7 +30,7 @@ struct EvidenceStepView: View {
                 VStack(alignment: .leading) {
                     HStack {
                         Text("Evidence Against")
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                         ContextualHelpButton(
                             title: "Evidence Against",

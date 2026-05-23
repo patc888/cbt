@@ -10,7 +10,7 @@ struct DistortionButton: View {
         Button(action: action) {
             HStack {
                 Text(item.title)
-                    .font(.headline)
+                    .font(.system(.headline, design: .rounded).weight(.bold))
                     .foregroundStyle(isSelected ? .white : Theme.primaryText)
                 Spacer()
                 if isSelected {

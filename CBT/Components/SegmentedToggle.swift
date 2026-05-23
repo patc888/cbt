@@ -56,7 +56,7 @@ struct SegmentedToggle<T: Hashable, Label: View>: View {
                         .foregroundColor(selection == option ? .white : Theme.unselectedOptionColor(for: colorScheme))
                         .opacity(hideUnselectedLabels && selection != option ? 0 : 1)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.5)
+                        .minimumScaleFactor(0.45)
                         .padding(.vertical, verticalPadding)
                         .frame(width: useMinWidth ? minWidth : nil)
                         .frame(maxWidth: useMinWidth ? nil : .infinity)

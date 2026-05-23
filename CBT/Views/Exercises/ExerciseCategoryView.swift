@@ -15,8 +15,7 @@ struct ExerciseCategoryView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     Text(category)
-                        .font(.largeTitle)
-                        .bold()
+                        .font(DSTypography.pageTitle)
                         .foregroundColor(Theme.primaryText)
                         .padding(.top)
                     
@@ -27,7 +26,7 @@ struct ExerciseCategoryView: View {
                             } label: {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(exercise.title)
-                                        .font(.headline)
+                                        .font(.system(.headline, design: .rounded).weight(.bold))
                                         .foregroundColor(Theme.primaryText)
                                     
                                     Text(exercise.description)

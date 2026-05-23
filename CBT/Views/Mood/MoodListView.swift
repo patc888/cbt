@@ -22,7 +22,7 @@ struct MoodListView: View {
                         .font(.system(size: 64))
                         .foregroundColor(Theme.secondaryText)
                     Text("No mood check-ins yet.")
-                        .font(.headline)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
                     Text("Track how you feel to spot patterns.")
                         .font(.subheadline)

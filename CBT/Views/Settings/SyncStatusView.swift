@@ -4,8 +4,74 @@ import SwiftData
 // MARK: - Sync Status View
 
 struct SyncStatusView: View {
+    @State private var monitor: CloudKitSyncMonitor
+
+    init(monitor: CloudKitSyncMonitor? = nil) {
+        _monitor = State(initialValue: monitor ?? .shared)
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            statusIndicator
+
+            Text(monitor.statusText)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(statusColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(statusColor.opacity(0.12), in: Capsule())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    @ViewBuilder
+    private var statusIndicator: some View {
+        switch monitor.status {
+        case .syncing:
+            ProgressView()
+                .controlSize(.mini)
+                .tint(statusColor)
+        case .upToDate:
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(statusColor)
+        case .error:
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(statusColor)
+        }
+    }
+
+    private var statusColor: Color {
+        switch monitor.status {
+        case .syncing:
+            return .orange
+        case .upToDate:
+            return Theme.successGreen
+        case .error:
+            return Theme.errorRed
+        }
+    }
+
+    private var accessibilityLabel: String {
+        switch monitor.status {
+        case .error(let message):
+            return "iCloud sync status, Error, \(message)"
+        default:
+            return "iCloud sync status, \(monitor.statusText)"
+        }
+    }
+}
+
+// MARK: - Sync Storage Audit View
+
+struct SyncStorageAuditView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
+    @EnvironmentObject private var syncStatusMonitor: CloudSyncStatusMonitor
     @State private var auditService = StorageAuditService()
     @State private var showingPurgeConfirmation = false
 
@@ -43,6 +109,10 @@ struct SyncStatusView: View {
 
     private var cloudHealthSection: some View {
         SettingsSection(title: "CloudKit Health") {
+            SettingsRow(icon: "circle.fill", iconColor: themeManager.primaryColor, title: "Sync Status") {
+                SyncStatusIndicatorView(monitor: syncStatusMonitor)
+            }
+
             SettingsRow(icon: "icloud.fill", iconColor: themeManager.primaryColor, title: "Account Status") {
                 Text(auditService.cloudAccountStatus)
                     .font(.system(size: 14, weight: .medium, design: .rounded))

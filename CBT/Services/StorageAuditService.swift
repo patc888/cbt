@@ -23,17 +23,11 @@ struct OrphanAsset: Identifiable {
 @Observable
 final class StorageAuditService {
     private let fileManager: FileManager
-    @ObservationIgnored private var cloudKitEventObserver: NSObjectProtocol?
+    private let syncMonitor: CloudKitSyncMonitor
 
-    init(fileManager: FileManager = .default) {
+    init(fileManager: FileManager = .default, syncMonitor: CloudKitSyncMonitor? = nil) {
         self.fileManager = fileManager
-        observeCloudKitEvents()
-    }
-
-    deinit {
-        if let cloudKitEventObserver {
-            NotificationCenter.default.removeObserver(cloudKitEventObserver)
-        }
+        self.syncMonitor = syncMonitor ?? .shared
     }
 
     // MARK: Cloud / DB audit
@@ -43,7 +37,9 @@ final class StorageAuditService {
     var syncAuditResults: [String] = []
     var cloudAccountStatus: String = "Checking..."
     var cloudKitReachabilityStatus: String = "Not checked"
-    var lastCloudKitEventSummary: String = "No SwiftData CloudKit events observed this launch."
+    var lastCloudKitEventSummary: String {
+        syncMonitor.lastEventSummary
+    }
     var persistenceMode: String = "Checking..."
     var cloudKitFallbackReason: String = ""
     var cloudKitRecoveryMessage: String = ""
@@ -164,49 +160,6 @@ final class StorageAuditService {
         cloudKitRecoveryMessage = defaults.string(forKey: AppConfiguration.cloudKitRecoveryMessageKey) ?? ""
     }
 
-    private func observeCloudKitEvents() {
-        cloudKitEventObserver = NotificationCenter.default.addObserver(
-            forName: NSPersistentCloudKitContainer.eventChangedNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            MainActor.assumeIsolated {
-                self?.handleCloudKitEvent(notification)
-            }
-        }
-    }
-
-    private func handleCloudKitEvent(_ notification: Notification) {
-        guard let event = notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event else {
-            return
-        }
-
-        let eventType: String
-        switch event.type {
-        case .setup:
-            eventType = "setup"
-        case .import:
-            eventType = "import"
-        case .export:
-            eventType = "export"
-        @unknown default:
-            eventType = "unknown"
-        }
-
-        if let error = event.error {
-            lastCloudKitEventSummary = "CloudKit \(eventType) failed: \(error.localizedDescription)"
-            return
-        }
-
-        if event.endDate == nil {
-            lastCloudKitEventSummary = "CloudKit \(eventType) in progress"
-        } else if event.succeeded {
-            lastCloudKitEventSummary = "CloudKit \(eventType) completed"
-        } else {
-            lastCloudKitEventSummary = "CloudKit \(eventType) ended without success"
-        }
-    }
-
     private func checkPrivateDatabaseReachability() async -> String {
         await withCheckedContinuation { continuation in
             AppConfiguration.cloudKitContainer.privateCloudDatabase.fetchAllRecordZones { zones, error in
@@ -228,6 +181,11 @@ final class StorageAuditService {
             let plannedActivities = try context.fetch(FetchDescriptor<PlannedActivity>())
             let assessmentLogs = try context.fetch(FetchDescriptor<AssessmentLog>())
             let personalityLogs = try context.fetch(FetchDescriptor<PersonalityAssessmentLog>())
+            let programProgresses = try context.fetch(FetchDescriptor<ProgramProgress>())
+            let flexibleJournalEntries = try context.fetch(FetchDescriptor<FlexibleJournalEntry>())
+            let moodCheckIns = try context.fetch(FetchDescriptor<MoodCheckIn>())
+            let breathingSessions = try context.fetch(FetchDescriptor<BreathingSession>())
+            let safetyPlans = try context.fetch(FetchDescriptor<SafetyPlan>())
             let settings = try context.fetch(FetchDescriptor<UserSettings>())
 
             var results = [
@@ -238,6 +196,11 @@ final class StorageAuditService {
                 activeCountLine("Planned activities", records: plannedActivities),
                 "Assessment logs: \(assessmentLogs.count)",
                 "Personality assessment logs: \(personalityLogs.count)",
+                activeCountLine("Program progress", records: programProgresses),
+                "Flexible journal entries: \(flexibleJournalEntries.count)",
+                activeCountLine("Mood check-ins", records: moodCheckIns),
+                activeCountLine("Breathing sessions", records: breathingSessions),
+                "Safety plans: \(safetyPlans.count)",
                 "User settings records: \(settings.count)"
             ]
 
@@ -248,6 +211,11 @@ final class StorageAuditService {
             appendDuplicateIDCheck("Planned activities", ids: plannedActivities.map(\.id), to: &results)
             appendDuplicateIDCheck("Assessment logs", ids: assessmentLogs.map(\.id), to: &results)
             appendDuplicateIDCheck("Personality assessment logs", ids: personalityLogs.map(\.id), to: &results)
+            appendDuplicateIDCheck("Program progress", ids: programProgresses.map(\.id), to: &results)
+            appendDuplicateIDCheck("Flexible journal entries", ids: flexibleJournalEntries.map(\.id), to: &results)
+            appendDuplicateIDCheck("Mood check-ins", ids: moodCheckIns.map(\.id), to: &results)
+            appendDuplicateIDCheck("Breathing sessions", ids: breathingSessions.map(\.id), to: &results)
+            appendDuplicateIDCheck("Safety plans", ids: safetyPlans.map(\.id), to: &results)
 
             if settings.count > 1 {
                 results.append("Issue: Found \(settings.count) UserSettings records. Run database repair to collapse duplicates.")

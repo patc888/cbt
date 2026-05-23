@@ -43,6 +43,11 @@ struct DataImportService {
         var existingPlannedActivitiesByID = try fetchExistingPlannedActivities(in: modelContext)
         var existingAssessmentLogsByID = try fetchExistingAssessmentLogs(in: modelContext)
         var existingPersonalityAssessmentLogsByID = try fetchExistingPersonalityAssessmentLogs(in: modelContext)
+        var existingProgramProgressesByID = try fetchExistingProgramProgresses(in: modelContext)
+        var existingFlexibleJournalEntriesByID = try fetchExistingFlexibleJournalEntries(in: modelContext)
+        var existingMoodCheckInsByID = try fetchExistingMoodCheckIns(in: modelContext)
+        var existingBreathingSessionsByID = try fetchExistingBreathingSessions(in: modelContext)
+        var existingSafetyPlansByID = try fetchExistingSafetyPlans(in: modelContext)
 
         // Mood entries
         for entry in payload.moodEntries {
@@ -185,6 +190,92 @@ struct DataImportService {
             }
         }
 
+        if let programProgresses = payload.programProgresses {
+            for progress in programProgresses {
+                if let existingProgress = existingProgramProgressesByID[progress.id] {
+                    update(existingProgress, from: progress)
+                } else {
+                    let programProgress = ProgramProgress(
+                        id: progress.id,
+                        programID: progress.programID,
+                        completedDays: progress.completedDays,
+                        lastCompletedAt: progress.lastCompletedAt
+                    )
+                    modelContext.insert(programProgress)
+                    existingProgramProgressesByID[progress.id] = programProgress
+                }
+            }
+        }
+
+        if let flexibleJournalEntries = payload.flexibleJournalEntries {
+            for entry in flexibleJournalEntries {
+                if let existingEntry = existingFlexibleJournalEntriesByID[entry.id] {
+                    update(existingEntry, from: entry)
+                } else {
+                    let journalEntry = FlexibleJournalEntry(
+                        id: entry.id,
+                        date: entry.date,
+                        templateType: entry.templateType,
+                        responses: entry.responses
+                    )
+                    modelContext.insert(journalEntry)
+                    existingFlexibleJournalEntriesByID[entry.id] = journalEntry
+                }
+            }
+        }
+
+        if let moodCheckIns = payload.moodCheckIns {
+            for checkIn in moodCheckIns {
+                if let existingCheckIn = existingMoodCheckInsByID[checkIn.id] {
+                    update(existingCheckIn, from: checkIn)
+                } else {
+                    let moodCheckIn = MoodCheckIn(
+                        id: checkIn.id,
+                        createdAt: checkIn.createdAt,
+                        moodScore: checkIn.moodScore,
+                        notes: checkIn.notes
+                    )
+                    modelContext.insert(moodCheckIn)
+                    existingMoodCheckInsByID[checkIn.id] = moodCheckIn
+                }
+            }
+        }
+
+        if let breathingSessions = payload.breathingSessions {
+            for session in breathingSessions {
+                if let existingSession = existingBreathingSessionsByID[session.id] {
+                    update(existingSession, from: session)
+                } else {
+                    let breathingSession = BreathingSession(
+                        id: session.id,
+                        createdAt: session.createdAt,
+                        durationSeconds: session.durationSeconds
+                    )
+                    modelContext.insert(breathingSession)
+                    existingBreathingSessionsByID[session.id] = breathingSession
+                }
+            }
+        }
+
+        if let safetyPlans = payload.safetyPlans {
+            for plan in safetyPlans {
+                if let existingPlan = existingSafetyPlansByID[plan.id] {
+                    update(existingPlan, from: plan)
+                } else {
+                    let safetyPlan = SafetyPlan(
+                        id: plan.id,
+                        createdAt: plan.createdAt,
+                        updatedAt: plan.updatedAt,
+                        emergencyContacts: plan.emergencyContacts,
+                        personalWarningSigns: plan.personalWarningSigns,
+                        copingStrategies: plan.copingStrategies
+                    )
+                    modelContext.insert(safetyPlan)
+                    existingSafetyPlansByID[plan.id] = safetyPlan
+                }
+            }
+        }
+
         try modelContext.save()
     }
     
@@ -218,6 +309,32 @@ struct DataImportService {
     private func fetchExistingPersonalityAssessmentLogs(in modelContext: ModelContext) throws -> [UUID: PersonalityAssessmentLog] {
         Dictionary(
             try modelContext.fetch(FetchDescriptor<PersonalityAssessmentLog>()).map { ($0.id, $0) },
+            uniquingKeysWith: { _, latest in latest }
+        )
+    }
+
+    private func fetchExistingProgramProgresses(in modelContext: ModelContext) throws -> [UUID: ProgramProgress] {
+        try existingRecordsByID(from: modelContext.fetch(FetchDescriptor<ProgramProgress>()))
+    }
+
+    private func fetchExistingFlexibleJournalEntries(in modelContext: ModelContext) throws -> [UUID: FlexibleJournalEntry] {
+        Dictionary(
+            try modelContext.fetch(FetchDescriptor<FlexibleJournalEntry>()).map { ($0.id, $0) },
+            uniquingKeysWith: { _, latest in latest }
+        )
+    }
+
+    private func fetchExistingMoodCheckIns(in modelContext: ModelContext) throws -> [UUID: MoodCheckIn] {
+        try existingRecordsByID(from: modelContext.fetch(FetchDescriptor<MoodCheckIn>()))
+    }
+
+    private func fetchExistingBreathingSessions(in modelContext: ModelContext) throws -> [UUID: BreathingSession] {
+        try existingRecordsByID(from: modelContext.fetch(FetchDescriptor<BreathingSession>()))
+    }
+
+    private func fetchExistingSafetyPlans(in modelContext: ModelContext) throws -> [UUID: SafetyPlan] {
+        Dictionary(
+            try modelContext.fetch(FetchDescriptor<SafetyPlan>()).map { ($0.id, $0) },
             uniquingKeysWith: { _, latest in latest }
         )
     }
@@ -295,5 +412,39 @@ struct DataImportService {
         log.extraversionScore = export.extraversionScore
         log.agreeablenessScore = export.agreeablenessScore
         log.neuroticismScore = export.neuroticismScore
+    }
+
+    private func update(_ progress: ProgramProgress, from export: ProgramProgressExport) {
+        progress.programID = export.programID
+        progress.completedDays = max(0, export.completedDays)
+        progress.lastCompletedAt = export.lastCompletedAt
+        progress.isDeleted = false
+    }
+
+    private func update(_ entry: FlexibleJournalEntry, from export: FlexibleJournalEntryExport) {
+        entry.date = export.date
+        entry.templateType = export.templateType
+        entry.responses = export.responses
+    }
+
+    private func update(_ checkIn: MoodCheckIn, from export: MoodCheckInExport) {
+        checkIn.createdAt = export.createdAt
+        checkIn.moodScore = min(10, max(1, export.moodScore))
+        checkIn.notes = export.notes
+        checkIn.isDeleted = false
+    }
+
+    private func update(_ session: BreathingSession, from export: BreathingSessionExport) {
+        session.createdAt = export.createdAt
+        session.durationSeconds = max(0, export.durationSeconds)
+        session.isDeleted = false
+    }
+
+    private func update(_ plan: SafetyPlan, from export: SafetyPlanExport) {
+        plan.createdAt = export.createdAt
+        plan.emergencyContacts = export.emergencyContacts
+        plan.personalWarningSigns = export.personalWarningSigns
+        plan.copingStrategies = export.copingStrategies
+        plan.updatedAt = export.updatedAt
     }
 }

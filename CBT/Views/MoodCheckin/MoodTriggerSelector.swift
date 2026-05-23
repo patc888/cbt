@@ -47,8 +47,10 @@ struct MoodTriggerSelector: View {
                         } label: {
                             Text(trigger)
                                 .font(DSTypography.body)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.75)
+                                .fixedSize(horizontal: false, vertical: true)
                                 .foregroundColor(isSelected ? .white : DSTheme.primaryText)
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 12)

@@ -11,7 +11,7 @@ struct InsightsWeeklyOverviewCard: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
                 Text(String(localized: "Weekly Overview"))
-                    .font(.system(.title, design: .rounded).weight(.bold))
+                    .font(DSTypography.sectionTitle)
                     .foregroundStyle(Theme.primaryText)
                 Spacer()
                 Text(String(localized: "LAST 8 WEEKS"))

@@ -108,6 +108,21 @@ enum LaunchSafeFetch {
     }
 
     @MainActor
+    static func flexibleJournalEntries(
+        from context: ModelContext,
+        logger: Logger = AppLogger.make(category: "LaunchSafeFetch")
+    ) -> [FlexibleJournalEntry] {
+        fetch(
+            FetchDescriptor<FlexibleJournalEntry>(
+                sortBy: [SortDescriptor(\FlexibleJournalEntry.date, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "flexibleJournalEntries"
+        )
+    }
+
+    @MainActor
     static func userSettings(
         from context: ModelContext,
         logger: Logger = AppLogger.make(category: "LaunchSafeFetch")

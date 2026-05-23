@@ -8,6 +8,8 @@ struct DSPrimaryButtonStyle: ButtonStyle {
         configuration.label
             .font(DSTypography.button)
             .foregroundStyle(.white)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity)
             .padding(.vertical, DSSpacing.large)
             .background(themeManager?.selectedColor ?? .accentColor)
@@ -26,6 +28,8 @@ struct DSSecondaryButtonStyle: ButtonStyle {
         return configuration.label
             .font(DSTypography.button)
             .foregroundStyle(accent)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity)
             .padding(.vertical, DSSpacing.large)
             .background(accent.opacity(0.12))

@@ -128,7 +128,7 @@ struct ExerciseOverviewPage: View {
                         .tracking(1.2)
                     
                     Text(exercise.title)
-                        .font(.system(.title, design: .rounded).weight(.bold))
+                        .font(DSTypography.pageTitle)
                         .foregroundStyle(Theme.primaryText)
                 }
 
@@ -137,11 +137,13 @@ struct ExerciseOverviewPage: View {
                     .foregroundStyle(Theme.secondaryText)
                     .lineSpacing(4)
 
-                HStack(spacing: 16) {
-                    statCapsule(label: "\(exercise.steps.count) Steps", icon: "list.bullet")
-                    statCapsule(label: "\(exercise.duration) min", icon: "clock")
-                    if completionsCount > 0 {
-                        statCapsule(label: "\(completionsCount) done", icon: "checkmark.circle.fill", color: .green)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 16) {
+                        overviewStats
+                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        overviewStats
                     }
                 }
 
@@ -184,6 +186,8 @@ struct ExerciseOverviewPage: View {
         HStack(spacing: 6) {
             Image(systemName: icon)
             Text(label)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
         }
         .font(.system(.caption, design: .rounded).weight(.bold))
         .foregroundStyle(color ?? Theme.secondaryText)
@@ -191,6 +195,15 @@ struct ExerciseOverviewPage: View {
         .padding(.vertical, 6)
         .background(Theme.tertiaryBackground)
         .clipShape(Capsule())
+    }
+
+    @ViewBuilder
+    private var overviewStats: some View {
+        statCapsule(label: "\(exercise.steps.count) Steps", icon: "list.bullet")
+        statCapsule(label: "\(exercise.duration) min", icon: "clock")
+        if completionsCount > 0 {
+            statCapsule(label: "\(completionsCount) done", icon: "checkmark.circle.fill", color: .green)
+        }
     }
 
     private func categoryIcon(for category: String) -> String {

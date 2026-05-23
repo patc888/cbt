@@ -32,7 +32,7 @@ struct MoodDetailView: View {
                     if !entry.emotions.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Emotions")
-                                .font(.headline)
+                                .font(.system(.headline, design: .rounded).weight(.bold))
                                 .foregroundStyle(Theme.primaryText)
                             
                             ScrollView(.horizontal, showsIndicators: false) {
@@ -53,7 +53,7 @@ struct MoodDetailView: View {
                     if let notes = entry.notes, !notes.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Notes")
-                                .font(.headline)
+                                .font(.system(.headline, design: .rounded).weight(.bold))
                                 .foregroundStyle(Theme.primaryText)
                             
                             Text(notes)

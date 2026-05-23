@@ -22,7 +22,7 @@ struct ThoughtRecordListView: View {
                         .font(.system(size: 64))
                         .foregroundColor(Theme.secondaryText)
                     Text("No thought records yet.")
-                        .font(.headline)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
                     Text("Capture and reframe your automatic thoughts.")
                         .font(.subheadline)

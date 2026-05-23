@@ -64,6 +64,7 @@ struct DataSettingsView: View {
 struct DataSettingsSection: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
+    @EnvironmentObject private var syncStatusMonitor: CloudSyncStatusMonitor
     @AppStorage(AppConfiguration.cloudKitEnabledKey) private var isCloudKitStoreEnabled = false
     @AppStorage(AppConfiguration.cloudKitFailureReasonKey) private var cloudKitFailureReason = ""
     @State private var viewModel = AdvancedDataSettingsViewModel()
@@ -78,8 +79,10 @@ struct DataSettingsSection: View {
                 title: "iCloud Sync",
                 subtitle: cloudSyncSubtitle
             ) {
-                Image(systemName: isCloudKitStoreEnabled ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                    .foregroundColor(isCloudKitStoreEnabled ? Theme.successGreen : .orange)
+                SyncStatusIndicatorView(
+                    monitor: syncStatusMonitor,
+                    style: isCloudKitStoreEnabled ? .label : .dot
+                )
             }
             
             Button {
@@ -222,7 +225,7 @@ struct DataSettingsSection: View {
                 }
             }
             .navigationDestination(isPresented: $showingStorageAudit) {
-                SyncStatusView()
+                SyncStorageAuditView()
                     .environment(themeManager)
             }
         }

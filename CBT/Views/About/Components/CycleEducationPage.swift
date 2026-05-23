@@ -70,7 +70,7 @@ struct CycleEducationPage: View {
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.headline)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(isActive ? Theme.primaryText : Color.secondary)
                     Text(description)
                         .font(.subheadline)

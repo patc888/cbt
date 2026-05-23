@@ -16,43 +16,45 @@ struct HomeView: View {
     @State private var showingTipModal = false
     @State private var selectedMoodForFlow: MoodColor? = nil
     var body: some View {
-        ZStack {
-            ThemedBackground().ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                ThemedBackground().ignoresSafeArea()
 
-            DeferredRenderView(
-                isEnabled: scenePhase == .active,
-                delay: .milliseconds(250)
-            ) {
-                VStack(alignment: .leading, spacing: 12) {
-                    AppScreenHeadline(title: String(localized: "Daily Plan"))
-                    .padding(.horizontal, 16)
-                    
-                    HomeDashboardPlaceholder()
+                DeferredRenderView(
+                    isEnabled: scenePhase == .active,
+                    delay: .milliseconds(250)
+                ) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        AppScreenHeadline(title: String(localized: "Daily Plan"))
+                        .padding(.horizontal, 16)
+
+                        HomeDashboardPlaceholder()
+                    }
+                } content: {
+                    HomeDashboardContent(
+                        selectedTab: $selectedTab,
+                        selectedDate: $selectedDate,
+                        showingNewMoodEntry: $showingNewMoodEntry,
+                        showingNewThoughtRecord: $showingNewThoughtRecord,
+                        attemptingNewMoodEntry: $attemptingNewMoodEntry,
+                        attemptingNewThoughtRecord: $attemptingNewThoughtRecord,
+                        showingTipModal: $showingTipModal,
+                        selectedMoodForFlow: $selectedMoodForFlow
+                    )
                 }
-            } content: {
-                HomeDashboardContent(
-                    selectedTab: $selectedTab,
-                    selectedDate: $selectedDate,
-                    showingNewMoodEntry: $showingNewMoodEntry,
-                    showingNewThoughtRecord: $showingNewThoughtRecord,
-                    attemptingNewMoodEntry: $attemptingNewMoodEntry,
-                    attemptingNewThoughtRecord: $attemptingNewThoughtRecord,
-                    showingTipModal: $showingTipModal,
-                    selectedMoodForFlow: $selectedMoodForFlow
-                )
+                .accessibilityIdentifier("home-scroll-view")
+                .safeAreaInset(edge: .bottom) {
+                    Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
+                }
             }
-            .accessibilityIdentifier("home-scroll-view")
-            .safeAreaInset(edge: .bottom) {
-                Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
-            }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("home-screen")
+            .navigationTitle("")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
+            #endif
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("home-screen")
-        .navigationTitle("")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
-        #endif
         .onAppear {
             Self.logger.info("HomeView mounted")
         }
@@ -114,7 +116,7 @@ private struct HomeDashboardContent: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var viewModel = HomeDashboardViewModel()
     @State private var refreshNonce = 0
-    
+
     init(
         selectedTab: Binding<FloatingTab>,
         selectedDate: Binding<Date>,
@@ -148,6 +150,27 @@ private struct HomeDashboardContent: View {
                 }
                 .padding(.top, 8)
                 .opacity(viewModel.isInitialized ? 1 : 0.6)
+
+                // Elegant new DailyPlanView at the top of primary Home Dashboard view
+                DailyPlanView(
+                    onLogMood: { showingNewMoodEntry = true },
+                    onDailyBreathing: {
+                        BreathingPresenter.shared.present(
+                            durationSeconds: 60,
+                            autoStart: true,
+                            onComplete: {
+                                withAnimation {
+                                    viewModel.markItemAsDone(.breathingReset, for: selectedDate)
+                                }
+                            }
+                        )
+                    },
+                    onDailyLesson: {
+                        selectedTab = .exercises
+                    }
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 4)
 
                 VStack(alignment: .leading, spacing: 16) {
                     if !viewModel.isInitialized {
@@ -200,7 +223,7 @@ private struct HomeDashboardContent: View {
             .responsiveMaxWidth()
             .frame(maxWidth: .infinity)
         }
-        .sheet(isPresented: $showingTipModal, onDismiss: { 
+        .sheet(isPresented: $showingTipModal, onDismiss: {
             withAnimation {
                 viewModel.markItemAsDone(.tipOfTheDay, for: selectedDate)
             }

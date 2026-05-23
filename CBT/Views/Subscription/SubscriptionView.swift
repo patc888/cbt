@@ -204,7 +204,7 @@ struct CBTPaywallTemplateView: View {
 
             VStack(spacing: 6) {
                 Text(config.title)
-                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .font(DSTypography.pageTitle)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
 
@@ -533,7 +533,7 @@ struct StoreProductCardView: View {
     private var planTitleView: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(product.displayTitle)
-                .font(.system(.title2, design: .rounded, weight: .bold))
+                .font(DSTypography.pageTitle)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)

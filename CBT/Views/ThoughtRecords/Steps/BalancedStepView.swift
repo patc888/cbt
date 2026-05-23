@@ -10,7 +10,7 @@ struct BalancedStepView: View {
                 VStack(alignment: .leading) {
                     HStack {
                         Text("New Perspective")
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                         ContextualHelpButton(
                             title: "Balanced Thoughts",
@@ -29,7 +29,7 @@ struct BalancedStepView: View {
                 
                 VStack(alignment: .leading, spacing: 12) {
                     Text("How intense is the feeling now? (0-100)")
-                        .font(.headline)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
                     Slider(value: $viewModel.intensityAfter, in: 0...100, step: 1)
                         .accessibilityLabel("Intensity after")

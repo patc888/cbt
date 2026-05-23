@@ -11,34 +11,35 @@ struct SettingsView: View {
     
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private var metrics: LayoutMetrics { LayoutMetrics.metrics(for: horizontalSizeClass) }
-    var showsDismissControl: Bool = true
+    var showsDismissControl: Bool = false
     
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            ThemedBackground().ignoresSafeArea()
+        NavigationStack {
+            ZStack(alignment: .topTrailing) {
+                ThemedBackground().ignoresSafeArea()
 
-            DeferredRenderView {
-                VStack(spacing: 12) {
-                    AppScreenHeadline(title: String(localized: "Settings"))
+                DeferredRenderView {
                     Spacer()
+                } content: {
+                    SettingsDashboardContent(showsDismissControl: showsDismissControl)
                 }
-                .padding(.horizontal, 16)
-            } content: {
-                SettingsDashboardContent(showsDismissControl: showsDismissControl)
-            }
 
-            if showsDismissControl {
-                navigationArrow
+                if showsDismissControl {
+                    navigationArrow
+                }
             }
-        }
-        .safeAreaInset(edge: .bottom) {
-            Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
-        }
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
+            }
+            .navigationTitle("")
 #if os(iOS)
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
+            .navigationBarBackButtonHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
 #endif
+            .hideNavigationBar()
+        }
+        .toggleStyle(ThemeToggleStyle())
     }
 
     private var navigationArrow: some View {
@@ -115,6 +116,20 @@ private struct SettingsDashboardContent: View {
             )
 
             SettingsSection(title: String(localized: "Tools")) {
+                NavigationLink(destination: SafetyPlanView()) {
+                    SettingsRow(
+                        icon: "cross.case.fill",
+                        iconColor: DSTheme.destructive,
+                        title: String(localized: "Safety Plan"),
+                        subtitle: String(localized: "Emergency contacts, warning signs, and coping strategies")
+                    ) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                }
+                .buttonStyle(.plain)
+
                 NavigationLink(destination: BreathingResetView()) {
                     SettingsRow(
                         icon: "wind",
@@ -133,23 +148,7 @@ private struct SettingsDashboardContent: View {
             RemindersSettingsSection()
 
             NavigationLink(destination: WhatIsCBTPagerView()) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(String(localized: "What is CBT"))
-                            .font(.system(.title3, design: .rounded).weight(.bold))
-                            .foregroundStyle(.white)
-                        Text(String(localized: "A quick interactive guide to Cognitive Behavioral Therapy"))
-                            .font(.system(.subheadline, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.8))
-                    }
-                    Spacer()
-                    Image(systemName: "book.pages.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(.white.opacity(0.8))
-                }
-                .padding()
-                .background(themeManager.selectedColor)
-                .cornerRadius(Theme.cornerRadiusMedium)
+                WhatIsCBTSettingsCard()
             }
             .buttonStyle(.plain)
 
@@ -162,6 +161,95 @@ private struct SettingsDashboardContent: View {
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 32)
+    }
+}
+
+private struct WhatIsCBTSettingsCard: View {
+    @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            themeManager.selectedColor,
+                            themeManager.selectedColor.opacity(colorScheme == .dark ? 0.55 : 0.70),
+                            Color.cyan.opacity(colorScheme == .dark ? 0.38 : 0.52)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            Image(systemName: "brain.head.profile")
+                .font(.system(size: 86, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.12))
+                .offset(x: 18, y: -8)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(themeManager.selectedColor)
+                        .frame(width: 38, height: 38)
+                        .background(.white.opacity(0.92))
+                        .clipShape(Circle())
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(String(localized: "What is CBT?"))
+                            .font(.system(.title3, design: .rounded).weight(.bold))
+                            .foregroundStyle(.white)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text(String(localized: "Interactive guide with the triangle, thought records, evidence checks, and practical next steps."))
+                            .font(.system(.subheadline, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.86))
+                            .lineSpacing(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 4)
+
+                    Image(systemName: "chevron.right.circle.fill")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.88))
+                }
+
+                HStack(spacing: 8) {
+                    CBTCardPill(icon: "hand.tap.fill", text: "Tap through")
+                    CBTCardPill(icon: "chart.dots.scatter", text: "See patterns")
+                    CBTCardPill(icon: "checkmark.seal.fill", text: "Practice")
+                }
+            }
+            .padding(18)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(.white.opacity(0.22), lineWidth: 1)
+        }
+        .shadow(color: themeManager.selectedColor.opacity(colorScheme == .dark ? 0.16 : 0.22), radius: 18, x: 0, y: 10)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct CBTCardPill: View {
+    let icon: String
+    let text: String
+
+    var body: some View {
+        Label(text, systemImage: icon)
+            .font(.system(size: 11, weight: .bold, design: .rounded))
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+            .foregroundStyle(.white)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 7)
+            .background(.white.opacity(0.16))
+            .clipShape(Capsule())
     }
 }
 
@@ -190,7 +278,7 @@ struct PrivacyFooter: View {
 
 private struct VersionFooterView: View {
     private var appVersionText: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.6"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.7"
         return "Version \(version)"
     }
 
