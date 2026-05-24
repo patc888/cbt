@@ -14,7 +14,13 @@ struct BreathingControlsBar: View {
     let onStop: () -> Void
 
     private let durationOptions = [30, 60, 120, 180]
-    private let soundOptions = ["None", "Gentle Rain", "Ocean Waves"]
+    private var soundOptions: [String] {
+        let soundscapes = LibraryService.shared.bundledAudioContent
+            .filter { $0.type == .soundscape }
+            .map { Self.resourceName(from: $0.localAssetFilename) }
+
+        return ["None"] + soundscapes
+    }
 
     var body: some View {
         VStack(spacing: DSSpacing.large) {
@@ -127,6 +133,12 @@ struct BreathingControlsBar: View {
     private func formatDuration(_ seconds: Int) -> String {
         if seconds < 60 { return "\(seconds)s" }
         return "\(seconds / 60)m"
+    }
+
+    private static func resourceName(from fileName: String) -> String {
+        URL(fileURLWithPath: fileName)
+            .deletingPathExtension()
+            .lastPathComponent
     }
 }
 

@@ -384,6 +384,8 @@ struct GuidedPromptView: View {
             templateType: flow.title,
             responses: responses
         ))
+        try? modelContext.save()
+        AchievementService.shared.evaluateAchievements(in: modelContext)
         onSave?()
         withAnimation(reduceMotion ? .none : .spring(response: 0.4, dampingFraction: 0.86)) {
             isCompleted = true

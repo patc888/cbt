@@ -33,7 +33,7 @@ extension TimelineItem {
             date: entry.createdAt,
             title: "Mood Check-in",
             subtitle: entry.notes?.isEmpty == false ? entry.notes : "Score: \(entry.moodScore)/10",
-            chips: entry.emotions,
+            chips: entry.emotions + entry.activityTags,
             route: .mood(entry.persistentModelID)
         )
     }

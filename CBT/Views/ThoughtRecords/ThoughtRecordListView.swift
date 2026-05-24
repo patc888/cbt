@@ -17,33 +17,17 @@ struct ThoughtRecordListView: View {
             ThemedBackground().ignoresSafeArea()
             
             if records.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "brain.head.profile")
-                        .font(.system(size: 64))
-                        .foregroundColor(Theme.secondaryText)
-                    Text("No thought records yet.")
-                        .font(.system(.headline, design: .rounded).weight(.bold))
-                        .foregroundStyle(Theme.primaryText)
-                    Text("Capture and reframe your automatic thoughts.")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.secondaryText)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                    
-                    Button {
-                        attemptingNewRecord = true
-                    } label: {
-                        Text("Add Thought Record")
-                            .bold()
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Theme.primaryColor)
-                            .clipShape(Capsule())
-                    }
-                    .padding(.top, 8)
+                SupportiveEmptyStateView(
+                    systemImage: "brain.head.profile",
+                    title: "Thought Records",
+                    message: "Thought records help you slow down one difficult moment and look for a more balanced response.",
+                    actionTitle: "Add Thought Record",
+                    actionSystemImage: "plus.circle.fill"
+                ) {
+                    HapticManager.shared.lightImpact()
+                    attemptingNewRecord = true
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 24)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
@@ -73,17 +57,19 @@ struct ThoughtRecordListView: View {
             ThoughtRecordDetailView(record: record)
         }
         .safeAreaInset(edge: .top) {
-            HStack {
-                Spacer()
-                ListActionPillButton(
-                    title: "+ Thought",
-                    color: themeManager.secondaryColor
-                ) {
-                    attemptingNewRecord = true
+            if !records.isEmpty {
+                HStack {
+                    Spacer()
+                    ListActionPillButton(
+                        title: "+ Thought",
+                        color: themeManager.secondaryColor
+                    ) {
+                        attemptingNewRecord = true
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
         }
         .sheet(isPresented: $showingNewRecord) {
             NewThoughtRecordFlowView()

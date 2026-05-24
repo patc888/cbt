@@ -21,7 +21,7 @@ struct InsightsWeeklyOverviewCard: View {
             }
 
             if weeklyMoodAverages.isEmpty {
-                Text(String(localized: "Not enough data to graph weekly trends."))
+                Text(String(localized: "Weekly trends appear once check-ins span more than one week. Keep using the app at a pace that feels manageable."))
                     .font(.system(size: 14, design: .rounded))
                     .foregroundStyle(Theme.secondaryText)
                     .padding(.vertical, 18)
@@ -32,7 +32,16 @@ struct InsightsWeeklyOverviewCard: View {
                             x: .value(String(localized: "Week"), point.weekStart, unit: .weekOfYear),
                             y: .value(String(localized: "Mood"), point.averageScore)
                         )
-                        .foregroundStyle(themeManager.selectedColor.opacity(0.8))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [
+                                    themeManager.selectedColor.opacity(0.95),
+                                    themeManager.secondaryColor.opacity(0.55)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
                         .cornerRadius(4)
                     }
 
@@ -41,11 +50,17 @@ struct InsightsWeeklyOverviewCard: View {
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
                 }
                 .chartYScale(domain: 0...11)
+                .chartPlotStyle { plotArea in
+                    plotArea
+                        .background(themeManager.selectedColor.opacity(0.05))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
                 .frame(height: 180)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(String(localized: "Weekly mood trend chart"))
                 .accessibilityValue(String(localized: "Showing weekly average mood over the last 8 weeks."))
             }
+
         }
         .padding(Theme.paddingMedium)
         .cardStyle()

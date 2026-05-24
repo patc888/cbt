@@ -74,11 +74,11 @@ final class NewThoughtRecordViewModel {
     }
     
     @MainActor
-    func saveRecord(context: ModelContext) {
-        guard canSave else { return }
+    func saveRecord(context: ModelContext) -> ThoughtRecord? {
+        guard canSave else { return nil }
         
         do {
-            try context.cbtStore.insertThoughtRecord(
+            return try context.cbtStore.insertThoughtRecord(
                 situation: situation,
                 automaticThought: automaticThought,
                 emotions: emotions,
@@ -91,6 +91,7 @@ final class NewThoughtRecordViewModel {
             )
         } catch {
             AppLogger.make(category: "Data").error("Failed to save thought record: \(error.localizedDescription, privacy: .private)")
+            return nil
         }
     }
 }

@@ -43,12 +43,14 @@ struct ActivityPlannerView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            addActivityButton
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 10)
-                .frame(maxWidth: .infinity)
-                .background(.ultraThinMaterial)
+            if !activities.isEmpty {
+                addActivityButton
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 10)
+                    .frame(maxWidth: .infinity)
+                    .background(.ultraThinMaterial)
+            }
         }
         .sheet(isPresented: $showingAddActivity) {
             AddActivityView()
@@ -87,22 +89,16 @@ struct ActivityPlannerView: View {
     }
     
     private var emptyState: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "calendar.badge.plus")
-                .font(.system(size: 60))
-                .foregroundStyle(Theme.secondaryText.opacity(0.5))
-            
-            Text("Your planner is empty")
-                .font(.system(.headline, design: .rounded))
-                .foregroundStyle(Theme.primaryText)
-            
-            Text("Schedule a small 'nourishing' or 'mastery' task. Don't wait until you feel like it.")
-                .font(.system(.subheadline, design: .rounded))
-                .foregroundStyle(Theme.secondaryText)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+        SupportiveEmptyStateView(
+            systemImage: "calendar.badge.plus",
+            title: "Activity Planner",
+            message: "Activity planning helps you schedule one small nourishing or mastery task and reflect on how it felt afterward.",
+            actionTitle: "Schedule Activity",
+            actionSystemImage: "plus.circle.fill"
+        ) {
+            HapticManager.shared.trigger(.medium)
+            showingAddActivity = true
         }
-        .frame(maxWidth: .infinity)
         .padding(.top, 60)
     }
     

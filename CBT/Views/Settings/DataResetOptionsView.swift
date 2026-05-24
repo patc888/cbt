@@ -213,6 +213,18 @@ struct DataResetOptionsView: View {
             modelContext.delete(record)
         }
 
+        for record in try modelContext.fetch(FetchDescriptor<LibraryItem>()) {
+            modelContext.delete(record)
+        }
+
+        for record in try modelContext.fetch(FetchDescriptor<Course>()) {
+            modelContext.delete(record)
+        }
+
+        for record in try modelContext.fetch(FetchDescriptor<AudioContent>()) {
+            modelContext.delete(record)
+        }
+
         for settings in try modelContext.fetch(FetchDescriptor<UserSettings>()) {
             modelContext.delete(settings)
         }

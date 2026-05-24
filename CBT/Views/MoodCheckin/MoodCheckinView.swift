@@ -20,7 +20,9 @@ struct MoodCheckinView: View {
     @State private var selectedTriggers: Set<String> = []
     @State private var selectedSensations: Set<String> = []
     @State private var selectedContextTags: Set<String> = []
+    @State private var selectedActivityTags: Set<String> = []
     @State private var notes: String = ""
+    @State private var nextStepState: MoodCheckinNextStepState?
 
     init(initialMood: MoodColor? = nil) {
         _selectedColor = State(initialValue: initialMood)
@@ -32,67 +34,81 @@ struct MoodCheckinView: View {
             ZStack {
                 ThemedBackground().ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    MoodCheckinProgressHeader(
-                        title: titleForStep,
-                        step: currentStep + 1,
-                        totalSteps: totalSteps,
-                        accent: accentColor
+                if let nextStepState {
+                    MoodCheckinNextStepView(
+                        state: nextStepState,
+                        onSkip: finishFlow,
+                        onGoHome: goHome,
+                        onJournalMore: journalMore
                     )
-                    .padding(.horizontal, DSSpacing.large)
-                    .padding(.top, 10)
-                    .padding(.bottom, 4)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Step \(currentStep + 1) of \(totalSteps)")
-                    .accessibilityValue(titleForStep)
-
-                    TabView(selection: $currentStep) {
-                        MoodColorSelector(selectedColor: $selectedColor, onNext: nextStep)
-                            .tag(0)
-
-                        MoodIntensitySelector(intensity: $intensity, selectedColor: selectedColor, onNext: nextStep)
-                            .tag(1)
-
-                        EmotionSelectorView(selectedEmotions: $selectedEmotions, onNext: nextStep)
-                            .tag(2)
-
-                        MoodTriggerSelector(selectedTriggers: $selectedTriggers, onNext: nextStep)
-                            .tag(3)
-
-                        MoodContextSelectorView(
-                            selectedSensations: $selectedSensations,
-                            selectedContextTags: $selectedContextTags,
-                            onNext: nextStep
+                    .transition(.opacity)
+                } else {
+                    VStack(spacing: 0) {
+                        MoodCheckinProgressHeader(
+                            title: titleForStep,
+                            step: currentStep + 1,
+                            totalSteps: totalSteps,
+                            accent: accentColor
                         )
-                        .tag(4)
+                        .padding(.horizontal, DSSpacing.large)
+                        .padding(.top, 10)
+                        .padding(.bottom, 4)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Step \(currentStep + 1) of \(totalSteps)")
+                        .accessibilityValue(titleForStep)
 
-                        MoodNotesView(notes: $notes, onNext: nextStep)
+                        TabView(selection: $currentStep) {
+                            MoodColorSelector(selectedColor: $selectedColor, onNext: nextStep)
+                                .tag(0)
+
+                            MoodIntensitySelector(intensity: $intensity, selectedColor: selectedColor, onNext: nextStep)
+                                .tag(1)
+
+                            EmotionSelectorView(selectedEmotions: $selectedEmotions, onNext: nextStep)
+                                .tag(2)
+
+                            MoodTriggerSelector(selectedTriggers: $selectedTriggers, onNext: nextStep)
+                                .tag(3)
+
+                            MoodActivitySelectorView(selectedActivityTags: $selectedActivityTags, onNext: nextStep)
+                                .tag(4)
+
+                            MoodContextSelectorView(
+                                selectedSensations: $selectedSensations,
+                                selectedContextTags: $selectedContextTags,
+                                onNext: nextStep
+                            )
                             .tag(5)
 
-                        if let color = selectedColor, color.rawValue <= 2 {
-                            MoodSuggestionsView(onNext: nextStep)
+                            MoodNotesView(notes: $notes, onNext: nextStep)
                                 .tag(6)
-                        }
 
-                        MoodCheckinSummaryView(
-                            color: selectedColor,
-                            intensity: Int(intensity),
-                            emotions: Array(selectedEmotions),
-                            triggers: Array(selectedTriggers),
-                            sensations: Array(selectedSensations),
-                            contextTags: Array(selectedContextTags),
-                            notes: notes,
-                            onSave: saveCheckin
-                        )
-                        .tag(isLowMood ? 7 : 6)
+                            if let color = selectedColor, color.rawValue <= 2 {
+                                MoodSuggestionsView(onNext: nextStep)
+                                    .tag(7)
+                            }
+
+                            MoodCheckinSummaryView(
+                                color: selectedColor,
+                                intensity: Int(intensity),
+                                emotions: Array(selectedEmotions),
+                                triggers: Array(selectedTriggers),
+                                activityTags: Array(selectedActivityTags),
+                                sensations: Array(selectedSensations),
+                                contextTags: Array(selectedContextTags),
+                                notes: notes,
+                                onSave: saveCheckin
+                            )
+                            .tag(isLowMood ? 8 : 7)
+                        }
+                        #if os(iOS)
+                        .tabViewStyle(.page(indexDisplayMode: .never))
+                        #endif
+                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: currentStep)
                     }
-                    #if os(iOS)
-                    .tabViewStyle(.page(indexDisplayMode: .never))
-                    #endif
-                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: currentStep)
                 }
             }
-            .navigationTitle(titleForStep)
+            .navigationTitle(nextStepState == nil ? titleForStep : "Saved")
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
 #endif
@@ -100,7 +116,7 @@ struct MoodCheckinView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     #if targetEnvironment(macCatalyst)
                     Button {
-                        dismiss()
+                        finishFlow()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(.title3, weight: .semibold))
@@ -108,10 +124,10 @@ struct MoodCheckinView: View {
                     }
                     .accessibilityLabel("Cancel")
                     #else
-                    Button("Cancel") { dismiss() }
+                    Button(nextStepState == nil ? "Cancel" : "Close") { finishFlow() }
                     #endif
                 }
-                if currentStep > 0 {
+                if currentStep > 0 && nextStepState == nil {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button {
                             withAnimation {
@@ -139,7 +155,7 @@ struct MoodCheckinView: View {
     }
 
     private var totalSteps: Int {
-        isLowMood ? 8 : 7
+        isLowMood ? 9 : 8
     }
 
     private var titleForStep: String {
@@ -148,10 +164,11 @@ struct MoodCheckinView: View {
         case 1: return "Intensity"
         case 2: return "Emotions"
         case 3: return "Triggers"
-        case 4: return "Context"
-        case 5: return "Notes"
-        case 6: return isLowMood ? "Support" : "Summary"
-        case 7: return "Summary"
+        case 4: return "Activities"
+        case 5: return "Context"
+        case 6: return "Notes"
+        case 7: return isLowMood ? "Support" : "Summary"
+        case 8: return "Summary"
         default: return ""
         }
     }
@@ -175,31 +192,84 @@ struct MoodCheckinView: View {
     private func saveCheckin() {
         do {
             let n = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+            let createdAt = Date()
+            let moodScore = selectedColor?.rawValue ?? 3
+            let intensityScore = Int(intensity)
+            let emotionList = selectedEmotions.sorted()
+            let triggerList = selectedTriggers.sorted()
+            let activityList = selectedActivityTags.sorted()
+            let sensationList = selectedSensations.sorted()
+            let contextList = selectedContextTags.sorted()
+
             try modelContext.cbtStore.insertMoodEntry(
-                moodScore: selectedColor?.rawValue ?? 3,
-                emotions: Array(selectedEmotions),
-                triggers: Array(selectedTriggers),
-                sensations: Array(selectedSensations),
-                contextTags: Array(selectedContextTags),
+                createdAt: createdAt,
+                moodScore: moodScore,
+                emotions: emotionList,
+                triggers: triggerList,
+                sensations: sensationList,
+                contextTags: contextList,
+                activityTags: activityList,
                 notes: n.isEmpty ? nil : n,
-                intensity: Int(intensity)
+                intensity: intensityScore
             )
 
             // Insert a MoodCheckIn record so that DailyPlanView can detect it.
             let checkin = MoodCheckIn(
-                moodScore: selectedColor?.rawValue ?? 3,
+                createdAt: createdAt,
+                moodScore: moodScore,
                 notes: n.isEmpty ? nil : n
             )
             modelContext.insert(checkin)
             try modelContext.save()
             AchievementService.shared.evaluateAchievements(in: modelContext)
 
+            let summary = MoodCheckinSavedSummary(
+                createdAt: createdAt,
+                color: selectedColor,
+                intensity: intensityScore,
+                emotions: emotionList,
+                triggers: triggerList,
+                activityTags: activityList,
+                sensations: sensationList,
+                contextTags: contextList,
+                notes: n
+            )
+
+            let plan = DailyRecommendationService.shared.nextStepsAfterMoodCheckIn(
+                for: MoodCheckInRecommendationInput(
+                    moodScore: moodScore,
+                    intensity: intensityScore,
+                    emotions: emotionList,
+                    triggers: triggerList,
+                    activityTags: activityList,
+                    sensations: sensationList,
+                    contextTags: contextList,
+                    notes: n.isEmpty ? nil : n
+                )
+            )
+
             HapticManager.shared.success()
             ReviewManager.shared.logSignificantAction()
-            dismiss()
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                nextStepState = MoodCheckinNextStepState(summary: summary, plan: plan)
+            }
         } catch {
             AppLogger.make(category: "Data").error("Failed to save mood entry: \(error.localizedDescription, privacy: .private)")
         }
+    }
+
+    private func finishFlow() {
+        dismiss()
+    }
+
+    private func goHome() {
+        dismiss()
+        NotificationCenter.default.post(name: .appTabSelectionRequested, object: FloatingTab.home)
+    }
+
+    private func journalMore() {
+        dismiss()
+        NotificationCenter.default.post(name: .appTabSelectionRequested, object: FloatingTab.journal)
     }
 }
 

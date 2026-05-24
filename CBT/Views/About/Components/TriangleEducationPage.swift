@@ -29,6 +29,7 @@ enum CBTDiagramTriangle {
 struct TriangleEducationPage: View {
     @State private var activeNode: CBTDiagramTriangle.CBTNodeType? = .thought
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     
     var body: some View {
         PagerLayout(
@@ -37,7 +38,7 @@ struct TriangleEducationPage: View {
         ) {
             VStack(spacing: 24) {
                 InteractiveCBTTriangle(activeNode: $activeNode)
-                    .frame(height: 220)
+                    .frame(height: triangleHeight)
                     .padding(.vertical)
                 
                 DSCardContainer {
@@ -45,10 +46,13 @@ struct TriangleEducationPage: View {
                         Text(activeNodeTitle)
                             .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(themeManager.selectedColor)
+                            .fixedSize(horizontal: false, vertical: true)
                         
                         Text(activeNodeDescription)
                             .font(.subheadline)
                             .foregroundStyle(Theme.secondaryText)
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
                             .id(activeNode)
                             .transition(.opacity)
                     }
@@ -58,8 +62,14 @@ struct TriangleEducationPage: View {
                 Text("Tap the nodes above to see how they interact.")
                     .font(.caption)
                     .foregroundStyle(Theme.secondaryText.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
+    }
+
+    private var triangleHeight: CGFloat {
+        dynamicTypeSize.isAccessibilitySize ? 300 : 244
     }
     
     private var activeNodeTitle: String {
@@ -84,15 +94,18 @@ struct TriangleEducationPage: View {
 private struct InteractiveCBTTriangle: View {
     @Binding var activeNode: CBTDiagramTriangle.CBTNodeType?
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
             let height = proxy.size.height
-            let nodeSize = min(width, height) * 0.28
-            let thought = CGPoint(x: width * 0.5, y: height * 0.15)
-            let emotion = CGPoint(x: width * 0.18, y: height * 0.78)
-            let behavior = CGPoint(x: width * 0.82, y: height * 0.78)
+            let nodeSize = resolvedNodeSize(width: width, height: height)
+            let activeRadius = nodeSize * 0.53
+            let edgeInset = activeRadius + 8
+            let thought = CGPoint(x: width * 0.5, y: edgeInset)
+            let emotion = CGPoint(x: edgeInset, y: height - edgeInset)
+            let behavior = CGPoint(x: width - edgeInset, y: height - edgeInset)
 
             ZStack {
                 Path { path in
@@ -121,14 +134,21 @@ private struct InteractiveCBTTriangle: View {
             }
             HapticManager.shared.lightImpact()
         } label: {
-            VStack(spacing: 8) {
+            VStack(spacing: max(4, size * 0.07)) {
                 Image(systemName: node.symbolName)
-                    .font(.system(size: size * 0.28, weight: .semibold))
+                    .font(.system(size: size * 0.24, weight: .semibold))
+                    .frame(height: size * 0.28)
+
                 Text(node.title)
-                    .font(.system(size: max(12, size * 0.13), weight: .semibold, design: .rounded))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .font(.system(size: max(11, size * 0.14), weight: .semibold, design: .rounded))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.55)
+                    .multilineTextAlignment(.center)
+                    .allowsTightening(true)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(width: max(44, size - 12))
             }
+            .padding(.horizontal, 6)
             .foregroundStyle(isActive ? .white : themeManager.selectedColor)
             .frame(width: size, height: size)
             .background(
@@ -141,9 +161,17 @@ private struct InteractiveCBTTriangle: View {
                     .stroke(themeManager.selectedColor.opacity(isActive ? 0 : 0.28), lineWidth: 1)
             )
             .scaleEffect(isActive ? 1.06 : 1)
+            .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .position(point)
         .accessibilityLabel(node.title)
+    }
+
+    private func resolvedNodeSize(width: CGFloat, height: CGFloat) -> CGFloat {
+        let edgeBound = min(width * 0.31, height * 0.34)
+        let minimum: CGFloat = dynamicTypeSize.isAccessibilitySize ? 90 : 76
+        let maximum: CGFloat = dynamicTypeSize.isAccessibilitySize ? 112 : 94
+        return min(max(edgeBound, minimum), maximum)
     }
 }

@@ -30,6 +30,11 @@ enum ContextualNotificationDeepLink: String, Identifiable {
     case affirmation
     case morningIntentions
     case eveningReflection
+    case moodCheckIn
+    case weeklyReport
+    case plannedActivity
+    case courseContinuation
+    case sleepWindDown
 
     var id: String { rawValue }
 
@@ -172,7 +177,11 @@ final class ContextualNotificationService: NSObject, UNUserNotificationCenterDel
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
-        if let deepLink = notificationDeepLink(from: userInfo) ?? DailyReminderService.shared.notificationDeepLink(from: userInfo) {
+        if let deepLink = (
+            notificationDeepLink(from: userInfo)
+            ?? PersonalizedReminderService.shared.notificationDeepLink(from: userInfo)
+            ?? DailyReminderService.shared.notificationDeepLink(from: userInfo)
+        ) {
             DispatchQueue.main.async {
                 NotificationCenter.default.post(
                     name: .contextualNotificationDeepLinkReceived,

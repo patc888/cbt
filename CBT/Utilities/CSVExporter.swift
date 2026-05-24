@@ -33,6 +33,7 @@ final class CSVExporter: Sendable {
                     String(entry.moodScore),
                     Self.escapeCSV(entry.emotions.joined(separator: "; ")),
                     Self.escapeCSV(entry.triggers.joined(separator: "; ")),
+                    Self.escapeCSV(entry.activityTags.joined(separator: "; ")),
                     Self.escapeCSV(entry.notes ?? ""),
                     entry.intensity.map { String($0) } ?? ""
                 ]
@@ -40,7 +41,7 @@ final class CSVExporter: Sendable {
         }
 
         return await Task.detached(priority: .userInitiated) {
-            let headers = ["Date", "Score", "Emotions", "Triggers", "Notes", "Intensity"]
+            let headers = ["Date", "Score", "Emotions", "Triggers", "Activities", "Notes", "Intensity"]
             let csvString = Self.makeCSVString(headers: headers, rows: rows)
             return Self.createCSVFile(name: "MoodEntries", content: csvString)
         }.value

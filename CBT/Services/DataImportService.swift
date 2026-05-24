@@ -48,6 +48,9 @@ struct DataImportService {
         var existingMoodCheckInsByID = try fetchExistingMoodCheckIns(in: modelContext)
         var existingBreathingSessionsByID = try fetchExistingBreathingSessions(in: modelContext)
         var existingSafetyPlansByID = try fetchExistingSafetyPlans(in: modelContext)
+        var existingCoursesByID = try fetchExistingCourses(in: modelContext)
+        var existingAudioContentsByID = try fetchExistingAudioContents(in: modelContext)
+        var existingAchievementsByID = try fetchExistingAchievements(in: modelContext)
 
         // Mood entries
         for entry in payload.moodEntries {
@@ -62,6 +65,7 @@ struct DataImportService {
                     triggers: entry.triggers ?? [],
                     sensations: entry.sensations ?? [],
                     contextTags: entry.contextTags ?? [],
+                    activityTags: entry.activityTags ?? [],
                     notes: entry.notes,
                     intensity: entry.intensity
                 )
@@ -278,6 +282,94 @@ struct DataImportService {
             }
         }
 
+        if let userSettings = payload.userSettings {
+            for settingsExport in userSettings {
+                let settings = try UserSettings.fetchOrCreate(in: modelContext)
+                update(settings, from: settingsExport)
+            }
+        }
+
+        if let courses = payload.courses {
+            for courseExport in courses {
+                if let existingCourse = existingCoursesByID[courseExport.id] {
+                    update(existingCourse, from: courseExport)
+                } else {
+                    let course = Course(
+                        id: courseExport.id,
+                        title: courseExport.title,
+                        subtitle: courseExport.subtitle,
+                        description: courseExport.descriptionText,
+                        approach: courseExport.approach,
+                        approaches: courseExport.approaches,
+                        category: courseExport.category,
+                        topics: courseExport.topics,
+                        difficulty: courseExport.difficulty,
+                        format: courseExport.format,
+                        estimatedTotalDuration: courseExport.estimatedTotalDuration,
+                        lessonCount: courseExport.lessonCount,
+                        lessons: courseExport.lessons,
+                        linkedExerciseIDs: courseExport.linkedExerciseIDs,
+                        linkedGuidedJournalIDs: courseExport.linkedGuidedJournalIDs,
+                        finalReflectionPrompt: courseExport.finalReflectionPrompt,
+                        finalReflectionResponse: courseExport.finalReflectionResponse,
+                        isPremium: courseExport.isPremium,
+                        itemIDs: courseExport.itemIDs,
+                        completedItemIDs: courseExport.completedItemIDs,
+                        isCompleted: courseExport.isCompleted,
+                        completedAt: courseExport.completedAt
+                    )
+                    modelContext.insert(course)
+                    existingCoursesByID[courseExport.id] = course
+                }
+            }
+        }
+
+        if let audioContents = payload.audioContents {
+            for audioExport in audioContents {
+                if let existingAudio = existingAudioContentsByID[audioExport.id] {
+                    update(existingAudio, from: audioExport)
+                } else {
+                    let audio = AudioContent(
+                        id: audioExport.id,
+                        title: audioExport.title,
+                        description: audioExport.description,
+                        category: audioExport.category,
+                        duration: audioExport.duration,
+                        type: audioExport.type,
+                        localAssetFilename: audioExport.localAssetFilename,
+                        transcript: audioExport.transcript,
+                        isPremium: audioExport.isPremium,
+                        isCompleted: audioExport.isCompleted,
+                        completedAt: audioExport.completedAt,
+                        isFavorite: audioExport.isFavorite
+                    )
+                    modelContext.insert(audio)
+                    existingAudioContentsByID[audioExport.id] = audio
+                }
+            }
+        }
+
+        if let achievements = payload.achievements {
+            for achievementExport in achievements {
+                if let existingAchievement = existingAchievementsByID[achievementExport.id] {
+                    update(existingAchievement, from: achievementExport)
+                } else {
+                    let achievement = Achievement(
+                        id: achievementExport.id,
+                        title: achievementExport.title,
+                        description: achievementExport.description,
+                        imageName: achievementExport.imageName,
+                        isUnlocked: achievementExport.isUnlocked,
+                        unlockCondition: achievementExport.unlockCondition,
+                        createdAt: achievementExport.createdAt,
+                        unlockedAt: achievementExport.unlockedAt
+                    )
+                    modelContext.insert(achievement)
+                    existingAchievementsByID[achievementExport.id] = achievement
+                }
+            }
+        }
+
         try modelContext.save()
     }
     
@@ -341,6 +433,27 @@ struct DataImportService {
         )
     }
 
+    private func fetchExistingCourses(in modelContext: ModelContext) throws -> [String: Course] {
+        Dictionary(
+            try modelContext.fetch(FetchDescriptor<Course>()).map { ($0.id, $0) },
+            uniquingKeysWith: { _, latest in latest }
+        )
+    }
+
+    private func fetchExistingAudioContents(in modelContext: ModelContext) throws -> [String: AudioContent] {
+        Dictionary(
+            try modelContext.fetch(FetchDescriptor<AudioContent>()).map { ($0.id, $0) },
+            uniquingKeysWith: { _, latest in latest }
+        )
+    }
+
+    private func fetchExistingAchievements(in modelContext: ModelContext) throws -> [UUID: Achievement] {
+        Dictionary(
+            try modelContext.fetch(FetchDescriptor<Achievement>()).map { ($0.id, $0) },
+            uniquingKeysWith: { _, latest in latest }
+        )
+    }
+
     private func existingRecordsByID<T: SoftDeletableRecord>(from items: [T]) throws -> [UUID: T] {
         Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { _, latest in latest })
     }
@@ -352,6 +465,7 @@ struct DataImportService {
         mood.triggers = entry.triggers ?? []
         mood.sensations = entry.sensations ?? []
         mood.contextTags = entry.contextTags ?? []
+        mood.activityTags = entry.activityTags ?? []
         mood.notes = entry.notes
         mood.intensity = entry.intensity
         mood.isDeleted = false
@@ -450,5 +564,62 @@ struct DataImportService {
         plan.personalWarningSigns = export.personalWarningSigns
         plan.copingStrategies = export.copingStrategies
         plan.updatedAt = export.updatedAt
+    }
+
+    private func update(_ settings: UserSettings, from export: UserSettingsExport) {
+        settings.singletonID = UserSettings.singletonKey
+        settings.uuid = export.uuid ?? settings.uuid
+        settings.hapticsEnabled = export.hapticsEnabled
+        settings.currentIcon = export.currentIcon
+        settings.appLockEnabled = export.appLockEnabled
+        settings.isPremium = export.isPremium
+    }
+
+    private func update(_ course: Course, from export: CourseExport) {
+        course.title = export.title
+        course.subtitle = export.subtitle
+        course.descriptionText = export.descriptionText
+        course.approach = export.approach
+        course.category = export.category
+        course.difficulty = export.difficulty
+        course.approaches = export.approaches
+        course.topics = export.topics
+        course.format = export.format
+        course.estimatedTotalDuration = max(0, export.estimatedTotalDuration)
+        course.lessonCount = max(0, export.lessonCount)
+        course.lessons = export.lessons
+        course.linkedExerciseIDs = export.linkedExerciseIDs
+        course.linkedGuidedJournalIDs = export.linkedGuidedJournalIDs
+        course.finalReflectionPrompt = export.finalReflectionPrompt
+        course.finalReflectionResponse = export.finalReflectionResponse
+        course.isPremium = export.isPremium
+        course.itemIDs = export.itemIDs
+        course.completedItemIDs = export.completedItemIDs
+        course.completedAt = export.completedAt
+        course.isCompleted = export.isCompleted
+    }
+
+    private func update(_ audio: AudioContent, from export: AudioContentExport) {
+        audio.title = export.title
+        audio.description = export.description
+        audio.category = export.category
+        audio.duration = max(0, export.duration)
+        audio.type = export.type
+        audio.localAssetFilename = export.localAssetFilename
+        audio.transcript = export.transcript
+        audio.isPremium = export.isPremium
+        audio.isCompleted = export.isCompleted
+        audio.completedAt = export.completedAt
+        audio.isFavorite = export.isFavorite
+    }
+
+    private func update(_ achievement: Achievement, from export: AchievementExport) {
+        achievement.title = export.title
+        achievement.achievementDescription = export.description
+        achievement.imageName = export.imageName
+        achievement.isUnlocked = export.isUnlocked
+        achievement.unlockCondition = export.unlockCondition
+        achievement.createdAt = export.createdAt
+        achievement.unlockedAt = export.unlockedAt
     }
 }

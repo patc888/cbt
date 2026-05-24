@@ -4,31 +4,68 @@ import SwiftUI
 
 struct CourseDetailView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Environment(ThemeManager.self) private var themeManager
     @Bindable var course: Course
 
+    @Query private var settings: [UserSettings]
+
     let libraryItems: [LibraryItem]
 
+    @State private var subscriptionManager = SubscriptionManager.shared
     @State private var currentIndex: Int
+    @State private var finalReflectionDraft: String
+    @State private var selectedJournalTemplate: JournalTemplate?
+    @State private var showingPaywall = false
 
-    private var orderedItems: [LibraryItem] {
-        course.orderedItems(from: libraryItems)
+    private var lessons: [CourseLesson] {
+        let courseLessons = course.lessons
+        return courseLessons.isEmpty ? legacyLessons : courseLessons
     }
 
-    private var currentItem: LibraryItem? {
-        guard orderedItems.indices.contains(currentIndex) else { return orderedItems.first }
-        return orderedItems[currentIndex]
+    private var legacyLessons: [CourseLesson] {
+        course.orderedItems(from: libraryItems).map { item in
+            let exercise = LibraryService.shared.exercise(for: item)
+            return CourseLesson(
+                id: item.id,
+                title: item.title,
+                shortEducationalText: exercise?.description ?? "Open the linked exercise to practice this skill.",
+                keyTakeaway: exercise?.completionSummary ?? "A small, completed practice is more useful than a perfect plan.",
+                reflectionPrompt: exercise?.journalReflection,
+                linkedExerciseID: item.id,
+                estimatedDuration: item.duration
+            )
+        }
     }
 
-    private var progress: Double {
-        guard !orderedItems.isEmpty else { return 0 }
-        return Double(course.completedItemIDs.count) / Double(orderedItems.count)
+    private var itemsByID: [String: LibraryItem] {
+        Dictionary(uniqueKeysWithValues: libraryItems.map { ($0.id, $0) })
+    }
+
+    private var currentLesson: CourseLesson? {
+        guard lessons.indices.contains(currentIndex) else { return lessons.first }
+        return lessons[currentIndex]
+    }
+
+    private var linkedJournalTemplates: [JournalTemplate] {
+        course.linkedGuidedJournalIDs.compactMap { id in
+            JournalTemplate.allTemplates.first { $0.id == id }
+        }
+    }
+
+    private var hasFullAccess: Bool {
+        !course.isPremium || subscriptionManager.isPremium || (settings.first?.isPremium ?? false)
+    }
+
+    private var displayLessonCount: Int {
+        max(course.lessonCount, lessons.count)
     }
 
     init(course: Course, libraryItems: [LibraryItem]) {
         self.course = course
         self.libraryItems = libraryItems
         self._currentIndex = State(initialValue: course.progressIndex(in: libraryItems))
+        self._finalReflectionDraft = State(initialValue: course.finalReflectionResponse ?? "")
     }
 
     var body: some View {
@@ -39,13 +76,21 @@ struct CourseDetailView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     AppScreenHeadline(title: course.title)
 
-                    progressHeader
+                    overviewCard
 
-                    if let currentItem {
-                        currentItemCard(currentItem)
+                    if lessons.isEmpty {
+                        emptyCourseState
+                    } else if hasFullAccess {
+                        if let currentLesson {
+                            currentLessonCard(currentLesson)
+                        }
+
+                        linkedResourcesSection
+                        finalReflectionSection
+                        lessonList
+                    } else {
+                        lockedCourseCard
                     }
-
-                    sequenceList
                 }
                 .responsiveMaxWidth()
                 .frame(maxWidth: .infinity)
@@ -59,81 +104,166 @@ struct CourseDetailView: View {
         #endif
         .onAppear {
             currentIndex = course.progressIndex(in: libraryItems)
+            finalReflectionDraft = course.finalReflectionResponse ?? ""
+        }
+        .sheet(item: $selectedJournalTemplate) { template in
+            GuidedJournalWizardView(template: template)
+        }
+        .sheet(isPresented: $showingPaywall) {
+            SubscriptionView()
         }
     }
 
-    private var progressHeader: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(course.isCompleted ? "Course completed" : "\(course.completedItemIDs.count) of \(orderedItems.count) completed")
-                    .font(.system(.headline, design: .rounded).weight(.bold))
-                    .foregroundStyle(course.isCompleted ? Theme.successGreen : Theme.primaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer()
-                Text("\(Int(progress * 100))%")
-                    .font(.system(.caption, design: .rounded).weight(.bold))
-                    .foregroundStyle(Theme.secondaryText)
-            }
-
-            ProgressView(value: progress)
-                .tint(course.isCompleted ? Theme.successGreen : themeManager.selectedColor)
+    private var emptyCourseState: some View {
+        SupportiveEmptyStateView(
+            systemImage: "graduationcap",
+            title: "Course Path",
+            message: "Courses gather related practices into a step-by-step path. This course is waiting for its lessons to load.",
+            actionTitle: "Back to Library",
+            actionSystemImage: "chevron.left"
+        ) {
+            HapticManager.shared.lightImpact()
+            dismiss()
         }
         .padding(Theme.paddingMedium)
         .cardStyle()
     }
 
-    private func currentItemCard(_ item: LibraryItem) -> some View {
+    private var overviewCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Current Step")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundStyle(Theme.secondaryText)
-                .textCase(.uppercase)
-                .tracking(0.6)
-
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: item.type.systemImage)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(themeManager.selectedColor)
-                    .frame(width: 42, height: 42)
-                    .background(themeManager.selectedColor.opacity(0.12), in: Circle())
+                Image(systemName: courseIcon)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(course.isCompleted ? Theme.successGreen : themeManager.selectedColor)
+                    .frame(width: 44, height: 44)
+                    .background((course.isCompleted ? Theme.successGreen : themeManager.selectedColor).opacity(0.12), in: Circle())
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.title)
-                        .font(.system(.title3, design: .rounded).weight(.bold))
-                        .foregroundStyle(Theme.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("\(item.type.rawValue) / \(item.duration)m")
+                VStack(alignment: .leading, spacing: 6) {
+                    if !course.subtitle.isEmpty {
+                        Text(course.subtitle)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
+                            .foregroundStyle(Theme.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    metadataWrap
+                }
+            }
+
+            if !course.courseDescription.isEmpty {
+                Text(course.courseDescription)
+                    .font(.system(.subheadline, design: .rounded))
+                    .foregroundStyle(Theme.secondaryText)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            VStack(spacing: 8) {
+                HStack {
+                    Text(course.isCompleted ? "Course completed" : "\(course.completedLessonCount) of \(course.progressTotal) lessons")
                         .font(.system(.caption, design: .rounded).weight(.semibold))
+                        .foregroundStyle(course.isCompleted ? Theme.successGreen : Theme.secondaryText)
+                    Spacer()
+                    Text("\(Int(course.progressFraction * 100))%")
+                        .font(.system(.caption, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.secondaryText)
                 }
+
+                ProgressView(value: course.progressFraction)
+                    .tint(course.isCompleted ? Theme.successGreen : themeManager.selectedColor)
+            }
+        }
+        .padding(Theme.paddingMedium)
+        .cardStyle()
+    }
+
+    private var metadataWrap: some View {
+        let approach = course.approaches.first ?? course.approach
+        let topic = course.topics.first ?? course.category
+
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 6) {
+                metadataPill(course.displayFormat)
+                metadataPill(approach)
+                metadataPill(topic)
+                metadataPill(course.displayDifficulty)
+                metadataPill("\(displayLessonCount) lessons")
+                metadataPill("\(course.estimatedTotalDuration)m")
+                metadataPill(course.isPremium ? "Premium" : "Free")
             }
 
-            NavigationLink(destination: LibraryItemDestinationView(item: item)) {
-                HStack {
-                    Image(systemName: "arrow.up.right.circle.fill")
-                    Text("Open Step")
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    metadataPill(course.displayFormat)
+                    metadataPill(approach)
+                    metadataPill(topic)
+                }
+                HStack(spacing: 6) {
+                    metadataPill(course.displayDifficulty)
+                    metadataPill("\(displayLessonCount) lessons")
+                    metadataPill("\(course.estimatedTotalDuration)m")
+                    metadataPill(course.isPremium ? "Premium" : "Free")
+                }
+            }
+        }
+    }
+
+    private func currentLessonCard(_ lesson: CourseLesson) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Lesson \(currentIndex + 1)")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.secondaryText)
+                    .textCase(.uppercase)
+
+                Spacer()
+
+                Text("\(lesson.estimatedDuration)m")
+                    .font(.system(.caption, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.secondaryText)
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text(lesson.title)
+                    .font(.system(.title3, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(lesson.shortEducationalText)
+                    .font(.system(.body, design: .rounded))
+                    .foregroundStyle(Theme.primaryText)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            lessonTakeaway(lesson.keyTakeaway)
+
+            if let reflectionPrompt = lesson.reflectionPrompt, !reflectionPrompt.isEmpty {
+                reflectionPromptView(reflectionPrompt)
+            }
+
+            if let item = linkedItem(for: lesson) {
+                NavigationLink(destination: LibraryItemDestinationView(item: item)) {
+                    actionLabel(title: "Open Exercise", systemImage: "arrow.up.right.circle.fill", filled: false)
+                }
+                .buttonStyle(.plain)
+            }
+
+            if course.isLessonCompleted(lesson) {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                    Text("Lesson complete")
                 }
                 .font(.system(.headline, design: .rounded).weight(.bold))
-                .foregroundStyle(themeManager.selectedColor)
+                .foregroundStyle(Theme.successGreen)
                 .frame(maxWidth: .infinity, minHeight: 44)
-                .background(themeManager.selectedColor.opacity(0.12))
+                .background(Theme.successGreen.opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-            .buttonStyle(.plain)
-
-            if !course.completedItemIDs.contains(item.id) {
+            } else {
                 Button {
-                    complete(item)
+                    complete(lesson)
                 } label: {
-                    HStack {
-                        Image(systemName: "checkmark")
-                        Text("Mark Complete")
-                    }
-                    .font(.system(.headline, design: .rounded).weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity, minHeight: 48)
-                    .background(themeManager.selectedColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    actionLabel(title: "Mark Lesson Complete", systemImage: "checkmark", filled: true)
                 }
                 .buttonStyle(.plain)
             }
@@ -142,15 +272,98 @@ struct CourseDetailView: View {
         .cardStyle()
     }
 
-    private var sequenceList: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Path")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundStyle(Theme.secondaryText)
-                .textCase(.uppercase)
-                .tracking(0.6)
+    @ViewBuilder
+    private var linkedResourcesSection: some View {
+        if !linkedJournalTemplates.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                sectionTitle("Guided Journals")
 
-            ForEach(Array(orderedItems.enumerated()), id: \.element.id) { index, item in
+                ForEach(linkedJournalTemplates) { template in
+                    Button {
+                        selectedJournalTemplate = template
+                        HapticManager.shared.selection()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: template.icon)
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(themeManager.selectedColor)
+                                .frame(width: 36, height: 36)
+                                .background(themeManager.selectedColor.opacity(0.12), in: Circle())
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(template.name)
+                                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                                    .foregroundStyle(Theme.primaryText)
+                                    .multilineTextAlignment(.leading)
+                                Text(template.description)
+                                    .font(.system(.caption, design: .rounded))
+                                    .foregroundStyle(Theme.secondaryText)
+                                    .lineLimit(2)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "arrow.up.forward.square")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(themeManager.selectedColor)
+                        }
+                        .padding(12)
+                        .background(Theme.cardBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var finalReflectionSection: some View {
+        if course.isCompleted,
+           let prompt = course.finalReflectionPrompt,
+           !prompt.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                sectionTitle("Final Reflection")
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(prompt)
+                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                        .foregroundStyle(Theme.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    TextEditor(text: $finalReflectionDraft)
+                        .font(.system(.body, design: .rounded))
+                        .foregroundStyle(Theme.primaryText)
+                        .scrollContentBackground(.hidden)
+                        .padding(10)
+                        .frame(minHeight: 110)
+                        .background(Theme.tertiaryBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                    Button {
+                        saveFinalReflection()
+                    } label: {
+                        actionLabel(
+                            title: course.finalReflectionResponse?.isEmpty == false ? "Update Reflection" : "Save Reflection",
+                            systemImage: "square.and.arrow.down",
+                            filled: true
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(finalReflectionDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .opacity(finalReflectionDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.55 : 1)
+                }
+                .padding(Theme.paddingMedium)
+                .cardStyle()
+            }
+        }
+    }
+
+    private var lessonList: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionTitle("Lessons")
+
+            ForEach(Array(lessons.enumerated()), id: \.element.id) { index, lesson in
                 Button {
                     currentIndex = index
                     HapticManager.shared.selection()
@@ -162,19 +375,20 @@ struct CourseDetailView: View {
                             .frame(width: 28, height: 28)
                             .background(currentIndex == index ? themeManager.selectedColor : themeManager.selectedColor.opacity(0.12), in: Circle())
 
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(item.title)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(lesson.title)
                                 .font(.system(.subheadline, design: .rounded).weight(.bold))
                                 .foregroundStyle(Theme.primaryText)
                                 .fixedSize(horizontal: false, vertical: true)
-                            Text(item.type.rawValue)
+
+                            Text("\(lesson.estimatedDuration)m lesson")
                                 .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(Theme.secondaryText)
                         }
 
                         Spacer()
 
-                        if course.completedItemIDs.contains(item.id) {
+                        if course.isLessonCompleted(lesson) {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(Theme.successGreen)
                         }
@@ -188,18 +402,146 @@ struct CourseDetailView: View {
         }
     }
 
-    private func complete(_ item: LibraryItem) {
-        course.markCompleted(itemID: item.id)
+    private var lockedCourseCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(themeManager.selectedColor)
+                    .frame(width: 40, height: 40)
+                    .background(themeManager.selectedColor.opacity(0.12), in: Circle())
 
-        if let nextIndex = orderedItems.firstIndex(where: { !course.completedItemIDs.contains($0.id) }) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Premium Course")
+                        .font(.system(.headline, design: .rounded).weight(.bold))
+                        .foregroundStyle(Theme.primaryText)
+                    Text("Unlock full access to start this course.")
+                        .font(.system(.subheadline, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
+
+            Button {
+                showingPaywall = true
+            } label: {
+                actionLabel(title: "View Full Access", systemImage: "sparkles", filled: true)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(Theme.paddingMedium)
+        .cardStyle()
+    }
+
+    private var courseIcon: String {
+        if course.isCompleted {
+            return "checkmark.seal.fill"
+        }
+
+        return course.approach == "Crash Course" ? "bolt.fill" : "graduationcap.fill"
+    }
+
+    @ViewBuilder
+    private func metadataPill(_ title: String) -> some View {
+        if !title.isEmpty {
+            Text(title)
+                .font(.system(.caption2, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.secondaryText)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Theme.tertiaryBackground)
+                .clipShape(Capsule())
+        }
+    }
+
+    private func sectionTitle(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 13, weight: .bold, design: .rounded))
+            .textCase(.uppercase)
+            .foregroundStyle(Theme.secondaryText)
+    }
+
+    private func lessonTakeaway(_ takeaway: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "lightbulb.fill")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(themeManager.selectedColor)
+                .padding(.top, 2)
+
+            Text(takeaway)
+                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                .foregroundStyle(Theme.primaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(themeManager.selectedColor.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private func reflectionPromptView(_ prompt: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Reflection Prompt")
+                .font(.system(.caption, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.secondaryText)
+                .textCase(.uppercase)
+
+            Text(prompt)
+                .font(.system(.subheadline, design: .rounded))
+                .foregroundStyle(Theme.primaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.tertiaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private func actionLabel(title: String, systemImage: String, filled: Bool) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+            Text(title)
+        }
+        .font(.system(.headline, design: .rounded).weight(.bold))
+        .foregroundStyle(filled ? .white : themeManager.selectedColor)
+        .frame(maxWidth: .infinity, minHeight: 46)
+        .background(filled ? themeManager.selectedColor : themeManager.selectedColor.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func linkedItem(for lesson: CourseLesson) -> LibraryItem? {
+        guard let linkedExerciseID = lesson.linkedExerciseID else { return nil }
+        return itemsByID[linkedExerciseID]
+    }
+
+    private func complete(_ lesson: CourseLesson) {
+        course.markCompleted(lesson: lesson)
+
+        if let nextIndex = lessons.firstIndex(where: { !course.isLessonCompleted($0) }) {
             currentIndex = nextIndex
         }
 
         do {
             try modelContext.save()
+            AchievementService.shared.evaluateAchievements(in: modelContext)
             HapticManager.shared.success()
+            Task { @MainActor in
+                await PersonalizedReminderService.shared.refreshEnabledReminders(modelContext: modelContext)
+            }
         } catch {
             AppLogger.make(category: "Library").error("Failed to save course progress: \(error.localizedDescription, privacy: .private)")
+        }
+    }
+
+    private func saveFinalReflection() {
+        let trimmed = finalReflectionDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        course.finalReflectionResponse = trimmed
+
+        do {
+            try modelContext.save()
+            HapticManager.shared.success()
+        } catch {
+            AppLogger.make(category: "Library").error("Failed to save final reflection: \(error.localizedDescription, privacy: .private)")
         }
     }
 }

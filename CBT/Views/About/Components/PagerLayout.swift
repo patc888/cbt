@@ -14,16 +14,20 @@ struct PagerLayout<Content: View>: View {
                     VStack(spacing: 8) {
                         Text(title)
                             .font(DSTypography.pageTitle)
+                            .lineLimit(nil)
                             .multilineTextAlignment(.center)
                             .foregroundStyle(Theme.primaryText)
                             .padding(.horizontal, 24)
+                            .fixedSize(horizontal: false, vertical: true)
                         
                         if let subtitle = subtitle {
                             Text(subtitle)
                                 .font(.system(.body, design: .rounded))
+                                .lineLimit(nil)
                                 .multilineTextAlignment(.center)
                                 .foregroundStyle(Theme.secondaryText)
                                 .padding(.horizontal, 32)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                     

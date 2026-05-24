@@ -189,6 +189,7 @@ final class StorageAuditService {
             let libraryItems = try context.fetch(FetchDescriptor<LibraryItem>())
             let courses = try context.fetch(FetchDescriptor<Course>())
             let achievements = try context.fetch(FetchDescriptor<Achievement>())
+            let audioContent = try context.fetch(FetchDescriptor<AudioContent>())
             let settings = try context.fetch(FetchDescriptor<UserSettings>())
 
             var results = [
@@ -207,6 +208,7 @@ final class StorageAuditService {
                 "Library items: \(libraryItems.count)",
                 "Courses: \(courses.count)",
                 "Achievements: \(achievements.count)",
+                "Audio content: \(audioContent.count)",
                 "User settings records: \(settings.count)"
             ]
 
@@ -225,6 +227,7 @@ final class StorageAuditService {
             appendDuplicateIDCheck("Library items", ids: libraryItems.map(\.id), to: &results)
             appendDuplicateIDCheck("Courses", ids: courses.map(\.id), to: &results)
             appendDuplicateIDCheck("Achievements", ids: achievements.map(\.title), to: &results)
+            appendDuplicateIDCheck("Audio content", ids: audioContent.map(\.id), to: &results)
 
             if settings.count > 1 {
                 results.append("Issue: Found \(settings.count) UserSettings records. Run database repair to collapse duplicates.")
@@ -294,6 +297,11 @@ final class StorageAuditService {
                 repairedSeededRecords += deleteDuplicateRecords(
                     try context.fetch(FetchDescriptor<Achievement>()),
                     key: \.title,
+                    in: context
+                )
+                repairedSeededRecords += deleteDuplicateRecords(
+                    try context.fetch(FetchDescriptor<AudioContent>()),
+                    key: \.id,
                     in: context
                 )
 

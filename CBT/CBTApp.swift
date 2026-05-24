@@ -209,6 +209,9 @@ struct CBTApp: App {
                         .environmentObject(securityManager)
                 }
             }
+            .task {
+                await PersonalizedReminderService.shared.refreshEnabledReminders(modelContext: modelContainer.mainContext)
+            }
             .onChange(of: scenePhase) { _, newPhase in
                 if newPhase == .active {
                     if !hasCheckedLockOnLaunch {
@@ -216,6 +219,7 @@ struct CBTApp: App {
                     }
                     Task {
                         await DailyReminderService.shared.refreshQuoteOfTheDayIfEnabled()
+                        await PersonalizedReminderService.shared.refreshEnabledReminders(modelContext: modelContainer.mainContext)
                     }
                 }
             }

@@ -7,6 +7,9 @@ struct InsightsMilestonesCard: View {
     let activeDaysCount: Int
 
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var visibleConsistencyProgress = 0.0
+    @State private var visibleMilestoneProgress = 0.0
 
     var body: some View {
         VStack(spacing: 16) {
@@ -29,8 +32,15 @@ struct InsightsMilestonesCard: View {
                     .frame(width: 190, height: 190)
 
                 Circle()
-                    .trim(from: 0, to: max(0.001, consistencyProgress))
-                    .stroke(themeManager.secondaryColor, style: StrokeStyle(lineWidth: 24, lineCap: .round))
+                    .trim(from: 0, to: max(0.001, visibleConsistencyProgress))
+                    .stroke(
+                        LinearGradient(
+                            colors: [themeManager.secondaryColor, themeManager.selectedColor.opacity(0.85)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: 24, lineCap: .round)
+                    )
                     .rotationEffect(.degrees(-90))
                     .frame(width: 190, height: 190)
 
@@ -39,15 +49,24 @@ struct InsightsMilestonesCard: View {
                     .frame(width: 136, height: 136)
 
                 Circle()
-                    .trim(from: 0, to: max(0.001, Double(milestonesCompleted) / 4.0))
-                    .stroke(themeManager.selectedColor, style: StrokeStyle(lineWidth: 18, lineCap: .round))
+                    .trim(from: 0, to: max(0.001, visibleMilestoneProgress))
+                    .stroke(
+                        LinearGradient(
+                            colors: [themeManager.selectedColor, themeManager.secondaryColor.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: 18, lineCap: .round)
+                    )
                     .rotationEffect(.degrees(-90))
                     .frame(width: 136, height: 136)
 
                 VStack(spacing: 4) {
-                    Text("\(Int((consistencyProgress * 100).rounded()))%")
+                    Text("\(Int((visibleConsistencyProgress * 100).rounded()))%")
                         .font(.system(.largeTitle, design: .rounded).weight(.black))
                         .foregroundStyle(Theme.primaryText)
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
                     Text("CONSISTENCY")
                         .font(.system(.caption, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.secondaryText)
@@ -63,5 +82,29 @@ struct InsightsMilestonesCard: View {
         }
         .padding(Theme.paddingMedium)
         .cardStyle()
+        .onAppear {
+            updateVisibleProgress(animated: !reduceMotion)
+        }
+        .onChange(of: consistencyProgress) { _, _ in
+            updateVisibleProgress(animated: !reduceMotion)
+        }
+        .onChange(of: milestonesCompleted) { _, _ in
+            updateVisibleProgress(animated: !reduceMotion)
+        }
+    }
+
+    private func updateVisibleProgress(animated: Bool) {
+        let consistency = min(1, max(0, consistencyProgress))
+        let milestones = min(1, max(0, Double(milestonesCompleted) / 4.0))
+
+        if animated {
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.84)) {
+                visibleConsistencyProgress = consistency
+                visibleMilestoneProgress = milestones
+            }
+        } else {
+            visibleConsistencyProgress = consistency
+            visibleMilestoneProgress = milestones
+        }
     }
 }

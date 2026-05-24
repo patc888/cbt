@@ -185,8 +185,6 @@ enum AppTokens {
         "CBT/Views/MoodCheckin/MoodSuggestionsView.swift",
         "CBT/Views/MoodCheckin/MoodTriggerSelector.swift",
         "CBT/Views/Programs/ProgramDetailView.swift",
-        "CBT/Views/Safety/EmergencyLandingView.swift",
-        "CBT/Views/Safety/SafetyPlanView.swift",
         "CBT/Views/Settings/AboutSettingsView.swift",
         "CBT/Views/Settings/AdvancedRemindersView.swift",
         "CBT/Views/Settings/AppearanceSettingsView.swift",

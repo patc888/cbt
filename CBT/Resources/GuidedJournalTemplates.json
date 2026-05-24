@@ -1,0 +1,635 @@
+[
+  {
+    "id": "gratitude_reflection",
+    "title": "Gratitude Reflection",
+    "description": "Focus on the positive aspects of your day.",
+    "category": "Gratitude",
+    "approach": "Positive Psychology",
+    "estimatedDurationMinutes": 4,
+    "promptSteps": [
+      {
+        "id": "smile",
+        "title": "Notice",
+        "prompt": "What made you smile today?",
+        "helperText": "Small moments count here.",
+        "placeholder": "A moment that lifted me was..."
+      },
+      {
+        "id": "person",
+        "title": "Appreciate",
+        "prompt": "Name a person you are thankful for.",
+        "helperText": "You can write about what they did, how they show up, or what they mean to you.",
+        "placeholder": "I am thankful for..."
+      }
+    ],
+    "helperText": "Let this be specific and ordinary. Gratitude works best when it has texture.",
+    "moodEmotionTags": ["Grateful", "Content", "Hopeful"],
+    "completionReflection": "Your gratitude reflection has been saved.",
+    "icon": "sun.max.fill",
+    "colorHexes": ["#F97316", "#FACC15"],
+    "isRecommended": true,
+    "legacyTemplateTypes": ["Gratitude Reflection", "gratitude"]
+  },
+  {
+    "id": "impostor_syndrome_unpacker",
+    "title": "Impostor Syndrome Unpacker",
+    "description": "Examine self-doubt with objective facts.",
+    "category": "Self-Esteem",
+    "approach": "CBT",
+    "estimatedDurationMinutes": 5,
+    "promptSteps": [
+      {
+        "id": "achievement",
+        "title": "Name It",
+        "prompt": "What achievement are you downplaying right now?",
+        "helperText": "Pick one specific thing, even if part of you wants to dismiss it.",
+        "placeholder": "Something I earned or contributed to was..."
+      },
+      {
+        "id": "evidence",
+        "title": "Check the Facts",
+        "prompt": "What objective, factual evidence proves you earned it?",
+        "helperText": "Look for observable actions, preparation, feedback, effort, or outcomes.",
+        "placeholder": "The facts that support me are..."
+      }
+    ],
+    "helperText": "Treat the impostor thought as a hypothesis, then check what the evidence actually says.",
+    "moodEmotionTags": ["Self-Doubt", "Anxious", "Proud"],
+    "completionReflection": "Your evidence-based reflection has been saved.",
+    "icon": "brain.head.profile",
+    "colorHexes": ["#A855F7", "#4F46E5"],
+    "isRecommended": true,
+    "legacyTemplateTypes": ["Impostor Syndrome Unpacker", "impostor_syndrome"]
+  },
+  {
+    "id": "worry_unpacker",
+    "title": "Worry Unpacker",
+    "description": "Separate a worry into facts, fears, and the next useful action.",
+    "category": "Anxiety",
+    "approach": "CBT",
+    "estimatedDurationMinutes": 7,
+    "promptSteps": [
+      {"id": "worry", "title": "Worry", "prompt": "What worry is taking up the most space right now?", "helperText": "Name it plainly, without trying to solve it yet.", "placeholder": "The worry is..."},
+      {"id": "facts", "title": "Facts", "prompt": "What facts do you actually have?", "helperText": "Stick to observable details and leave guesses for the next step.", "placeholder": "The facts I know are..."},
+      {"id": "fears", "title": "Fears", "prompt": "What are you afraid might happen?", "helperText": "Let the fear be specific enough to examine.", "placeholder": "I am afraid that..."},
+      {"id": "action", "title": "Action", "prompt": "What is one helpful action you can take today?", "helperText": "Choose something small and within reach.", "placeholder": "One useful action is..."}
+    ],
+    "moodEmotionTags": ["Worried", "Anxious", "Overwhelmed"],
+    "completionReflection": "Your worry map has been saved.",
+    "icon": "wind",
+    "colorHexes": ["#14B8A6", "#2563EB"],
+    "isRecommended": true
+  },
+  {
+    "id": "what_am_i_predicting",
+    "title": "What Am I Predicting?",
+    "description": "Catch anxious predictions and compare them with balanced possibilities.",
+    "category": "Anxiety",
+    "approach": "CBT",
+    "estimatedDurationMinutes": 6,
+    "promptSteps": [
+      {"id": "prediction", "title": "Prediction", "prompt": "What are you predicting will happen?", "helperText": "Write the prediction as a sentence.", "placeholder": "I predict that..."},
+      {"id": "confidence", "title": "Confidence", "prompt": "How strongly do you believe this prediction right now?", "helperText": "Use words, a percentage, or both.", "placeholder": "I believe this about..."},
+      {"id": "alternatives", "title": "Alternatives", "prompt": "What are two other possible outcomes?", "helperText": "They do not need to be perfect, just plausible.", "placeholder": "Other outcomes could be..."},
+      {"id": "response", "title": "Response", "prompt": "How would you respond if a friend made this prediction?", "helperText": "Borrow that tone for yourself.", "placeholder": "I would tell them..."}
+    ],
+    "moodEmotionTags": ["Anxious", "Uncertain", "Alert"],
+    "completionReflection": "Your prediction check has been saved.",
+    "icon": "sparkle.magnifyingglass",
+    "colorHexes": ["#0EA5E9", "#6366F1"],
+    "isRecommended": false
+  },
+  {
+    "id": "uncertainty_practice",
+    "title": "Uncertainty Practice",
+    "description": "Practice making room for unknowns without rushing to reassurance.",
+    "category": "Anxiety",
+    "approach": "ACT",
+    "estimatedDurationMinutes": 6,
+    "promptSteps": [
+      {"id": "unknown", "title": "Unknown", "prompt": "What uncertainty are you trying to settle?", "helperText": "Name the question your mind keeps returning to.", "placeholder": "The uncertainty is..."},
+      {"id": "urge", "title": "Urge", "prompt": "What do you feel pulled to do for reassurance?", "helperText": "Notice checking, asking, replaying, or researching urges.", "placeholder": "I feel pulled to..."},
+      {"id": "allow", "title": "Allow", "prompt": "What would it sound like to allow this uncertainty for now?", "helperText": "Use a phrase you could repeat gently.", "placeholder": "I can allow..."},
+      {"id": "values", "title": "Values", "prompt": "What valued action can you return to instead?", "helperText": "Pick behavior that matters even while uncertain.", "placeholder": "I can return to..."}
+    ],
+    "moodEmotionTags": ["Uncertain", "Restless", "Brave"],
+    "completionReflection": "Your uncertainty practice has been saved.",
+    "icon": "questionmark.circle.fill",
+    "colorHexes": ["#2DD4BF", "#2563EB"],
+    "isRecommended": true
+  },
+  {
+    "id": "panic_reflection",
+    "title": "Panic Reflection",
+    "description": "Review a panic spike with body cues, thoughts, and grounding.",
+    "category": "Anxiety",
+    "approach": "CBT",
+    "estimatedDurationMinutes": 6,
+    "promptSteps": [
+      {"id": "body", "title": "Body", "prompt": "What body sensations showed up?", "helperText": "Describe sensations without judging them as dangerous.", "placeholder": "I noticed..."},
+      {"id": "thought", "title": "Thought", "prompt": "What did your mind say those sensations meant?", "helperText": "Capture the scary interpretation.", "placeholder": "My mind said..."},
+      {"id": "evidence", "title": "Evidence", "prompt": "What helped you recognize this as a wave of alarm, not immediate danger?", "helperText": "Include timing, past patterns, or what changed as the moment passed.", "placeholder": "Signs this was a wave of alarm were..."},
+      {"id": "grounding", "title": "Grounding", "prompt": "What grounding helped, or what could help next time?", "helperText": "Keep it practical and repeatable.", "placeholder": "Next time I can..."}
+    ],
+    "moodEmotionTags": ["Panicked", "Scared", "Relieved"],
+    "completionReflection": "Your panic reflection has been saved.",
+    "icon": "waveform.path.ecg",
+    "colorHexes": ["#06B6D4", "#1D4ED8"],
+    "isRecommended": false
+  },
+  {
+    "id": "safety_behavior_audit",
+    "title": "Safety Behavior Audit",
+    "description": "Notice coping habits that lower anxiety short term but keep fear stuck.",
+    "category": "Anxiety",
+    "approach": "CBT",
+    "estimatedDurationMinutes": 8,
+    "promptSteps": [
+      {"id": "situation", "title": "Situation", "prompt": "What situation did you want to feel safe in?", "helperText": "Choose one recent example.", "placeholder": "The situation was..."},
+      {"id": "behavior", "title": "Behavior", "prompt": "What did you do to reduce anxiety or prevent embarrassment?", "helperText": "Look for checking, avoiding, rehearsing, hiding, or seeking reassurance.", "placeholder": "I coped by..."},
+      {"id": "cost", "title": "Cost", "prompt": "What did this behavior cost you?", "helperText": "Consider energy, confidence, freedom, or connection.", "placeholder": "The cost was..."},
+      {"id": "experiment", "title": "Experiment", "prompt": "What tiny experiment could you try next time?", "helperText": "Reduce the safety behavior by one notch, not all at once.", "placeholder": "I could test..."}
+    ],
+    "moodEmotionTags": ["Avoidant", "Anxious", "Curious"],
+    "completionReflection": "Your safety behavior audit has been saved.",
+    "icon": "shield.lefthalf.filled",
+    "colorHexes": ["#0891B2", "#4338CA"],
+    "isRecommended": false
+  },
+  {
+    "id": "one_small_step",
+    "title": "One Small Step",
+    "description": "Find a low-friction action when mood or energy is low.",
+    "category": "Low Mood",
+    "approach": "Behavioral Activation",
+    "estimatedDurationMinutes": 5,
+    "promptSteps": [
+      {"id": "state", "title": "State", "prompt": "How is your mood affecting what feels possible?", "helperText": "Be honest and brief.", "placeholder": "Right now it feels like..."},
+      {"id": "need", "title": "Need", "prompt": "What do you most need in the next hour?", "helperText": "Think care, movement, food, rest, support, or structure.", "placeholder": "I need..."},
+      {"id": "step", "title": "Step", "prompt": "What is one step so small it almost feels too easy?", "helperText": "Make it concrete enough to start in two minutes.", "placeholder": "One small step is..."},
+      {"id": "support", "title": "Support", "prompt": "What would make this step easier?", "helperText": "Change the environment, lower the bar, or ask for help.", "placeholder": "I can make it easier by..."}
+    ],
+    "moodEmotionTags": ["Low", "Tired", "Stuck"],
+    "completionReflection": "Your small step has been saved.",
+    "icon": "figure.walk",
+    "colorHexes": ["#06B6D4", "#4F46E5"],
+    "isRecommended": true
+  },
+  {
+    "id": "low_mood_reflection",
+    "title": "Low Mood Reflection",
+    "description": "Reflect on low mood without turning it into a verdict about yourself.",
+    "category": "Low Mood",
+    "approach": "CBT",
+    "estimatedDurationMinutes": 7,
+    "promptSteps": [
+      {"id": "context", "title": "Context", "prompt": "What has been happening around this low mood?", "helperText": "Include sleep, stress, conflict, loss, or overload.", "placeholder": "Around this mood..."},
+      {"id": "thoughts", "title": "Thoughts", "prompt": "What thoughts are showing up with it?", "helperText": "Write them as thoughts, not facts.", "placeholder": "My mind is saying..."},
+      {"id": "care", "title": "Care", "prompt": "What would a caring interpretation include?", "helperText": "Make room for context and humanity.", "placeholder": "A kinder view is..."},
+      {"id": "next", "title": "Next", "prompt": "What is one nourishing next step?", "helperText": "Choose something supportive, not punishing.", "placeholder": "A nourishing step is..."}
+    ],
+    "moodEmotionTags": ["Sad", "Heavy", "Tender"],
+    "completionReflection": "Your low mood reflection has been saved.",
+    "icon": "cloud.sun.fill",
+    "colorHexes": ["#38BDF8", "#6366F1"],
+    "isRecommended": false
+  },
+  {
+    "id": "energy_vs_mood",
+    "title": "Energy vs Mood",
+    "description": "Separate physical energy from emotional mood to choose the right support.",
+    "category": "Low Mood",
+    "approach": "Mindfulness",
+    "estimatedDurationMinutes": 5,
+    "promptSteps": [
+      {"id": "energy", "title": "Energy", "prompt": "What is your energy level like right now?", "helperText": "Describe the body first.", "placeholder": "My energy feels..."},
+      {"id": "mood", "title": "Mood", "prompt": "What is your emotional mood like right now?", "helperText": "Name the emotion separately from energy.", "placeholder": "My mood feels..."},
+      {"id": "mix", "title": "Pattern", "prompt": "How are energy and mood interacting?", "helperText": "Notice whether one is pulling on the other.", "placeholder": "They interact by..."},
+      {"id": "support", "title": "Support", "prompt": "What support fits this combination?", "helperText": "Low energy may need rest; low mood may need connection or meaning.", "placeholder": "The support that fits is..."}
+    ],
+    "moodEmotionTags": ["Drained", "Flat", "Curious"],
+    "completionReflection": "Your energy and mood check has been saved.",
+    "icon": "battery.50percent",
+    "colorHexes": ["#22D3EE", "#818CF8"],
+    "isRecommended": false
+  },
+  {
+    "id": "self_criticism_reframe",
+    "title": "Self-Criticism Reframe",
+    "description": "Turn a harsh inner judgment into a fairer, more useful thought.",
+    "category": "Self-Esteem",
+    "approach": "CBT",
+    "estimatedDurationMinutes": 6,
+    "promptSteps": [
+      {"id": "criticism", "title": "Criticism", "prompt": "What is the harsh thought saying?", "helperText": "Write it in the exact words it uses.", "placeholder": "The harsh thought says..."},
+      {"id": "tone", "title": "Tone", "prompt": "What tone does this thought use with you?", "helperText": "Notice whether it shames, threatens, compares, or dismisses.", "placeholder": "The tone is..."},
+      {"id": "truth", "title": "Truth", "prompt": "What part, if any, is worth learning from?", "helperText": "Find the useful signal without accepting the cruelty.", "placeholder": "The useful part is..."},
+      {"id": "reframe", "title": "Reframe", "prompt": "What is a fairer thought you can practice?", "helperText": "Aim for believable, not sugary.", "placeholder": "A fairer thought is..."}
+    ],
+    "moodEmotionTags": ["Ashamed", "Frustrated", "Compassionate"],
+    "completionReflection": "Your self-criticism reframe has been saved.",
+    "icon": "sparkles",
+    "colorHexes": ["#EC4899", "#F97316"],
+    "isRecommended": true
+  },
+  {
+    "id": "hope_inventory",
+    "title": "Hope Inventory",
+    "description": "Collect realistic signs that change, support, and relief remain possible.",
+    "category": "Low Mood",
+    "approach": "Positive Psychology",
+    "estimatedDurationMinutes": 6,
+    "promptSteps": [
+      {"id": "past", "title": "Past", "prompt": "When have things shifted even a little before?", "helperText": "Look for evidence from your own life.", "placeholder": "A time things shifted was..."},
+      {"id": "support", "title": "Support", "prompt": "Who or what helps you keep going?", "helperText": "Include people, routines, places, beliefs, or tools.", "placeholder": "Support includes..."},
+      {"id": "signs", "title": "Signs", "prompt": "What small signs of possibility can you see today?", "helperText": "Tiny signs still count.", "placeholder": "A small sign is..."},
+      {"id": "protect", "title": "Protect", "prompt": "What would help protect that hope for one day?", "helperText": "Choose one caring boundary or action.", "placeholder": "I can protect hope by..."}
+    ],
+    "moodEmotionTags": ["Discouraged", "Hopeful", "Tender"],
+    "completionReflection": "Your hope inventory has been saved.",
+    "icon": "lightbulb.fill",
+    "colorHexes": ["#06B6D4", "#F59E0B"],
+    "isRecommended": false
+  },
+  {
+    "id": "inner_critic_dialogue",
+    "title": "Inner Critic Dialogue",
+    "description": "Create distance from the inner critic and answer it with steadier language.",
+    "category": "Self-Esteem",
+    "approach": "ACT",
+    "estimatedDurationMinutes": 8,
+    "promptSteps": [
+      {"id": "critic", "title": "Critic", "prompt": "What is your inner critic saying today?", "helperText": "Let it speak, but put its words on the page.", "placeholder": "The critic says..."},
+      {"id": "purpose", "title": "Purpose", "prompt": "What might this critic be trying to protect you from?", "helperText": "You can understand a protective strategy without obeying it.", "placeholder": "It may be trying to protect me from..."},
+      {"id": "impact", "title": "Impact", "prompt": "How does this criticism affect you?", "helperText": "Notice motivation, shame, avoidance, or tension.", "placeholder": "Its impact is..."},
+      {"id": "reply", "title": "Reply", "prompt": "What would your steadier self say back?", "helperText": "Use firm, kind, direct language.", "placeholder": "My steadier self says..."}
+    ],
+    "moodEmotionTags": ["Self-Critical", "Defensive", "Grounded"],
+    "completionReflection": "Your inner critic dialogue has been saved.",
+    "icon": "bubble.left.and.bubble.right.fill",
+    "colorHexes": ["#DB2777", "#F97316"],
+    "isRecommended": false
+  },
+  {
+    "id": "strengths_evidence_log",
+    "title": "Strengths Evidence Log",
+    "description": "Use evidence from your actions to notice strengths you tend to dismiss.",
+    "category": "Self-Esteem",
+    "approach": "Positive Psychology",
+    "estimatedDurationMinutes": 6,
+    "promptSteps": [
+      {"id": "moment", "title": "Moment", "prompt": "What is one recent thing you handled, contributed, or tried?", "helperText": "Small actions are valid evidence.", "placeholder": "Recently I..."},
+      {"id": "strength", "title": "Strength", "prompt": "What strength did that action show?", "helperText": "Think persistence, care, courage, honesty, patience, creativity.", "placeholder": "This showed..."},
+      {"id": "evidence", "title": "Evidence", "prompt": "What concrete evidence supports that strength?", "helperText": "Point to what you did, not just how it felt.", "placeholder": "The evidence is..."},
+      {"id": "use", "title": "Use", "prompt": "How could you use this strength again soon?", "helperText": "Choose one near-term opportunity.", "placeholder": "I can use it by..."}
+    ],
+    "moodEmotionTags": ["Proud", "Capable", "Uncertain"],
+    "completionReflection": "Your strengths evidence log has been saved.",
+    "icon": "checkmark.seal.fill",
+    "colorHexes": ["#F472B6", "#F59E0B"],
+    "isRecommended": true
+  },
+  {
+    "id": "shame_unpacking",
+    "title": "Shame Unpacking",
+    "description": "Meet shame with context, accountability, and compassion.",
+    "category": "Self-Esteem",
+    "approach": "CBT",
+    "estimatedDurationMinutes": 8,
+    "promptSteps": [
+      {"id": "story", "title": "Story", "prompt": "What story is shame telling about you?", "helperText": "Separate the story from your whole identity.", "placeholder": "Shame says..."},
+      {"id": "context", "title": "Context", "prompt": "What context does this story leave out?", "helperText": "Include pressure, needs, limits, history, or missing support.", "placeholder": "It leaves out..."},
+      {"id": "repair", "title": "Repair", "prompt": "Is there any repair or responsibility that belongs here?", "helperText": "Name repair without turning it into self-attack.", "placeholder": "A repair step could be..."},
+      {"id": "compassion", "title": "Compassion", "prompt": "What compassionate truth can stand beside accountability?", "helperText": "Both can be true at once.", "placeholder": "A compassionate truth is..."}
+    ],
+    "moodEmotionTags": ["Ashamed", "Exposed", "Compassionate"],
+    "completionReflection": "Your shame reflection has been saved.",
+    "icon": "heart.text.square.fill",
+    "colorHexes": ["#BE185D", "#EA580C"],
+    "isRecommended": false
+  },
+  {
+    "id": "comparison_detox",
+    "title": "Comparison Detox",
+    "description": "Step out of comparison and return to your own values and pace.",
+    "category": "Self-Esteem",
+    "approach": "ACT",
+    "estimatedDurationMinutes": 6,
+    "promptSteps": [
+      {"id": "comparison", "title": "Comparison", "prompt": "Who or what are you comparing yourself to?", "helperText": "Name the comparison without judging yourself for having it.", "placeholder": "I am comparing myself to..."},
+      {"id": "impact", "title": "Impact", "prompt": "What does this comparison do to your mood or behavior?", "helperText": "Notice whether it shrinks, pushes, or distracts you.", "placeholder": "It affects me by..."},
+      {"id": "values", "title": "Values", "prompt": "What value of yours is hidden underneath the comparison?", "helperText": "Comparison often points to something you care about.", "placeholder": "A value underneath is..."},
+      {"id": "return", "title": "Return", "prompt": "What is one values-based action at your own pace?", "helperText": "Make it yours, not a race.", "placeholder": "At my pace I can..."}
+    ],
+    "moodEmotionTags": ["Jealous", "Insecure", "Focused"],
+    "completionReflection": "Your comparison detox has been saved.",
+    "icon": "arrow.left.arrow.right.circle.fill",
+    "colorHexes": ["#F472B6", "#FB923C"],
+    "isRecommended": false
+  },
+  {
+    "id": "compassionate_letter",
+    "title": "Compassionate Letter",
+    "description": "Write to yourself from the voice of a wise, caring ally.",
+    "category": "Self-Esteem",
+    "approach": "Self-Compassion",
+    "estimatedDurationMinutes": 10,
+    "promptSteps": [
+      {"id": "pain", "title": "Pain", "prompt": "What pain or struggle do you want this letter to understand?", "helperText": "Name the hard thing directly.", "placeholder": "I want understanding for..."},
+      {"id": "ally", "title": "Ally", "prompt": "Imagine a wise ally sees this clearly. What do they understand?", "helperText": "Let the ally be kind and honest.", "placeholder": "They understand that..."},
+      {"id": "letter", "title": "Letter", "prompt": "What would they write to you?", "helperText": "Use second person if it helps: you are, you can, you deserve.", "placeholder": "Dear me..."},
+      {"id": "line", "title": "Line", "prompt": "What one line from this letter do you want to keep?", "helperText": "Choose a sentence you can return to.", "placeholder": "The line I want to keep is..."}
+    ],
+    "moodEmotionTags": ["Tender", "Lonely", "Supported"],
+    "completionReflection": "Your compassionate letter has been saved.",
+    "icon": "envelope.heart.fill",
+    "colorHexes": ["#F43F5E", "#F97316"],
+    "isRecommended": true
+  },
+  {
+    "id": "boundary_builder",
+    "title": "Boundary Builder",
+    "description": "Clarify a boundary and shape it into respectful, direct language.",
+    "category": "Relationships",
+    "approach": "DBT",
+    "estimatedDurationMinutes": 7,
+    "promptSteps": [
+      {"id": "need", "title": "Need", "prompt": "What need or limit is asking for a boundary?", "helperText": "Focus on what protects your wellbeing or values.", "placeholder": "I need..."},
+      {"id": "pattern", "title": "Pattern", "prompt": "What pattern happens when this boundary is missing?", "helperText": "Describe behavior, not character.", "placeholder": "When it is missing..."},
+      {"id": "words", "title": "Words", "prompt": "What could you say clearly and respectfully?", "helperText": "Try: I can, I cannot, I need, I am willing to.", "placeholder": "I could say..."},
+      {"id": "follow", "title": "Follow Through", "prompt": "What follow-through will support the boundary?", "helperText": "Choose a realistic action if the boundary is ignored.", "placeholder": "I will follow through by..."}
+    ],
+    "moodEmotionTags": ["Resentful", "Clear", "Nervous"],
+    "completionReflection": "Your boundary plan has been saved.",
+    "icon": "person.crop.circle.badge.checkmark",
+    "colorHexes": ["#34D399", "#16A34A"],
+    "isRecommended": true
+  },
+  {
+    "id": "conflict_reflection",
+    "title": "Conflict Reflection",
+    "description": "Review a conflict with emotion, interpretation, and responsibility in view.",
+    "category": "Relationships",
+    "approach": "CBT",
+    "estimatedDurationMinutes": 8,
+    "promptSteps": [
+      {"id": "event", "title": "Event", "prompt": "What happened in the conflict?", "helperText": "Describe the observable sequence.", "placeholder": "What happened was..."},
+      {"id": "feeling", "title": "Feeling", "prompt": "What feelings came up for you?", "helperText": "Name primary feelings beneath anger if you can.", "placeholder": "I felt..."},
+      {"id": "story", "title": "Story", "prompt": "What story did you tell yourself about the other person or yourself?", "helperText": "This is the interpretation layer.", "placeholder": "The story was..."},
+      {"id": "next", "title": "Next", "prompt": "What is the next constructive move?", "helperText": "Consider pausing, clarifying, apologizing, or asking directly.", "placeholder": "The next move is..."}
+    ],
+    "moodEmotionTags": ["Angry", "Hurt", "Reflective"],
+    "completionReflection": "Your conflict reflection has been saved.",
+    "icon": "person.2.fill",
+    "colorHexes": ["#10B981", "#059669"],
+    "isRecommended": false
+  },
+  {
+    "id": "needs_and_requests",
+    "title": "Needs & Requests",
+    "description": "Translate a relationship need into a specific, doable request.",
+    "category": "Relationships",
+    "approach": "DBT",
+    "estimatedDurationMinutes": 6,
+    "promptSteps": [
+      {"id": "feeling", "title": "Feeling", "prompt": "What feeling tells you a need is present?", "helperText": "Feelings can point to needs without making anyone wrong.", "placeholder": "I feel..."},
+      {"id": "need", "title": "Need", "prompt": "What need is underneath this feeling?", "helperText": "Try support, space, reassurance, honesty, respect, or collaboration.", "placeholder": "The need is..."},
+      {"id": "request", "title": "Request", "prompt": "What specific request could you make?", "helperText": "Make it observable and time-bound if possible.", "placeholder": "I could ask..."},
+      {"id": "flex", "title": "Flexibility", "prompt": "Where can you stay flexible while still honoring the need?", "helperText": "Separate the need from one exact strategy.", "placeholder": "I can be flexible about..."}
+    ],
+    "moodEmotionTags": ["Needy", "Hopeful", "Clear"],
+    "completionReflection": "Your needs and requests reflection has been saved.",
+    "icon": "hands.sparkles.fill",
+    "colorHexes": ["#22C55E", "#14B8A6"],
+    "isRecommended": false
+  },
+  {
+    "id": "relationship_trigger_reflection",
+    "title": "Relationship Trigger Reflection",
+    "description": "Understand a relational trigger before choosing how to respond.",
+    "category": "Relationships",
+    "approach": "Mindfulness",
+    "estimatedDurationMinutes": 7,
+    "promptSteps": [
+      {"id": "trigger", "title": "Trigger", "prompt": "What moment felt triggering?", "helperText": "Choose the smallest specific moment.", "placeholder": "The triggering moment was..."},
+      {"id": "body", "title": "Body", "prompt": "What happened in your body?", "helperText": "Notice activation, shutdown, heat, tension, or numbness.", "placeholder": "My body..."},
+      {"id": "meaning", "title": "Meaning", "prompt": "What meaning did your mind attach to it?", "helperText": "This may be old, new, accurate, or incomplete.", "placeholder": "My mind made it mean..."},
+      {"id": "choice", "title": "Choice", "prompt": "What response would align with your values?", "helperText": "Give yourself a choice between reaction and response.", "placeholder": "A values-aligned response is..."}
+    ],
+    "moodEmotionTags": ["Triggered", "Hurt", "Grounded"],
+    "completionReflection": "Your trigger reflection has been saved.",
+    "icon": "bolt.heart.fill",
+    "colorHexes": ["#2DD4BF", "#16A34A"],
+    "isRecommended": false
+  },
+  {
+    "id": "repair_conversation_prep",
+    "title": "Repair Conversation Prep",
+    "description": "Prepare for a conversation that repairs trust or clears the air.",
+    "category": "Relationships",
+    "approach": "DBT",
+    "estimatedDurationMinutes": 8,
+    "promptSteps": [
+      {"id": "goal", "title": "Goal", "prompt": "What do you want this conversation to make possible?", "helperText": "Name the relationship outcome, not just the point you want to prove.", "placeholder": "I want to make possible..."},
+      {"id": "own", "title": "Own", "prompt": "What part can you own without over-owning?", "helperText": "Accountability is specific, not global self-blame.", "placeholder": "I can own..."},
+      {"id": "hear", "title": "Hear", "prompt": "What do you need to hear or understand from them?", "helperText": "Turn assumptions into questions.", "placeholder": "I want to understand..."},
+      {"id": "opening", "title": "Opening", "prompt": "What opening sentence could start the repair?", "helperText": "Keep it direct and non-accusing.", "placeholder": "I could start with..."}
+    ],
+    "moodEmotionTags": ["Nervous", "Regretful", "Hopeful"],
+    "completionReflection": "Your repair conversation prep has been saved.",
+    "icon": "wrench.and.screwdriver.fill",
+    "colorHexes": ["#059669", "#0D9488"],
+    "isRecommended": false
+  },
+  {
+    "id": "avoidance_map",
+    "title": "Avoidance Map",
+    "description": "Map what you avoid, what it protects, and what it costs.",
+    "category": "Productivity",
+    "approach": "CBT",
+    "estimatedDurationMinutes": 7,
+    "promptSteps": [
+      {"id": "task", "title": "Task", "prompt": "What are you avoiding?", "helperText": "Name one task, decision, message, or situation.", "placeholder": "I am avoiding..."},
+      {"id": "feeling", "title": "Feeling", "prompt": "What feeling does avoidance protect you from?", "helperText": "Look for fear, shame, boredom, uncertainty, or overwhelm.", "placeholder": "It protects me from feeling..."},
+      {"id": "cost", "title": "Cost", "prompt": "What does avoidance cost if it continues?", "helperText": "Consider stress, trust, time, opportunity, or self-respect.", "placeholder": "The cost is..."},
+      {"id": "approach", "title": "Approach", "prompt": "What is the smallest approach step?", "helperText": "Make it easier than your mind thinks it should be.", "placeholder": "The smallest approach step is..."}
+    ],
+    "moodEmotionTags": ["Avoidant", "Overwhelmed", "Ready"],
+    "completionReflection": "Your avoidance map has been saved.",
+    "icon": "map.fill",
+    "colorHexes": ["#2563EB", "#16A34A"],
+    "isRecommended": true
+  },
+  {
+    "id": "procrastination_unpacker",
+    "title": "Procrastination Unpacker",
+    "description": "Understand the friction behind procrastination and lower the start cost.",
+    "category": "Productivity",
+    "approach": "CBT",
+    "estimatedDurationMinutes": 6,
+    "promptSteps": [
+      {"id": "target", "title": "Target", "prompt": "What task are you putting off?", "helperText": "Pick one concrete target.", "placeholder": "The task is..."},
+      {"id": "block", "title": "Block", "prompt": "What makes starting feel hard?", "helperText": "Look for unclear steps, fear, perfectionism, resentment, or fatigue.", "placeholder": "Starting feels hard because..."},
+      {"id": "lower", "title": "Lower Bar", "prompt": "How could you lower the bar without quitting?", "helperText": "Shrink the scope, time, or quality demand.", "placeholder": "I could lower the bar by..."},
+      {"id": "start", "title": "Start", "prompt": "What is your first two-minute move?", "helperText": "The goal is contact with the task.", "placeholder": "For two minutes I can..."}
+    ],
+    "moodEmotionTags": ["Stuck", "Guilty", "Motivated"],
+    "completionReflection": "Your procrastination reflection has been saved.",
+    "icon": "timer",
+    "colorHexes": ["#3B82F6", "#22C55E"],
+    "isRecommended": false
+  },
+  {
+    "id": "task_breakdown",
+    "title": "Task Breakdown",
+    "description": "Turn an overwhelming task into visible, doable pieces.",
+    "category": "Productivity",
+    "approach": "Behavioral Activation",
+    "estimatedDurationMinutes": 6,
+    "promptSteps": [
+      {"id": "task", "title": "Task", "prompt": "What task feels too big?", "helperText": "Name the outcome you are trying to reach.", "placeholder": "The big task is..."},
+      {"id": "parts", "title": "Parts", "prompt": "What are the smallest visible parts of this task?", "helperText": "List pieces that can be checked off.", "placeholder": "The parts are..."},
+      {"id": "first", "title": "First", "prompt": "Which part should happen first?", "helperText": "Choose the part that unlocks the next move.", "placeholder": "First I will..."},
+      {"id": "done", "title": "Done", "prompt": "What will count as enough for today?", "helperText": "Define a stopping point before you start.", "placeholder": "Enough for today is..."}
+    ],
+    "moodEmotionTags": ["Overwhelmed", "Focused", "Capable"],
+    "completionReflection": "Your task breakdown has been saved.",
+    "icon": "list.bullet.clipboard.fill",
+    "colorHexes": ["#2563EB", "#059669"],
+    "isRecommended": true
+  },
+  {
+    "id": "perfectionism_reframe",
+    "title": "Perfectionism Reframe",
+    "description": "Loosen impossible standards while keeping care and quality.",
+    "category": "Productivity",
+    "approach": "CBT",
+    "estimatedDurationMinutes": 7,
+    "promptSteps": [
+      {"id": "standard", "title": "Standard", "prompt": "What standard are you trying to meet?", "helperText": "Write the rule your mind is using.", "placeholder": "The standard is..."},
+      {"id": "cost", "title": "Cost", "prompt": "What does this standard cost you?", "helperText": "Consider delays, stress, avoidance, or lost creativity.", "placeholder": "It costs me..."},
+      {"id": "good", "title": "Good Enough", "prompt": "What would good enough look like?", "helperText": "Good enough can still be responsible and thoughtful.", "placeholder": "Good enough would be..."},
+      {"id": "practice", "title": "Practice", "prompt": "What is one place to practice good enough?", "helperText": "Choose a low-risk experiment.", "placeholder": "I can practice with..."}
+    ],
+    "moodEmotionTags": ["Pressured", "Afraid", "Flexible"],
+    "completionReflection": "Your perfectionism reframe has been saved.",
+    "icon": "wand.and.stars",
+    "colorHexes": ["#1D4ED8", "#16A34A"],
+    "isRecommended": false
+  },
+  {
+    "id": "decision_journal",
+    "title": "Decision Journal",
+    "description": "Clarify a decision by naming values, tradeoffs, and next information.",
+    "category": "Productivity",
+    "approach": "CBT",
+    "estimatedDurationMinutes": 8,
+    "promptSteps": [
+      {"id": "decision", "title": "Decision", "prompt": "What decision are you facing?", "helperText": "Write the choice as clearly as possible.", "placeholder": "The decision is..."},
+      {"id": "values", "title": "Values", "prompt": "What values matter in this decision?", "helperText": "Think health, honesty, growth, stability, care, freedom, or connection.", "placeholder": "The values are..."},
+      {"id": "tradeoffs", "title": "Tradeoffs", "prompt": "What are the real tradeoffs?", "helperText": "Every option gives and costs something.", "placeholder": "The tradeoffs are..."},
+      {"id": "next", "title": "Next", "prompt": "What information or action would help you decide?", "helperText": "Choose one next move, not the whole answer.", "placeholder": "The next helpful move is..."}
+    ],
+    "moodEmotionTags": ["Uncertain", "Thoughtful", "Clear"],
+    "completionReflection": "Your decision journal has been saved.",
+    "icon": "arrow.triangle.branch",
+    "colorHexes": ["#2563EB", "#0D9488"],
+    "isRecommended": false
+  },
+  {
+    "id": "values_check_in",
+    "title": "Values Check-In",
+    "description": "Reconnect with what matters and choose a values-aligned action.",
+    "category": "Values",
+    "approach": "ACT",
+    "estimatedDurationMinutes": 6,
+    "promptSteps": [
+      {"id": "value", "title": "Value", "prompt": "What value wants more attention right now?", "helperText": "Choose one value, not a whole life plan.", "placeholder": "A value I care about is..."},
+      {"id": "why", "title": "Why", "prompt": "Why does this value matter to you?", "helperText": "Let your answer be personal.", "placeholder": "It matters because..."},
+      {"id": "drift", "title": "Drift", "prompt": "Where have you drifted from this value?", "helperText": "Notice without scolding yourself.", "placeholder": "I have drifted when..."},
+      {"id": "action", "title": "Action", "prompt": "What small action would move toward it?", "helperText": "Make it specific and doable today.", "placeholder": "I can move toward it by..."}
+    ],
+    "moodEmotionTags": ["Disconnected", "Inspired", "Grounded"],
+    "completionReflection": "Your values check-in has been saved.",
+    "icon": "star.circle.fill",
+    "colorHexes": ["#16A34A", "#14B8A6"],
+    "isRecommended": true
+  },
+  {
+    "id": "control_vs_influence",
+    "title": "Control vs Influence",
+    "description": "Sort what you can control, influence, or release for now.",
+    "category": "Mindfulness",
+    "approach": "ACT",
+    "estimatedDurationMinutes": 6,
+    "promptSteps": [
+      {"id": "concern", "title": "Concern", "prompt": "What concern are you carrying?", "helperText": "Name the situation or outcome.", "placeholder": "The concern is..."},
+      {"id": "control", "title": "Control", "prompt": "What is directly within your control?", "helperText": "Focus on your actions, words, attention, and boundaries.", "placeholder": "I can control..."},
+      {"id": "influence", "title": "Influence", "prompt": "What can you influence but not force?", "helperText": "This is where effort matters but outcomes stay shared.", "placeholder": "I can influence..."},
+      {"id": "release", "title": "Release", "prompt": "What can you practice releasing for now?", "helperText": "Release means unclenching, not pretending not to care.", "placeholder": "For now I can release..."}
+    ],
+    "moodEmotionTags": ["Overloaded", "Grounded", "Accepting"],
+    "completionReflection": "Your control and influence map has been saved.",
+    "icon": "circle.grid.cross.fill",
+    "colorHexes": ["#22C55E", "#06B6D4"],
+    "isRecommended": true
+  },
+  {
+    "id": "sleep_wind_down_reflection",
+    "title": "Sleep Wind-Down Reflection",
+    "description": "Set down the day and prepare your mind for rest.",
+    "category": "Sleep",
+    "approach": "Mindfulness",
+    "estimatedDurationMinutes": 5,
+    "promptSteps": [
+      {"id": "day", "title": "Day", "prompt": "What from today is still active in your mind?", "helperText": "List it so your mind does not have to hold it alone.", "placeholder": "Still active is..."},
+      {"id": "complete", "title": "Complete", "prompt": "What is complete enough for today?", "helperText": "Mark a stopping point.", "placeholder": "Complete enough is..."},
+      {"id": "tomorrow", "title": "Tomorrow", "prompt": "What can wait until tomorrow?", "helperText": "Place it outside tonight.", "placeholder": "Tomorrow can hold..."},
+      {"id": "rest", "title": "Rest", "prompt": "What restful cue can you give your body now?", "helperText": "Think light, breath, temperature, sound, or posture.", "placeholder": "A restful cue is..."}
+    ],
+    "moodEmotionTags": ["Tired", "Restless", "Settled"],
+    "completionReflection": "Your wind-down reflection has been saved.",
+    "icon": "moon.fill",
+    "colorHexes": ["#4F46E5", "#9333EA"],
+    "isRecommended": false
+  },
+  {
+    "id": "burnout_check_in",
+    "title": "Burnout Check-In",
+    "description": "Assess depletion, pressure, and one boundary that protects recovery.",
+    "category": "Stress & Burnout",
+    "approach": "Mindfulness",
+    "estimatedDurationMinutes": 7,
+    "promptSteps": [
+      {"id": "signals", "title": "Signals", "prompt": "What signs of depletion are showing up?", "helperText": "Notice body, mood, attention, cynicism, or irritability.", "placeholder": "Signs include..."},
+      {"id": "pressure", "title": "Pressure", "prompt": "What pressure is weighing most heavily?", "helperText": "Name the demand or expectation.", "placeholder": "The pressure is..."},
+      {"id": "need", "title": "Need", "prompt": "What recovery need is being underfed?", "helperText": "Think rest, autonomy, meaning, connection, movement, or quiet.", "placeholder": "I need more..."},
+      {"id": "boundary", "title": "Boundary", "prompt": "What boundary or reduction would help this week?", "helperText": "Choose a real adjustment, even a small one.", "placeholder": "This week I can..."}
+    ],
+    "moodEmotionTags": ["Burned Out", "Irritable", "Depleted"],
+    "completionReflection": "Your burnout check-in has been saved.",
+    "icon": "flame.fill",
+    "colorHexes": ["#DC2626", "#F97316"],
+    "isRecommended": true
+  },
+  {
+    "id": "three_good_things",
+    "title": "Three Good Things",
+    "description": "Record three good things and why they mattered.",
+    "category": "Gratitude",
+    "approach": "Positive Psychology",
+    "estimatedDurationMinutes": 6,
+    "promptSteps": [
+      {"id": "one", "title": "First", "prompt": "What is one good thing from today?", "helperText": "It can be tiny, practical, or emotional.", "placeholder": "One good thing was..."},
+      {"id": "why_one", "title": "Meaning", "prompt": "Why did this good thing matter?", "helperText": "Notice the need, value, or feeling it touched.", "placeholder": "It mattered because..."},
+      {"id": "two_three", "title": "More Good", "prompt": "What are two more good things from today?", "helperText": "Let ordinary things count.", "placeholder": "Two more good things were..."},
+      {"id": "savor", "title": "Savor", "prompt": "How do these good things feel in your body or mood?", "helperText": "Pause long enough to register them.", "placeholder": "They feel..."}
+    ],
+    "moodEmotionTags": ["Grateful", "Content", "Warm"],
+    "completionReflection": "Your three good things reflection has been saved.",
+    "icon": "sun.max.fill",
+    "colorHexes": ["#F97316", "#FACC15"],
+    "isRecommended": true,
+    "legacyTemplateTypes": ["three_good_things"]
+  }
+]

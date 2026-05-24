@@ -25,24 +25,45 @@ struct InsightsTrendsCard: View {
             }
 
             if dailyMoodAverages.isEmpty {
-                Text(String(localized: "No mood data for this range."))
+                Text(String(localized: "Daily trends appear after mood check-ins in this range. A single check-in is enough to begin the chart."))
                     .font(.system(size: 14, design: .rounded))
                     .foregroundStyle(Theme.secondaryText)
                     .padding(.vertical, 18)
             } else {
                 Chart {
                     ForEach(dailyMoodAverages) { point in
+                        AreaMark(
+                            x: .value(String(localized: "Date"), point.date, unit: .day),
+                            yStart: .value(String(localized: "Floor"), 0),
+                            yEnd: .value(String(localized: "Mood"), point.averageScore)
+                        )
+                        .interpolationMethod(.catmullRom)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [
+                                    themeManager.selectedColor.opacity(0.28),
+                                    themeManager.selectedColor.opacity(0.03)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                    }
+
+                    ForEach(dailyMoodAverages) { point in
                         LineMark(
                             x: .value(String(localized: "Date"), point.date, unit: .day),
                             y: .value(String(localized: "Mood"), point.averageScore)
                         )
-                        .lineStyle(StrokeStyle(lineWidth: 2.2))
+                        .interpolationMethod(.catmullRom)
+                        .lineStyle(StrokeStyle(lineWidth: 3.0, lineCap: .round, lineJoin: .round))
                         .foregroundStyle(themeManager.selectedColor)
 
                         PointMark(
                             x: .value(String(localized: "Date"), point.date, unit: .day),
                             y: .value(String(localized: "Mood"), point.averageScore)
                         )
+                        .symbolSize(48)
                         .foregroundStyle(themeManager.selectedColor)
                     }
 
@@ -51,6 +72,11 @@ struct InsightsTrendsCard: View {
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
                 }
                 .chartYScale(domain: 0...10)
+                .chartPlotStyle { plotArea in
+                    plotArea
+                        .background(themeManager.selectedColor.opacity(0.05))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
                 .frame(height: 220)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(String(localized: "Daily mood trend chart"))

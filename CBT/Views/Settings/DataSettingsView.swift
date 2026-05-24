@@ -70,6 +70,10 @@ struct DataSettingsSection: View {
     @State private var viewModel = AdvancedDataSettingsViewModel()
     @State private var showingAdvancedDataOptions = false
     @State private var showingStorageAudit = false
+    @State private var showingWeeklyReportCheckIn = false
+    @Query(filter: #Predicate<MoodEntry> { $0.isDeleted == false }) private var moodEntries: [MoodEntry]
+    @Query(filter: #Predicate<ThoughtRecord> { $0.isDeleted == false }) private var thoughtRecords: [ThoughtRecord]
+    @Query private var assessmentLogs: [AssessmentLog]
 
     var body: some View {
         SettingsSection(title: "Data") {
@@ -104,6 +108,9 @@ struct DataSettingsSection: View {
         }
         .sheet(isPresented: $showingAdvancedDataOptions) {
             advancedDataOptionsSheet
+        }
+        .sheet(isPresented: $showingWeeklyReportCheckIn) {
+            MoodCheckinView()
         }
         .alert("Restore Error", isPresented: Binding(get: { viewModel.errorMessage != nil }, set: { if !$0 { viewModel.errorMessage = nil } })) {
             Button("OK", role: .cancel) {}
@@ -198,6 +205,10 @@ struct DataSettingsSection: View {
         return "Using local storage until iCloud is available"
     }
 
+    private var hasWeeklyReportData: Bool {
+        !moodEntries.isEmpty || !thoughtRecords.isEmpty || !assessmentLogs.isEmpty
+    }
+
     private var advancedDataOptionsSheet: some View {
         NavigationStack {
             ScrollView {
@@ -266,20 +277,34 @@ struct DataSettingsSection: View {
                 .foregroundColor(themeManager.primaryColor)
             }
 
-            SettingsRow(
-                icon: "doc.richtext.fill",
-                iconColor: themeManager.primaryColor,
-                title: "Therapist PDF Report",
-                subtitle: "Beautiful summary of recent mood & thoughts"
-            ) {
-                Button("Generate") {
-                    HapticManager.shared.mediumImpact()
-                    Task {
-                        await viewModel.exportPDFReport(modelContext: modelContext)
+            if hasWeeklyReportData {
+                SettingsRow(
+                    icon: "doc.richtext.fill",
+                    iconColor: themeManager.primaryColor,
+                    title: "Weekly Report",
+                    subtitle: "Private PDF summary of recent mood, thoughts, and assessments"
+                ) {
+                    Button("Generate") {
+                        HapticManager.shared.mediumImpact()
+                        Task {
+                            await viewModel.exportPDFReport(modelContext: modelContext)
+                        }
                     }
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundColor(themeManager.primaryColor)
                 }
-                .font(.system(size: 14, weight: .bold, design: .rounded))
-                .foregroundColor(themeManager.primaryColor)
+            } else {
+                SupportiveEmptyStateView(
+                    systemImage: "doc.richtext",
+                    title: "Weekly Report",
+                    message: "Weekly reports summarize recent check-ins, thought records, and assessments once there is something to include.",
+                    actionTitle: "Add Check-In",
+                    actionSystemImage: "face.smiling"
+                ) {
+                    HapticManager.shared.lightImpact()
+                    showingWeeklyReportCheckIn = true
+                }
+                .padding(.vertical, 4)
             }
 
             sectionHeaderLabel("IMPORT")

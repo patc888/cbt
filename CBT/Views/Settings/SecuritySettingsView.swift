@@ -26,7 +26,7 @@ struct SecuritySettingsView: View {
                 SettingsRow(
                     icon: "lock.shield",
                     iconColor: themeManager.selectedColor,
-                    title: "App lock",
+                    title: "Lock with Face ID or passcode",
                     subtitle: appLockSubtitle
                 ) {
                     SegmentedToggle(

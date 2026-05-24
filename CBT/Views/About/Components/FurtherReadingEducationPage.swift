@@ -18,6 +18,7 @@ struct FurtherReadingEducationPage: View {
                         Text("Online Resources")
                             .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
                         
                         VStack(alignment: .leading, spacing: 8) {
                             LinkItem(text: "Beck Institute (beckinstitute.org)")
@@ -43,12 +44,16 @@ struct FurtherReadingEducationPage: View {
                         .font(.caption2.bold())
                         .foregroundStyle(themeManager.selectedColor)
                         .textCase(.uppercase)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(title)
                         .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text("by \(author)")
                         .font(.caption)
                         .foregroundStyle(Theme.secondaryText)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
                 Image(systemName: "book.fill")
@@ -70,6 +75,8 @@ struct FurtherReadingEducationPage: View {
                 Text(text)
                     .font(.subheadline)
                     .foregroundStyle(Theme.primaryText)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

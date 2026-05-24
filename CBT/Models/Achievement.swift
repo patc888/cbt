@@ -1,16 +1,51 @@
 import Foundation
 import SwiftData
 
-enum AchievementUnlockCondition: String, CaseIterable, Codable {
+enum AchievementUnlockCondition: String, CaseIterable, Codable, Hashable, Sendable {
     case streakCount = "StreakCount"
     case exercisesCompleted = "ExercisesCompleted"
     case thoughtRecordsCount = "ThoughtRecordsCount"
+    case moodCheckInCount = "MoodCheckInCount"
+    case guidedJournalCount = "GuidedJournalCount"
+    case breathingSessionCount = "BreathingSessionCount"
+    case coursesCompleted = "CoursesCompleted"
+    case weeklyReportViewed = "WeeklyReportViewed"
+    case plannedActivitiesCompleted = "PlannedActivitiesCompleted"
+    case assessmentsCompleted = "AssessmentsCompleted"
+    case activeWeeksCount = "ActiveWeeksCount"
+    case contentModalitiesTried = "ContentModalitiesTried"
 
     var label: String {
         switch self {
-        case .streakCount: return "Streak"
+        case .streakCount: return "Best run"
         case .exercisesCompleted: return "Exercises"
         case .thoughtRecordsCount: return "Thought Records"
+        case .moodCheckInCount: return "Mood Check-Ins"
+        case .guidedJournalCount: return "Guided Journals"
+        case .breathingSessionCount: return "Breathing Sessions"
+        case .coursesCompleted: return "Courses"
+        case .weeklyReportViewed: return "Weekly Overview"
+        case .plannedActivitiesCompleted: return "Planned Activities"
+        case .assessmentsCompleted: return "Assessments"
+        case .activeWeeksCount: return "Active Weeks"
+        case .contentModalitiesTried: return "Content Styles"
+        }
+    }
+
+    var progressUnit: String {
+        switch self {
+        case .streakCount: return "days"
+        case .exercisesCompleted: return "exercises"
+        case .thoughtRecordsCount: return "records"
+        case .moodCheckInCount: return "check-ins"
+        case .guidedJournalCount: return "journals"
+        case .breathingSessionCount: return "sessions"
+        case .coursesCompleted: return "courses"
+        case .weeklyReportViewed: return "viewed"
+        case .plannedActivitiesCompleted: return "activities"
+        case .assessmentsCompleted: return "assessments"
+        case .activeWeeksCount: return "weeks"
+        case .contentModalitiesTried: return "styles"
         }
     }
 }

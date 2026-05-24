@@ -12,6 +12,7 @@ struct CBTDataStore {
         triggers: [String] = [],
         sensations: [String] = [],
         contextTags: [String] = [],
+        activityTags: [String] = [],
         notes: String? = nil,
         intensity: Int? = nil
     ) throws -> MoodEntry {
@@ -22,6 +23,7 @@ struct CBTDataStore {
             triggers: triggers,
             sensations: sensations,
             contextTags: contextTags,
+            activityTags: activityTags,
             notes: notes,
             intensity: intensity
         )

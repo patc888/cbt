@@ -14,10 +14,13 @@ struct ThoughtRecordEducationPage: View {
                         Text("Why write it down?")
                             .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
                         
                         Text("Writing down your thoughts helps you step back and see them as 'mental events' rather than absolute facts. This 'de-centering' is key to emotional regulation.")
                             .font(.subheadline)
                             .foregroundStyle(Theme.secondaryText)
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 
@@ -52,10 +55,14 @@ struct ThoughtRecordEducationPage: View {
                     Text(title)
                         .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(description)
                         .font(.subheadline)
                         .foregroundStyle(Theme.secondaryText)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }

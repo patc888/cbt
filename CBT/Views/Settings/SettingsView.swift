@@ -116,6 +116,20 @@ private struct SettingsDashboardContent: View {
             )
 
             SettingsSection(title: String(localized: "Tools")) {
+                NavigationLink(destination: SafetyPlanView()) {
+                    SettingsRow(
+                        icon: "cross.case.fill",
+                        iconColor: themeManager.selectedColor,
+                        title: String(localized: "Safety Plan"),
+                        subtitle: String(localized: "Prepare contacts and coping steps for difficult moments")
+                    ) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                }
+                .buttonStyle(.plain)
+
                 NavigationLink(destination: BreathingResetView()) {
                     SettingsRow(
                         icon: "wind",
@@ -204,11 +218,7 @@ private struct WhatIsCBTSettingsCard: View {
                         .foregroundStyle(.white.opacity(0.88))
                 }
 
-                HStack(spacing: 8) {
-                    CBTCardPill(icon: "hand.tap.fill", text: "Tap through")
-                    CBTCardPill(icon: "chart.dots.scatter", text: "See patterns")
-                    CBTCardPill(icon: "checkmark.seal.fill", text: "Practice")
-                }
+                pillLayout
             }
             .padding(18)
         }
@@ -220,6 +230,31 @@ private struct WhatIsCBTSettingsCard: View {
         .shadow(color: themeManager.selectedColor.opacity(colorScheme == .dark ? 0.16 : 0.22), radius: 18, x: 0, y: 10)
         .accessibilityElement(children: .combine)
     }
+
+    private var pillLayout: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                CBTCardPill(icon: "hand.tap.fill", text: "Tap through")
+                CBTCardPill(icon: "chart.dots.scatter", text: "See patterns")
+                CBTCardPill(icon: "checkmark.seal.fill", text: "Practice")
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    CBTCardPill(icon: "hand.tap.fill", text: "Tap through")
+                    CBTCardPill(icon: "chart.dots.scatter", text: "See patterns")
+                }
+
+                CBTCardPill(icon: "checkmark.seal.fill", text: "Practice")
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                CBTCardPill(icon: "hand.tap.fill", text: "Tap through")
+                CBTCardPill(icon: "chart.dots.scatter", text: "See patterns")
+                CBTCardPill(icon: "checkmark.seal.fill", text: "Practice")
+            }
+        }
+    }
 }
 
 private struct CBTCardPill: View {
@@ -229,8 +264,10 @@ private struct CBTCardPill: View {
     var body: some View {
         Label(text, systemImage: icon)
             .font(.system(size: 11, weight: .bold, design: .rounded))
-            .lineLimit(1)
+            .lineLimit(2)
             .minimumScaleFactor(0.72)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
             .foregroundStyle(.white)
             .padding(.horizontal, 9)
             .padding(.vertical, 7)

@@ -32,10 +32,13 @@ struct BalancedEducationPage: View {
                         Text("The Shift")
                             .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
                         
                         Text("A balanced thought is grounded in all the evidence. It acknowledges the difficulty while also recognizing your strengths and alternative explanations.")
                             .font(.subheadline)
                             .foregroundStyle(Theme.secondaryText)
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
@@ -57,11 +60,14 @@ struct BalancedEducationPage: View {
                         .font(.caption.bold())
                         .foregroundStyle(color)
                         .textCase(.uppercase)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 
                 Text(content)
                     .font(.system(.body, design: .rounded).weight(.medium))
                     .foregroundStyle(Theme.primaryText)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(color.opacity(0.1))

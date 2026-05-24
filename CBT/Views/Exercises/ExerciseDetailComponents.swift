@@ -137,6 +137,51 @@ struct ExerciseOverviewPage: View {
                     .foregroundStyle(Theme.secondaryText)
                     .lineSpacing(4)
 
+                if exercise.displayApproach == "DBT" {
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundStyle(accent)
+                        Text("Educational self-help practice, not diagnosis, therapy, treatment, or medical advice.")
+                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                            .foregroundStyle(Theme.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Theme.tertiaryBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+
+                if exercise.displayApproaches.contains("ACT") {
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundStyle(accent)
+                        Text("Educational self-help only. This is not a replacement for therapy.")
+                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                            .foregroundStyle(Theme.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Theme.tertiaryBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+
+                let approachText = exercise.displayApproaches.joined(separator: ", ")
+                if !approachText.isEmpty {
+                    HStack(spacing: 8) {
+                        Image(systemName: "point.3.connected.trianglepath.dotted")
+                            .foregroundStyle(accent)
+                        Text("Approach: \(approachText)")
+                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                            .foregroundStyle(Theme.primaryText)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Theme.tertiaryBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 16) {
                         overviewStats
@@ -177,6 +222,8 @@ struct ExerciseOverviewPage: View {
                     }
                 }
                 .padding(.top, 12)
+
+                practiceDetails
             }
             .padding(24)
         }
@@ -201,9 +248,77 @@ struct ExerciseOverviewPage: View {
     private var overviewStats: some View {
         statCapsule(label: "\(exercise.steps.count) Steps", icon: "list.bullet")
         statCapsule(label: "\(exercise.duration) min", icon: "clock")
+        statCapsule(label: exercise.displayDifficulty, icon: "flag.fill")
         if completionsCount > 0 {
             statCapsule(label: "\(completionsCount) done", icon: "checkmark.circle.fill", color: .green)
         }
+    }
+
+    @ViewBuilder
+    private var practiceDetails: some View {
+        if hasPracticeDetails {
+            VStack(alignment: .leading, spacing: 12) {
+                if let completionSummary = exercise.completionSummary, !completionSummary.isEmpty {
+                    detailBlock(
+                        title: "Completion Summary",
+                        icon: "checkmark.seal.fill",
+                        text: completionSummary
+                    )
+                }
+
+                if let journalReflection = exercise.journalReflection, !journalReflection.isEmpty {
+                    detailBlock(
+                        title: "Journal Reflection",
+                        icon: "book.pages.fill",
+                        text: journalReflection
+                    )
+                }
+
+                if let tags = exercise.tags, !tags.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(tags, id: \.self) { tag in
+                                Text(tag)
+                                    .font(.system(.caption, design: .rounded).weight(.bold))
+                                    .foregroundStyle(accent)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(accent.opacity(0.1))
+                                    .clipShape(Capsule())
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    private var hasPracticeDetails: Bool {
+        exercise.completionSummary?.isEmpty == false ||
+            exercise.journalReflection?.isEmpty == false ||
+            exercise.tags?.isEmpty == false
+    }
+
+    private func detailBlock(title: String, icon: String, text: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .foregroundStyle(accent)
+                Text(title)
+                    .font(.system(.caption, design: .rounded).weight(.black))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+
+            Text(text)
+                .font(.system(.subheadline, design: .rounded))
+                .foregroundStyle(Theme.primaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .background(Theme.tertiaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func categoryIcon(for category: String) -> String {
@@ -214,6 +329,17 @@ struct ExerciseOverviewPage: View {
         case "Anxiety Reset": return "wind"
         case "Gratitude": return "heart.fill"
         case "Self Compassion": return "hand.raised.fill"
+        case "Mindfulness": return "figure.mind.and.body"
+        case "Positive Psychology": return "sparkles"
+        case "Distress Tolerance": return "hand.raised.fill"
+        case "Emotion Regulation": return "heart.fill"
+        case "Self-Soothing": return "sparkles"
+        case "Wellness Basics": return "checkmark.circle.fill"
+        case "Values": return "safari.fill"
+        case "Defusion": return "cloud.fill"
+        case "Acceptance": return "hand.raised.fill"
+        case "Committed Action": return "checkmark.circle.fill"
+        case "Self-as-Context": return "person.crop.circle"
         case "Behavioral Activation": return "figure.walk"
         case "Exposure Practice": return "shield.lefthalf.filled"
         default: return "sparkles"

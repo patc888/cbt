@@ -21,7 +21,8 @@ enum SharedPersistence {
         SafetyPlan.self,
         LibraryItem.self,
         Course.self,
-        Achievement.self
+        Achievement.self,
+        AudioContent.self
     ])
 
     // MARK: - Factory

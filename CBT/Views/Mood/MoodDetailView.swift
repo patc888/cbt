@@ -28,26 +28,19 @@ struct MoodDetailView: View {
                     }
                     .padding(.top, 24)
                     
-                    // Emtions
-                    if !entry.emotions.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Emotions")
-                                .font(.system(.headline, design: .rounded).weight(.bold))
-                                .foregroundStyle(Theme.primaryText)
-                            
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    ForEach(entry.emotions, id: \.self) { emotion in
-                                        TagChip(title: emotion)
-                                    }
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                        .background(Theme.cardBackground)
-                        .cornerRadius(Theme.cornerRadiusMedium)
+                    if let intensity = entry.intensity {
+                        MoodDetailMetricSection(
+                            title: "Intensity",
+                            value: "\(intensity)/10",
+                            systemImage: "dial.low"
+                        )
                     }
+
+                    MoodDetailChipSection(title: "Emotions", items: entry.emotions)
+                    MoodDetailChipSection(title: "Triggers", items: entry.triggers)
+                    MoodDetailChipSection(title: "Activities", items: entry.activityTags)
+                    MoodDetailChipSection(title: "Sensations", items: entry.sensations)
+                    MoodDetailChipSection(title: "Context", items: entry.contextTags)
                     
                     // Notes
                     if let notes = entry.notes, !notes.isEmpty {
@@ -113,6 +106,62 @@ struct MoodDetailView: View {
             dismiss()
         } catch {
             AppLogger.make(category: "Data").error("Failed to delete entry: \(error.localizedDescription, privacy: .private)")
+        }
+    }
+}
+
+private struct MoodDetailMetricSection: View {
+    let title: String
+    let value: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(.headline, design: .rounded).weight(.semibold))
+                .foregroundStyle(Theme.secondaryText)
+                .frame(width: 24)
+
+            Text(title)
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.primaryText)
+
+            Spacer()
+
+            Text(value)
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.primaryText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Theme.cardBackground)
+        .cornerRadius(Theme.cornerRadiusMedium)
+    }
+}
+
+private struct MoodDetailChipSection: View {
+    let title: String
+    let items: [String]
+
+    var body: some View {
+        if !items.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(title)
+                    .font(.system(.headline, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.primaryText)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(items, id: \.self) { item in
+                            TagChip(title: item)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(Theme.cardBackground)
+            .cornerRadius(Theme.cornerRadiusMedium)
         }
     }
 }

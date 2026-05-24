@@ -4,10 +4,12 @@ import SwiftData
 struct HomeDashboardSnapshot: Sendable {
     let activeDates: Set<Date>
     let completionSnapshot: DailyPlanCompletionSnapshot
+    let recommendations: [DailyRecommendation]
 
     static let empty = HomeDashboardSnapshot(
         activeDates: [],
-        completionSnapshot: .empty
+        completionSnapshot: .empty,
+        recommendations: []
     )
 }
 
@@ -16,10 +18,12 @@ private protocol CreatedAtRecord: SoftDeletableRecord {
 }
 
 extension MoodEntry: CreatedAtRecord {}
+extension MoodCheckIn: CreatedAtRecord {}
 extension ThoughtRecord: CreatedAtRecord {}
 extension ExerciseCompletion: CreatedAtRecord {}
 extension JournalEntry: CreatedAtRecord {}
 extension PlannedActivity: CreatedAtRecord {}
+extension BreathingSession: CreatedAtRecord {}
 
 enum LaunchSafeFetch {
     private static let disableHomeDashboardFetches = false
@@ -37,6 +41,22 @@ enum LaunchSafeFetch {
             from: context,
             logger: logger,
             label: "moodEntries"
+        )
+    }
+
+    @MainActor
+    static func moodCheckIns(
+        from context: ModelContext,
+        logger: Logger = AppLogger.make(category: "LaunchSafeFetch")
+    ) -> [MoodCheckIn] {
+        fetch(
+            FetchDescriptor<MoodCheckIn>(
+                predicate: #Predicate<MoodCheckIn> { $0.isDeleted == false },
+                sortBy: [SortDescriptor(\MoodCheckIn.createdAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "moodCheckIns"
         )
     }
 
@@ -223,11 +243,26 @@ enum LaunchSafeFetch {
             label: "homeDashboardSnapshot.breathingDates"
         )
 
+        let breathingSessionDates = createdDates(
+            FetchDescriptor<BreathingSession>(
+                predicate: #Predicate<BreathingSession> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= windowStart &&
+                    $0.createdAt < windowEnd
+                },
+                sortBy: [SortDescriptor(\BreathingSession.createdAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.breathingSessionDates"
+        )
+
         var activeDates = Set<Date>()
         for date in moodDates { activeDates.insert(calendar.startOfDay(for: date)) }
         for date in thoughtDates { activeDates.insert(calendar.startOfDay(for: date)) }
         for date in exerciseDates { activeDates.insert(calendar.startOfDay(for: date)) }
         for date in breathingDates { activeDates.insert(calendar.startOfDay(for: date)) }
+        for date in breathingSessionDates { activeDates.insert(calendar.startOfDay(for: date)) }
         
         let activityDates = createdDates(
             FetchDescriptor<PlannedActivity>(
@@ -242,6 +277,33 @@ enum LaunchSafeFetch {
             label: "homeDashboardSnapshot.activityDates"
         )
         for date in activityDates { activeDates.insert(calendar.startOfDay(for: date)) }
+
+        let breathingJournalCount = fetchCount(
+            FetchDescriptor<JournalEntry>(
+                predicate: #Predicate<JournalEntry> {
+                    $0.isDeleted == false &&
+                    $0.sourceKind == breathingSourceKind &&
+                    $0.createdAt >= selectedDayStart &&
+                    $0.createdAt < selectedDayEnd
+                }
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.breathingJournalCount"
+        )
+
+        let breathingSessionCount = fetchCount(
+            FetchDescriptor<BreathingSession>(
+                predicate: #Predicate<BreathingSession> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= selectedDayStart &&
+                    $0.createdAt < selectedDayEnd
+                }
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.breathingSessionCount"
+        )
 
         let completionSnapshot = DailyPlanCompletionSnapshot(entries: [
             .moodCheckIn: fetchCount(
@@ -280,19 +342,7 @@ enum LaunchSafeFetch {
                 logger: logger,
                 label: "homeDashboardSnapshot.exerciseCount"
             ) > 0 ? .completed : .incomplete,
-            .breathingReset: fetchCount(
-                FetchDescriptor<JournalEntry>(
-                    predicate: #Predicate<JournalEntry> {
-                        $0.isDeleted == false &&
-                        $0.sourceKind == breathingSourceKind &&
-                        $0.createdAt >= selectedDayStart &&
-                        $0.createdAt < selectedDayEnd
-                    }
-                ),
-                from: context,
-                logger: logger,
-                label: "homeDashboardSnapshot.breathingCount"
-            ) > 0 ? .completed : .incomplete,
+            .breathingReset: (breathingJournalCount + breathingSessionCount) > 0 ? .completed : .incomplete,
             .tipOfTheDay: .notTracked,
             .activityPlanner: fetchCount(
                 FetchDescriptor<PlannedActivity>(
@@ -310,7 +360,8 @@ enum LaunchSafeFetch {
 
         return HomeDashboardSnapshot(
             activeDates: activeDates,
-            completionSnapshot: completionSnapshot
+            completionSnapshot: completionSnapshot,
+            recommendations: []
         )
     }
 

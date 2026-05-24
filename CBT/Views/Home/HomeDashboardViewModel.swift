@@ -34,6 +34,7 @@ final class HomeDashboardViewModel {
     var isInitialized = false
     var activeDates = Set<Date>()
     var completionSnapshot: DailyPlanCompletionSnapshot = .empty
+    var recommendations = [DailyRecommendation]()
     
     // Manual completion tracking (persisted only for current session here, naturally)
     var manualCompletions: [Date: Set<DailyPlanItem>] = [:]
@@ -43,7 +44,8 @@ final class HomeDashboardViewModel {
     @MainActor
     func apply(
         snapshot: HomeDashboardSnapshot,
-        selectedDate: Date
+        selectedDate: Date,
+        recommendations: [DailyRecommendation]
     ) async {
         let currentTaskID = UUID()
         self.updateTaskID = currentTaskID
@@ -65,6 +67,7 @@ final class HomeDashboardViewModel {
         
         self.activeDates = snapshot.activeDates
         self.completionSnapshot = completion
+        self.recommendations = Array(recommendations.prefix(3))
         self.isInitialized = true
     }
 

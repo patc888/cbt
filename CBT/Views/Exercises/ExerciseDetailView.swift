@@ -198,6 +198,10 @@ struct ExerciseDetailView: View {
 
     private func buildFinalBodyText() -> String {
         var bodyText = "\(exercise.description)\n\n"
+        if exercise.displayApproaches.contains("ACT") {
+            bodyText += "Note: Educational self-help only. This is not a replacement for therapy.\n\n"
+        }
+
         for (index, step) in exercise.steps.enumerated() {
             bodyText += "Step \(index + 1): \(step)\n"
             if index < stepResponses.count {
@@ -208,6 +212,21 @@ struct ExerciseDetailView: View {
             }
             bodyText += "\n"
         }
+
+        if let completionSummary = exercise.completionSummary?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !completionSummary.isEmpty {
+            bodyText += "Completion Summary:\n\(completionSummary)\n\n"
+        }
+
+        if let journalReflection = exercise.journalReflection?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !journalReflection.isEmpty {
+            bodyText += "Journal Reflection:\n\(journalReflection)\n\n"
+        }
+
+        if let tags = exercise.tags, !tags.isEmpty {
+            bodyText += "Tags: \(tags.joined(separator: ", "))\n"
+        }
+
         return bodyText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 

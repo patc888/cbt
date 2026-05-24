@@ -81,7 +81,7 @@ struct PermissionDeniedView: View {
     private var message: String {
         switch type {
         case .notifications:
-            return String(localized: "Enable notifications to receive timely mood check-ins and reflection reminders.")
+            return String(localized: "Enable notifications to receive the gentle reminders you choose.")
         case .locationWhenInUse:
             return String(localized: "Location access helps us understand how your environment affects your mood.")
         case .camera:

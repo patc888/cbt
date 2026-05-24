@@ -28,7 +28,7 @@ struct InsightsGoalProgressSection: View {
 
             InsightsGoalProgressCard(
                 title: String(localized: "Thought Relief Goal"),
-                subtitle: snapshot.averageIntensityImprovement.map { String(localized: "\($0) of 15 pts average relief") } ?? String(localized: "No thought records yet"),
+                subtitle: snapshot.averageIntensityImprovement.map { String(localized: "\($0) of 15 pts average relief") } ?? String(localized: "Thought relief appears after a thought record."),
                 progress: snapshot.thoughtGoalProgress,
                 tint: .orange
             )

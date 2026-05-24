@@ -44,9 +44,12 @@ struct DistortionsEducationPage: View {
                             Text(selected)
                                 .font(.system(.headline, design: .rounded).weight(.bold))
                                 .foregroundStyle(themeManager.selectedColor)
+                                .fixedSize(horizontal: false, vertical: true)
                             Text(desc)
                                 .font(.subheadline)
                                 .foregroundStyle(Theme.secondaryText)
+                                .lineLimit(nil)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                         .padding(4)
                         .frame(maxWidth: .infinity, alignment: .leading)

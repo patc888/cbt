@@ -2,8 +2,18 @@
   {
     "id": "exercise_001",
     "title": "Identify the Stressor",
+    "approach": "CBT",
+    "approaches": [
+      "CBT"
+    ],
     "category": "Thought Reframing",
+    "topics": [
+      "Anxiety Tools",
+      "Depression Support"
+    ],
+    "format": "Exercise",
     "duration": 5,
+    "difficulty": "Beginner",
     "description": "Notice what situation triggers your stressful thought.",
     "steps": [
       "Write down the specific situation.",
@@ -14,8 +24,18 @@
   {
     "id": "exercise_002",
     "title": "Spotting All-or-Nothing",
+    "approach": "CBT",
+    "approaches": [
+      "CBT"
+    ],
     "category": "Cognitive Distortions",
+    "topics": [
+      "Anxiety Tools",
+      "Depression Support"
+    ],
+    "format": "Exercise",
     "duration": 6,
+    "difficulty": "Beginner",
     "description": "Find shades of grey in your thinking.",
     "steps": [
       "Write your absolute thought (e.g. ruined, always, never).",
@@ -26,8 +46,19 @@
   {
     "id": "exercise_003",
     "title": "5-4-3-2-1 Technique",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness",
+      "DBT"
+    ],
     "category": "Grounding",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
     "duration": 7,
+    "difficulty": "Beginner",
     "description": "Use your senses to anchor yourself in the present.",
     "steps": [
       "Acknowledge 5 things you see.",
@@ -40,8 +71,20 @@
   {
     "id": "exercise_004",
     "title": "Box Breathing",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness",
+      "CBT"
+    ],
     "category": "Anxiety Reset",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout",
+      "Sleep & Wind Down"
+    ],
+    "format": "Exercise",
     "duration": 8,
+    "difficulty": "Intermediate",
     "description": "Calm your nervous system with measured breaths.",
     "steps": [
       "Breathe in for 4 seconds.",
@@ -65,8 +108,18 @@
   {
     "id": "exercise_005",
     "title": "Three Good Things",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
     "category": "Gratitude",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
     "duration": 9,
+    "difficulty": "Intermediate",
     "description": "Shift focus to positives from today.",
     "steps": [
       "Write down one good thing.",
@@ -78,8 +131,18 @@
   {
     "id": "exercise_006",
     "title": "Inner Friend",
+    "approach": "Self-Compassion",
+    "approaches": [
+      "Self-Compassion"
+    ],
     "category": "Self Compassion",
+    "topics": [
+      "Depression Support",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
     "duration": 10,
+    "difficulty": "Intermediate",
     "description": "Talk to yourself as you would a friend.",
     "steps": [
       "Write down your self-critical thought.",
@@ -91,8 +154,18 @@
   {
     "id": "exercise_007",
     "title": "Do One Small Thing",
+    "approach": "Behavioral Activation",
+    "approaches": [
+      "Behavioral Activation"
+    ],
     "category": "Behavioral Activation",
+    "topics": [
+      "Depression Support",
+      "Productivity / Procrastination"
+    ],
+    "format": "Exercise",
     "duration": 11,
+    "difficulty": "Intermediate",
     "description": "Break the cycle of avoidance.",
     "steps": [
       "Pick a task that takes under 5 minutes.",
@@ -104,8 +177,17 @@
   {
     "id": "exercise_008",
     "title": "Imaginal Exposure",
+    "approach": "CBT",
+    "approaches": [
+      "CBT"
+    ],
     "category": "Exposure Practice",
+    "topics": [
+      "Anxiety Tools"
+    ],
+    "format": "Exercise",
     "duration": 12,
+    "difficulty": "Intermediate",
     "description": "Visualize a mildly anxiety-provoking scenario.",
     "steps": [
       "Sit somewhere safe.",
@@ -117,8 +199,18 @@
   {
     "id": "exercise_009",
     "title": "Challenge the Thought",
+    "approach": "CBT",
+    "approaches": [
+      "CBT"
+    ],
     "category": "Thought Reframing",
+    "topics": [
+      "Anxiety Tools",
+      "Depression Support"
+    ],
+    "format": "Exercise",
     "duration": 13,
+    "difficulty": "Advanced",
     "description": "Examine a recurring negative belief.",
     "steps": [
       "Identify the negative belief.",
@@ -130,8 +222,18 @@
   {
     "id": "exercise_010",
     "title": "Mind Reading Check",
+    "approach": "CBT",
+    "approaches": [
+      "CBT"
+    ],
     "category": "Cognitive Distortions",
+    "topics": [
+      "Anxiety Tools",
+      "Depression Support"
+    ],
+    "format": "Exercise",
     "duration": 14,
+    "difficulty": "Advanced",
     "description": "Stop assuming you know what others think.",
     "steps": [
       "Notice who you are mind-reading.",
@@ -142,8 +244,19 @@
   {
     "id": "exercise_011",
     "title": "Color Focus",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness",
+      "DBT"
+    ],
     "category": "Grounding",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
     "duration": 5,
+    "difficulty": "Beginner",
     "description": "Ground yourself visually by finding colors.",
     "steps": [
       "Pick a color.",
@@ -155,8 +268,20 @@
   {
     "id": "exercise_012",
     "title": "Progressive Relaxation",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness",
+      "CBT"
+    ],
     "category": "Anxiety Reset",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout",
+      "Sleep & Wind Down"
+    ],
+    "format": "Exercise",
     "duration": 6,
+    "difficulty": "Beginner",
     "description": "Release tension from your muscles.",
     "steps": [
       "Tense your toes for 5 seconds.",
@@ -168,8 +293,18 @@
   {
     "id": "exercise_013",
     "title": "Appreciation Letter",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
     "category": "Gratitude",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
     "duration": 7,
+    "difficulty": "Beginner",
     "description": "Express gratitude mentally or in writing.",
     "steps": [
       "Think of someone who helped you.",
@@ -180,8 +315,18 @@
   {
     "id": "exercise_014",
     "title": "Forgiveness Practice",
+    "approach": "Self-Compassion",
+    "approaches": [
+      "Self-Compassion"
+    ],
     "category": "Self Compassion",
+    "topics": [
+      "Depression Support",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
     "duration": 8,
+    "difficulty": "Intermediate",
     "description": "Let go of a small mistake.",
     "steps": [
       "Acknowledge the mistake without judgment.",
@@ -192,8 +337,18 @@
   {
     "id": "exercise_015",
     "title": "Pleasant Activity Scheduling",
+    "approach": "Behavioral Activation",
+    "approaches": [
+      "Behavioral Activation"
+    ],
     "category": "Behavioral Activation",
+    "topics": [
+      "Depression Support",
+      "Productivity / Procrastination"
+    ],
+    "format": "Exercise",
     "duration": 9,
+    "difficulty": "Intermediate",
     "description": "Plan a small enjoyment.",
     "steps": [
       "Brainstorm 3 simple things you enjoy.",
@@ -205,8 +360,17 @@
   {
     "id": "exercise_016",
     "title": "Worry Time",
+    "approach": "CBT",
+    "approaches": [
+      "CBT"
+    ],
     "category": "Exposure Practice",
+    "topics": [
+      "Anxiety Tools"
+    ],
+    "format": "Exercise",
     "duration": 10,
+    "difficulty": "Intermediate",
     "description": "Confine worry to a specific block of time.",
     "steps": [
       "Schedule 15 minutes of 'worry time'.",
@@ -218,8 +382,18 @@
   {
     "id": "exercise_017",
     "title": "Examine the Evidence",
+    "approach": "CBT",
+    "approaches": [
+      "CBT"
+    ],
     "category": "Thought Reframing",
+    "topics": [
+      "Anxiety Tools",
+      "Depression Support"
+    ],
+    "format": "Exercise",
     "duration": 11,
+    "difficulty": "Intermediate",
     "description": "Look at facts objectively.",
     "steps": [
       "Write down the belief.",
@@ -231,8 +405,18 @@
   {
     "id": "exercise_018",
     "title": "Label Reducer",
+    "approach": "CBT",
+    "approaches": [
+      "CBT"
+    ],
     "category": "Cognitive Distortions",
+    "topics": [
+      "Anxiety Tools",
+      "Depression Support"
+    ],
+    "format": "Exercise",
     "duration": 12,
+    "difficulty": "Intermediate",
     "description": "Change global labels to specific behaviors.",
     "steps": [
       "Catch yourself calling yourself a name.",
@@ -243,8 +427,19 @@
   {
     "id": "exercise_019",
     "title": "Texture Walk",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness",
+      "DBT"
+    ],
     "category": "Grounding",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
     "duration": 13,
+    "difficulty": "Advanced",
     "description": "Focus on the physical sensation of touch.",
     "steps": [
       "Find an object near you.",
@@ -256,8 +451,20 @@
   {
     "id": "exercise_020",
     "title": "Shoulder Drop",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness",
+      "CBT"
+    ],
     "category": "Anxiety Reset",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout",
+      "Sleep & Wind Down"
+    ],
+    "format": "Exercise",
     "duration": 14,
+    "difficulty": "Advanced",
     "description": "Release physical tension held in your shoulders.",
     "steps": [
       "Notice if your shoulders are raised.",
@@ -269,8 +476,18 @@
   {
     "id": "exercise_021",
     "title": "Silver Linings",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
     "category": "Gratitude",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
     "duration": 5,
+    "difficulty": "Beginner",
     "description": "Find one positive in a neutral or negative situation.",
     "steps": [
       "Pick a minor annoyance from today.",
@@ -281,8 +498,18 @@
   {
     "id": "exercise_022",
     "title": "Soothing Touch",
+    "approach": "Self-Compassion",
+    "approaches": [
+      "Self-Compassion"
+    ],
     "category": "Self Compassion",
+    "topics": [
+      "Depression Support",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
     "duration": 6,
+    "difficulty": "Beginner",
     "description": "Provide yourself with physical comfort.",
     "steps": [
       "Place a hand over your heart or on your arm.",
@@ -293,8 +520,18 @@
   {
     "id": "exercise_023",
     "title": "Routine Anchor",
+    "approach": "Behavioral Activation",
+    "approaches": [
+      "Behavioral Activation"
+    ],
     "category": "Behavioral Activation",
+    "topics": [
+      "Depression Support",
+      "Productivity / Procrastination"
+    ],
+    "format": "Exercise",
     "duration": 7,
+    "difficulty": "Beginner",
     "description": "Attach a new habit to an existing one.",
     "steps": [
       "Identify something you do every day (like brushing teeth).",
@@ -305,8 +542,17 @@
   {
     "id": "exercise_024",
     "title": "Decatastrophize a Fear",
+    "approach": "CBT",
+    "approaches": [
+      "CBT"
+    ],
     "category": "Exposure Practice",
+    "topics": [
+      "Anxiety Tools"
+    ],
+    "format": "Exercise",
     "duration": 8,
+    "difficulty": "Intermediate",
     "description": "Examine the feared outcome.",
     "steps": [
       "Write down what you fear will happen.",
@@ -317,8 +563,18 @@
   {
     "id": "exercise_025",
     "title": "De-catastrophizing",
+    "approach": "CBT",
+    "approaches": [
+      "CBT"
+    ],
     "category": "Thought Reframing",
+    "topics": [
+      "Anxiety Tools",
+      "Depression Support"
+    ],
+    "format": "Exercise",
     "duration": 9,
+    "difficulty": "Intermediate",
     "description": "Manage worst-case scenario thinking.",
     "steps": [
       "Identify the worst-case scenario.",
@@ -330,8 +586,18 @@
   {
     "id": "exercise_026",
     "title": "Should Statements",
+    "approach": "CBT",
+    "approaches": [
+      "CBT"
+    ],
     "category": "Cognitive Distortions",
+    "topics": [
+      "Anxiety Tools",
+      "Depression Support"
+    ],
+    "format": "Exercise",
     "duration": 10,
+    "difficulty": "Intermediate",
     "description": "Replace 'should' with 'would like'.",
     "steps": [
       "Write down a 'should' statement.",
@@ -342,8 +608,19 @@
   {
     "id": "exercise_027",
     "title": "Temperature Notice",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness",
+      "DBT"
+    ],
     "category": "Grounding",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
     "duration": 11,
+    "difficulty": "Intermediate",
     "description": "Use temperature to ground your body.",
     "steps": [
       "Hold an ice cube or something cold.",
@@ -354,8 +631,20 @@
   {
     "id": "exercise_028",
     "title": "4-7-8 Breathing",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness",
+      "CBT"
+    ],
     "category": "Anxiety Reset",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout",
+      "Sleep & Wind Down"
+    ],
+    "format": "Exercise",
     "duration": 12,
+    "difficulty": "Intermediate",
     "description": "A relaxing breath pattern.",
     "steps": [
       "Inhale quietly through your nose for 4 seconds.",
@@ -378,8 +667,18 @@
   {
     "id": "exercise_029",
     "title": "Future Gratitude",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
     "category": "Gratitude",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
     "duration": 13,
+    "difficulty": "Advanced",
     "description": "Look forward to something positive.",
     "steps": [
       "Think of one thing happening tomorrow to enjoy.",
@@ -390,8 +689,18 @@
   {
     "id": "exercise_030",
     "title": "Shared Humanity",
+    "approach": "Self-Compassion",
+    "approaches": [
+      "Self-Compassion"
+    ],
     "category": "Self Compassion",
+    "topics": [
+      "Depression Support",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
     "duration": 14,
+    "difficulty": "Advanced",
     "description": "Remember you are not alone.",
     "steps": [
       "Notice a feeling of inadequacy.",
@@ -402,8 +711,18 @@
   {
     "id": "exercise_031",
     "title": "Mastery Task",
+    "approach": "Behavioral Activation",
+    "approaches": [
+      "Behavioral Activation"
+    ],
     "category": "Behavioral Activation",
+    "topics": [
+      "Depression Support",
+      "Productivity / Procrastination"
+    ],
+    "format": "Exercise",
     "duration": 5,
+    "difficulty": "Beginner",
     "description": "Do something that gives a sense of accomplishment.",
     "steps": [
       "Pick a task you've been putting off.",
@@ -414,13 +733,1316 @@
   {
     "id": "exercise_032",
     "title": "Safety Behavior Drop",
+    "approach": "CBT",
+    "approaches": [
+      "CBT"
+    ],
     "category": "Exposure Practice",
+    "topics": [
+      "Anxiety Tools"
+    ],
+    "format": "Exercise",
     "duration": 6,
+    "difficulty": "Beginner",
     "description": "Gradually remove crutches.",
     "steps": [
       "Identify something you do just to feel 'safe'.",
       "Try doing the activity without it once.",
       "Notice that you survived without the safety behavior."
+    ]
+  },
+  {
+    "id": "exercise_dbt_001",
+    "title": "STOP Skill",
+    "approach": "DBT",
+    "approaches": [
+      "DBT"
+    ],
+    "category": "Distress Tolerance",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 5,
+    "difficulty": "Easy",
+    "description": "A DBT-inspired pause for intense moments. This is an educational self-help exercise, not therapy or medical advice.",
+    "steps": [
+      "Stop. Pause what you are doing and avoid making the moment bigger.",
+      "Take a step back. Put both feet on the floor, breathe out slowly, or create a little physical space.",
+      "Observe. Name what is happening around you, what you feel in your body, and what thoughts are showing up.",
+      "Proceed mindfully. Choose one small next action that fits your values and keeps things steady."
+    ],
+    "completionSummary": "You practiced creating space between a strong feeling and your next action.",
+    "journalReflection": "What changed after you paused before responding?",
+    "tags": [
+      "DBT",
+      "pause",
+      "distress tolerance",
+      "self-control"
+    ]
+  },
+  {
+    "id": "exercise_dbt_002",
+    "title": "TIPP Skill",
+    "approach": "DBT",
+    "approaches": [
+      "DBT"
+    ],
+    "category": "Distress Tolerance",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 8,
+    "difficulty": "Moderate",
+    "description": "A DBT-inspired body reset for moments that feel very intense. Skip any part that feels unsafe for your body; this is self-help education, not medical advice.",
+    "steps": [
+      "Temperature: hold something cool, splash cool water on your face, or step near fresh air for a brief reset.",
+      "Intense movement: move for 30 to 60 seconds in a way that is safe for you, such as brisk walking, wall push-ups, or marching in place.",
+      "Paced breathing: breathe out longer than you breathe in for one minute.",
+      "Paired muscle release: gently tense one muscle group for five seconds, then relax it and notice the difference."
+    ],
+    "completionSummary": "You tried body-based skills to lower the intensity enough to choose your next step.",
+    "journalReflection": "Which part of TIPP felt most helpful or least helpful today?",
+    "tags": [
+      "DBT",
+      "TIPP",
+      "body reset",
+      "distress tolerance"
+    ]
+  },
+  {
+    "id": "exercise_dbt_003",
+    "title": "Wise Mind Check-In",
+    "approach": "DBT",
+    "approaches": [
+      "DBT"
+    ],
+    "category": "Mindfulness",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 6,
+    "difficulty": "Easy",
+    "description": "A DBT-inspired check-in that helps you listen to both feelings and facts before choosing a response.",
+    "steps": [
+      "Name the feeling mind: what emotion is loudest right now?",
+      "Name the reasonable mind: what facts do you know for sure?",
+      "Imagine both sides sitting at the same table instead of arguing.",
+      "Ask: what would a balanced, grounded next step look like?",
+      "Write one sentence that starts with: Wise mind says..."
+    ],
+    "completionSummary": "You practiced balancing emotion and facts before deciding what to do next.",
+    "journalReflection": "What did your wise mind notice that one side alone might have missed?",
+    "tags": [
+      "DBT",
+      "wise mind",
+      "mindfulness",
+      "balance"
+    ]
+  },
+  {
+    "id": "exercise_dbt_004",
+    "title": "Check the Facts",
+    "approach": "DBT",
+    "approaches": [
+      "DBT"
+    ],
+    "category": "Emotion Regulation",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 8,
+    "difficulty": "Easy",
+    "description": "A DBT-inspired way to compare a strong emotion with the facts of the situation.",
+    "steps": [
+      "Write the event in plain words, like a camera recording only what happened.",
+      "Name the emotion and rate its intensity from 1 to 10.",
+      "List the facts that support the emotion.",
+      "List facts that do not fit the emotion or point to another explanation.",
+      "Ask: does the emotion fit the facts, or is it asking for a smaller response?"
+    ],
+    "completionSummary": "You separated facts from interpretations and checked whether the emotion matched the situation.",
+    "journalReflection": "Which fact was easiest to miss at first?",
+    "tags": [
+      "DBT",
+      "emotion regulation",
+      "facts",
+      "perspective"
+    ]
+  },
+  {
+    "id": "exercise_dbt_005",
+    "title": "Opposite Action",
+    "approach": "DBT",
+    "approaches": [
+      "DBT"
+    ],
+    "category": "Emotion Regulation",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 10,
+    "difficulty": "Moderate",
+    "description": "A DBT-inspired practice for choosing a small action that goes against an unhelpful urge. Do not use this to ignore real danger, personal limits, or values.",
+    "steps": [
+      "Name the emotion and the urge it brings, such as hiding, snapping, quitting, or avoiding.",
+      "Check whether the urge fits the facts and your values.",
+      "If the urge is not helping, choose one small opposite action.",
+      "Make the action specific: where, when, and for how long?",
+      "Try the action for a short amount of time and notice what shifts."
+    ],
+    "completionSummary": "You practiced acting from intention instead of automatically following an unhelpful urge.",
+    "journalReflection": "What did you learn from doing the opposite action, even briefly?",
+    "tags": [
+      "DBT",
+      "opposite action",
+      "emotion regulation",
+      "behavior"
+    ]
+  },
+  {
+    "id": "exercise_dbt_006",
+    "title": "Urge Surfing",
+    "approach": "DBT",
+    "approaches": [
+      "DBT"
+    ],
+    "category": "Distress Tolerance",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 7,
+    "difficulty": "Moderate",
+    "description": "A DBT-inspired exercise for riding out an urge without judging it or acting on it right away.",
+    "steps": [
+      "Name the urge in simple words: I am noticing the urge to...",
+      "Rate the urge from 1 to 10.",
+      "Picture the urge as a wave that rises, peaks, and falls.",
+      "Track where you feel it in your body for one minute.",
+      "Choose a safe delay, such as five minutes, then rate the urge again."
+    ],
+    "completionSummary": "You observed an urge as something that changes over time, rather than a command you have to follow.",
+    "journalReflection": "What helped you stay with the urge while it moved through?",
+    "tags": [
+      "DBT",
+      "urge surfing",
+      "distress tolerance",
+      "delay"
+    ]
+  },
+  {
+    "id": "exercise_dbt_007",
+    "title": "Self-Soothe With the Five Senses",
+    "approach": "DBT",
+    "approaches": [
+      "DBT"
+    ],
+    "category": "Self-Soothing",
+    "topics": [
+      "Anxiety Tools",
+      "Sleep & Wind Down"
+    ],
+    "format": "Exercise",
+    "duration": 10,
+    "difficulty": "Easy",
+    "description": "A DBT-inspired grounding practice that uses everyday sensory comfort to settle the moment.",
+    "steps": [
+      "Sight: choose something calming or pleasant to look at for 30 seconds.",
+      "Sound: listen for one steady sound, quiet song, or gentle background noise.",
+      "Smell: notice a comforting scent, fresh air, soap, tea, or another safe smell.",
+      "Taste: take one mindful sip or bite and describe it slowly.",
+      "Touch: use a blanket, warm mug, smooth object, or steady hand pressure to add comfort."
+    ],
+    "completionSummary": "You used the five senses to bring small, concrete comfort into the present moment.",
+    "journalReflection": "Which sense gave you the strongest feeling of steadiness?",
+    "tags": [
+      "DBT",
+      "self-soothing",
+      "five senses",
+      "grounding"
+    ]
+  },
+  {
+    "id": "exercise_dbt_008",
+    "title": "PLEASE Skill Reflection",
+    "approach": "DBT",
+    "approaches": [
+      "DBT"
+    ],
+    "category": "Wellness Basics",
+    "topics": [
+      "Sleep & Wind Down",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 8,
+    "difficulty": "Easy",
+    "description": "A DBT-inspired reflection on everyday body basics that can affect mood. This is not medical advice; follow professional guidance for health needs.",
+    "steps": [
+      "Physical care: note one basic need your body has today, such as rest, food, water, movement, or medication as already prescribed.",
+      "Eating: ask whether you have eaten in a way that supports your energy today.",
+      "Avoid mood-altering extras: notice whether substances, too much caffeine, or other choices are affecting you.",
+      "Sleep: write one small thing that could make tonight easier.",
+      "Exercise: choose one realistic movement option, even a short walk or stretch."
+    ],
+    "completionSummary": "You reviewed practical body basics that can make emotions easier to manage.",
+    "journalReflection": "Which basic need deserves a little attention today?",
+    "tags": [
+      "DBT",
+      "PLEASE",
+      "wellness",
+      "emotion regulation"
+    ]
+  },
+  {
+    "id": "exercise_dbt_009",
+    "title": "Distress Tolerance Plan",
+    "approach": "DBT",
+    "approaches": [
+      "DBT"
+    ],
+    "category": "Distress Tolerance",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 12,
+    "difficulty": "Moderate",
+    "description": "A DBT-inspired plan for getting through a hard moment without making it worse. If you might harm yourself or someone else, seek urgent help now.",
+    "steps": [
+      "Write one early warning sign that tells you distress is rising.",
+      "Choose three safe skills you can try first, such as STOP, paced breathing, self-soothing, or stepping away.",
+      "List two people, places, or supports that help you stay grounded.",
+      "Name one action to avoid because it usually makes things worse.",
+      "Write a simple plan: When I notice distress rising, I will..."
+    ],
+    "completionSummary": "You created a simple plan for moving through distress with fewer regrets.",
+    "journalReflection": "What support or skill would be easiest to use when things feel intense?",
+    "tags": [
+      "DBT",
+      "distress tolerance",
+      "coping plan",
+      "safety"
+    ]
+  },
+  {
+    "id": "exercise_dbt_010",
+    "title": "Emotion Regulation Review",
+    "approach": "DBT",
+    "approaches": [
+      "DBT"
+    ],
+    "category": "Emotion Regulation",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 9,
+    "difficulty": "Easy",
+    "description": "A DBT-inspired review for understanding what shaped an emotion and what helped you respond.",
+    "steps": [
+      "Pick one emotion from today and name it without judging it.",
+      "Write what prompted the emotion.",
+      "Notice body clues, thoughts, urges, and actions that came with it.",
+      "Identify one skill or choice that helped even a little.",
+      "Choose one small adjustment for next time."
+    ],
+    "completionSummary": "You reviewed an emotion with curiosity and identified one useful adjustment for the future.",
+    "journalReflection": "What did this emotion seem to need from you?",
+    "tags": [
+      "DBT",
+      "emotion regulation",
+      "review",
+      "patterns"
+    ]
+  },
+  {
+    "id": "exercise_act_001",
+    "title": "Values Clarification",
+    "approach": "ACT",
+    "approaches": [
+      "ACT"
+    ],
+    "category": "Values",
+    "topics": [
+      "Productivity / Procrastination",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 10,
+    "difficulty": "Easy",
+    "description": "Name what matters to you so your next choice can point in that direction.",
+    "steps": [
+      "Pick one life area: relationships, health, learning, work, community, or rest.",
+      "Ask: What kind of person do I want to be here?",
+      "Write three values, such as kindness, honesty, courage, care, or patience.",
+      "Choose one value that feels important this week.",
+      "Name one small action that could show that value today."
+    ],
+    "completionSummary": "You named a value and one small way to live it.",
+    "journalReflection": "Which value felt most alive today, and what could you do next?",
+    "tags": [
+      "ACT",
+      "values",
+      "choice",
+      "self-help"
+    ]
+  },
+  {
+    "id": "exercise_act_002",
+    "title": "Values Compass",
+    "approach": "ACT",
+    "approaches": [
+      "ACT"
+    ],
+    "category": "Values",
+    "topics": [
+      "Productivity / Procrastination",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 12,
+    "difficulty": "Easy",
+    "description": "Check which valued directions need more attention right now.",
+    "steps": [
+      "Draw or imagine a compass with four directions: care, growth, connection, and health.",
+      "Rate each direction from 0 to 10 for how closely your actions match your values.",
+      "Pick the lowest score that still matters to you.",
+      "Write one barrier that pulls you off course.",
+      "Choose one small action to move one point closer."
+    ],
+    "completionSummary": "You checked your values compass and chose one small move forward.",
+    "journalReflection": "Which direction needs a little more care this week?",
+    "tags": [
+      "ACT",
+      "values",
+      "compass",
+      "direction"
+    ]
+  },
+  {
+    "id": "exercise_act_003",
+    "title": "Cognitive Defusion: \"I'm Having the Thought That...\"",
+    "approach": "ACT",
+    "approaches": [
+      "ACT"
+    ],
+    "category": "Defusion",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 6,
+    "difficulty": "Easy",
+    "description": "Practice seeing thoughts as words in your mind, not facts you must obey.",
+    "steps": [
+      "Write one sticky thought in a short sentence.",
+      "Add these words before it: I'm having the thought that...",
+      "Say the new sentence slowly.",
+      "Add another layer: I notice I'm having the thought that...",
+      "Ask: Does holding this thought lightly help me move toward what matters?"
+    ],
+    "completionSummary": "You practiced holding a thought more lightly.",
+    "journalReflection": "How did the thought feel when you added distance from it?",
+    "tags": [
+      "ACT",
+      "defusion",
+      "thoughts",
+      "perspective"
+    ]
+  },
+  {
+    "id": "exercise_act_004",
+    "title": "Leaves on a Stream",
+    "approach": "ACT",
+    "approaches": [
+      "ACT"
+    ],
+    "category": "Mindfulness",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 8,
+    "difficulty": "Easy",
+    "description": "Let thoughts come and go without needing to push them away.",
+    "steps": [
+      "Sit comfortably and notice your breathing.",
+      "Picture a slow stream with leaves floating by.",
+      "When a thought shows up, place it on a leaf.",
+      "Let the leaf float past at its own speed.",
+      "If you get pulled into a thought, gently return to the stream."
+    ],
+    "completionSummary": "You practiced noticing thoughts and letting them move through.",
+    "journalReflection": "What thoughts kept returning, and how did you respond to them?",
+    "tags": [
+      "ACT",
+      "mindfulness",
+      "defusion",
+      "thoughts"
+    ]
+  },
+  {
+    "id": "exercise_act_005",
+    "title": "Control vs Influence",
+    "approach": "ACT",
+    "approaches": [
+      "ACT"
+    ],
+    "category": "Acceptance",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 10,
+    "difficulty": "Easy",
+    "description": "Sort a hard situation into what you can control, influence, and let be.",
+    "steps": [
+      "Write the situation in one sentence.",
+      "List what is directly in your control, such as your words or next step.",
+      "List what you may influence but cannot force.",
+      "List what is outside your control.",
+      "Choose one useful action from the control or influence list."
+    ],
+    "completionSummary": "You separated control, influence, and things to let be.",
+    "journalReflection": "What changed when you focused on one useful action?",
+    "tags": [
+      "ACT",
+      "acceptance",
+      "control",
+      "influence"
+    ]
+  },
+  {
+    "id": "exercise_act_006",
+    "title": "Acceptance Practice",
+    "approach": "ACT",
+    "approaches": [
+      "ACT"
+    ],
+    "category": "Acceptance",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 7,
+    "difficulty": "Moderate",
+    "description": "Practice allowing a feeling to be present while you stay kind to yourself.",
+    "steps": [
+      "Name the feeling in simple words.",
+      "Notice where it shows up in your body.",
+      "Say: This feeling is here right now.",
+      "Breathe slowly and soften around the feeling if you can.",
+      "Choose one gentle action that fits your values."
+    ],
+    "completionSummary": "You practiced making space for a feeling without needing to fight it.",
+    "journalReflection": "What helped you allow the feeling to be there?",
+    "tags": [
+      "ACT",
+      "acceptance",
+      "feelings",
+      "self-kindness"
+    ]
+  },
+  {
+    "id": "exercise_act_007",
+    "title": "Committed Action Plan",
+    "approach": "ACT",
+    "approaches": [
+      "ACT"
+    ],
+    "category": "Committed Action",
+    "topics": [
+      "Productivity / Procrastination",
+      "Depression Support"
+    ],
+    "format": "Exercise",
+    "duration": 12,
+    "difficulty": "Easy",
+    "description": "Turn a value into a small, realistic next step.",
+    "steps": [
+      "Choose one value you want to act on.",
+      "Name one action that is small enough to do this week.",
+      "Set a time and place for the action.",
+      "Name one obstacle that may show up.",
+      "Choose a backup step that is even smaller.",
+      "Afterward, mark what you did and what you learned."
+    ],
+    "completionSummary": "You made a clear plan for one values-based action.",
+    "journalReflection": "What would make this action easier to start?",
+    "tags": [
+      "ACT",
+      "committed action",
+      "values",
+      "planning"
+    ]
+  },
+  {
+    "id": "exercise_act_008",
+    "title": "Self-as-Context Reflection",
+    "approach": "ACT",
+    "approaches": [
+      "ACT"
+    ],
+    "category": "Self-as-Context",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 8,
+    "difficulty": "Moderate",
+    "description": "Notice that you are more than one thought, feeling, or role.",
+    "steps": [
+      "Write: I am noticing...",
+      "Add one thought, one feeling, and one body sensation.",
+      "Ask: Who is noticing these experiences?",
+      "Rest for a few breaths as the observer of the experience.",
+      "Write: I can notice this and still choose my next step."
+    ],
+    "completionSummary": "You practiced noticing experiences from a steadier point of view.",
+    "journalReflection": "What did you notice when you stepped back from the experience?",
+    "tags": [
+      "ACT",
+      "self-as-context",
+      "observer",
+      "perspective"
+    ]
+  },
+  {
+    "id": "exercise_act_009",
+    "title": "Passengers on the Bus",
+    "approach": "ACT",
+    "approaches": [
+      "ACT"
+    ],
+    "category": "Defusion",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 10,
+    "difficulty": "Moderate",
+    "description": "See difficult thoughts and feelings as passengers while you choose the direction.",
+    "steps": [
+      "Imagine you are driving a bus toward something that matters.",
+      "Name the passengers that show up, such as fear, doubt, shame, or anger.",
+      "Let each passenger speak without arguing with it.",
+      "Thank them for trying to protect you.",
+      "Keep your hands on the wheel and choose one small move forward."
+    ],
+    "completionSummary": "You practiced making room for inner passengers while keeping your direction.",
+    "journalReflection": "Which passenger was loudest, and what direction still mattered?",
+    "tags": [
+      "ACT",
+      "defusion",
+      "values",
+      "metaphor"
+    ]
+  },
+  {
+    "id": "exercise_act_010",
+    "title": "Making Room for Feelings",
+    "approach": "ACT",
+    "approaches": [
+      "ACT"
+    ],
+    "category": "Acceptance",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 9,
+    "difficulty": "Easy",
+    "description": "Make space for a feeling instead of spending all your energy fighting it.",
+    "steps": [
+      "Name the feeling.",
+      "Picture how much space it takes up.",
+      "Breathe around it, as if making the space a little wider.",
+      "Unclench your jaw, shoulders, or hands if you can.",
+      "Say: I can make room for this and still do what matters."
+    ],
+    "completionSummary": "You practiced making room for a feeling and choosing what matters.",
+    "journalReflection": "What became possible when you made a little room for the feeling?",
+    "tags": [
+      "ACT",
+      "acceptance",
+      "feelings",
+      "values"
+    ]
+  },
+  {
+    "id": "exercise_mindfulness_001",
+    "title": "3-Minute Breathing Space",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "category": "Mindfulness",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 3,
+    "difficulty": "Beginner",
+    "description": "A compact practice for pausing, breathing, and returning to the next moment with steadier attention.",
+    "steps": [
+      "Minute 1: Notice what is here right now, including thoughts, emotions, and body sensations.",
+      "Minute 2: Gather your attention around the natural rhythm of breathing.",
+      "Minute 3: Expand awareness to the whole body, the room, and the next small action."
+    ],
+    "completionSummary": "You practiced shifting from automatic pilot into a steadier, more spacious awareness.",
+    "journalReflection": "What changed between the first minute and the final minute?",
+    "tags": [
+      "mindfulness",
+      "breathing",
+      "grounding",
+      "present moment",
+      "quick reset"
+    ]
+  },
+  {
+    "id": "exercise_mindfulness_002",
+    "title": "Body Scan",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "category": "Mindfulness",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 12,
+    "difficulty": "Beginner",
+    "description": "Move attention through the body to notice sensation, tension, warmth, or numbness without needing to fix it.",
+    "steps": [
+      "Settle into a comfortable position and let your breathing be natural.",
+      "Bring attention to your feet and notice any sensations there.",
+      "Slowly move attention through legs, hips, belly, chest, hands, arms, shoulders, neck, and face.",
+      "When the mind wanders, gently name 'wandering' and return to the next body area.",
+      "End by sensing the whole body breathing as one field of awareness."
+    ],
+    "completionSummary": "You trained gentle body awareness and practiced returning attention without judgment.",
+    "journalReflection": "Where did you notice ease, tension, or surprise in your body?",
+    "tags": [
+      "mindfulness",
+      "body awareness",
+      "somatic",
+      "relaxation",
+      "attention"
+    ]
+  },
+  {
+    "id": "exercise_mindfulness_003",
+    "title": "Five Senses Grounding",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "category": "Mindfulness",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 5,
+    "difficulty": "Beginner",
+    "description": "Use sight, touch, sound, smell, and taste to anchor yourself in the here and now.",
+    "steps": [
+      "Name five things you can see, noticing color, shape, or light.",
+      "Name four things you can feel through touch or body contact.",
+      "Name three sounds you can hear, near or far.",
+      "Name two scents you can detect, or two scents you remember clearly.",
+      "Name one taste, then take one slow breath and look around again."
+    ],
+    "completionSummary": "You used sensory detail to reconnect with your immediate environment.",
+    "journalReflection": "Which sense helped you feel most present?",
+    "tags": [
+      "mindfulness",
+      "grounding",
+      "senses",
+      "anxiety",
+      "present moment"
+    ]
+  },
+  {
+    "id": "exercise_mindfulness_004",
+    "title": "Mindful Walking",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "category": "Mindfulness",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 10,
+    "difficulty": "Beginner",
+    "description": "Turn ordinary walking into a practice of attention, rhythm, and contact with the ground.",
+    "steps": [
+      "Choose a short path where you can walk safely without rushing.",
+      "Feel each foot lift, move, and make contact with the ground.",
+      "Notice the rhythm of breath, movement, and balance.",
+      "When attention drifts, return to the sensation of your next step.",
+      "Pause at the end and notice how your body feels after moving slowly."
+    ],
+    "completionSummary": "You practiced bringing full attention to movement and physical contact with the world.",
+    "journalReflection": "What did slowing down reveal about walking that you usually miss?",
+    "tags": [
+      "mindfulness",
+      "walking",
+      "movement",
+      "grounding",
+      "body awareness"
+    ]
+  },
+  {
+    "id": "exercise_mindfulness_005",
+    "title": "Mindful Eating",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "category": "Mindfulness",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 8,
+    "difficulty": "Beginner",
+    "description": "Use one small bite or sip to practice noticing texture, scent, flavor, and pace.",
+    "steps": [
+      "Choose one bite of food or one sip of a drink.",
+      "Look closely at color, shape, and surface before eating.",
+      "Notice scent and any anticipation in your body.",
+      "Take the bite or sip slowly, tracking texture and flavor as they change.",
+      "Pause before the next bite and notice satisfaction, hunger, or habit."
+    ],
+    "completionSummary": "You practiced savoring and noticing the body during a familiar daily activity.",
+    "journalReflection": "How did attention change the experience of eating or drinking?",
+    "tags": [
+      "mindfulness",
+      "eating",
+      "savoring",
+      "daily practice",
+      "body awareness"
+    ]
+  },
+  {
+    "id": "exercise_mindfulness_006",
+    "title": "Noting Thoughts",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "category": "Mindfulness",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 6,
+    "difficulty": "Intermediate",
+    "description": "Label thoughts as mental events so they can be noticed without automatically becoming commands.",
+    "steps": [
+      "Sit quietly and let thoughts come and go naturally.",
+      "When a thought appears, gently label it 'planning', 'remembering', 'judging', 'worrying', or simply 'thinking'.",
+      "Return attention to the breath or body after each label.",
+      "If the same thought returns, note it again with a neutral tone.",
+      "End by naming one thought pattern you noticed."
+    ],
+    "completionSummary": "You practiced seeing thoughts as passing experiences rather than facts you must obey.",
+    "journalReflection": "Which thought label showed up most often?",
+    "tags": [
+      "mindfulness",
+      "thoughts",
+      "defusion",
+      "noting",
+      "attention"
+    ]
+  },
+  {
+    "id": "exercise_mindfulness_007",
+    "title": "Observing Emotions",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "category": "Mindfulness",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 8,
+    "difficulty": "Intermediate",
+    "description": "Notice an emotion as a changing body experience with a name, location, and intensity.",
+    "steps": [
+      "Choose one emotion that is present enough to observe safely.",
+      "Name the emotion with a simple label, such as sadness, anger, worry, or tenderness.",
+      "Find where it shows up in the body and describe the sensations.",
+      "Rate its intensity from 1 to 10, then breathe with it for one minute.",
+      "Rate it again and note whether it changed, stayed, or moved."
+    ],
+    "completionSummary": "You practiced making room for emotion while tracking it with curiosity.",
+    "journalReflection": "What did the emotion seem to need from you?",
+    "tags": [
+      "mindfulness",
+      "emotions",
+      "acceptance",
+      "body awareness",
+      "self-regulation"
+    ]
+  },
+  {
+    "id": "exercise_mindfulness_008",
+    "title": "Present Moment Anchor",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "category": "Mindfulness",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 4,
+    "difficulty": "Beginner",
+    "description": "Choose one reliable anchor and return to it whenever attention gets pulled away.",
+    "steps": [
+      "Pick an anchor: breath, feet on the floor, hands touching, or a steady sound.",
+      "Rest attention on the anchor for three natural breaths.",
+      "When attention moves away, silently say 'back' and return to the anchor.",
+      "Repeat until the timer ends, letting each return count as the practice."
+    ],
+    "completionSummary": "You strengthened the skill of coming back to the present one return at a time.",
+    "journalReflection": "Which anchor felt most steady today?",
+    "tags": [
+      "mindfulness",
+      "anchor",
+      "attention",
+      "present moment",
+      "quick reset"
+    ]
+  },
+  {
+    "id": "exercise_mindfulness_009",
+    "title": "Sleep Wind-Down Scan",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "category": "Mindfulness",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 10,
+    "difficulty": "Beginner",
+    "description": "A gentle evening scan for releasing the day and preparing the body for rest.",
+    "steps": [
+      "Lie down or sit comfortably and let your eyes close or soften.",
+      "Notice the points where your body is supported.",
+      "Scan from forehead to jaw, shoulders, chest, belly, hips, legs, and feet.",
+      "At each area, invite a small release on the exhale without forcing relaxation.",
+      "End by naming one thing you can set down until tomorrow."
+    ],
+    "completionSummary": "You practiced easing attention out of the day and into physical rest.",
+    "journalReflection": "What felt ready to be released before sleep?",
+    "tags": [
+      "mindfulness",
+      "sleep",
+      "body scan",
+      "wind down",
+      "relaxation"
+    ]
+  },
+  {
+    "id": "exercise_mindfulness_010",
+    "title": "Self-Compassion Pause",
+    "approach": "Mindfulness",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "category": "Mindfulness",
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Exercise",
+    "duration": 7,
+    "difficulty": "Beginner",
+    "description": "Pause during a hard moment to acknowledge pain, shared humanity, and one kind response.",
+    "steps": [
+      "Name the difficult moment in plain language: 'This is hard right now.'",
+      "Place a hand somewhere comforting, such as your chest, arm, or cheek.",
+      "Remind yourself: 'Difficulty is part of being human.'",
+      "Ask: 'What is one kind thing I can offer myself in this moment?'",
+      "Choose a small supportive action, phrase, or boundary."
+    ],
+    "completionSummary": "You practiced meeting difficulty with acknowledgement and kindness instead of criticism.",
+    "journalReflection": "What kind phrase or action felt most believable?",
+    "tags": [
+      "mindfulness",
+      "self-compassion",
+      "kindness",
+      "emotion",
+      "support"
+    ]
+  },
+  {
+    "id": "exercise_positive_001",
+    "title": "Three Good Things",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
+    "category": "Positive Psychology",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 7,
+    "difficulty": "Beginner",
+    "description": "Record three things that went well and explore what helped them happen.",
+    "steps": [
+      "Write down one good thing from today, even if it was small.",
+      "Write a second good thing and name what made it possible.",
+      "Write a third good thing and notice your role, another person's role, or good timing.",
+      "Pause for one breath with each item before finishing."
+    ],
+    "completionSummary": "You practiced training attention toward moments of goodness, contribution, and support.",
+    "journalReflection": "Which good thing do you want to remember tomorrow?",
+    "tags": [
+      "positive psychology",
+      "gratitude",
+      "optimism",
+      "reflection",
+      "wellbeing"
+    ]
+  },
+  {
+    "id": "exercise_positive_002",
+    "title": "Best Possible Self",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
+    "category": "Positive Psychology",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 12,
+    "difficulty": "Intermediate",
+    "description": "Imagine a realistic future where you have moved toward what matters and supported yourself well.",
+    "steps": [
+      "Choose a future time frame, such as six months or one year from now.",
+      "Write about yourself handling life in a way that reflects your values.",
+      "Include concrete details about relationships, health, work, learning, or daily rhythm.",
+      "Identify one strength or habit that helped this future become more likely.",
+      "Pick one small action you can take this week in that direction."
+    ],
+    "completionSummary": "You clarified an energizing future and connected it to one practical next step.",
+    "journalReflection": "What part of this future felt most alive or important?",
+    "tags": [
+      "positive psychology",
+      "future self",
+      "hope",
+      "values",
+      "goal setting"
+    ]
+  },
+  {
+    "id": "exercise_positive_003",
+    "title": "Gratitude Letter",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
+    "category": "Positive Psychology",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 15,
+    "difficulty": "Intermediate",
+    "description": "Write a specific note of appreciation to someone whose actions mattered to you.",
+    "steps": [
+      "Choose someone who helped, encouraged, taught, or supported you.",
+      "Describe what they did in specific detail.",
+      "Write how their action affected you then and how it still matters now.",
+      "Decide whether to send, read, save, or simply use the letter as private reflection.",
+      "Take a moment to notice any warmth, tenderness, or resistance that appears."
+    ],
+    "completionSummary": "You practiced making appreciation specific and visible.",
+    "journalReflection": "What did writing this letter help you recognize?",
+    "tags": [
+      "positive psychology",
+      "gratitude",
+      "relationships",
+      "appreciation",
+      "connection"
+    ]
+  },
+  {
+    "id": "exercise_positive_004",
+    "title": "Savoring a Good Moment",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
+    "category": "Positive Psychology",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 6,
+    "difficulty": "Beginner",
+    "description": "Slow down with one pleasant moment so your mind and body have time to register it.",
+    "steps": [
+      "Choose a recent or current good moment, however ordinary.",
+      "Replay or observe the sensory details: sights, sounds, textures, smells, and feelings.",
+      "Name what made the moment meaningful, enjoyable, or comforting.",
+      "Let yourself stay with the good feeling for three slow breaths.",
+      "Consider one way to make room for similar moments again."
+    ],
+    "completionSummary": "You practiced extending attention toward a positive experience instead of rushing past it.",
+    "journalReflection": "What did you notice when you let the good moment last longer?",
+    "tags": [
+      "positive psychology",
+      "savoring",
+      "joy",
+      "gratitude",
+      "present moment"
+    ]
+  },
+  {
+    "id": "exercise_positive_005",
+    "title": "Strengths Spotting",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
+    "category": "Positive Psychology",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 8,
+    "difficulty": "Beginner",
+    "description": "Notice strengths in yourself or someone else and connect them to real behavior.",
+    "steps": [
+      "Choose yourself or another person to observe kindly.",
+      "Identify one strength shown recently, such as courage, humor, fairness, curiosity, patience, or care.",
+      "Write the specific behavior that showed the strength.",
+      "Name how that strength affected the situation.",
+      "Choose one way to use or appreciate that strength again."
+    ],
+    "completionSummary": "You practiced seeing strengths as observable patterns, not vague compliments.",
+    "journalReflection": "Which strength do you want to notice more often this week?",
+    "tags": [
+      "positive psychology",
+      "strengths",
+      "self-esteem",
+      "relationships",
+      "awareness"
+    ]
+  },
+  {
+    "id": "exercise_positive_006",
+    "title": "Kindness Challenge",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
+    "category": "Positive Psychology",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 10,
+    "difficulty": "Beginner",
+    "description": "Plan one small act of kindness that is realistic, specific, and freely chosen.",
+    "steps": [
+      "Choose a person, group, or place that could use a small supportive action.",
+      "Brainstorm three kind actions that would take ten minutes or less.",
+      "Pick one action that fits your energy and boundaries today.",
+      "Decide when and how you will do it.",
+      "Afterward, notice the effect on you and, if visible, the other person."
+    ],
+    "completionSummary": "You turned kindness into a concrete action while respecting your capacity.",
+    "journalReflection": "How did choosing or doing the kind action affect your mood?",
+    "tags": [
+      "positive psychology",
+      "kindness",
+      "connection",
+      "values",
+      "prosocial"
+    ]
+  },
+  {
+    "id": "exercise_positive_007",
+    "title": "Meaningful Moment Reflection",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
+    "category": "Positive Psychology",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 9,
+    "difficulty": "Beginner",
+    "description": "Reflect on a moment that felt meaningful and identify the value it points toward.",
+    "steps": [
+      "Recall one recent moment that felt meaningful, grounding, or important.",
+      "Describe what happened without judging whether it was big enough.",
+      "Name the value present in the moment, such as care, learning, honesty, courage, beauty, or service.",
+      "Notice what the moment says about what matters to you.",
+      "Choose one small way to honor that value again."
+    ],
+    "completionSummary": "You connected an ordinary moment to a deeper value that can guide future action.",
+    "journalReflection": "What value was asking for more attention?",
+    "tags": [
+      "positive psychology",
+      "meaning",
+      "values",
+      "reflection",
+      "purpose"
+    ]
+  },
+  {
+    "id": "exercise_positive_008",
+    "title": "Hope Mapping",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
+    "category": "Positive Psychology",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 12,
+    "difficulty": "Intermediate",
+    "description": "Build hope by naming a goal, pathways toward it, obstacles, and sources of agency.",
+    "steps": [
+      "Write one goal that matters and is realistic enough to influence.",
+      "List two or three pathways that could move you toward the goal.",
+      "Name one likely obstacle for each pathway.",
+      "For each obstacle, write a backup route or support you could use.",
+      "Choose the first small step and when you will take it."
+    ],
+    "completionSummary": "You practiced hope as a skill: goals, pathways, flexibility, and agency.",
+    "journalReflection": "Which pathway feels most workable right now?",
+    "tags": [
+      "positive psychology",
+      "hope",
+      "goals",
+      "agency",
+      "problem solving"
+    ]
+  },
+  {
+    "id": "exercise_positive_009",
+    "title": "Accomplishment Log",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
+    "category": "Positive Psychology",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 6,
+    "difficulty": "Beginner",
+    "description": "Record small wins to help your brain notice effort, progress, and follow-through.",
+    "steps": [
+      "List three things you did today or recently, including small maintenance tasks.",
+      "For each item, name the effort or strength it required.",
+      "Notice any task you are tempted to dismiss and write why it still counts.",
+      "Choose one accomplishment to acknowledge with a simple phrase: 'That mattered.'"
+    ],
+    "completionSummary": "You practiced recognizing progress that may otherwise pass unnoticed.",
+    "journalReflection": "What accomplishment did you almost overlook?",
+    "tags": [
+      "positive psychology",
+      "accomplishment",
+      "mastery",
+      "confidence",
+      "progress"
+    ]
+  },
+  {
+    "id": "exercise_positive_010",
+    "title": "Appreciation Practice",
+    "approach": "Positive Psychology",
+    "approaches": [
+      "Positive Psychology"
+    ],
+    "category": "Positive Psychology",
+    "topics": [
+      "Stress & Burnout",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 5,
+    "difficulty": "Beginner",
+    "description": "Name one person, place, object, or experience you appreciate and let the feeling become specific.",
+    "steps": [
+      "Choose one thing you appreciate right now.",
+      "Write three specific qualities, actions, or details you value about it.",
+      "Notice how your body responds as you focus on appreciation.",
+      "Decide whether to express the appreciation outwardly or simply carry it with you.",
+      "Take one slow breath before moving on."
+    ],
+    "completionSummary": "You practiced making appreciation concrete, embodied, and available.",
+    "journalReflection": "What detail made your appreciation feel real?",
+    "tags": [
+      "positive psychology",
+      "appreciation",
+      "gratitude",
+      "savoring",
+      "wellbeing"
     ]
   }
 ]

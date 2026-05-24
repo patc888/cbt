@@ -6,6 +6,7 @@ struct MoodCheckinSummaryView: View {
     let intensity: Int
     let emotions: [String]
     let triggers: [String]
+    let activityTags: [String]
     let sensations: [String]
     let contextTags: [String]
     let notes: String
@@ -59,6 +60,10 @@ struct MoodCheckinSummaryView: View {
                         
                     if !triggers.isEmpty {
                         SummaryChipSection(title: "Triggers", icon: "arrow.triangle.branch", items: triggers, accent: accent)
+                    }
+
+                    if !activityTags.isEmpty {
+                        SummaryChipSection(title: "Activities", icon: "square.grid.2x2", items: activityTags, accent: accent)
                     }
 
                     if !sensations.isEmpty {

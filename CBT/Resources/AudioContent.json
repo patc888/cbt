@@ -1,0 +1,125 @@
+[
+  {
+    "id": "audio_mindful_minute_check_in",
+    "title": "Mindful Minute Check-In",
+    "description": "A short mindfulness reset for noticing breath, body, and mood without needing to change anything.",
+    "category": "Mindfulness",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Audio",
+    "duration": 3,
+    "difficulty": "Beginner",
+    "type": "meditation",
+    "localAssetFilename": "mindful-minute-check-in.mp3",
+    "transcript": "Arrive where you are. Let your eyes soften. Notice one breath moving in, and one breath moving out. Name what is present in the body, then let the next breath be simple.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_box_breathing_companion",
+    "title": "Box Breathing Companion",
+    "description": "A guided breathwork track that pairs with the app's box breathing reset.",
+    "category": "Breathwork",
+    "approaches": [
+      "Mindfulness",
+      "CBT"
+    ],
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout",
+      "Sleep & Wind Down"
+    ],
+    "format": "Audio",
+    "duration": 4,
+    "difficulty": "Beginner",
+    "type": "breathwork",
+    "localAssetFilename": "box-breathing-companion.mp3",
+    "transcript": "Inhale for four. Hold gently for four. Exhale for four. Rest for four. Keep the effort soft and steady, following the rhythm without forcing the breath.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_gentle_rain_soundscape",
+    "title": "Gentle Rain",
+    "description": "A looping rain soundscape for background calm during breathing, journaling, or winding down.",
+    "category": "Soundscapes",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "topics": [
+      "Stress & Burnout",
+      "Sleep & Wind Down"
+    ],
+    "format": "Audio",
+    "duration": 15,
+    "difficulty": "Advanced",
+    "type": "soundscape",
+    "localAssetFilename": "Gentle Rain.mp3",
+    "transcript": "Ambient rain soundscape. No spoken guidance.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_ocean_waves_soundscape",
+    "title": "Ocean Waves",
+    "description": "A soft ocean loop prepared for future ambient playback in resets and audio sessions.",
+    "category": "Soundscapes",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "topics": [
+      "Stress & Burnout",
+      "Sleep & Wind Down"
+    ],
+    "format": "Audio",
+    "duration": 15,
+    "difficulty": "Advanced",
+    "type": "soundscape",
+    "localAssetFilename": "Ocean Waves.mp3",
+    "transcript": "Ambient ocean wave soundscape. No spoken guidance.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_sleep_body_scan",
+    "title": "Sleep Body Scan",
+    "description": "A gentle bedtime meditation for releasing tension from head to toe.",
+    "category": "Sleep",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "topics": [
+      "Sleep & Wind Down",
+      "Stress & Burnout"
+    ],
+    "format": "Audio",
+    "duration": 12,
+    "difficulty": "Intermediate",
+    "type": "sleep",
+    "localAssetFilename": "sleep-body-scan.mp3",
+    "transcript": "Let the day be complete for now. Bring attention to the forehead, jaw, shoulders, hands, ribs, belly, legs, and feet. Give each area permission to settle.",
+    "isPremium": true
+  },
+  {
+    "id": "audio_five_senses_grounding",
+    "title": "Five Senses Grounding",
+    "description": "A grounding practice for reconnecting with the room when anxiety feels loud.",
+    "category": "Grounding",
+    "approaches": [
+      "Mindfulness",
+      "DBT"
+    ],
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Audio",
+    "duration": 5,
+    "difficulty": "Beginner",
+    "type": "grounding",
+    "localAssetFilename": "five-senses-grounding.mp3",
+    "transcript": "Name five things you can see. Four things you can feel. Three things you can hear. Two things you can smell. One thing you can taste. Let the room hold you.",
+    "isPremium": false
+  }
+]

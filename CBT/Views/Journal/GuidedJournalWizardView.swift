@@ -1,49 +1,6 @@
 import SwiftUI
 import SwiftData
 
-struct JournalTemplate: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let description: String
-    let prompts: [String]
-    let icon: String
-    let gradientColors: [Color]
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-
-    static func == (lhs: JournalTemplate, rhs: JournalTemplate) -> Bool {
-        lhs.id == rhs.id
-    }
-
-    static let gratitude = JournalTemplate(
-        id: "gratitude_reflection",
-        name: "Gratitude Reflection",
-        description: "Focus on the positive aspects of your day.",
-        prompts: [
-            "What made you smile today?",
-            "Name a person you are thankful for."
-        ],
-        icon: "sun.max.fill",
-        gradientColors: [.orange, .yellow]
-    )
-
-    static let impostorSyndrome = JournalTemplate(
-        id: "impostor_syndrome_unpacker",
-        name: "Impostor Syndrome Unpacker",
-        description: "Examine self-doubt with objective facts.",
-        prompts: [
-            "What achievement are you downplaying right now?",
-            "What objective, factual evidence proves you earned it?"
-        ],
-        icon: "brain.head.profile",
-        gradientColors: [.purple, .indigo]
-    )
-
-    static let allTemplates: [JournalTemplate] = [.gratitude, .impostorSyndrome]
-}
-
 struct GuidedJournalWizardView: View {
     let template: JournalTemplate
     var onSave: (() -> Void)?
@@ -63,6 +20,10 @@ struct GuidedJournalWizardView: View {
     
     private var secondaryAccent: Color {
         themeManager?.secondaryColor ?? .accentColor.opacity(0.8)
+    }
+
+    private var currentStep: JournalPromptStep {
+        template.prompts[currentStepIndex]
     }
 
     init(template: JournalTemplate, onSave: (() -> Void)? = nil) {
@@ -89,7 +50,7 @@ struct GuidedJournalWizardView: View {
                     }
                 }
             }
-            .navigationTitle(template.name)
+            .navigationTitle(template.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -140,32 +101,63 @@ struct GuidedJournalWizardView: View {
                     .background(accent.opacity(0.12))
                     .clipShape(Capsule())
 
+                if let stepTitle = currentStep.title,
+                   !stepTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(stepTitle)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                        .textCase(.uppercase)
+                        .tracking(1)
+                }
+
                 // Prompt
-                Text(template.prompts[currentStepIndex])
+                Text(currentStep.text)
                     .font(.system(size: 22, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Theme.primaryText)
                     .padding(.horizontal, 32)
                     .id(currentStepIndex) // Force re-render for animation
+
+                if let helperText = currentStep.helperText ?? template.helperText,
+                   !helperText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(helperText)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(Theme.secondaryText)
+                        .padding(.horizontal, 36)
+                }
             }
 
             // Text Input Box
-            TextEditor(text: $responses[currentStepIndex])
-                .font(.system(size: 16, design: .rounded))
-                .foregroundStyle(Theme.primaryText)
-                .scrollContentBackground(.hidden)
-                .focused($isEditorFocused)
-                .padding(16)
-                .frame(minHeight: 140, maxHeight: 200)
-                .background(Theme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(
-                            isEditorFocused ? accent.opacity(0.6) : Theme.secondaryText.opacity(0.12),
-                            lineWidth: isEditorFocused ? 1.8 : 0.8
-                        )
-                )
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $responses[currentStepIndex])
+                    .font(.system(size: 16, design: .rounded))
+                    .foregroundStyle(Theme.primaryText)
+                    .scrollContentBackground(.hidden)
+                    .focused($isEditorFocused)
+                    .padding(16)
+                    .frame(minHeight: 140, maxHeight: 200)
+                    .background(Theme.cardBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(
+                                isEditorFocused ? accent.opacity(0.6) : Theme.secondaryText.opacity(0.12),
+                                lineWidth: isEditorFocused ? 1.8 : 0.8
+                            )
+                    )
+
+                if responses[currentStepIndex].isEmpty,
+                   let placeholder = currentStep.placeholder,
+                   !placeholder.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(placeholder)
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText.opacity(0.65))
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 24)
+                        .allowsHitTesting(false)
+                }
+            }
                 .padding(.horizontal, 24)
                 .padding(.top, 24)
                 .animation(.easeInOut(duration: 0.2), value: isEditorFocused)
@@ -274,10 +266,11 @@ struct GuidedJournalWizardView: View {
                     .font(DSTypography.pageTitle)
                     .foregroundStyle(Theme.primaryText)
 
-                Text("Your reflection has been saved.")
+                Text(template.completionMessage)
                     .font(.system(size: 16, weight: .medium, design: .rounded))
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
             }
 
             Spacer()
@@ -311,7 +304,7 @@ struct GuidedJournalWizardView: View {
     private func saveEntry() {
         isEditorFocused = false
         let newEntry = FlexibleJournalEntry(
-            templateType: template.name,
+            templateType: template.storageKey,
             responses: responses
         )
         modelContext.insert(newEntry)
@@ -326,6 +319,6 @@ struct GuidedJournalWizardView: View {
 }
 
 #Preview {
-    GuidedJournalWizardView(template: .gratitude)
+    GuidedJournalWizardView(template: .allTemplates.first ?? .preview)
         .modelContainer(for: FlexibleJournalEntry.self, inMemory: true)
 }

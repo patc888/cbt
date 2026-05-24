@@ -37,29 +37,9 @@ enum MoodColor: Int, CaseIterable {
         ZStack {
             switch self {
             case .veryLow:
-                #if os(macOS) || targetEnvironment(macCatalyst)
-                Image(systemName: MoodColor.frownSymbolName(isFilled: false))
-                    .font(.system(size: 20).weight(.black))
-                    .scaleEffect(1.75)
-                    .offset(y: -1)
-                #else
-                Text("\u{2639}\u{FE0E}")
-                    .font(.system(size: 20).weight(.black))
-                    .scaleEffect(1.75)
-                    .offset(y: -1)
-                #endif
+                MoodColor.frownIcon(isFilled: true)
             case .low:
-                #if os(macOS) || targetEnvironment(macCatalyst)
-                Image(systemName: MoodColor.frownSymbolName(isFilled: true))
-                    .font(.system(size: 20).weight(.black))
-                    .scaleEffect(1.75)
-                    .offset(y: -1)
-                #else
-                Text("\u{2639}\u{FE0E}")
-                    .font(.system(size: 20).weight(.black))
-                    .scaleEffect(1.75)
-                    .offset(y: -1)
-                #endif
+                MoodColor.frownIcon(isFilled: false)
             case .neutral:
                 Image(systemName: "face.smiling")
             case .good:
@@ -70,33 +50,34 @@ enum MoodColor: Int, CaseIterable {
         }
     }
 
-    private static func frownSymbolName(isFilled: Bool) -> String {
+    @ViewBuilder
+    private static func frownIcon(isFilled: Bool) -> some View {
+        if let symbolName = MoodColor.frownSymbolName(isFilled: isFilled) {
+            Image(systemName: symbolName)
+        } else {
+            Text("\u{2639}\u{FE0E}")
+                .fontWeight(isFilled ? .black : .semibold)
+        }
+    }
+
+    private static func frownSymbolName(isFilled: Bool) -> String? {
         // SF Symbols face variants differ across OS versions / SF Symbols packs.
-        // Use availability checks so we don't end up with blank icons.
+        // Fall back to a text frown instead of a blank or smiling icon.
         let outlineCandidates: [String] = [
-            "face.dashed",
-            "face.meh",
             "face.sad",
             "face.frowning",
             "face.frown",
-            "face.smiling.inverse",
-            "face.angry",
         ]
 
         let filledCandidates: [String] = [
-            "face.dashed.fill",
-            "face.meh.fill",
             "face.sad.fill",
             "face.frowning.fill",
             "face.frown.fill",
-            "face.smiling.inverse.fill",
-            "face.angry.fill",
         ]
 
         let candidates = isFilled ? filledCandidates : outlineCandidates
 
         return candidates.first(where: { isSFIconAvailable($0) })
-            ?? (isFilled ? "face.smiling.fill" : "face.smiling")
     }
 
     private static func isSFIconAvailable(_ name: String) -> Bool {

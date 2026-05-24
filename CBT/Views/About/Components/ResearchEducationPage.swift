@@ -49,6 +49,9 @@ struct ResearchEducationPage: View {
                     .font(.caption2)
                     .italic()
                     .foregroundStyle(Theme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -80,10 +83,14 @@ struct ResearchEducationPage: View {
                 Text(text)
                     .font(.subheadline)
                     .foregroundStyle(Theme.primaryText)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text("— \(source)")
                     .font(.caption)
                     .foregroundStyle(Theme.secondaryText.opacity(0.8))
                     .padding(.leading, 8)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(12)
             .background(Theme.cardBackground)

@@ -125,6 +125,10 @@ struct ActivityCompletionView: View {
         activity.completedAt = Date()
         do {
             try modelContext.save()
+            AchievementService.shared.evaluateAchievements(in: modelContext)
+            Task { @MainActor in
+                await PersonalizedReminderService.shared.refreshEnabledReminders(modelContext: modelContext)
+            }
             dismiss()
         } catch {
             errorMessage = error.localizedDescription

@@ -7,7 +7,8 @@ enum CBTModelMigrationPlan: SchemaMigrationPlan {
             CBTVersionedSchemaV1.self,
             CBTVersionedSchemaV2.self,
             CBTVersionedSchemaV3.self,
-            CBTVersionedSchemaV4.self
+            CBTVersionedSchemaV4.self,
+            CBTVersionedSchemaV5.self
         ]
     }
 
@@ -15,7 +16,8 @@ enum CBTModelMigrationPlan: SchemaMigrationPlan {
         [
             .lightweight(fromVersion: CBTVersionedSchemaV1.self, toVersion: CBTVersionedSchemaV2.self),
             .lightweight(fromVersion: CBTVersionedSchemaV2.self, toVersion: CBTVersionedSchemaV3.self),
-            .lightweight(fromVersion: CBTVersionedSchemaV3.self, toVersion: CBTVersionedSchemaV4.self)
+            .lightweight(fromVersion: CBTVersionedSchemaV3.self, toVersion: CBTVersionedSchemaV4.self),
+            .lightweight(fromVersion: CBTVersionedSchemaV4.self, toVersion: CBTVersionedSchemaV5.self)
         ]
     }
 }
@@ -101,6 +103,32 @@ enum CBTVersionedSchemaV4: VersionedSchema {
             LibraryItem.self,
             Course.self,
             Achievement.self
+        ]
+    }
+}
+
+enum CBTVersionedSchemaV5: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 4, 0)
+
+    static var models: [any PersistentModel.Type] {
+        [
+            UserSettings.self,
+            MoodEntry.self,
+            ThoughtRecord.self,
+            ExerciseCompletion.self,
+            JournalEntry.self,
+            PlannedActivity.self,
+            AssessmentLog.self,
+            PersonalityAssessmentLog.self,
+            ProgramProgress.self,
+            FlexibleJournalEntry.self,
+            MoodCheckIn.self,
+            BreathingSession.self,
+            SafetyPlan.self,
+            LibraryItem.self,
+            Course.self,
+            Achievement.self,
+            AudioContent.self
         ]
     }
 }

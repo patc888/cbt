@@ -4,7 +4,7 @@ struct DistortionExamplesView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
     
-    @State private var selectedCategory: String = "All"
+    @State private var selectedCategory: String
     @State private var currentExample: CognitiveDistortionExample?
     
     // Timer state
@@ -15,6 +15,15 @@ struct DistortionExamplesView: View {
     private let timerOptions = [120, 300] // 2m, 5m
     
     private let library = CognitiveDistortionsLibrary.shared
+
+    init(initialCategory: String? = nil) {
+        let category = initialCategory?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let category, !category.isEmpty {
+            self._selectedCategory = State(initialValue: category)
+        } else {
+            self._selectedCategory = State(initialValue: "All")
+        }
+    }
     
     private var allCategories: [String] {
         ["All"] + library.allDistortionNames()

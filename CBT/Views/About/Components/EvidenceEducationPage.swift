@@ -65,10 +65,13 @@ struct EvidenceEducationPage: View {
                         Text("The Weight of Evidence")
                             .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
                         
                         Text("Often, we give 'Negative Evidence' (feelings, past mistakes) too much weight. 'Positive Evidence' (facts, recent successes) is often ignored. CBT balances the scale.")
                             .font(.subheadline)
                             .foregroundStyle(Theme.secondaryText)
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 
@@ -76,6 +79,7 @@ struct EvidenceEducationPage: View {
                     Text("Ask yourself:")
                         .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                     
                     BulletPoint(text: "Is there any other way to look at this?")
                     BulletPoint(text: "If a friend had this thought, what would I say?")
@@ -110,6 +114,8 @@ private struct BulletPoint: View {
             Text(text)
                 .font(.subheadline)
                 .foregroundStyle(Theme.secondaryText)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

@@ -18,21 +18,17 @@ struct JournalSessionsListView: View {
     var body: some View {
         Group {
             if entries.isEmpty {
-                VStack(spacing: 16) {
-                    Spacer()
-                    Image(systemName: "book.pages")
-                        .font(.system(size: 48))
-                        .foregroundStyle(Theme.secondaryText)
-                    Text(String(localized: "No Sessions Yet"))
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
-                    Text(String(localized: "Complete a timed exercise, affirmation, or distortion practice and save it to see entries here."))
-                        .font(.system(size: 14, design: .rounded))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Theme.secondaryText)
-                        .padding(.horizontal, 32)
-                    Spacer()
+                SupportiveEmptyStateView(
+                    systemImage: "book.pages",
+                    title: String(localized: "Saved Sessions"),
+                    message: String(localized: "Saved sessions keep notes from timed practices, exercises, and calming tools in one private place."),
+                    actionTitle: String(localized: "Start Breathing Reset"),
+                    actionSystemImage: "wind"
+                ) {
+                    HapticManager.shared.lightImpact()
+                    BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
                 }
+                .padding(.horizontal, 24)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {

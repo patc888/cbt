@@ -8,97 +8,110 @@ struct NewThoughtRecordFlowView: View {
     @Environment(ThemeManager.self) private var themeManager
     
     @State private var viewModel = NewThoughtRecordViewModel()
+    @State private var completedRecord: ThoughtRecord?
 
     var body: some View {
         NavigationStack {
             ZStack {
-                ThemedBackground().ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    VStack(alignment: .leading, spacing: DSSpacing.small) {
-                        Text("Step \(viewModel.currentStep + 1) of \(viewModel.totalSteps)")
-                            .font(DSTypography.caption)
-                            .foregroundStyle(DSTheme.secondaryText)
+                if let completedRecord {
+                    ThoughtRecordNextStepView(record: completedRecord) {
+                        dismiss()
+                    }
+                } else {
+                    ThemedBackground().ignoresSafeArea()
 
-                        ProgressView(value: Double(viewModel.currentStep + 1), total: Double(viewModel.totalSteps))
-                            .tint(themeManager.selectedColor)
-                            .accessibilityLabel("Step \(viewModel.currentStep + 1) of \(viewModel.totalSteps)")
-                    }
-                    .padding(.horizontal, DSSpacing.large)
-                    .padding(.top, DSSpacing.large)
-                    .padding(.bottom, DSSpacing.small)
-                    
-                    TabView(selection: $viewModel.currentStep) {
-                        ContextStepView(viewModel: viewModel).tag(0)
-                        EmotionStepView(viewModel: viewModel).tag(1)
-                        DistortionStepView(viewModel: viewModel).tag(2)
-                        EvidenceStepView(viewModel: viewModel).tag(3)
-                        BalancedStepView(viewModel: viewModel).tag(4)
-                    }
-                    #if os(iOS)
-                    .tabViewStyle(.page(indexDisplayMode: .never))
-                    #endif
-                    .animation(.easeInOut, value: viewModel.currentStep)
-                    
-                    // Bottom Navigation
-                    HStack(spacing: DSSpacing.medium) {
-                        if viewModel.currentStep > 0 {
-                            Button("Back") {
-                                HapticManager.shared.selection()
-                                moveToPreviousStep()
-                            }
-                            .buttonStyle(DSSecondaryButtonStyle())
-                            .accessibilityLabel("Go back to previous step")
+                    VStack(spacing: 0) {
+                        VStack(alignment: .leading, spacing: DSSpacing.small) {
+                            Text("Step \(viewModel.currentStep + 1) of \(viewModel.totalSteps)")
+                                .font(DSTypography.caption)
+                                .foregroundStyle(DSTheme.secondaryText)
+
+                            ProgressView(value: Double(viewModel.currentStep + 1), total: Double(viewModel.totalSteps))
+                                .tint(themeManager.selectedColor)
+                                .accessibilityLabel("Step \(viewModel.currentStep + 1) of \(viewModel.totalSteps)")
                         }
-                        
-                        Spacer()
-                        
-                        if viewModel.currentStep < viewModel.totalSteps - 1 {
-                            let canProceed = viewModel.currentStep != 0 || viewModel.canSave
-                            Button("Next") {
-                                HapticManager.shared.selection()
-                                moveToNextStep()
-                            }
-                            .buttonStyle(DSPrimaryButtonStyle())
-                            .disabled(!canProceed)
-                            .accessibilityLabel("Go to next step")
-                        } else {
-                            Button("Save") {
-                                HapticManager.shared.success()
-                                viewModel.saveRecord(context: modelContext)
-                                ReviewManager.shared.logSignificantAction()
-                                dismiss()
-                            }
-                            .buttonStyle(DSPrimaryButtonStyle())
-                            .disabled(!viewModel.canSave)
+                        .padding(.horizontal, DSSpacing.large)
+                        .padding(.top, DSSpacing.large)
+                        .padding(.bottom, DSSpacing.small)
+
+                        TabView(selection: $viewModel.currentStep) {
+                            ContextStepView(viewModel: viewModel).tag(0)
+                            EmotionStepView(viewModel: viewModel).tag(1)
+                            DistortionStepView(viewModel: viewModel).tag(2)
+                            EvidenceStepView(viewModel: viewModel).tag(3)
+                            BalancedStepView(viewModel: viewModel).tag(4)
                         }
+                        #if os(iOS)
+                        .tabViewStyle(.page(indexDisplayMode: .never))
+                        #endif
+                        .animation(.easeInOut, value: viewModel.currentStep)
+
+                        HStack(spacing: DSSpacing.medium) {
+                            if viewModel.currentStep > 0 {
+                                Button("Back") {
+                                    HapticManager.shared.selection()
+                                    moveToPreviousStep()
+                                }
+                                .buttonStyle(DSSecondaryButtonStyle())
+                                .accessibilityLabel("Go back to previous step")
+                            }
+
+                            Spacer()
+
+                            if viewModel.currentStep < viewModel.totalSteps - 1 {
+                                let canProceed = viewModel.currentStep != 0 || viewModel.canSave
+                                Button("Next") {
+                                    HapticManager.shared.selection()
+                                    moveToNextStep()
+                                }
+                                .buttonStyle(DSPrimaryButtonStyle())
+                                .disabled(!canProceed)
+                                .accessibilityLabel("Go to next step")
+                            } else {
+                                Button("Save") {
+                                    HapticManager.shared.success()
+                                    if let record = viewModel.saveRecord(context: modelContext) {
+                                        ReviewManager.shared.logSignificantAction()
+                                        completedRecord = record
+                                    }
+                                }
+                                .buttonStyle(DSPrimaryButtonStyle())
+                                .disabled(!viewModel.canSave)
+                            }
+                        }
+                        .padding(.horizontal, DSSpacing.large)
+                        .padding(.top, DSSpacing.small)
+                        .padding(.bottom, DSSpacing.large)
+                        .background(DSTheme.cardBackground.ignoresSafeArea(edges: .bottom))
                     }
-                    .padding(.horizontal, DSSpacing.large)
-                    .padding(.top, DSSpacing.small)
-                    .padding(.bottom, DSSpacing.large)
-                    .background(DSTheme.cardBackground.ignoresSafeArea(edges: .bottom))
                 }
             }
-            .navigationTitle("New Thought Record")
+            .navigationTitle(completedRecord == nil ? "New Thought Record" : "Next Step")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    #if targetEnvironment(macCatalyst)
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(.title3, weight: .semibold))
-                            .foregroundStyle(Theme.secondaryText)
+                    if completedRecord == nil {
+                        #if targetEnvironment(macCatalyst)
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(.title3, weight: .semibold))
+                                .foregroundStyle(Theme.secondaryText)
+                        }
+                        .accessibilityLabel("Cancel")
+                        #else
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                        #endif
+                    } else {
+                        Button("Done") {
+                            dismiss()
+                        }
                     }
-                    .accessibilityLabel("Cancel")
-                    #else
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    #endif
                 }
             }
             #if os(iOS)

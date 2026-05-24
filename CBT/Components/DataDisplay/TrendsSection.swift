@@ -122,7 +122,7 @@ struct TrendsSection: View {
             RangePicker(title: "Mood Trend Range", selection: $selectedRange)
 
             if dailyMoodAverages.isEmpty {
-                Text("No mood data for this range.")
+                Text("Mood trends appear after check-ins in this range. One check-in is enough to begin.")
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 24)

@@ -19,6 +19,7 @@ struct ConclusionEducationPage: View {
                         Text("How to use this app:")
                             .font(.system(.headline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
                         
                         VStack(alignment: .leading, spacing: 12) {
                             BulletItem(icon: "face.smiling", text: "Check into your mood daily to see patterns.")
@@ -35,6 +36,8 @@ struct ConclusionEducationPage: View {
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Theme.secondaryText)
                     .padding(.horizontal, 24)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -53,6 +56,8 @@ struct ConclusionEducationPage: View {
                 Text(text)
                     .font(.subheadline)
                     .foregroundStyle(Theme.secondaryText)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

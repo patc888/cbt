@@ -12,6 +12,9 @@ struct DistortionButton: View {
                 Text(item.title)
                     .font(.system(.headline, design: .rounded).weight(.bold))
                     .foregroundStyle(isSelected ? .white : Theme.primaryText)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer()
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")

@@ -21,6 +21,14 @@ final class ExerciseService {
         exercises.filter { $0.category == category }
     }
 
+    func approaches() -> [String] {
+        exercises.reduce(into: [String]()) { result, exercise in
+            for approach in exercise.displayApproaches where !result.contains(approach) {
+                result.append(approach)
+            }
+        }
+    }
+
     func categories() -> [String] {
         exercises.reduce(into: [String]()) { result, exercise in
             if !result.contains(exercise.category) {

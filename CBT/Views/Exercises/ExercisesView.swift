@@ -42,6 +42,7 @@ private struct ExercisesDashboardContent: View {
 
     private let exerciseService = ExerciseService.shared
     @State private var viewModel = ExercisesViewModel()
+    @State private var selectedApproach: String = "All"
     @State private var selectedCategory: String = "All"
 
     init() {}
@@ -51,16 +52,33 @@ private struct ExercisesDashboardContent: View {
     }
 
     private var categories: [String] {
-        exerciseService.categories()
+        approachFilteredExercises.reduce(into: [String]()) { result, exercise in
+            if !result.contains(exercise.category) {
+                result.append(exercise.category)
+            }
+        }
+    }
+
+    private var approaches: [String] {
+        exerciseService.approaches()
+    }
+
+    private var approachFilters: [String] {
+        ["All"] + approaches
     }
 
     private var categoryFilters: [String] {
         ["All"] + categories
     }
 
+    private var approachFilteredExercises: [Exercise] {
+        if selectedApproach == "All" { return exercises }
+        return exercises.filter { $0.displayApproaches.contains(selectedApproach) }
+    }
+
     private var filteredExercises: [Exercise] {
-        if selectedCategory == "All" { return exercises }
-        return exercises.filter { $0.category == selectedCategory }
+        if selectedCategory == "All" { return approachFilteredExercises }
+        return approachFilteredExercises.filter { $0.category == selectedCategory }
     }
 
     private var groupedExercises: [(category: String, exercises: [Exercise])] {
@@ -111,14 +129,8 @@ private struct ExercisesDashboardContent: View {
                             }
                         }
 
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(categoryFilters, id: \.self) { category in
-                                    categoryChip(category)
-                                }
-                            }
-                            .padding(.vertical, 2)
-                        }
+                        filterChips(title: "Approach", items: approachFilters, chip: approachChip)
+                        filterChips(title: "Category", items: categoryFilters, chip: categoryChip)
 
                         VStack(alignment: .leading, spacing: 14) {
                             ForEach(groupedExercises, id: \.category) { group in
@@ -141,7 +153,7 @@ private struct ExercisesDashboardContent: View {
                             }
                         }
 
-                        if selectedCategory == "All" {
+                        if selectedApproach == "All" && selectedCategory == "All" {
                             personalGrowthCoursesSection
                         }
                     }
@@ -417,6 +429,44 @@ private struct ExercisesDashboardContent: View {
             .accessibilityLabel("\(category) category filter")
     }
 
+    private func approachChip(_ approach: String) -> some View {
+        Button {
+            selectedApproach = approach
+            selectedCategory = "All"
+            HapticManager.shared.lightImpact()
+        } label: {
+            Text(approach)
+                .font(.system(.caption, design: .rounded).weight(.bold))
+                .foregroundStyle(selectedApproach == approach ? Theme.backgroundColor : Theme.primaryText)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(selectedApproach == approach ? themeManager.selectedColor : Theme.tertiaryBackground)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selectedApproach == approach ? .isSelected : [])
+        .accessibilityLabel("\(approach) approach filter")
+    }
+
+    private func filterChips<Chip: View>(
+        title: String,
+        items: [String],
+        chip: @escaping (String) -> Chip
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            sectionTitle(title)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(items, id: \.self) { item in
+                        chip(item)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+    }
+
     private func exerciseCard(_ exercise: Exercise, showCategory: Bool, isComplete: Bool) -> some View {
         NavigationLink(destination: ExerciseDetailView(exercise: exercise)) {
             VStack(alignment: .leading, spacing: 8) {
@@ -428,7 +478,7 @@ private struct ExercisesDashboardContent: View {
                             .multilineTextAlignment(.leading)
 
                         if showCategory {
-                            Text(exercise.category)
+                            Text("\(exercise.displayApproach) - \(exercise.category)")
                                 .font(.system(.caption2, design: .rounded).weight(.bold))
                                 .textCase(.uppercase)
                                 .foregroundStyle(Theme.secondaryText)

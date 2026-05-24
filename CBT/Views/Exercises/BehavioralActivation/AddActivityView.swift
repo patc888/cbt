@@ -139,6 +139,9 @@ struct AddActivityView: View {
         modelContext.insert(newActivity)
         do {
             try modelContext.save()
+            Task { @MainActor in
+                await PersonalizedReminderService.shared.refreshEnabledReminders(modelContext: modelContext)
+            }
             dismiss()
         } catch {
             errorMessage = error.localizedDescription

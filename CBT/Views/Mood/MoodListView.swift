@@ -17,33 +17,17 @@ struct MoodListView: View {
             ThemedBackground().ignoresSafeArea()
             
             if entries.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "face.smiling")
-                        .font(.system(size: 64))
-                        .foregroundColor(Theme.secondaryText)
-                    Text("No mood check-ins yet.")
-                        .font(.system(.headline, design: .rounded).weight(.bold))
-                        .foregroundStyle(Theme.primaryText)
-                    Text("Track how you feel to spot patterns.")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.secondaryText)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                    
-                    Button {
-                        attemptingNewEntry = true
-                    } label: {
-                        Text("Add Check-in")
-                            .bold()
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(themeManager.selectedColor)
-                            .clipShape(Capsule())
-                    }
-                    .padding(.top, 8)
+                SupportiveEmptyStateView(
+                    systemImage: "face.smiling",
+                    title: "Mood Check-Ins",
+                    message: "Mood check-ins are quick snapshots of how you feel, so patterns can become easier to notice later.",
+                    actionTitle: "Add Check-In",
+                    actionSystemImage: "plus.circle.fill"
+                ) {
+                    HapticManager.shared.lightImpact()
+                    attemptingNewEntry = true
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 24)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
@@ -73,17 +57,19 @@ struct MoodListView: View {
             MoodDetailView(entry: entry)
         }
         .safeAreaInset(edge: .top) {
-            HStack {
-                Spacer()
-                ListActionPillButton(
-                    title: "+ Mood",
-                    color: themeManager.selectedColor
-                ) {
-                    attemptingNewEntry = true
+            if !entries.isEmpty {
+                HStack {
+                    Spacer()
+                    ListActionPillButton(
+                        title: "+ Mood",
+                        color: themeManager.selectedColor
+                    ) {
+                        attemptingNewEntry = true
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
         }
         .sheet(isPresented: $showingNewEntry) {
             MoodCheckinView()
@@ -161,11 +147,12 @@ fileprivate struct MoodEntryRow: View {
                     .clipShape(Capsule())
             }
 
-            if !entry.emotions.isEmpty {
+            let visibleTags = entry.emotions + entry.activityTags
+            if !visibleTags.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
-                        ForEach(entry.emotions, id: \.self) { emotion in
-                            TagChip(title: emotion)
+                        ForEach(visibleTags, id: \.self) { tag in
+                            TagChip(title: tag)
                         }
                     }
                 }

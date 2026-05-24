@@ -9,6 +9,7 @@ nonisolated struct MoodEntryExport: Codable, Sendable {
     let triggers: [String]?
     let sensations: [String]?
     let contextTags: [String]?
+    let activityTags: [String]?
     let notes: String?
     let intensity: Int?
 }
@@ -112,6 +113,66 @@ nonisolated struct SafetyPlanExport: Codable, Sendable {
     let copingStrategies: [String]
 }
 
+nonisolated struct UserSettingsExport: Codable, Sendable {
+    let singletonID: String
+    let uuid: UUID?
+    let hapticsEnabled: Bool?
+    let currentIcon: String?
+    let appLockEnabled: Bool?
+    let isPremium: Bool?
+}
+
+nonisolated struct CourseExport: Codable, Sendable {
+    let id: String
+    let title: String
+    let subtitle: String
+    let descriptionText: String
+    let approach: String
+    let category: String
+    let difficulty: String
+    let approaches: [String]
+    let topics: [String]
+    let format: String
+    let estimatedTotalDuration: Int
+    let lessonCount: Int
+    let lessons: [CourseLesson]
+    let linkedExerciseIDs: [String]
+    let linkedGuidedJournalIDs: [String]
+    let finalReflectionPrompt: String?
+    let finalReflectionResponse: String?
+    let isPremium: Bool
+    let itemIDs: [String]
+    let completedItemIDs: [String]
+    let isCompleted: Bool
+    let completedAt: Date?
+}
+
+nonisolated struct AudioContentExport: Codable, Sendable {
+    let id: String
+    let title: String
+    let description: String
+    let category: String
+    let duration: Int
+    let type: AudioContentType
+    let localAssetFilename: String
+    let transcript: String
+    let isPremium: Bool
+    let isCompleted: Bool
+    let completedAt: Date?
+    let isFavorite: Bool
+}
+
+nonisolated struct AchievementExport: Codable, Sendable {
+    let id: UUID
+    let title: String
+    let description: String
+    let imageName: String
+    let isUnlocked: Bool
+    let unlockCondition: AchievementUnlockCondition
+    let createdAt: Date
+    let unlockedAt: Date?
+}
+
 nonisolated struct CBTDataExportPayload: Codable, Sendable {
     let exportedAt: String
     let appVersion: String?
@@ -127,6 +188,10 @@ nonisolated struct CBTDataExportPayload: Codable, Sendable {
     let moodCheckIns: [MoodCheckInExport]?
     let breathingSessions: [BreathingSessionExport]?
     let safetyPlans: [SafetyPlanExport]?
+    let userSettings: [UserSettingsExport]?
+    let courses: [CourseExport]?
+    let audioContents: [AudioContentExport]?
+    let achievements: [AchievementExport]?
 }
 
 struct DataExportService {
@@ -195,6 +260,18 @@ struct DataExportService {
         let safetyPlanDescriptor = FetchDescriptor<SafetyPlan>(
             sortBy: [SortDescriptor(\SafetyPlan.updatedAt, order: .reverse)]
         )
+        let userSettingsDescriptor = FetchDescriptor<UserSettings>(
+            sortBy: [SortDescriptor(\UserSettings.singletonID)]
+        )
+        let courseDescriptor = FetchDescriptor<Course>(
+            sortBy: [SortDescriptor(\Course.title)]
+        )
+        let audioContentDescriptor = FetchDescriptor<AudioContent>(
+            sortBy: [SortDescriptor(\AudioContent.title)]
+        )
+        let achievementDescriptor = FetchDescriptor<Achievement>(
+            sortBy: [SortDescriptor(\Achievement.createdAt)]
+        )
 
         let moodEntries = try modelContext.fetch(moodDescriptor).map {
             MoodEntryExport(
@@ -205,6 +282,7 @@ struct DataExportService {
                 triggers: $0.triggers,
                 sensations: $0.sensations,
                 contextTags: $0.contextTags,
+                activityTags: $0.activityTags,
                 notes: $0.notes,
                 intensity: $0.intensity
             )
@@ -331,6 +409,74 @@ struct DataExportService {
             )
         }
 
+        let userSettings = try modelContext.fetch(userSettingsDescriptor).map {
+            UserSettingsExport(
+                singletonID: $0.singletonID,
+                uuid: $0.uuid,
+                hapticsEnabled: $0.hapticsEnabled,
+                currentIcon: $0.currentIcon,
+                appLockEnabled: $0.appLockEnabled,
+                isPremium: $0.isPremium
+            )
+        }
+
+        let courses = try modelContext.fetch(courseDescriptor).map {
+            CourseExport(
+                id: $0.id,
+                title: $0.title,
+                subtitle: $0.subtitle,
+                descriptionText: $0.descriptionText,
+                approach: $0.approach,
+                category: $0.category,
+                difficulty: $0.difficulty,
+                approaches: $0.approaches,
+                topics: $0.topics,
+                format: $0.format,
+                estimatedTotalDuration: $0.estimatedTotalDuration,
+                lessonCount: $0.lessonCount,
+                lessons: $0.lessons,
+                linkedExerciseIDs: $0.linkedExerciseIDs,
+                linkedGuidedJournalIDs: $0.linkedGuidedJournalIDs,
+                finalReflectionPrompt: $0.finalReflectionPrompt,
+                finalReflectionResponse: $0.finalReflectionResponse,
+                isPremium: $0.isPremium,
+                itemIDs: $0.itemIDs,
+                completedItemIDs: $0.completedItemIDs,
+                isCompleted: $0.isCompleted,
+                completedAt: $0.completedAt
+            )
+        }
+
+        let audioContents = try modelContext.fetch(audioContentDescriptor).map {
+            AudioContentExport(
+                id: $0.id,
+                title: $0.title,
+                description: $0.description,
+                category: $0.category,
+                duration: $0.duration,
+                type: $0.type,
+                localAssetFilename: $0.localAssetFilename,
+                transcript: $0.transcript,
+                isPremium: $0.isPremium,
+                isCompleted: $0.isCompleted,
+                completedAt: $0.completedAt,
+                isFavorite: $0.isFavorite
+            )
+        }
+
+        let achievements = try modelContext.fetch(achievementDescriptor).map {
+            AchievementExport(
+                id: $0.id,
+                title: $0.title,
+                description: $0.description,
+                imageName: $0.imageName,
+                isUnlocked: $0.isUnlocked,
+                unlockCondition: $0.unlockCondition,
+                createdAt: $0.createdAt,
+                unlockedAt: $0.unlockedAt
+            )
+        }
+
         return CBTDataExportPayload(
             exportedAt: Self.makeExportDateString(),
             appVersion: Self.appVersion,
@@ -345,7 +491,11 @@ struct DataExportService {
             flexibleJournalEntries: flexibleJournalEntries,
             moodCheckIns: moodCheckIns,
             breathingSessions: breathingSessions,
-            safetyPlans: safetyPlans
+            safetyPlans: safetyPlans,
+            userSettings: userSettings,
+            courses: courses,
+            audioContents: audioContents,
+            achievements: achievements
         )
     }
 

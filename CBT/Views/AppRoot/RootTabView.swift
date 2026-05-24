@@ -74,16 +74,6 @@ struct RootTabView: View {
                 .toolbar(.hidden, for: .tabBar)
                 #endif
 
-                tabContent(for: .profile) {
-                    ProfileView()
-                }
-                .tag(FloatingTab.profile)
-                #if os(iOS) && !targetEnvironment(macCatalyst)
-                .toolbar(.hidden, for: .tabBar)
-                #elseif os(iOS)
-                .toolbar(.hidden, for: .tabBar)
-                #endif
-
                 tabContent(for: .settings) {
                     SettingsView(showsDismissControl: false)
                 }
@@ -110,6 +100,11 @@ struct RootTabView: View {
         .onReceive(NotificationCenter.default.publisher(for: .contextualNotificationDeepLinkReceived)) { notification in
             guard let deepLink = notification.object as? ContextualNotificationDeepLink else { return }
             handleContextualDeepLink(deepLink)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .appTabSelectionRequested)) { notification in
+            guard let tab = notification.object as? FloatingTab else { return }
+            activatedTabs.insert(tab)
+            selectedTab = tab
         }
         .onReceive(NotificationCenter.default.publisher(for: .exerciseFlowDidEnter)) { _ in
             isInExerciseFlow = true
@@ -202,9 +197,13 @@ struct RootTabView: View {
             }
         case .journal:
             JournalView()
+        case .moodCheckIn:
+            MoodCheckinView()
         case .morningIntentions:
             GuidedPromptView(flow: .flow(for: .morningIntentions))
         case .eveningReflection:
+            GuidedPromptView(flow: .flow(for: .eveningReflection))
+        case .sleepWindDown:
             GuidedPromptView(flow: .flow(for: .eveningReflection))
         case .breathing:
             BreathingResetView(
@@ -212,6 +211,12 @@ struct RootTabView: View {
                 autoStart: true,
                 showsDismissControl: true
             )
+        case .weeklyReport:
+            InsightsView()
+        case .plannedActivity:
+            ActivityPlannerView()
+        case .courseContinuation:
+            LibraryView()
         }
     }
 
@@ -224,14 +229,32 @@ struct RootTabView: View {
         case .journal:
             activatedTabs.insert(.journal)
             selectedTab = .journal
+        case .moodCheckIn:
+            activatedTabs.insert(.home)
+            selectedTab = .home
+            presentedContextualDeepLink = .moodCheckIn
         case .morningIntentions, .eveningReflection:
             activatedTabs.insert(.journal)
             selectedTab = .journal
             presentedContextualDeepLink = deepLink
+        case .sleepWindDown:
+            activatedTabs.insert(.journal)
+            selectedTab = .journal
+            presentedContextualDeepLink = .sleepWindDown
         case .affirmation:
             activatedTabs.insert(.exercises)
             selectedTab = .exercises
             presentedContextualDeepLink = .affirmation
+        case .weeklyReport:
+            activatedTabs.insert(.insights)
+            selectedTab = .insights
+        case .plannedActivity:
+            activatedTabs.insert(.exercises)
+            selectedTab = .exercises
+            presentedContextualDeepLink = .plannedActivity
+        case .courseContinuation:
+            activatedTabs.insert(.exercises)
+            selectedTab = .exercises
         }
     }
 

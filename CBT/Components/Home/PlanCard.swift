@@ -26,6 +26,7 @@ enum PlanCardCompletionState {
 
 struct PlanCard<CTAContent: View>: View {
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.colorScheme) private var colorScheme
     let title: String
     let subtitle: String
     let trailingSymbol: String?
@@ -62,8 +63,18 @@ struct PlanCard<CTAContent: View>: View {
 
     private var checkboxBackground: some View {
         Circle()
-            .fill(completionState.isCompleted ? themeManager.selectedColor.opacity(0.14) : Theme.tertiaryText.opacity(0.08))
-            .frame(width: 30, height: 30)
+            .fill(
+                LinearGradient(
+                    colors: checkboxBackgroundColors,
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .frame(width: 34, height: 34)
+            .overlay {
+                Circle()
+                    .stroke(themeManager.selectedColor.opacity(completionState.isCompleted ? 0.28 : 0.14), lineWidth: 1)
+            }
     }
 
     private var titleStyle: Color {
@@ -85,6 +96,25 @@ struct PlanCard<CTAContent: View>: View {
         return title
     }
 
+    private var checkboxBackgroundColors: [Color] {
+        if completionState.isCompleted {
+            return [
+                themeManager.selectedColor.opacity(colorScheme == .dark ? 0.28 : 0.18),
+                themeManager.secondaryColor.opacity(colorScheme == .dark ? 0.18 : 0.1)
+            ]
+        }
+        return [
+            themeManager.selectedColor.opacity(colorScheme == .dark ? 0.14 : 0.07),
+            Theme.tertiaryText.opacity(0.08)
+        ]
+    }
+
+    private var cardBorderColor: Color {
+        completionState.isCompleted
+            ? themeManager.selectedColor.opacity(0.24)
+            : themeManager.selectedColor.opacity(0.14)
+    }
+
     var body: some View {
         Button(action: {
             HapticManager.shared.mediumImpact()
@@ -100,7 +130,7 @@ struct PlanCard<CTAContent: View>: View {
                             .foregroundStyle(checkboxForegroundStyle)
                             .accessibilityHidden(true)
                     }
-                    .frame(width: 30, height: 30)
+                    .frame(width: 34, height: 34)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(title)
@@ -124,9 +154,17 @@ struct PlanCard<CTAContent: View>: View {
                     if let trailingSymbol {
                         Image(systemName: trailingSymbol)
                             .font(.system(.body, weight: .bold))
-                            .foregroundStyle(themeManager.selectedColor)
-                            .frame(width: 36, height: 36)
-                            .background(themeManager.selectedColor.opacity(0.12), in: Circle())
+                            .foregroundStyle(.white)
+                            .frame(width: 38, height: 38)
+                            .background(
+                                LinearGradient(
+                                    colors: [themeManager.selectedColor, themeManager.secondaryColor],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                in: Circle()
+                            )
+                            .shadow(color: themeManager.selectedColor.opacity(colorScheme == .dark ? 0.26 : 0.16), radius: 10, x: 0, y: 6)
                             .accessibilityHidden(true)
                     }
                 }
@@ -136,7 +174,32 @@ struct PlanCard<CTAContent: View>: View {
             }
             .padding(Theme.paddingMedium)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .cardStyle()
+            .background {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(DSTheme.cardBackground)
+                    .overlay {
+                        LinearGradient(
+                            colors: [
+                                themeManager.selectedColor.opacity(colorScheme == .dark ? 0.16 : 0.08),
+                                themeManager.secondaryColor.opacity(colorScheme == .dark ? 0.1 : 0.04),
+                                .clear
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .strokeBorder(cardBorderColor, lineWidth: 1)
+                    }
+            }
+            .shadow(
+                color: themeManager.selectedColor.opacity(colorScheme == .dark ? 0.14 : 0.05),
+                radius: colorScheme == .dark ? 14 : 8,
+                x: 0,
+                y: colorScheme == .dark ? 9 : 5
+            )
             .contentShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusMedium))
         }
         .buttonStyle(.plain)

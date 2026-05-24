@@ -1,22 +1,35 @@
+import SwiftData
 import SwiftUI
 import UserNotifications
 
 struct RemindersSettingsSection: View {
-    @AppStorage("cbt_moodReminderEnabled") private var moodReminderEnabled = false
-    @AppStorage("cbt_reflectionReminderEnabled") private var reflectionReminderEnabled = false
+    @AppStorage("cbt_moodReminderEnabled") private var dailyMoodCheckInEnabled = false
+    @AppStorage("cbt_reflectionReminderEnabled") private var eveningReflectionEnabled = false
+    @AppStorage("cbt_weeklyReportReminderEnabled") private var weeklyReportEnabled = false
+    @AppStorage("cbt_breathingResetReminderEnabled") private var breathingResetEnabled = false
+    @AppStorage("cbt_plannedActivityReminderEnabled") private var plannedActivityEnabled = false
+    @AppStorage("cbt_courseContinuationReminderEnabled") private var courseContinuationEnabled = false
+    @AppStorage("cbt_sleepWindDownReminderEnabled") private var sleepWindDownEnabled = false
     @AppStorage("cbt_quoteOfTheDayEnabled") private var quoteOfTheDayEnabled = false
 
-    @AppStorage("cbt_moodReminderHour") private var moodReminderHour = 9
-    @AppStorage("cbt_moodReminderMinute") private var moodReminderMinute = 0
-
-    @AppStorage("cbt_reflectionReminderHour") private var reflectionReminderHour = 20
-    @AppStorage("cbt_reflectionReminderMinute") private var reflectionReminderMinute = 0
-
+    @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
     @State private var authorizationStatus: PermissionManager.Status = .notDetermined
     @State private var isShowingPermissionSheet = false
 
+    private let personalizedReminderService = PersonalizedReminderService.shared
     private let dailyReminderService = DailyReminderService.shared
+
+    private var isAnyReminderEnabled: Bool {
+        dailyMoodCheckInEnabled ||
+        eveningReflectionEnabled ||
+        weeklyReportEnabled ||
+        breathingResetEnabled ||
+        plannedActivityEnabled ||
+        courseContinuationEnabled ||
+        sleepWindDownEnabled ||
+        quoteOfTheDayEnabled
+    }
 
     var body: some View {
         SettingsSection(title: String(localized: "Reminders")) {
@@ -24,9 +37,9 @@ struct RemindersSettingsSection: View {
                 icon: "bell.badge.fill",
                 iconColor: themeManager.primaryColor,
                 title: String(localized: "Reminders"),
-                subtitle: String(localized: "Morning intentions, evening reflection, and a daily quote"),
+                subtitle: String(localized: "Personal check-ins, activities, courses, breathing, and sleep"),
                 isOn: Binding(
-                    get: { moodReminderEnabled || reflectionReminderEnabled || quoteOfTheDayEnabled },
+                    get: { isAnyReminderEnabled },
                     set: { newValue in
                         Task {
                             await handleMasterRemindersToggle(newValue)
@@ -40,7 +53,7 @@ struct RemindersSettingsSection: View {
                     icon: "gearshape.2.fill",
                     iconColor: themeManager.primaryColor,
                     title: String(localized: "Advanced Reminders"),
-                    subtitle: String(localized: "Daily check-ins, quote alert, quiet hours")
+                    subtitle: String(localized: "Enable each type and adjust timing")
                 ) {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
@@ -55,7 +68,7 @@ struct RemindersSettingsSection: View {
                         .font(.system(size: 14, weight: .bold, design: .rounded))
                         .foregroundStyle(Theme.primaryColor)
 
-                    Text(String(localized: "Enable notifications in System Settings to receive reminders."))
+                    Text(String(localized: "Enable notifications in System Settings to receive the reminders you choose."))
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(Theme.secondaryText)
 
@@ -89,21 +102,29 @@ struct RemindersSettingsSection: View {
             let canSchedule = await ensureAuthorizationForScheduling()
             guard canSchedule else { return }
             await MainActor.run {
-                moodReminderEnabled = true
-                reflectionReminderEnabled = true
+                dailyMoodCheckInEnabled = true
+                eveningReflectionEnabled = true
+                weeklyReportEnabled = true
+                breathingResetEnabled = true
+                plannedActivityEnabled = true
+                courseContinuationEnabled = true
+                sleepWindDownEnabled = true
                 quoteOfTheDayEnabled = true
             }
-            await scheduleMoodReminderIfAuthorized()
-            await scheduleReflectionReminderIfAuthorized()
-            await scheduleQuoteOfTheDayIfAuthorized()
+            await personalizedReminderService.refreshEnabledReminders(modelContext: modelContext)
+            try? await dailyReminderService.scheduleQuoteOfTheDay()
         } else {
             await MainActor.run {
-                moodReminderEnabled = false
-                reflectionReminderEnabled = false
+                dailyMoodCheckInEnabled = false
+                eveningReflectionEnabled = false
+                weeklyReportEnabled = false
+                breathingResetEnabled = false
+                plannedActivityEnabled = false
+                courseContinuationEnabled = false
+                sleepWindDownEnabled = false
                 quoteOfTheDayEnabled = false
             }
-            dailyReminderService.cancel(.morningIntentions)
-            dailyReminderService.cancel(.eveningReflection)
+            personalizedReminderService.cancelAllPersonalizedReminders()
             dailyReminderService.cancelQuoteOfTheDay()
         }
     }
@@ -115,7 +136,7 @@ struct RemindersSettingsSection: View {
         case .notDetermined:
             let status = await PermissionManager.shared.request(.notifications)
             await refreshAuthorizationStatus()
-            return status == .authorized
+            return status.isAuthorized
         case .denied:
             await MainActor.run {
                 isShowingPermissionSheet = true
@@ -124,28 +145,5 @@ struct RemindersSettingsSection: View {
         case .authorized, .limited:
             return true
         }
-    }
-
-    private func scheduleMoodReminderIfAuthorized() async {
-        guard await ensureAuthorizationForScheduling() else { return }
-        try? await dailyReminderService.schedule(
-            .morningIntentions,
-            hour: moodReminderHour,
-            minute: moodReminderMinute
-        )
-    }
-
-    private func scheduleReflectionReminderIfAuthorized() async {
-        guard await ensureAuthorizationForScheduling() else { return }
-        try? await dailyReminderService.schedule(
-            .eveningReflection,
-            hour: reflectionReminderHour,
-            minute: reflectionReminderMinute
-        )
-    }
-
-    private func scheduleQuoteOfTheDayIfAuthorized() async {
-        guard await ensureAuthorizationForScheduling() else { return }
-        try? await dailyReminderService.scheduleQuoteOfTheDay()
     }
 }

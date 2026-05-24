@@ -8,6 +8,13 @@ struct StreakToolbarButton: View {
     @Query(sort: \ThoughtRecord.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
     @Query(sort: \ExerciseCompletion.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
     @Query(sort: \JournalEntry.createdAt, order: .reverse) private var journalEntries: [JournalEntry]
+    @Query(sort: \MoodCheckIn.createdAt, order: .reverse) private var moodCheckIns: [MoodCheckIn]
+    @Query(sort: \FlexibleJournalEntry.date, order: .reverse) private var flexibleJournalEntries: [FlexibleJournalEntry]
+    @Query(sort: \BreathingSession.createdAt, order: .reverse) private var breathingSessions: [BreathingSession]
+    @Query(sort: \PlannedActivity.createdAt, order: .reverse) private var plannedActivities: [PlannedActivity]
+    @Query(sort: \AssessmentLog.date, order: .reverse) private var assessmentLogs: [AssessmentLog]
+    @Query(sort: \PersonalityAssessmentLog.date, order: .reverse) private var personalityAssessmentLogs: [PersonalityAssessmentLog]
+    @Query(sort: \Course.title) private var courses: [Course]
 
     @State private var showingStreak = false
 
@@ -17,7 +24,20 @@ struct StreakToolbarButton: View {
             moodEntries.compactMap { $0.isDeleted ? nil : calendar.startOfDay(for: $0.createdAt) },
             thoughtRecords.compactMap { $0.isDeleted ? nil : calendar.startOfDay(for: $0.createdAt) },
             exerciseCompletions.compactMap { $0.isDeleted ? nil : calendar.startOfDay(for: $0.createdAt) },
-            journalEntries.compactMap { $0.isDeleted ? nil : calendar.startOfDay(for: $0.createdAt) }
+            journalEntries.compactMap { $0.isDeleted ? nil : calendar.startOfDay(for: $0.createdAt) },
+            moodCheckIns.compactMap { $0.isDeleted ? nil : calendar.startOfDay(for: $0.createdAt) },
+            flexibleJournalEntries.map { calendar.startOfDay(for: $0.date) },
+            breathingSessions.compactMap { $0.isDeleted ? nil : calendar.startOfDay(for: $0.createdAt) },
+            plannedActivities.compactMap { activity in
+                guard !activity.isDeleted, activity.isCompleted else { return nil }
+                return calendar.startOfDay(for: activity.completedAt ?? activity.createdAt)
+            },
+            assessmentLogs.map { calendar.startOfDay(for: $0.date) },
+            personalityAssessmentLogs.map { calendar.startOfDay(for: $0.date) },
+            courses.compactMap { course in
+                guard course.isCompleted, let completedAt = course.completedAt else { return nil }
+                return calendar.startOfDay(for: completedAt)
+            }
         ]
         .reduce(into: Set<Date>()) { $0.formUnion($1) }
     }
@@ -55,7 +75,7 @@ struct StreakToolbarButton: View {
             }
         }
         .sheet(isPresented: $showingStreak) {
-            StreakSheet(activeDays: activeDays, showStreakInToolbar: $showStreakInToolbar)
+            StreakSheet(activeDays: activeDays)
         }
     }
 }
@@ -119,12 +139,14 @@ private struct StreakSnapshot {
 
 private struct StreakSheet: View {
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Query(sort: \Achievement.createdAt) private var achievements: [Achievement]
 
     let activeDays: Set<Date>
-    @Binding var showStreakInToolbar: Bool
     @State private var hasAppeared = false
+    @State private var achievementProgress: [String: AchievementProgress] = [:]
 
     private var snapshot: StreakSnapshot {
         StreakSnapshot(activeDays: activeDays)
@@ -140,10 +162,13 @@ private struct StreakSheet: View {
                     StreakStatsRow(snapshot: snapshot)
                         .streakEntrance(index: 1, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
-                    StreakCalendarMonth(activeDays: snapshot.activeDays, animate: hasAppeared && !reduceMotion)
-                        .streakEntrance(index: 2, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                    AchievementsProfileSection(
+                        achievements: achievements,
+                        progress: achievementProgress
+                    )
+                    .streakEntrance(index: 2, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
-                    streakVisibilityCard
+                    StreakCalendarMonth(activeDays: snapshot.activeDays, animate: hasAppeared && !reduceMotion)
                         .streakEntrance(index: 3, isVisible: hasAppeared, reduceMotion: reduceMotion)
                 }
                 .padding(.horizontal, 16)
@@ -176,24 +201,18 @@ private struct StreakSheet: View {
                     }
                 }
             }
+            .task {
+                refreshAchievements()
+            }
         }
         #if os(iOS)
         .presentationDetents([.large])
         #endif
     }
 
-    private var streakVisibilityCard: some View {
-        DSCardContainer {
-            ToggleRow(
-                icon: "flame.fill",
-                iconColor: themeManager.selectedColor,
-                title: "Show Streak",
-                subtitle: "Display the streak button in the top toolbar.",
-                isOn: $showStreakInToolbar
-            )
-            .padding(.horizontal, -20)
-            .padding(.vertical, -14)
-        }
+    private func refreshAchievements() {
+        AchievementService.shared.evaluateAchievements(in: modelContext)
+        achievementProgress = AchievementService.shared.progressSnapshots(in: modelContext)
     }
 }
 

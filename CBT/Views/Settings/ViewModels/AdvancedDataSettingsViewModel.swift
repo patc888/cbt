@@ -103,12 +103,34 @@ final class AdvancedDataSettingsViewModel {
             let completions = try modelContext.fetch(FetchDescriptor<ExerciseCompletion>())
             let journalEntries = try modelContext.fetch(FetchDescriptor<JournalEntry>())
             let plannedActivities = try modelContext.fetch(FetchDescriptor<PlannedActivity>())
+            let assessmentLogs = try modelContext.fetch(FetchDescriptor<AssessmentLog>())
+            let personalityAssessmentLogs = try modelContext.fetch(FetchDescriptor<PersonalityAssessmentLog>())
+            let programProgresses = try modelContext.fetch(FetchDescriptor<ProgramProgress>())
+            let flexibleJournalEntries = try modelContext.fetch(FetchDescriptor<FlexibleJournalEntry>())
+            let moodCheckIns = try modelContext.fetch(FetchDescriptor<MoodCheckIn>())
+            let breathingSessions = try modelContext.fetch(FetchDescriptor<BreathingSession>())
+            let safetyPlans = try modelContext.fetch(FetchDescriptor<SafetyPlan>())
+            let achievements = try modelContext.fetch(FetchDescriptor<Achievement>())
+            let libraryItems = try modelContext.fetch(FetchDescriptor<LibraryItem>())
+            let courses = try modelContext.fetch(FetchDescriptor<Course>())
+            let audioContents = try modelContext.fetch(FetchDescriptor<AudioContent>())
 
             for record in moodEntries { modelContext.delete(record) }
             for record in thoughtRecords { modelContext.delete(record) }
             for record in completions { modelContext.delete(record) }
             for record in journalEntries { modelContext.delete(record) }
             for record in plannedActivities { modelContext.delete(record) }
+            for record in assessmentLogs { modelContext.delete(record) }
+            for record in personalityAssessmentLogs { modelContext.delete(record) }
+            for record in programProgresses { modelContext.delete(record) }
+            for record in flexibleJournalEntries { modelContext.delete(record) }
+            for record in moodCheckIns { modelContext.delete(record) }
+            for record in breathingSessions { modelContext.delete(record) }
+            for record in safetyPlans { modelContext.delete(record) }
+            for record in achievements { modelContext.delete(record) }
+            for record in libraryItems { modelContext.delete(record) }
+            for record in courses { modelContext.delete(record) }
+            for record in audioContents { modelContext.delete(record) }
 
             try modelContext.save()
 

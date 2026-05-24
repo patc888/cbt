@@ -3,7 +3,6 @@ import SwiftUI
 
 struct SafetyPlanView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(ThemeManager.self) private var themeManager
     @Query(sort: \SafetyPlan.updatedAt, order: .reverse) private var safetyPlans: [SafetyPlan]
 
     private var activePlan: SafetyPlan? {
@@ -30,26 +29,25 @@ struct SafetyPlanView: View {
             }
         }
         .navigationTitle("")
-#if os(iOS)
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
-#endif
+        #endif
     }
 
     private var emptyState: some View {
-        DSCardContainer {
-            VStack(alignment: .leading, spacing: DSSpacing.large) {
-                DSSectionHeader(
-                    title: String(localized: "Create a Safety Plan"),
-                    subtitle: String(localized: "Keep warning signs, coping strategies, and trusted contacts ready for hard moments.")
-                )
-
-                DSPrimaryButton(title: String(localized: "Create Plan")) {
-                    let plan = SafetyPlan()
-                    modelContext.insert(plan)
-                    try? modelContext.save()
-                }
-            }
+        SupportiveEmptyStateView(
+            systemImage: "cross.case.fill",
+            title: String(localized: "Safety Plan"),
+            message: String(localized: "A safety plan keeps warning signs, coping strategies, and trusted contacts nearby for hard moments. It is not emergency care."),
+            actionTitle: String(localized: "Create Safety Plan"),
+            actionSystemImage: "plus.circle.fill"
+        ) {
+            let plan = SafetyPlan()
+            modelContext.insert(plan)
+            try? modelContext.save()
         }
+        .padding(Theme.paddingMedium)
+        .cardStyle()
         .padding(.horizontal, DSSpacing.large)
     }
 
@@ -82,6 +80,7 @@ private struct SafetyPlanEditor: View {
 
     var body: some View {
         VStack(spacing: DSSpacing.large) {
+            supportNotice
             contactsSection
             warningSignsSection
             copingSection
@@ -101,12 +100,28 @@ private struct SafetyPlanEditor: View {
         }
     }
 
+    private var supportNotice: some View {
+        DSCardContainer {
+            HStack(alignment: .top, spacing: DSSpacing.medium) {
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(themeManager.selectedColor)
+                    .padding(.top, 2)
+
+                Text(String(localized: "Use this as a preparation tool for difficult moments. If you may be in immediate danger, contact local emergency services now."))
+                    .font(DSTypography.body)
+                    .foregroundStyle(DSTheme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
     private var contactsSection: some View {
         DSCardContainer {
             VStack(alignment: .leading, spacing: DSSpacing.large) {
                 DSSectionHeader(
-                    title: String(localized: "Emergency Contacts"),
-                    subtitle: String(localized: "People you trust and how to reach them.")
+                    title: String(localized: "Trusted Contacts"),
+                    subtitle: String(localized: "People you may want to reach when extra support would help.")
                 ) {
                     addButton(title: String(localized: "Add Contact")) {
                         contacts.append(EmergencyContact())
@@ -114,7 +129,7 @@ private struct SafetyPlanEditor: View {
                 }
 
                 if contacts.isEmpty {
-                    emptyText(String(localized: "No emergency contacts yet."))
+                    emptyText(String(localized: "Trusted contacts are optional. Add one person you would feel okay reaching out to."))
                 } else {
                     VStack(spacing: DSSpacing.medium) {
                         ForEach($contacts) { $contact in
@@ -132,9 +147,9 @@ private struct SafetyPlanEditor: View {
 
     private var warningSignsSection: some View {
         EditableStringListSection(
-            title: String(localized: "Personal Warning Signs"),
+            title: String(localized: "Warning Signs"),
             subtitle: String(localized: "Thoughts, feelings, body cues, or situations that tell you support may help."),
-            emptyMessage: String(localized: "No warning signs yet."),
+            emptyMessage: String(localized: "Warning signs are personal cues. Add one sign you want your future self to notice."),
             addTitle: String(localized: "Add Sign"),
             placeholder: String(localized: "Warning sign"),
             values: $warningSigns,
@@ -145,8 +160,8 @@ private struct SafetyPlanEditor: View {
     private var copingSection: some View {
         EditableStringListSection(
             title: String(localized: "Coping Strategies"),
-            subtitle: String(localized: "Actions that help you get through the next few minutes safely."),
-            emptyMessage: String(localized: "No coping strategies yet."),
+            subtitle: String(localized: "Actions that may help you get through the next few minutes safely."),
+            emptyMessage: String(localized: "Coping strategies can be small. Add one grounding step, breath practice, or supportive action."),
             addTitle: String(localized: "Add Strategy"),
             placeholder: String(localized: "Coping strategy"),
             values: $copingStrategies,
@@ -190,12 +205,14 @@ private struct SafetyPlanEditor: View {
             .foregroundStyle(DSTheme.secondaryText)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, DSSpacing.small)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func save() {
         plan.emergencyContacts = contacts
         plan.personalWarningSigns = warningSigns
         plan.copingStrategies = copingStrategies
+        plan.updatedAt = Date()
         try? modelContext.save()
     }
 }
@@ -215,9 +232,9 @@ private struct EmergencyContactEditor: View {
 
             TextField(String(localized: "Phone Number"), text: $contact.phoneNumber)
                 .textContentType(.telephoneNumber)
-#if os(iOS)
+                #if os(iOS)
                 .keyboardType(.phonePad)
-#endif
+                #endif
                 .textFieldStyle(.roundedBorder)
 
             TextField(String(localized: "Notes"), text: $contact.notes, axis: .vertical)
@@ -269,6 +286,7 @@ private struct EditableStringListSection: View {
                         .foregroundStyle(DSTheme.secondaryText)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, DSSpacing.small)
+                        .fixedSize(horizontal: false, vertical: true)
                 } else {
                     VStack(spacing: DSSpacing.small) {
                         ForEach(values.indices, id: \.self) { index in

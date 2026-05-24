@@ -51,6 +51,7 @@ struct WeekStripView: View {
 
 struct WeekStripDayView: View {
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.colorScheme) private var colorScheme
     let date: Date
     let isSelected: Bool
     let isToday: Bool
@@ -65,7 +66,6 @@ struct WeekStripDayView: View {
             
             ZStack {
                 if isToday {
-                    // Today ring (subtle pulse-like ring)
                     Circle()
                         .stroke(isSelected ? .white.opacity(0.4) : themeManager.selectedColor.opacity(0.3), lineWidth: 1.5)
                         .frame(width: 36, height: 36)
@@ -83,7 +83,6 @@ struct WeekStripDayView: View {
             }
             .frame(height: 40)
             
-            // Has Activity Indicator
             Circle()
                 .fill(hasActivity ? (isSelected ? .white : themeManager.selectedColor.opacity(0.6)) : Color.clear)
                 .frame(width: 5, height: 5)
@@ -93,8 +92,25 @@ struct WeekStripDayView: View {
         .background {
             if isSelected {
                 RoundedRectangle(cornerRadius: 32, style: .continuous)
-                    .fill(themeManager.selectedColor)
+                    .fill(
+                        LinearGradient(
+                            colors: [themeManager.selectedColor, themeManager.secondaryColor],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                     .matchedGeometryEffect(id: "selectionPill", in: namespace)
+                    .shadow(color: themeManager.selectedColor.opacity(colorScheme == .dark ? 0.35 : 0.18), radius: 12, x: 0, y: 8)
+            } else {
+                RoundedRectangle(cornerRadius: 32, style: .continuous)
+                    .fill(themeManager.selectedColor.opacity(colorScheme == .dark ? 0.08 : 0.035))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 32, style: .continuous)
+                            .strokeBorder(
+                                isToday ? themeManager.selectedColor.opacity(0.24) : Theme.secondaryText.opacity(0.08),
+                                lineWidth: 1
+                            )
+                    }
             }
         }
     }

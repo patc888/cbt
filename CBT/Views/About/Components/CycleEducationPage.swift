@@ -72,10 +72,14 @@ struct CycleEducationPage: View {
                     Text(title)
                         .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(isActive ? Theme.primaryText : Color.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(description)
                         .font(.subheadline)
                         .foregroundStyle(isActive ? Theme.secondaryText : Color.secondary.opacity(0.5))
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 Spacer()
             }
             .opacity(isActive ? 1.0 : 0.4)
