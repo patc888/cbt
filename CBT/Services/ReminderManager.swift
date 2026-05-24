@@ -74,6 +74,7 @@ struct ReminderManager {
         notificationCenter.removePendingNotificationRequests(withIdentifiers: identifiers)
         notificationCenter.removeDeliveredNotifications(withIdentifiers: identifiers)
         ContextualNotificationService.shared.cancelAllContextualNotifications()
+        DailyReminderService.shared.cancelAllDailyReminders()
     }
 
     private func notificationSettings() async -> UNNotificationSettings {

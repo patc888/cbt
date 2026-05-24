@@ -383,23 +383,14 @@ struct AffirmationPlayerView: View {
     }
     
     private func triggerSelectionHaptic() {
-        #if os(iOS)
-        let generator = UISelectionFeedbackGenerator()
-        generator.selectionChanged()
-        #endif
+        HapticManager.shared.selection()
     }
     
     private func triggerSuccessHaptic() {
-        #if os(iOS)
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
-        #endif
+        HapticManager.shared.success()
     }
     
     private func triggerFavoriteHaptic() {
-        #if os(iOS)
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
-        #endif
+        HapticManager.shared.mediumImpact()
     }
 }

@@ -4,6 +4,7 @@ import UserNotifications
 struct AdvancedRemindersView: View {
     @AppStorage("cbt_moodReminderEnabled") private var moodReminderEnabled = false
     @AppStorage("cbt_reflectionReminderEnabled") private var reflectionReminderEnabled = false
+    @AppStorage("cbt_quoteOfTheDayEnabled") private var quoteOfTheDayEnabled = false
     @AppStorage("cbt_contextualBeforeWorkEnabled") private var contextualBeforeWorkEnabled = false
     @AppStorage("cbt_contextualDuringCommuteEnabled") private var contextualDuringCommuteEnabled = false
     @AppStorage("cbt_contextualBeforeBedEnabled") private var contextualBeforeBedEnabled = false
@@ -29,10 +30,8 @@ struct AdvancedRemindersView: View {
     @State private var showingQuietStartPicker = false
     @State private var showingQuietEndPicker = false
 
-    private let reminderManager = ReminderManager.shared
+    private let dailyReminderService = DailyReminderService.shared
     private let contextualNotificationService = ContextualNotificationService.shared
-    private let moodReminderIdentifier = "daily_mood_reminder"
-    private let reflectionReminderIdentifier = "daily_reflection_reminder"
 
     var body: some View {
         ZStack {
@@ -62,12 +61,12 @@ struct AdvancedRemindersView: View {
 
     private var advancedContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            SettingsSection(title: String(localized: "Mood & Reflection")) {
+            SettingsSection(title: String(localized: "Daily Loop")) {
                 ToggleRow(
-                    icon: "face.smiling",
+                    icon: "sun.max.fill",
                     iconColor: themeManager.primaryColor,
-                    title: String(localized: "Mood Check-In"),
-                    subtitle: String(localized: "Daily prompt to log your mood"),
+                    title: String(localized: "Morning Intentions"),
+                    subtitle: String(localized: "Daily prompt-card check-in"),
                     isOn: Binding(
                         get: { moodReminderEnabled },
                         set: { newValue in
@@ -113,7 +112,7 @@ struct AdvancedRemindersView: View {
                     icon: "moon.stars.fill",
                     iconColor: themeManager.primaryColor,
                     title: String(localized: "Evening Reflection"),
-                    subtitle: String(localized: "Evening prompt for exercises"),
+                    subtitle: String(localized: "Daily guided journal prompt"),
                     isOn: Binding(
                         get: { reflectionReminderEnabled },
                         set: { newValue in
@@ -154,6 +153,21 @@ struct AdvancedRemindersView: View {
                         .padding(.horizontal, 16)
                     }
                 }
+
+                ToggleRow(
+                    icon: "quote.opening",
+                    iconColor: themeManager.primaryColor,
+                    title: String(localized: "Quote of the Day"),
+                    subtitle: String(localized: "Daily affirmation at 9:00 AM"),
+                    isOn: Binding(
+                        get: { quoteOfTheDayEnabled },
+                        set: { newValue in
+                            Task {
+                                await handleQuoteOfTheDayToggleChange(newValue)
+                            }
+                        }
+                    )
+                )
             }
 
             SettingsSection(title: String(localized: "Life Events")) {
@@ -305,6 +319,10 @@ struct AdvancedRemindersView: View {
             return "wind"
         case .journal:
             return "book.pages.fill"
+        case .morningIntentions:
+            return "sunrise.fill"
+        case .eveningReflection:
+            return "moon.stars.fill"
         case .affirmation:
             return "sparkles"
         }
@@ -325,6 +343,10 @@ struct AdvancedRemindersView: View {
             return String(localized: "\(triggerLabel) - opens Breathing")
         case .journal:
             return String(localized: "\(triggerLabel) - opens Journal")
+        case .morningIntentions:
+            return String(localized: "\(triggerLabel) - opens Morning Intentions")
+        case .eveningReflection:
+            return String(localized: "\(triggerLabel) - opens Evening Reflection")
         case .affirmation:
             return String(localized: "\(triggerLabel) - opens Affirmations")
         }
@@ -410,7 +432,7 @@ struct AdvancedRemindersView: View {
             await MainActor.run {
                 moodReminderEnabled = false
             }
-            await reminderManager.cancel(moodReminderIdentifier)
+            dailyReminderService.cancel(.morningIntentions)
         }
     }
 
@@ -431,7 +453,28 @@ struct AdvancedRemindersView: View {
             await MainActor.run {
                 reflectionReminderEnabled = false
             }
-            await reminderManager.cancel(reflectionReminderIdentifier)
+            dailyReminderService.cancel(.eveningReflection)
+        }
+    }
+
+    private func handleQuoteOfTheDayToggleChange(_ isEnabled: Bool) async {
+        if isEnabled {
+            let canSchedule = await ensureAuthorizationForScheduling()
+            guard canSchedule else {
+                await MainActor.run {
+                    quoteOfTheDayEnabled = false
+                }
+                return
+            }
+            await MainActor.run {
+                quoteOfTheDayEnabled = true
+            }
+            try? await dailyReminderService.scheduleQuoteOfTheDay()
+        } else {
+            await MainActor.run {
+                quoteOfTheDayEnabled = false
+            }
+            dailyReminderService.cancelQuoteOfTheDay()
         }
     }
 
@@ -439,14 +482,14 @@ struct AdvancedRemindersView: View {
         if isEnabled {
             let canSchedule = await ensureAuthorizationForScheduling()
             guard canSchedule, let template = contextualNotificationService.template(for: lifeEvent) else {
-                await setContextualReminder(lifeEvent, isEnabled: false)
+                setContextualReminder(lifeEvent, isEnabled: false)
                 return
             }
 
-            await setContextualReminder(lifeEvent, isEnabled: true)
+            setContextualReminder(lifeEvent, isEnabled: true)
             try? await contextualNotificationService.schedule(template)
         } else {
-            await setContextualReminder(lifeEvent, isEnabled: false)
+            setContextualReminder(lifeEvent, isEnabled: false)
             contextualNotificationService.cancel(lifeEvent: lifeEvent)
         }
     }
@@ -483,10 +526,8 @@ struct AdvancedRemindersView: View {
 
     private func scheduleMoodReminderIfAuthorized() async {
         guard await ensureAuthorizationForScheduling() else { return }
-        try? await reminderManager.scheduleDaily(
-            identifier: moodReminderIdentifier,
-            title: "How are you feeling?",
-            body: "Take a quick moment to log your mood.",
+        try? await dailyReminderService.schedule(
+            .morningIntentions,
             hour: moodReminderHour,
             minute: moodReminderMinute
         )
@@ -494,10 +535,8 @@ struct AdvancedRemindersView: View {
 
     private func scheduleReflectionReminderIfAuthorized() async {
         guard await ensureAuthorizationForScheduling() else { return }
-        try? await reminderManager.scheduleDaily(
-            identifier: reflectionReminderIdentifier,
-            title: "Evening reflection",
-            body: "Review your thoughts or complete an exercise.",
+        try? await dailyReminderService.schedule(
+            .eveningReflection,
             hour: reflectionReminderHour,
             minute: reflectionReminderMinute
         )

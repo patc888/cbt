@@ -10,6 +10,8 @@ struct CBTDataStore {
         moodScore: Int,
         emotions: [String] = [],
         triggers: [String] = [],
+        sensations: [String] = [],
+        contextTags: [String] = [],
         notes: String? = nil,
         intensity: Int? = nil
     ) throws -> MoodEntry {
@@ -18,11 +20,14 @@ struct CBTDataStore {
             moodScore: moodScore,
             emotions: emotions,
             triggers: triggers,
+            sensations: sensations,
+            contextTags: contextTags,
             notes: notes,
             intensity: intensity
         )
         modelContext.insert(entry)
         try modelContext.save()
+        AchievementService.shared.evaluateAchievements(in: modelContext)
         return entry
     }
 
@@ -53,6 +58,7 @@ struct CBTDataStore {
         )
         modelContext.insert(record)
         try modelContext.save()
+        AchievementService.shared.evaluateAchievements(in: modelContext)
         return record
     }
 
@@ -69,6 +75,7 @@ struct CBTDataStore {
         )
         modelContext.insert(completion)
         try modelContext.save()
+        AchievementService.shared.evaluateAchievements(in: modelContext)
         return completion
     }
 
@@ -91,6 +98,7 @@ struct CBTDataStore {
         )
         modelContext.insert(entry)
         try modelContext.save()
+        AchievementService.shared.evaluateAchievements(in: modelContext)
         return entry
     }
 

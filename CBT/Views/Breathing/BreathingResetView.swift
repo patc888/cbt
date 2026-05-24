@@ -185,6 +185,8 @@ struct BreathingResetView: View {
                 // Save a BreathingSession to SwiftData
                 let session = BreathingSession(durationSeconds: selectedDuration)
                 modelContext.insert(session)
+                try? modelContext.save()
+                AchievementService.shared.evaluateAchievements(in: modelContext)
             }
         }
         .onAppear {

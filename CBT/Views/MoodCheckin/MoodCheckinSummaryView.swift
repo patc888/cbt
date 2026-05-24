@@ -6,113 +6,117 @@ struct MoodCheckinSummaryView: View {
     let intensity: Int
     let emotions: [String]
     let triggers: [String]
+    let sensations: [String]
+    let contextTags: [String]
     let notes: String
     
     let onSave: () -> Void
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 32) {
-                Text("Ready to save?")
-                    .font(DSTypography.pageTitle)
-                    .foregroundStyle(DSTheme.primaryText)
-                    .padding(.top, 24)
-                
-                DSCardContainer {
-                    VStack(spacing: 24) {
-                        HStack(spacing: 20) {
-                            if let mood = color {
-                                ZStack {
-                                    Circle()
-                                        .fill(mood.color(with: themeManager.selectedColor).opacity(0.15))
-                                        .frame(width: 96, height: 96)
-                                    
-                                    mood.iconView
-                                        .font(.system(size: 48))
-                                        .foregroundStyle(mood.color(with: themeManager.selectedColor))
-                                }
+        let accent = color?.color(with: themeManager.selectedColor) ?? themeManager.selectedColor
+
+        MoodStepScaffold(
+            title: "Ready to save?",
+            subtitle: "Here is the shape of this moment before it joins your mood history.",
+            icon: "checkmark.seal",
+            accent: accent,
+            actionTitle: "Save Check-In",
+            action: onSave
+        ) {
+            MoodGlassPanel(accent: accent) {
+                VStack(spacing: 24) {
+                    if let mood = color {
+                        HStack(spacing: 18) {
+                            ZStack {
+                                Circle()
+                                    .fill(accent.opacity(0.14))
+                                    .frame(width: 96, height: 96)
+                                    .overlay(Circle().stroke(accent.opacity(0.22), lineWidth: 1))
                                 
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(mood.label)
-                                        .font(DSTypography.pageTitle)
-                                        .foregroundStyle(DSTheme.primaryText)
-                                    
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "dial.low")
-                                            .foregroundStyle(DSTheme.secondaryText)
-                                        Text("Intensity: \(intensity)/10")
-                                            .font(DSTypography.body.bold())
-                                            .foregroundStyle(DSTheme.secondaryText)
-                                    }
-                                }
-                                Spacer()
+                                mood.iconView
+                                    .font(.system(size: 48))
+                                    .foregroundStyle(accent)
                             }
-                        }
-                        
-                        if !emotions.isEmpty {
-                            Divider()
                             
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Emotions")
-                                    .font(DSTypography.sectionTitle)
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(mood.label)
+                                    .font(DSTypography.pageTitle)
                                     .foregroundStyle(DSTheme.primaryText)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.72)
                                 
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 8) {
-                                        ForEach(emotions, id: \.self) { emotion in
-                                            TagChip(title: emotion)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        
-                        if !triggers.isEmpty {
-                            Divider()
-                            
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Triggers")
-                                    .font(DSTypography.sectionTitle)
-                                    .foregroundStyle(DSTheme.primaryText)
-                                
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 8) {
-                                        ForEach(triggers, id: \.self) { trigger in
-                                            TagChip(title: trigger)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        
-                        let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !trimmedNotes.isEmpty {
-                            Divider()
-                            
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Notes")
-                                    .font(DSTypography.sectionTitle)
-                                    .foregroundStyle(DSTheme.primaryText)
-                                
-                                Text(trimmedNotes)
-                                    .font(DSTypography.body)
+                                Label("Intensity: \(intensity)/10", systemImage: "dial.low")
+                                    .font(DSTypography.body.bold())
                                     .foregroundStyle(DSTheme.secondaryText)
-                                    .lineLimit(3)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            Spacer(minLength: 0)
+                        }
+                    }
+                        
+                    if !emotions.isEmpty {
+                        SummaryChipSection(title: "Emotions", icon: "heart.text.square", items: emotions, accent: accent)
+                    }
+                        
+                    if !triggers.isEmpty {
+                        SummaryChipSection(title: "Triggers", icon: "arrow.triangle.branch", items: triggers, accent: accent)
+                    }
+
+                    if !sensations.isEmpty {
+                        SummaryChipSection(title: "Sensations", icon: "waveform.path.ecg", items: sensations, accent: accent)
+                    }
+
+                    if !contextTags.isEmpty {
+                        SummaryChipSection(title: "Context", icon: "tag", items: contextTags, accent: accent)
+                    }
+                        
+                    let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !trimmedNotes.isEmpty {
+                        Divider()
+                        
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Notes", systemImage: "square.and.pencil")
+                                .font(DSTypography.sectionTitle)
+                                .foregroundStyle(DSTheme.primaryText)
+                            
+                            Text(trimmedNotes)
+                                .font(DSTypography.body)
+                                .foregroundStyle(DSTheme.secondaryText)
+                                .lineLimit(4)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(14)
+                                .background(
+                                    RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous)
+                                        .fill(DSTheme.elevatedFill.opacity(0.42))
+                                )
                         }
                     }
                 }
-                .padding(.horizontal, DSSpacing.large)
-                
-                Button(action: onSave) {
-                    Text("Save Check-In")
-                        .font(DSTypography.body.bold())
-                        .frame(maxWidth: .infinity)
+            }
+        }
+    }
+}
+
+private struct SummaryChipSection: View {
+    let title: String
+    let icon: String
+    let items: [String]
+    let accent: Color
+
+    var body: some View {
+        Divider()
+
+        VStack(alignment: .leading, spacing: 12) {
+            Label(title, systemImage: icon)
+                .font(DSTypography.sectionTitle)
+                .foregroundStyle(DSTheme.primaryText)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(items, id: \.self) { item in
+                        TagChip(title: item)
+                            .background(accent.opacity(0.001))
+                    }
                 }
-                .buttonStyle(DSPrimaryButtonStyle())
-                .padding(.horizontal, DSSpacing.large)
-                .padding(.bottom, DSSpacing.large)
             }
         }
     }

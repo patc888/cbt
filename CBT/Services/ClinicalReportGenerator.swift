@@ -4,7 +4,7 @@ import SwiftData
 import UIKit
 
 @MainActor
-final class ClinicalReportGenerator {
+struct ClinicalReportGenerator {
     struct Report {
         let generatedAt: Date
         let windows: [WindowSummary]

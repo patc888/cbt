@@ -60,6 +60,8 @@ struct DataImportService {
                     moodScore: entry.moodScore,
                     emotions: entry.emotions,
                     triggers: entry.triggers ?? [],
+                    sensations: entry.sensations ?? [],
+                    contextTags: entry.contextTags ?? [],
                     notes: entry.notes,
                     intensity: entry.intensity
                 )
@@ -348,6 +350,8 @@ struct DataImportService {
         mood.moodScore = MoodEntry.clampMoodScore(entry.moodScore)
         mood.emotions = entry.emotions
         mood.triggers = entry.triggers ?? []
+        mood.sensations = entry.sensations ?? []
+        mood.contextTags = entry.contextTags ?? []
         mood.notes = entry.notes
         mood.intensity = entry.intensity
         mood.isDeleted = false

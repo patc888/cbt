@@ -26,6 +26,7 @@ private struct CloudSettingsSyncObserver: View {
     private func syncSettings() async {
         do {
             let settings = try settingsList.first ?? UserSettings.fetchOrCreate(in: modelContext)
+            HapticManager.shared.setEnabled(settings.hapticsEnabled ?? true)
             CloudSettingsManager.shared.syncOnLocalChange(settings: settings)
         } catch {
             Self.logger.error("Failed to bootstrap cloud settings sync: \(error.localizedDescription, privacy: .private)")
@@ -52,13 +53,26 @@ struct CBTApp: App {
     private static let modelContainerBootstrap: ModelContainerBootstrap = {
         // MARK: - Attempt 1: App Group location + CloudKit sync
         do {
-            let container = try ModelContainerRecovery(
+            let recovery = try ModelContainerRecovery(
                 schema: SharedPersistence.schema,
                 groupID: AppConfiguration.appGroupIdentifier
             )
-            .makeModelContainer()
-            logger.info("[SwiftData] Successfully using App Group + CloudKit store")
-            return ModelContainerBootstrap(container: container, cloudKitEnabled: true, recoveryMessage: nil, cloudKitFailureReason: nil)
+            .makeModelContainerRecovery()
+
+            if recovery.cloudKitEnabled {
+                logger.info("[SwiftData] Successfully using App Group + CloudKit store")
+                return ModelContainerBootstrap(container: recovery.container, cloudKitEnabled: true, recoveryMessage: nil, cloudKitFailureReason: nil)
+            }
+
+            let cloudKitFailureReason = recovery.cloudKitFailure.map(Self.userVisibleCloudKitFailureReason(from:))
+                ?? "CloudKit storage could not start. CBT is using local storage for this launch."
+            logger.info("[SwiftData] Successfully using App Group local store after CloudKit recovery fallback")
+            return ModelContainerBootstrap(
+                container: recovery.container,
+                cloudKitEnabled: false,
+                recoveryMessage: "CBT couldn't start iCloud sync and is temporarily using local storage. Your data will stay on this device until iCloud storage opens successfully.",
+                cloudKitFailureReason: cloudKitFailureReason
+            )
         } catch {
             logger.info("[SwiftData] App Group + CloudKit failed: \(String(describing: error), privacy: .public)")
             let cloudKitFailureReason = Self.userVisibleCloudKitFailureReason(from: error)
@@ -152,6 +166,7 @@ struct CBTApp: App {
             }
             .task {
                 securityManager.checkBiometrics()
+                await DailyReminderService.shared.refreshQuoteOfTheDayIfEnabled()
             }
             .environment(themeManager)
             .alert(
@@ -198,6 +213,9 @@ struct CBTApp: App {
                 if newPhase == .active {
                     if !hasCheckedLockOnLaunch {
                         hasCheckedLockOnLaunch = true
+                    }
+                    Task {
+                        await DailyReminderService.shared.refreshQuoteOfTheDayIfEnabled()
                     }
                 }
             }

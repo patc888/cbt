@@ -7,6 +7,8 @@ nonisolated struct MoodEntryExport: Codable, Sendable {
     let moodScore: Int
     let emotions: [String]
     let triggers: [String]?
+    let sensations: [String]?
+    let contextTags: [String]?
     let notes: String?
     let intensity: Int?
 }
@@ -201,6 +203,8 @@ struct DataExportService {
                 moodScore: $0.moodScore,
                 emotions: $0.emotions,
                 triggers: $0.triggers,
+                sensations: $0.sensations,
+                contextTags: $0.contextTags,
                 notes: $0.notes,
                 intensity: $0.intensity
             )

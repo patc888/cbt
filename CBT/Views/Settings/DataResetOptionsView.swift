@@ -209,6 +209,10 @@ struct DataResetOptionsView: View {
             modelContext.delete(record)
         }
 
+        for record in try modelContext.fetch(FetchDescriptor<Achievement>()) {
+            modelContext.delete(record)
+        }
+
         for settings in try modelContext.fetch(FetchDescriptor<UserSettings>()) {
             modelContext.delete(settings)
         }

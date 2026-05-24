@@ -10,6 +10,7 @@ private struct MoodSnapshot: Sendable {
     let moodScore: Int
     let emotions: [String]
     let triggers: [String]
+    let contextTags: [String]
 }
 
 private struct ThoughtSnapshot: Sendable {
@@ -65,6 +66,7 @@ final class InsightsViewModel {
     var topEmotions: [EmotionCount] = []
     var topTriggers: [TriggerCount] = []
     var topDistortions: [DistortionCount] = []
+    var contextTagCorrelations: [ContextTagMoodCorrelation] = []
     
     @MainActor
     func recalculate(
@@ -84,7 +86,8 @@ final class InsightsViewModel {
                 createdAt: $0.createdAt,
                 moodScore: $0.moodScore,
                 emotions: $0.emotions,
-                triggers: $0.triggers
+                triggers: $0.triggers,
+                contextTags: $0.contextTags
             )
         }
         let thoughts = thoughtRecords.map {
@@ -133,6 +136,7 @@ final class InsightsViewModel {
             
             // 5. Overall Averages (for the timeRange)
             let averageMood = filteredMoods.isEmpty ? nil : Double(filteredMoods.map(\.moodScore).reduce(0, +)) / Double(filteredMoods.count)
+            let overallMoodAverage = averageMood ?? 0
             
             let validThoughts = filteredThoughts.filter { (0...100).contains($0.intensityBefore) && (0...100).contains($0.intensityAfter) }
             let averageIntensityImprovement: Int? = validThoughts.isEmpty ? nil : (validThoughts.map { $0.intensityBefore - $0.intensityAfter }.reduce(0, +) / validThoughts.count)
@@ -184,6 +188,35 @@ final class InsightsViewModel {
 
             let topDistortions = distortionCounts.map { DistortionCount(name: $0.key.capitalized, count: $0.value) }
                 .sorted { $0.count > $1.count }.prefix(5).map { $0 }
+
+            let contextTagGroups = Dictionary(grouping: filteredMoods.flatMap { mood in
+                mood.contextTags.map { tag in
+                    (tag: tag.trimmingCharacters(in: .whitespacesAndNewlines), moodScore: mood.moodScore)
+                }
+                .filter { !$0.tag.isEmpty }
+            }) { $0.tag.lowercased() }
+
+            let contextTagCorrelations = contextTagGroups.compactMap { _, values -> ContextTagMoodCorrelation? in
+                guard !values.isEmpty else { return nil }
+                let average = Double(values.map { $0.moodScore }.reduce(0, +)) / Double(values.count)
+                let displayName = values.first?.tag.capitalized ?? ""
+                return ContextTagMoodCorrelation(
+                    name: displayName,
+                    entryCount: values.count,
+                    averageMood: average,
+                    deltaFromOverall: average - overallMoodAverage
+                )
+            }
+            .sorted { first, second in
+                let firstMagnitude = abs(first.deltaFromOverall)
+                let secondMagnitude = abs(second.deltaFromOverall)
+                if firstMagnitude == secondMagnitude {
+                    return first.entryCount > second.entryCount
+                }
+                return firstMagnitude > secondMagnitude
+            }
+            .prefix(5)
+            .map { $0 }
             
             // 8. Weekly Averages (last 8 weeks)
             let eightWeeksMoods = moods.filter { $0.createdAt >= eightWeeksCutoff }
@@ -229,7 +262,7 @@ final class InsightsViewModel {
                     moodGoalProgress, thoughtGoalProgress,
                     exerciseGoalTarget, exerciseProgress, milestonesCompleted,
                     topEmotions, topTriggers, topDistortions,
-                    weeklyMoodAverages, volatility, 0, 0
+                    contextTagCorrelations, weeklyMoodAverages, volatility, 0, 0
                 )
             }
             
@@ -280,7 +313,7 @@ final class InsightsViewModel {
                 moodGoalProgress, thoughtGoalProgress,
                 exerciseGoalTarget, exerciseProgress, milestonesCompleted,
                 topEmotions, topTriggers, topDistortions,
-                weeklyMoodAverages, volatility, cStreak, lStreak
+                contextTagCorrelations, weeklyMoodAverages, volatility, cStreak, lStreak
             )
         }.value
         
@@ -299,10 +332,11 @@ final class InsightsViewModel {
             self.topEmotions = results.11
             self.topTriggers = results.12
             self.topDistortions = results.13
-            self.weeklyMoodAverages = results.14
-            self.moodVolatilityLast30Days = results.15
-            self.currentStreak = results.16
-            self.longestStreak = results.17
+            self.contextTagCorrelations = results.14
+            self.weeklyMoodAverages = results.15
+            self.moodVolatilityLast30Days = results.16
+            self.currentStreak = results.17
+            self.longestStreak = results.18
             
             self.isCalculating = false
         }
@@ -327,7 +361,8 @@ final class InsightsViewModel {
             milestonesCompleted: milestonesCompleted,
             topEmotions: topEmotions,
             topTriggers: topTriggers,
-            topDistortions: topDistortions
+            topDistortions: topDistortions,
+            contextTagCorrelations: contextTagCorrelations
         )
     }
 }

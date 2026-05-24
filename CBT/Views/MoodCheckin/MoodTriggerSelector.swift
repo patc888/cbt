@@ -9,24 +9,40 @@ struct MoodTriggerSelector: View {
         "Work", "Family", "Health", "Sleep", "Social",
         "Finances", "Weather", "News", "Exercise", "Food", "Nothing specific"
     ]
+
+    private let icons: [String: String] = [
+        "Work": "briefcase",
+        "Family": "person.2",
+        "Health": "cross.case",
+        "Sleep": "bed.double",
+        "Social": "bubble.left.and.bubble.right",
+        "Finances": "creditcard",
+        "Weather": "cloud.sun",
+        "News": "newspaper",
+        "Exercise": "figure.walk",
+        "Food": "fork.knife",
+        "Nothing specific": "circle"
+    ]
     
     var body: some View {
-        VStack(spacing: 20) {
-            Spacer().frame(height: 20)
-            
-            Text("What influenced this mood?")
-                .font(DSTypography.pageTitle)
-                .foregroundStyle(DSTheme.primaryText)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-            
-            ScrollView {
+        MoodStepScaffold(
+            title: "What influenced this mood?",
+            subtitle: "Capture the context around the feeling. It helps patterns stand out later.",
+            icon: "arrow.triangle.branch",
+            accent: themeManager.selectedColor,
+            action: onNext
+        ) {
+            MoodGlassPanel(accent: themeManager.selectedColor) {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 12)], spacing: 12) {
                     ForEach(triggers, id: \.self) { trigger in
                         let isSelected = selectedTriggers.contains(trigger)
                         
-                        Button {
-                            HapticManager.shared.lightImpact()
+                        MoodSelectionChip(
+                            title: trigger,
+                            icon: icons[trigger],
+                            isSelected: isSelected,
+                            accent: themeManager.selectedColor
+                        ) {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                                 if trigger == "Nothing specific" {
                                     if isSelected {
@@ -44,42 +60,10 @@ struct MoodTriggerSelector: View {
                                     }
                                 }
                             }
-                        } label: {
-                            Text(trigger)
-                                .font(DSTypography.body)
-                                .multilineTextAlignment(.center)
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.75)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .foregroundColor(isSelected ? .white : DSTheme.primaryText)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 12)
-                                .frame(maxWidth: .infinity)
-                                .background(
-                                    RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous)
-                                        .fill(isSelected ? themeManager.selectedColor : DSTheme.cardBackground)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous)
-                                        .stroke(isSelected ? Color.clear : DSTheme.separator.opacity(0.18), lineWidth: 1)
-                                )
-                                .scaleEffect(isSelected ? 1.05 : 1.0)
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(trigger)
-                        .accessibilityAddTraits(isSelected ? .isSelected : [])
-                        .accessibilityHint(isSelected ? "Removes \(trigger)" : "Adds \(trigger)")
                     }
                 }
-                .padding(.horizontal, DSSpacing.large)
             }
-            
-            Button("Continue") {
-                onNext()
-            }
-            .buttonStyle(DSPrimaryButtonStyle())
-            .padding(.horizontal, DSSpacing.large)
-            .padding(.bottom, DSSpacing.large)
         }
     }
 }

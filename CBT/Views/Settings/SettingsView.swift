@@ -116,20 +116,6 @@ private struct SettingsDashboardContent: View {
             )
 
             SettingsSection(title: String(localized: "Tools")) {
-                NavigationLink(destination: SafetyPlanView()) {
-                    SettingsRow(
-                        icon: "cross.case.fill",
-                        iconColor: DSTheme.destructive,
-                        title: String(localized: "Safety Plan"),
-                        subtitle: String(localized: "Emergency contacts, warning signs, and coping strategies")
-                    ) {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Theme.secondaryText)
-                    }
-                }
-                .buttonStyle(.plain)
-
                 NavigationLink(destination: BreathingResetView()) {
                     SettingsRow(
                         icon: "wind",

@@ -4,6 +4,12 @@ import SwiftData
 import os.log
 
 struct ModelContainerRecovery {
+    struct RecoveryResult {
+        let container: ModelContainer
+        let cloudKitEnabled: Bool
+        let cloudKitFailure: Error?
+    }
+
     private let logger = Logger(subsystem: "com.melichan.CBT", category: "ModelContainerRecovery")
 
     let schema: Schema
@@ -24,13 +30,18 @@ struct ModelContainerRecovery {
     }
 
     func makeModelContainer() throws -> ModelContainer {
+        try makeModelContainerRecovery().container
+    }
+
+    func makeModelContainerRecovery() throws -> RecoveryResult {
         let storeURL = resolvedStoreURL()
         if let storeURL {
             Self.clearLaunchBlockingExtendedAttributes(for: storeURL)
         }
 
         do {
-            return try makePreferredContainer(storeURL: storeURL)
+            let container = try makePreferredContainer(storeURL: storeURL)
+            return RecoveryResult(container: container, cloudKitEnabled: true, cloudKitFailure: nil)
         } catch {
             logger.error("Preferred SwiftData container creation failed: \(String(describing: error), privacy: .public)")
 
@@ -38,9 +49,12 @@ struct ModelContainerRecovery {
                 throw error
             }
 
+            let cloudKitFailure = error
+
             do {
                 logger.warning("Detected likely schema conflict. Retrying without CloudKit before resetting the store.")
-                return try makeLocalOnlyContainer(storeURL: storeURL)
+                let container = try makeLocalOnlyContainer(storeURL: storeURL)
+                return RecoveryResult(container: container, cloudKitEnabled: false, cloudKitFailure: cloudKitFailure)
             } catch {
                 logger.error("Local-only recovery attempt failed: \(String(describing: error), privacy: .public)")
             }
@@ -57,7 +71,8 @@ struct ModelContainerRecovery {
                 logger.warning("Quarantined conflicting store files before reset: \(archivedPaths, privacy: .public)")
             }
 
-            return try makePreferredContainer(storeURL: storeURL)
+            let container = try makePreferredContainer(storeURL: storeURL)
+            return RecoveryResult(container: container, cloudKitEnabled: true, cloudKitFailure: nil)
         }
     }
 

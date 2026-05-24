@@ -186,6 +186,9 @@ final class StorageAuditService {
             let moodCheckIns = try context.fetch(FetchDescriptor<MoodCheckIn>())
             let breathingSessions = try context.fetch(FetchDescriptor<BreathingSession>())
             let safetyPlans = try context.fetch(FetchDescriptor<SafetyPlan>())
+            let libraryItems = try context.fetch(FetchDescriptor<LibraryItem>())
+            let courses = try context.fetch(FetchDescriptor<Course>())
+            let achievements = try context.fetch(FetchDescriptor<Achievement>())
             let settings = try context.fetch(FetchDescriptor<UserSettings>())
 
             var results = [
@@ -201,6 +204,9 @@ final class StorageAuditService {
                 activeCountLine("Mood check-ins", records: moodCheckIns),
                 activeCountLine("Breathing sessions", records: breathingSessions),
                 "Safety plans: \(safetyPlans.count)",
+                "Library items: \(libraryItems.count)",
+                "Courses: \(courses.count)",
+                "Achievements: \(achievements.count)",
                 "User settings records: \(settings.count)"
             ]
 
@@ -216,6 +222,9 @@ final class StorageAuditService {
             appendDuplicateIDCheck("Mood check-ins", ids: moodCheckIns.map(\.id), to: &results)
             appendDuplicateIDCheck("Breathing sessions", ids: breathingSessions.map(\.id), to: &results)
             appendDuplicateIDCheck("Safety plans", ids: safetyPlans.map(\.id), to: &results)
+            appendDuplicateIDCheck("Library items", ids: libraryItems.map(\.id), to: &results)
+            appendDuplicateIDCheck("Courses", ids: courses.map(\.id), to: &results)
+            appendDuplicateIDCheck("Achievements", ids: achievements.map(\.title), to: &results)
 
             if settings.count > 1 {
                 results.append("Issue: Found \(settings.count) UserSettings records. Run database repair to collapse duplicates.")
@@ -232,10 +241,10 @@ final class StorageAuditService {
         return "\(label): \(activeCount) active / \(records.count) total"
     }
 
-    private func appendDuplicateIDCheck(_ label: String, ids: [UUID], to results: inout [String]) {
+    private func appendDuplicateIDCheck<ID: Hashable>(_ label: String, ids: [ID], to results: inout [String]) {
         let duplicateCount = ids.count - Set(ids).count
         if duplicateCount > 0 {
-            results.append("Issue: \(label) contains \(duplicateCount) duplicate id value\(duplicateCount == 1 ? "" : "s").")
+            results.append("Issue: \(label) contains \(duplicateCount) duplicate key value\(duplicateCount == 1 ? "" : "s").")
         }
     }
 
@@ -249,6 +258,7 @@ final class StorageAuditService {
         Task {
             do {
                 var repairedSettings = 0
+                var repairedSeededRecords = 0
                 var descriptor = FetchDescriptor<UserSettings>()
                 descriptor.includePendingChanges = true
                 let allSettings = try context.fetch(descriptor)
@@ -271,9 +281,34 @@ final class StorageAuditService {
                     try context.save()
                 }
 
+                repairedSeededRecords += deleteDuplicateRecords(
+                    try context.fetch(FetchDescriptor<LibraryItem>()),
+                    key: \.id,
+                    in: context
+                )
+                repairedSeededRecords += deleteDuplicateRecords(
+                    try context.fetch(FetchDescriptor<Course>()),
+                    key: \.id,
+                    in: context
+                )
+                repairedSeededRecords += deleteDuplicateRecords(
+                    try context.fetch(FetchDescriptor<Achievement>()),
+                    key: \.title,
+                    in: context
+                )
+
+                if repairedSeededRecords > 0 {
+                    try context.save()
+                }
+
                 var results: [String] = []
-                if repairedSettings > 0 {
-                    results.append("Repaired \(repairedSettings) duplicate or invalid settings record\(repairedSettings == 1 ? "" : "s").")
+                if repairedSettings > 0 || repairedSeededRecords > 0 {
+                    if repairedSettings > 0 {
+                        results.append("Repaired \(repairedSettings) duplicate or invalid settings record\(repairedSettings == 1 ? "" : "s").")
+                    }
+                    if repairedSeededRecords > 0 {
+                        results.append("Repaired \(repairedSeededRecords) duplicate seeded record\(repairedSeededRecords == 1 ? "" : "s").")
+                    }
                     results.insert("Database repair completed. Issues were found and fixed.", at: 0)
                 } else {
                     results.append("Database is healthy. No orphan records found.")
@@ -286,6 +321,24 @@ final class StorageAuditService {
 
             self.isAuditing = false
         }
+    }
+
+    private func deleteDuplicateRecords<Record: PersistentModel, Key: Hashable>(
+        _ records: [Record],
+        key: KeyPath<Record, Key>,
+        in context: ModelContext
+    ) -> Int {
+        let groupedRecords = Dictionary(grouping: records, by: { $0[keyPath: key] })
+        var repairedCount = 0
+
+        for matches in groupedRecords.values where matches.count > 1 {
+            for duplicate in matches.dropFirst() {
+                context.delete(duplicate)
+                repairedCount += 1
+            }
+        }
+
+        return repairedCount
     }
 
     // MARK: - Orphan File Scan

@@ -6,47 +6,77 @@ struct MoodIntensitySelector: View {
     let selectedColor: MoodColor?
     let onNext: () -> Void
     
+    private var accent: Color {
+        selectedColor.map { $0.color(with: themeManager.selectedColor) } ?? themeManager.selectedColor
+    }
+
     var body: some View {
-        GeometryReader { geo in
-            ScrollView {
-                VStack(spacing: 40) {
-                    Text("How strong is this feeling?")
-                        .font(DSTypography.pageTitle)
-                        .foregroundStyle(DSTheme.primaryText)
-                        .multilineTextAlignment(.center)
-                    
-                    VStack(spacing: 24) {
-                        Text("\(Int(intensity))")
-                            .font(.system(size: 64, weight: .bold, design: .rounded))
-                            .minimumScaleFactor(0.5)
-                            .foregroundStyle(selectedColor.map { $0.color(with: themeManager.selectedColor) } ?? themeManager.selectedColor)
-                            .contentTransition(.numericText())
-                            .animation(.spring(), value: intensity)
-                            .accessibilityHidden(true)
-                        
+        MoodStepScaffold(
+            title: "How strong is this feeling?",
+            subtitle: "Set the intensity so today's entry captures the signal, not just the label.",
+            icon: "dial.medium",
+            accent: accent,
+            action: onNext
+        ) {
+            MoodGlassPanel(accent: accent) {
+                VStack(spacing: 26) {
+                    ZStack {
+                        Circle()
+                            .stroke(accent.opacity(0.12), lineWidth: 18)
+                            .frame(width: 168, height: 168)
+
+                        Circle()
+                            .trim(from: 0, to: intensity / 10)
+                            .stroke(
+                                accent,
+                                style: StrokeStyle(lineWidth: 18, lineCap: .round)
+                            )
+                            .frame(width: 168, height: 168)
+                            .rotationEffect(.degrees(-90))
+                            .animation(.spring(response: 0.35, dampingFraction: 0.82), value: intensity)
+
+                        VStack(spacing: 2) {
+                            Text("\(Int(intensity))")
+                                .font(.system(size: 62, weight: .bold, design: .rounded))
+                                .minimumScaleFactor(0.5)
+                                .foregroundStyle(accent)
+                                .contentTransition(.numericText())
+                                .animation(.spring(), value: intensity)
+                                .accessibilityHidden(true)
+
+                            Text("of 10")
+                                .font(DSTypography.caption)
+                                .foregroundStyle(DSTheme.secondaryText)
+                        }
+                    }
+
+                    VStack(spacing: 12) {
                         Slider(value: $intensity, in: 1...10, step: 1) {
                             Text("Intensity")
                         } minimumValueLabel: {
-                            Text("1").font(.caption).foregroundStyle(Theme.secondaryText)
+                            Text("1")
+                                .font(DSTypography.caption)
+                                .foregroundStyle(DSTheme.secondaryText)
                         } maximumValueLabel: {
-                            Text("10").font(.caption).foregroundStyle(Theme.secondaryText)
+                            Text("10")
+                                .font(DSTypography.caption)
+                                .foregroundStyle(DSTheme.secondaryText)
                         }
-                        .tint(selectedColor.map { $0.color(with: themeManager.selectedColor) } ?? themeManager.selectedColor)
-                        .padding(.horizontal, 32)
+                        .tint(accent)
                         .accessibilityValue("\(Int(intensity)) out of 10")
                         .onChange(of: Int(intensity)) { _, _ in
                             HapticManager.shared.lightTick()
                         }
+
+                        HStack {
+                            Text("Gentle")
+                            Spacer()
+                            Text("Intense")
+                        }
+                        .font(DSTypography.caption)
+                        .foregroundStyle(DSTheme.tertiaryText)
                     }
-                    
-                    Button("Continue") {
-                        onNext()
-                    }
-                    .buttonStyle(DSPrimaryButtonStyle())
-                    .padding(.horizontal, DSSpacing.large)
                 }
-                .padding(.bottom, DSSpacing.large)
-                .frame(minHeight: geo.size.height)
             }
         }
     }

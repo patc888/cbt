@@ -116,6 +116,7 @@ private struct HomeDashboardContent: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var viewModel = HomeDashboardViewModel()
     @State private var refreshNonce = 0
+    private var calendar: Calendar { .current }
 
     init(
         selectedTab: Binding<FloatingTab>,
@@ -138,8 +139,6 @@ private struct HomeDashboardContent: View {
     }
 
     var body: some View {
-        let calendar = Calendar.current
-
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 AppScreenHeadline(title: String(localized: "Daily Plan"))
@@ -151,9 +150,8 @@ private struct HomeDashboardContent: View {
                 .padding(.top, 8)
                 .opacity(viewModel.isInitialized ? 1 : 0.6)
 
-                // Elegant new DailyPlanView at the top of primary Home Dashboard view
                 DailyPlanView(
-                    onLogMood: { showingNewMoodEntry = true },
+                    onLogMood: { attemptingNewMoodEntry = true },
                     onDailyBreathing: {
                         BreathingPresenter.shared.present(
                             durationSeconds: 60,
@@ -176,45 +174,25 @@ private struct HomeDashboardContent: View {
                     if !viewModel.isInitialized {
                         HomeDashboardSkeleton()
                     } else {
-                    MoodCheckInPlanCard(
-                        completionState: viewModel.completionSnapshot.state(for: .moodCheckIn),
-                        action: { showingNewMoodEntry = true }
-                    )
+                        Text(String(localized: "More for today"))
+                            .font(.system(.headline, design: .rounded).weight(.bold))
+                            .foregroundStyle(Theme.primaryText)
+                            .padding(.top, 2)
 
-                    ThoughtRecordPlanCard(
-                        completionState: viewModel.completionSnapshot.state(for: .thoughtRecord),
-                        action: { showingNewThoughtRecord = true }
-                    )
+                        ThoughtRecordPlanCard(
+                            completionState: viewModel.completionSnapshot.state(for: .thoughtRecord),
+                            action: { attemptingNewThoughtRecord = true }
+                        )
 
-                    ExercisesPlanCard(
-                        completionState: viewModel.completionSnapshot.state(for: .exercises),
-                        action: { selectedTab = .exercises }
-                    )
+                        TipOfTheDayPlanCard(
+                            completionState: viewModel.completionSnapshot.state(for: .tipOfTheDay),
+                            action: { showingTipModal = true }
+                        )
 
-                    BreathingResetPlanCard(
-                        completionState: viewModel.completionSnapshot.state(for: .breathingReset),
-                        action: {
-                            BreathingPresenter.shared.present(
-                                durationSeconds: 60,
-                                autoStart: true,
-                                onComplete: {
-                                    withAnimation {
-                                        viewModel.markItemAsDone(.breathingReset, for: selectedDate)
-                                    }
-                                }
-                            )
-                        }
-                    )
-
-                    TipOfTheDayPlanCard(
-                        completionState: viewModel.completionSnapshot.state(for: .tipOfTheDay),
-                        action: { showingTipModal = true }
-                    )
-
-                    ActivityPlannerPlanCard(
-                        completionState: viewModel.completionSnapshot.state(for: .activityPlanner),
-                        action: { selectedTab = .exercises } // It's in the Exercises tab
-                    )
+                        ActivityPlannerPlanCard(
+                            completionState: viewModel.completionSnapshot.state(for: .activityPlanner),
+                            action: { selectedTab = .exercises }
+                        )
                     }
                 }
                 .padding(.horizontal, 16)
@@ -247,6 +225,12 @@ private struct HomeDashboardContent: View {
             nonce: refreshNonce
         )) {
             await refreshDashboard()
+        }
+        .withUsageGate(isAttemptingAction: $attemptingNewMoodEntry) {
+            showingNewMoodEntry = true
+        }
+        .withUsageGate(isAttemptingAction: $attemptingNewThoughtRecord) {
+            showingNewThoughtRecord = true
         }
     }
 

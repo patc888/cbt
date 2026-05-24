@@ -219,6 +219,7 @@ struct ExerciseDetailView: View {
 
         do {
             try modelContext.save()
+            AchievementService.shared.evaluateAchievements(in: modelContext)
             refreshCompletions()
             ReviewManager.shared.logSignificantAction()
             if timerManager.isRunning || timerManager.isPaused {

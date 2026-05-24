@@ -30,6 +30,14 @@ struct TriggerCount: Identifiable {
     let count: Int
 }
 
+struct ContextTagMoodCorrelation: Identifiable {
+    let id = UUID()
+    let name: String
+    let entryCount: Int
+    let averageMood: Double
+    let deltaFromOverall: Double
+}
+
 struct InsightsDashboardSnapshot: Sendable {
     let activeDaysCount: Int
     let dailyMoodAverages: [DailyMoodAverage]
@@ -49,4 +57,5 @@ struct InsightsDashboardSnapshot: Sendable {
     let topEmotions: [EmotionCount]
     let topTriggers: [TriggerCount]
     let topDistortions: [DistortionCount]
+    let contextTagCorrelations: [ContextTagMoodCorrelation]
 }

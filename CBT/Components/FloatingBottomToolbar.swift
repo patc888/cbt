@@ -6,6 +6,7 @@ enum FloatingTab: String, CaseIterable, Hashable {
     case assessments = "Assess"
     case exercises = "Exercises"
     case journal = "Journal"
+    case profile = "Profile"
     case settings = "Settings"
 
     var icon: String {
@@ -15,6 +16,7 @@ enum FloatingTab: String, CaseIterable, Hashable {
         case .assessments: return "checklist"
         case .exercises: return "figure.mind.and.body"
         case .journal: return "book.pages"
+        case .profile: return "person.crop.circle"
         case .settings: return "gearshape"
         }
     }

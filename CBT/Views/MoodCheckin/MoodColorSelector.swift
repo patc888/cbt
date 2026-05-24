@@ -6,14 +6,16 @@ struct MoodColorSelector: View {
     let onNext: () -> Void
     
     var body: some View {
-        GeometryReader { geo in
-            ScrollView {
-                VStack(spacing: 40) {
-                    Text("How are you feeling right now?")
-                        .font(DSTypography.pageTitle)
-                        .foregroundStyle(DSTheme.primaryText)
-                        .multilineTextAlignment(.center)
-                    
+        MoodStepScaffold(
+            title: "How are you feeling right now?",
+            subtitle: "Choose the face that feels closest. You can refine the strength next.",
+            icon: "face.smiling",
+            accent: selectedColor?.color(with: themeManager.selectedColor) ?? themeManager.selectedColor,
+            isActionEnabled: selectedColor != nil,
+            action: onNext
+        ) {
+            MoodGlassPanel(accent: selectedColor?.color(with: themeManager.selectedColor) ?? themeManager.selectedColor) {
+                VStack(spacing: 22) {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 12)], spacing: 12) {
                         ForEach(MoodColor.allCases.reversed(), id: \.self) { mood in
                             MoodCircleButton(mood: mood, isSelected: selectedColor == mood) {
@@ -23,28 +25,22 @@ struct MoodColorSelector: View {
                             }
                         }
                     }
-                    .padding(.horizontal, DSSpacing.large)
                     
-                    if let color = selectedColor {
-                        Text(color.label)
-                            .font(.system(.headline, design: .rounded).weight(.bold))
-                            .foregroundStyle(color.color(with: themeManager.selectedColor))
-                            .transition(.opacity.combined(with: .scale))
-                    } else {
-                        Text(" ")
+                    HStack(spacing: 10) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 13, weight: .bold))
+                        Text(selectedColor?.label ?? "Pick a mood")
                             .font(.system(.headline, design: .rounded).weight(.bold))
                     }
-                    
-                    Button("Continue") {
-                        onNext()
-                    }
-                    .buttonStyle(DSPrimaryButtonStyle())
-                    .disabled(selectedColor == nil)
-                    .opacity(selectedColor == nil ? 0.5 : 1.0)
-                    .padding(.horizontal, DSSpacing.large)
+                    .foregroundStyle(selectedColor?.color(with: themeManager.selectedColor) ?? DSTheme.secondaryText)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill((selectedColor?.color(with: themeManager.selectedColor) ?? themeManager.selectedColor).opacity(0.1))
+                    )
+                    .transition(.opacity.combined(with: .scale))
                 }
-                .padding(.bottom, DSSpacing.large)
-                .frame(minHeight: geo.size.height)
             }
         }
     }
@@ -69,17 +65,39 @@ private struct MoodCircleButton: View {
             HapticManager.shared.lightImpact()
             action()
         }) {
-            ZStack {
-                Circle()
-                    .fill(mood.color(with: themeManager.selectedColor).opacity(isSelected ? 0.25 : 0.1))
-                    .frame(width: circleSize, height: circleSize)
-                    .scaleEffect(isSelected ? 1.1 : 1.0)
-                
-                mood.iconView
-                    .font(.system(size: iconSize))
-                    .foregroundStyle(mood.color(with: themeManager.selectedColor))
-                    .scaleEffect(isSelected ? 1.1 : 1.0)
+            VStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    mood.color(with: themeManager.selectedColor).opacity(isSelected ? 0.28 : 0.12),
+                                    mood.color(with: themeManager.selectedColor).opacity(isSelected ? 0.12 : 0.05)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: circleSize, height: circleSize)
+                        .overlay(
+                            Circle()
+                                .stroke(mood.color(with: themeManager.selectedColor).opacity(isSelected ? 0.62 : 0.18), lineWidth: isSelected ? 2 : 1)
+                        )
+                        .shadow(color: isSelected ? mood.color(with: themeManager.selectedColor).opacity(0.22) : .clear, radius: 12, y: 6)
+                    
+                    mood.iconView
+                        .font(.system(size: iconSize))
+                        .foregroundStyle(mood.color(with: themeManager.selectedColor))
+                        .scaleEffect(isSelected ? 1.08 : 1.0)
+                }
+
+                Text(mood.label)
+                    .font(DSTypography.caption)
+                    .foregroundStyle(isSelected ? mood.color(with: themeManager.selectedColor) : DSTheme.secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
+            .frame(minWidth: 76)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(mood.label)

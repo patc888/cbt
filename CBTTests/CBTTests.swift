@@ -16,12 +16,19 @@ final class CBTTests: XCTestCase {
         context.insert(ProgramProgress(programID: "test_program", completedDays: 2))
         context.insert(FlexibleJournalEntry(templateType: "gratitude", responses: ["One", "Two"]))
         context.insert(MoodCheckIn(moodScore: 7, notes: "Settled"))
+        context.insert(MoodEntry(
+            moodScore: 6,
+            sensations: ["tight chest"],
+            contextTags: ["Work"]
+        ))
         context.insert(BreathingSession(durationSeconds: 180))
         context.insert(SafetyPlan(personalWarningSigns: ["Withdrawing"]))
         try context.save()
 
         let payload = try DataExportService().makePayload(from: context)
 
+        XCTAssertEqual(payload.moodEntries.first?.sensations, ["tight chest"])
+        XCTAssertEqual(payload.moodEntries.first?.contextTags, ["Work"])
         XCTAssertEqual(payload.programProgresses?.count, 1)
         XCTAssertEqual(payload.flexibleJournalEntries?.count, 1)
         XCTAssertEqual(payload.moodCheckIns?.count, 1)

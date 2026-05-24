@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import AVFoundation
+import OSLog
 
 enum BreathingPhase {
     case inhale
@@ -19,6 +20,8 @@ struct BreathingState {
 
 @MainActor
 final class BreathingEngine: ObservableObject {
+    private static let logger = AppLogger.make(category: "BreathingEngine")
+
     @Published private(set) var state: BreathingState
     @Published public var currentAmbientSound: String = "None"
 
@@ -208,7 +211,7 @@ final class BreathingEngine: ObservableObject {
         // Graceful Degradation Check: Verify if the audio file exists in the bundle
         guard let url = Bundle.main.url(forResource: soundName, withExtension: "mp3") else {
             // Log warning and degrade gracefully by reverting sound to None without failing
-            print("⚠️ [BreathingEngine] Graceful Degradation: Ambient sound file not found: '\(soundName).mp3'. Please check Xcode target membership.")
+            Self.logger.warning("Ambient sound file not found: \(soundName, privacy: .public).mp3")
             currentAmbientSound = "None"
             return
         }
@@ -234,7 +237,7 @@ final class BreathingEngine: ObservableObject {
             }
         } catch {
             // Catch all audio initialization errors gracefully and fallback
-            print("⚠️ [BreathingEngine] Graceful Degradation: Failed to initialize audio player for '\(soundName)': \(error.localizedDescription)")
+            Self.logger.warning("Failed to initialize ambient audio player for \(soundName, privacy: .public): \(error.localizedDescription, privacy: .private)")
             self.audioPlayer = nil
             self.currentAmbientSound = "None"
         }

@@ -13,6 +13,8 @@ final class MoodEntry: SoftDeletableRecord {
     // Check-in V2 fields
     var intensity: Int?
     var triggersStorage: String?
+    var sensationsStorage: String?
+    var contextTagsStorage: String?
 
     var emotions: [String] {
         get { StringArrayStorage.decode(emotionsStorage) }
@@ -29,12 +31,34 @@ final class MoodEntry: SoftDeletableRecord {
         set { triggersStorage = StringArrayStorage.encode(newValue) }
     }
 
+    var sensations: [String] {
+        get {
+            if let sensationsStorage = sensationsStorage {
+                return StringArrayStorage.decode(sensationsStorage)
+            }
+            return []
+        }
+        set { sensationsStorage = StringArrayStorage.encode(newValue) }
+    }
+
+    var contextTags: [String] {
+        get {
+            if let contextTagsStorage = contextTagsStorage {
+                return StringArrayStorage.decode(contextTagsStorage)
+            }
+            return []
+        }
+        set { contextTagsStorage = StringArrayStorage.encode(newValue) }
+    }
+
     init(
         id: UUID = UUID(),
         createdAt: Date = Date(),
         moodScore: Int,
         emotions: [String] = [],
         triggers: [String] = [],
+        sensations: [String] = [],
+        contextTags: [String] = [],
         notes: String? = nil,
         intensity: Int? = nil,
         isDeleted: Bool = false
@@ -44,6 +68,8 @@ final class MoodEntry: SoftDeletableRecord {
         self.moodScore = Self.clampMoodScore(moodScore)
         self.emotionsStorage = StringArrayStorage.encode(emotions)
         self.triggersStorage = StringArrayStorage.encode(triggers)
+        self.sensationsStorage = StringArrayStorage.encode(sensations)
+        self.contextTagsStorage = StringArrayStorage.encode(contextTags)
         self.notes = notes
         self.intensity = intensity
         self.isDeleted = isDeleted

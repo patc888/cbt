@@ -31,6 +31,7 @@ final class SettingsViewModel {
 
         self.settings = settings
         self.hapticsEnabled = settings?.hapticsEnabled ?? true
+        HapticManager.shared.setEnabled(self.hapticsEnabled)
         self.appLockEnabled = settings?.appLockEnabled ?? false
         self.currentIcon = settings?.currentIcon
         self.isInitialized = true
@@ -39,6 +40,7 @@ final class SettingsViewModel {
     @MainActor
     func updateHaptics(_ enabled: Bool) {
         hapticsEnabled = enabled
+        HapticManager.shared.setEnabled(enabled)
         update { $0.hapticsEnabled = enabled }
     }
 

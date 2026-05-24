@@ -315,6 +315,8 @@ struct GuidedJournalWizardView: View {
             responses: responses
         )
         modelContext.insert(newEntry)
+        try? modelContext.save()
+        AchievementService.shared.evaluateAchievements(in: modelContext)
 
         withAnimation {
             isCompleted = true

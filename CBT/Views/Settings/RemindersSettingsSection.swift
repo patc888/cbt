@@ -4,6 +4,7 @@ import UserNotifications
 struct RemindersSettingsSection: View {
     @AppStorage("cbt_moodReminderEnabled") private var moodReminderEnabled = false
     @AppStorage("cbt_reflectionReminderEnabled") private var reflectionReminderEnabled = false
+    @AppStorage("cbt_quoteOfTheDayEnabled") private var quoteOfTheDayEnabled = false
 
     @AppStorage("cbt_moodReminderHour") private var moodReminderHour = 9
     @AppStorage("cbt_moodReminderMinute") private var moodReminderMinute = 0
@@ -15,9 +16,7 @@ struct RemindersSettingsSection: View {
     @State private var authorizationStatus: PermissionManager.Status = .notDetermined
     @State private var isShowingPermissionSheet = false
 
-    private let reminderManager = ReminderManager.shared
-    private let moodReminderIdentifier = "daily_mood_reminder"
-    private let reflectionReminderIdentifier = "daily_reflection_reminder"
+    private let dailyReminderService = DailyReminderService.shared
 
     var body: some View {
         SettingsSection(title: String(localized: "Reminders")) {
@@ -25,9 +24,9 @@ struct RemindersSettingsSection: View {
                 icon: "bell.badge.fill",
                 iconColor: themeManager.primaryColor,
                 title: String(localized: "Reminders"),
-                subtitle: String(localized: "Daily mood check-in and evening reflection"),
+                subtitle: String(localized: "Morning intentions, evening reflection, and a daily quote"),
                 isOn: Binding(
-                    get: { moodReminderEnabled || reflectionReminderEnabled },
+                    get: { moodReminderEnabled || reflectionReminderEnabled || quoteOfTheDayEnabled },
                     set: { newValue in
                         Task {
                             await handleMasterRemindersToggle(newValue)
@@ -41,7 +40,7 @@ struct RemindersSettingsSection: View {
                     icon: "gearshape.2.fill",
                     iconColor: themeManager.primaryColor,
                     title: String(localized: "Advanced Reminders"),
-                    subtitle: String(localized: "Mood check-in, evening reflection, quiet hours")
+                    subtitle: String(localized: "Daily check-ins, quote alert, quiet hours")
                 ) {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
@@ -92,16 +91,20 @@ struct RemindersSettingsSection: View {
             await MainActor.run {
                 moodReminderEnabled = true
                 reflectionReminderEnabled = true
+                quoteOfTheDayEnabled = true
             }
             await scheduleMoodReminderIfAuthorized()
             await scheduleReflectionReminderIfAuthorized()
+            await scheduleQuoteOfTheDayIfAuthorized()
         } else {
             await MainActor.run {
                 moodReminderEnabled = false
                 reflectionReminderEnabled = false
+                quoteOfTheDayEnabled = false
             }
-            await reminderManager.cancel(moodReminderIdentifier)
-            await reminderManager.cancel(reflectionReminderIdentifier)
+            dailyReminderService.cancel(.morningIntentions)
+            dailyReminderService.cancel(.eveningReflection)
+            dailyReminderService.cancelQuoteOfTheDay()
         }
     }
 
@@ -125,10 +128,8 @@ struct RemindersSettingsSection: View {
 
     private func scheduleMoodReminderIfAuthorized() async {
         guard await ensureAuthorizationForScheduling() else { return }
-        try? await reminderManager.scheduleDaily(
-            identifier: moodReminderIdentifier,
-            title: "How are you feeling?",
-            body: "Take a quick moment to log your mood.",
+        try? await dailyReminderService.schedule(
+            .morningIntentions,
             hour: moodReminderHour,
             minute: moodReminderMinute
         )
@@ -136,12 +137,15 @@ struct RemindersSettingsSection: View {
 
     private func scheduleReflectionReminderIfAuthorized() async {
         guard await ensureAuthorizationForScheduling() else { return }
-        try? await reminderManager.scheduleDaily(
-            identifier: reflectionReminderIdentifier,
-            title: "Evening reflection",
-            body: "Review your thoughts or complete an exercise.",
+        try? await dailyReminderService.schedule(
+            .eveningReflection,
             hour: reflectionReminderHour,
             minute: reflectionReminderMinute
         )
+    }
+
+    private func scheduleQuoteOfTheDayIfAuthorized() async {
+        guard await ensureAuthorizationForScheduling() else { return }
+        try? await dailyReminderService.scheduleQuoteOfTheDay()
     }
 }

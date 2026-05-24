@@ -1,6 +1,7 @@
 #if os(iOS) && !targetEnvironment(macCatalyst)
 import UIKit
 import QuartzCore
+import AudioToolbox
 
 /// Haptic intents for consistent feedback across the app. Use HapticManager.shared.trigger(_:) or the convenience methods.
 enum HapticType {
@@ -17,6 +18,7 @@ final class HapticManager {
     // MARK: - Persistence
     private let defaults: UserDefaults
     private let hapticsEnabledKey = "hapticsEnabled"
+    private let soundsEnabledKey = "interactionSoundsEnabled"
     private let strongHapticsKey = "strongHapticsEnabled"
     
     // MARK: - Generators
@@ -31,6 +33,8 @@ final class HapticManager {
     private let selectionDebounceInterval: CFTimeInterval = 0.3
     private var lastLightTickTimestamp: CFTimeInterval = 0
     private let lightTickInterval: CFTimeInterval = 0.15
+    private var lastSoundTimestamp: CFTimeInterval = 0
+    private let soundDebounceInterval: CFTimeInterval = 0.08
     
     // MARK: - Init
     private init(defaults: UserDefaults = UserDefaults.standard) {
@@ -47,11 +51,18 @@ final class HapticManager {
         guard defaults.object(forKey: strongHapticsKey) != nil else { return false }
         return defaults.bool(forKey: strongHapticsKey)
     }
+    var isSoundEnabled: Bool {
+        guard defaults.object(forKey: soundsEnabledKey) != nil else { return true }
+        return defaults.bool(forKey: soundsEnabledKey)
+    }
     
     // MARK: - Public API
     func setEnabled(_ enabled: Bool) {
         defaults.set(enabled, forKey: hapticsEnabledKey)
         if enabled { prepareGenerators() }
+    }
+    func setSoundEnabled(_ enabled: Bool) {
+        defaults.set(enabled, forKey: soundsEnabledKey)
     }
     func setStrongEnabled(_ enabled: Bool) {
         defaults.set(enabled, forKey: strongHapticsKey)
@@ -74,7 +85,6 @@ final class HapticManager {
     }
     
     func errorDouble() {
-        guard isEnabled else { return }
         notification(.error)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             self.heavyImpact()
@@ -82,42 +92,42 @@ final class HapticManager {
     }
     
     func selection() {
-        guard isEnabled else { return }
-        throttle(interval: selectionDebounceInterval, last: &lastSelectionTimestamp) {
-            self.selectionGenerator.selectionChanged()
-            self.selectionGenerator.prepare()
+        performOnMain {
+            self.throttle(interval: self.selectionDebounceInterval, last: &self.lastSelectionTimestamp) {
+                if self.isEnabled {
+                    self.selectionGenerator.selectionChanged()
+                    self.selectionGenerator.prepare()
+                }
+                self.playSound(.selection)
+            }
         }
     }
     func lightImpact() {
-        guard isEnabled else { return }
         impact(with: lightGenerator, intensity: isStrongEnabled ? 0.9 : 0.65)
     }
     func mediumImpact() { // medium for profile switch, secondary
-        guard isEnabled else { return }
         impact(with: mediumGenerator, intensity: isStrongEnabled ? 1.0 : 0.8)
     }
     func heavyImpact() { // strong for confirmations
-        guard isEnabled else { return }
         impact(with: heavyGenerator, intensity: isStrongEnabled ? 1.0 : 1.0)
     }
     func success() { // success completions
-        guard isEnabled else { return }
         notification(.success)
     }
     func warning() { // destructive confirmations
-        guard isEnabled else { return }
         notification(.warning)
     }
     func error() {
-        guard isEnabled else { return }
         notification(.error)
     }
     
     /// Throttled light tick for steppers and rapid repeated actions. Avoids spam.
     func lightTick() {
-        guard isEnabled else { return }
-        throttle(interval: lightTickInterval, last: &lastLightTickTimestamp) {
-            self.impact(with: self.lightGenerator, intensity: 0.5)
+        performOnMain {
+            guard self.isEnabled else { return }
+            self.throttle(interval: self.lightTickInterval, last: &self.lastLightTickTimestamp) {
+                self.impact(with: self.lightGenerator, intensity: 0.5)
+            }
         }
     }
     
@@ -135,14 +145,20 @@ final class HapticManager {
     // MARK: - Private helpers
     private func impact(with generator: UIImpactFeedbackGenerator, intensity: CGFloat) {
         performOnMain {
-            generator.impactOccurred(intensity: min(max(intensity, 0.1), 1.0))
-            generator.prepare()
+            if self.isEnabled {
+                generator.impactOccurred(intensity: min(max(intensity, 0.1), 1.0))
+                generator.prepare()
+            }
+            self.playSound(intensity >= 0.95 ? .strongImpact : .softImpact)
         }
     }
     private func notification(_ type: UINotificationFeedbackGenerator.FeedbackType) {
         performOnMain {
-            self.notificationGenerator.notificationOccurred(type)
-            self.notificationGenerator.prepare()
+            if self.isEnabled {
+                self.notificationGenerator.notificationOccurred(type)
+                self.notificationGenerator.prepare()
+            }
+            self.playSound(Self.feedbackSound(for: type))
         }
     }
     private func prepareGenerators() {
@@ -161,6 +177,37 @@ final class HapticManager {
         last = now
         action()
     }
+
+    private enum FeedbackSound {
+        case selection, softImpact, strongImpact, success, warning, error
+
+        var id: SystemSoundID {
+            switch self {
+            case .selection: return 1519
+            case .softImpact: return 1104
+            case .strongImpact: return 1520
+            case .success: return 1057
+            case .warning: return 1054
+            case .error: return 1073
+            }
+        }
+    }
+
+    private static func feedbackSound(for type: UINotificationFeedbackGenerator.FeedbackType) -> FeedbackSound {
+        switch type {
+        case .success: return .success
+        case .warning: return .warning
+        case .error: return .error
+        @unknown default: return .softImpact
+        }
+    }
+
+    private func playSound(_ sound: FeedbackSound) {
+        guard isSoundEnabled else { return }
+        throttle(interval: soundDebounceInterval, last: &lastSoundTimestamp) {
+            AudioServicesPlaySystemSound(sound.id)
+        }
+    }
 }
 #else
 // MARK: - Mac Catalyst – HapticType and no-op implementation (no device haptics)
@@ -172,7 +219,9 @@ final class HapticManager {
     static let shared = HapticManager()
     var isEnabled: Bool { false }
     var isStrongEnabled: Bool { false }
+    var isSoundEnabled: Bool { false }
     func setEnabled(_ enabled: Bool) {}
+    func setSoundEnabled(_ enabled: Bool) {}
     func setStrongEnabled(_ enabled: Bool) {}
     func trigger(_ type: HapticType) {}
     func errorDouble() {}

@@ -1,26 +1,27 @@
 import SwiftUI
 
 struct MoodSuggestionsView: View {
+    @Environment(ThemeManager.self) private var themeManager
     let onNext: () -> Void
     @State private var showingThoughtRecord = false
     @State private var attemptingThoughtRecord = false
     @State private var showingBreathing = false
     
     var body: some View {
-        GeometryReader { geo in
-            ScrollView {
+        MoodStepScaffold(
+            title: "Would you like help with this feeling?",
+            subtitle: "Choose a short support tool, or continue straight to your summary.",
+            icon: "hands.sparkles",
+            accent: themeManager.selectedColor,
+            actionTitle: "No thanks, continue",
+            action: onNext
+        ) {
+            MoodGlassPanel(accent: themeManager.selectedColor) {
                 VStack(spacing: 32) {
-                    Spacer().frame(height: 10)
-                    
-                    Text("Would you like help with this feeling?")
-                        .font(DSTypography.pageTitle)
-                        .foregroundStyle(DSTheme.primaryText)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                    
                     VStack(spacing: 16) {
                         SuggestionButton(
                             title: "Breathing Reset",
+                            subtitle: "One minute of paced breathing",
                             icon: "wind"
                         ) {
                             showingBreathing = true
@@ -28,6 +29,7 @@ struct MoodSuggestionsView: View {
                         
                         SuggestionButton(
                             title: "Write a Thought Record",
+                            subtitle: "Sort the thought from the feeling",
                             icon: "brain.head.profile"
                         ) {
                             showingThoughtRecord = true
@@ -35,22 +37,13 @@ struct MoodSuggestionsView: View {
                         
                         SuggestionButton(
                             title: "Try a CBT Exercise",
+                            subtitle: "Move into a guided coping practice",
                             icon: "list.bullet.rectangle.portrait"
                         ) {
                             onNext()
                         }
                     }
-                    .padding(.horizontal, DSSpacing.large)
-                    
-                    Button("No thanks, continue") {
-                        onNext()
-                    }
-                    .buttonStyle(.plain)
-                    .font(DSTypography.body.bold())
-                    .foregroundStyle(DSTheme.secondaryText)
                 }
-                .padding(.bottom, DSSpacing.large)
-                .frame(minHeight: geo.size.height)
             }
         }
         .sheet(isPresented: $showingThoughtRecord) {
@@ -93,6 +86,7 @@ struct MoodSuggestionsView: View {
 private struct SuggestionButton: View {
     @Environment(ThemeManager.self) private var themeManager
     let title: String
+    let subtitle: String
     let icon: String
     let action: () -> Void
     
@@ -102,12 +96,26 @@ private struct SuggestionButton: View {
             action()
         }) {
             HStack(spacing: 16) {
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                    .frame(width: 32)
+                ZStack {
+                    RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous)
+                        .fill(themeManager.selectedColor.opacity(0.12))
+                        .frame(width: 46, height: 46)
+
+                    Image(systemName: icon)
+                        .font(.system(size: 21, weight: .semibold))
+                }
                 
-                Text(title)
-                    .font(DSTypography.button)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(DSTypography.button)
+                        .foregroundStyle(DSTheme.primaryText)
+
+                    Text(subtitle)
+                        .font(DSTypography.caption)
+                        .foregroundStyle(DSTheme.secondaryText)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                }
                 
                 Spacer()
                 
@@ -115,14 +123,13 @@ private struct SuggestionButton: View {
                     .font(.caption)
                     .foregroundStyle(DSTheme.secondaryText)
             }
-            .padding(20)
+            .padding(16)
             .foregroundStyle(themeManager.selectedColor)
             .background(
                 RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous)
                     .fill(DSTheme.cardBackground)
-                    .shadow(color: Color.black.opacity(0.05), radius: 5, y: 2)
+                    .shadow(color: themeManager.selectedColor.opacity(0.07), radius: 12, y: 6)
             )
-            .padding(.horizontal, 4) // Space for shadow
         }
         .buttonStyle(.plain)
     }

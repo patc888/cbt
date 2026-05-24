@@ -17,7 +17,9 @@ struct AppearanceSettingsView: View {
     @Namespace private var appearanceNamespace
     @Namespace private var fullColorNamespace
     @Namespace private var hapticNamespace
+    @Namespace private var soundNamespace
     @AppStorage("cbt_showStreakInToolbar") private var showStreakInToolbar = true
+    @AppStorage("interactionSoundsEnabled") private var soundsEnabled = true
     
     @State private var isIconExpanded = false
     @State private var errorString: String?
@@ -48,6 +50,10 @@ struct AppearanceSettingsView: View {
             
             SettingsRow(title: "Haptic Feedback") {
                 hapticToggle
+            }
+
+            SettingsRow(title: "Sound Effects") {
+                soundToggle
             }
 
             ToggleRow(
@@ -122,9 +128,29 @@ struct AppearanceSettingsView: View {
         SegmentedToggle(
             isOn: Binding(
                 get: { hapticsEnabled },
-                set: { onUpdateHaptics($0) }
+                set: { enabled in
+                    HapticManager.shared.setEnabled(enabled)
+                    onUpdateHaptics(enabled)
+                    if enabled {
+                        HapticManager.shared.success()
+                    }
+                }
             ),
             namespace: hapticNamespace
+        )
+    }
+
+    private var soundToggle: some View {
+        SegmentedToggle(
+            isOn: Binding(
+                get: { soundsEnabled },
+                set: { enabled in
+                    soundsEnabled = enabled
+                    HapticManager.shared.setSoundEnabled(enabled)
+                    HapticManager.shared.selection()
+                }
+            ),
+            namespace: soundNamespace
         )
     }
 

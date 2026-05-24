@@ -18,7 +18,10 @@ enum SharedPersistence {
         FlexibleJournalEntry.self,
         MoodCheckIn.self,
         BreathingSession.self,
-        SafetyPlan.self
+        SafetyPlan.self,
+        LibraryItem.self,
+        Course.self,
+        Achievement.self
     ])
 
     // MARK: - Factory

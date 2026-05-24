@@ -4,12 +4,11 @@ struct RootTabView: View {
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var selectedTab: FloatingTab = .journal
-    @State private var activatedTabs: Set<FloatingTab> = [.journal]
+    @State private var selectedTab: FloatingTab = .home
+    @State private var activatedTabs: Set<FloatingTab> = [.home]
     @StateObject private var breathing = BreathingPresenter.shared
     @State private var isInExerciseFlow = false
     @State private var isInQuizFlow = false
-    @State private var showingEmergencyLanding = false
     @State private var presentedContextualDeepLink: ContextualNotificationDeepLink?
 
     private var selectedTabBinding: Binding<FloatingTab> {
@@ -56,7 +55,7 @@ struct RootTabView: View {
                 #endif
 
                 tabContent(for: .exercises) {
-                    ExercisesView()
+                    LibraryView()
                 }
                 .tag(FloatingTab.exercises)
                 #if os(iOS) && !targetEnvironment(macCatalyst)
@@ -69,6 +68,16 @@ struct RootTabView: View {
                     JournalView()
                 }
                 .tag(FloatingTab.journal)
+                #if os(iOS) && !targetEnvironment(macCatalyst)
+                .toolbar(.hidden, for: .tabBar)
+                #elseif os(iOS)
+                .toolbar(.hidden, for: .tabBar)
+                #endif
+
+                tabContent(for: .profile) {
+                    ProfileView()
+                }
+                .tag(FloatingTab.profile)
                 #if os(iOS) && !targetEnvironment(macCatalyst)
                 .toolbar(.hidden, for: .tabBar)
                 #elseif os(iOS)
@@ -88,22 +97,8 @@ struct RootTabView: View {
             .tint(themeManager.selectedColor)
 
             if !isInExerciseFlow && !isInQuizFlow {
-                VStack(spacing: DSSpacing.medium) {
-                    HStack {
-                        Spacer()
-                        GlobalEmergencyFloatingButton {
-                            HapticManager.shared.mediumImpact()
-                            showingEmergencyLanding = true
-                        }
-                    }
-                    .padding(.horizontal, DSSpacing.large)
-
-                    FloatingBottomToolbar(selectedTab: selectedTabBinding)
-                }
+                FloatingBottomToolbar(selectedTab: selectedTabBinding)
             }
-        }
-        .fullScreenCover(isPresented: $showingEmergencyLanding) {
-            EmergencyLandingView()
         }
         .fullScreenCover(item: $presentedContextualDeepLink) { deepLink in
             contextualDestination(for: deepLink)
@@ -207,6 +202,10 @@ struct RootTabView: View {
             }
         case .journal:
             JournalView()
+        case .morningIntentions:
+            GuidedPromptView(flow: .flow(for: .morningIntentions))
+        case .eveningReflection:
+            GuidedPromptView(flow: .flow(for: .eveningReflection))
         case .breathing:
             BreathingResetView(
                 durationSeconds: 60,
@@ -225,6 +224,10 @@ struct RootTabView: View {
         case .journal:
             activatedTabs.insert(.journal)
             selectedTab = .journal
+        case .morningIntentions, .eveningReflection:
+            activatedTabs.insert(.journal)
+            selectedTab = .journal
+            presentedContextualDeepLink = deepLink
         case .affirmation:
             activatedTabs.insert(.exercises)
             selectedTab = .exercises
@@ -245,40 +248,6 @@ struct RootTabView: View {
             ThemedBackground()
                 .accessibilityHidden(true)
         }
-    }
-}
-
-private struct GlobalEmergencyFloatingButton: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Label {
-                Text(String(localized: "Emergency"))
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.65)
-            } icon: {
-                Image(systemName: "cross.case.fill")
-                    .font(.system(size: 17, weight: .bold))
-            }
-            .foregroundStyle(.white)
-            .padding(.horizontal, DSSpacing.large)
-            .frame(minHeight: 48)
-            .background(DSTheme.destructive)
-            .clipShape(Capsule())
-            .shadow(
-                color: DSTheme.destructive.opacity(colorScheme == .dark ? 0.42 : 0.25),
-                radius: 12,
-                x: 0,
-                y: 5
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Global Emergency"))
-        .accessibilityHint(String(localized: "Opens emergency support actions"))
     }
 }
 

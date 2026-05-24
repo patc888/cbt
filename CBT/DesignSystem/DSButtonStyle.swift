@@ -3,6 +3,7 @@ import SwiftUI
 struct DSPrimaryButtonStyle: ButtonStyle {
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -16,12 +17,19 @@ struct DSPrimaryButtonStyle: ButtonStyle {
             .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous))
             .opacity(configuration.isPressed ? 0.85 : 1)
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.99 : 1)
+            .animation(reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.24, dampingFraction: 0.76), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed && isEnabled {
+                    HapticManager.shared.primaryAction()
+                }
+            }
     }
 }
 
 struct DSSecondaryButtonStyle: ButtonStyle {
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         let accent = themeManager?.selectedColor ?? .accentColor
@@ -36,6 +44,12 @@ struct DSSecondaryButtonStyle: ButtonStyle {
             .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous))
             .opacity(configuration.isPressed ? 0.85 : 1)
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.99 : 1)
+            .animation(reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.24, dampingFraction: 0.76), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed && isEnabled {
+                    HapticManager.shared.lightImpact()
+                }
+            }
     }
 }
 

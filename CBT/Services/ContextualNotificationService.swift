@@ -28,11 +28,16 @@ enum ContextualNotificationDeepLink: String, Identifiable {
     case breathing
     case journal
     case affirmation
+    case morningIntentions
+    case eveningReflection
 
     var id: String { rawValue }
 
     var url: URL {
-        URL(string: "cbt://\(rawValue)")!
+        var components = URLComponents()
+        components.scheme = "cbt"
+        components.host = rawValue
+        return components.url ?? URL(fileURLWithPath: rawValue)
     }
 
     init?(url: URL) {
@@ -166,7 +171,8 @@ final class ContextualNotificationService: NSObject, UNUserNotificationCenterDel
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        if let deepLink = notificationDeepLink(from: response.notification.request.content.userInfo) {
+        let userInfo = response.notification.request.content.userInfo
+        if let deepLink = notificationDeepLink(from: userInfo) ?? DailyReminderService.shared.notificationDeepLink(from: userInfo) {
             DispatchQueue.main.async {
                 NotificationCenter.default.post(
                     name: .contextualNotificationDeepLinkReceived,
