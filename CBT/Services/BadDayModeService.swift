@@ -11,12 +11,14 @@ nonisolated struct BadDayModeContext: Equatable, Sendable {
     let trigger: BadDayModeTrigger?
     let missedDays: Int
     let latestMoodScore: Int?
+    let latestMoodDate: Date?
 
     static let inactive = BadDayModeContext(
         shouldShow: false,
         trigger: nil,
         missedDays: 0,
-        latestMoodScore: nil
+        latestMoodScore: nil,
+        latestMoodDate: nil
     )
 }
 
@@ -35,6 +37,7 @@ nonisolated enum BadDayModeService {
     static func context(
         activeDays: Set<Date>,
         latestMoodScore: Int?,
+        latestMoodDate: Date? = nil,
         today: Date = Date(),
         calendar: Calendar = .current,
         manual: Bool = false
@@ -52,7 +55,8 @@ nonisolated enum BadDayModeService {
                 shouldShow: true,
                 trigger: .manual,
                 missedDays: missedDays,
-                latestMoodScore: latestMoodScore
+                latestMoodScore: latestMoodScore,
+                latestMoodDate: latestMoodDate
             )
         }
 
@@ -61,16 +65,20 @@ nonisolated enum BadDayModeService {
                 shouldShow: true,
                 trigger: .missedDays(missedDays),
                 missedDays: missedDays,
-                latestMoodScore: latestMoodScore
+                latestMoodScore: latestMoodScore,
+                latestMoodDate: latestMoodDate
             )
         }
 
-        if let latestMoodScore, latestMoodScore <= veryLowMoodThreshold {
+        if let latestMoodScore,
+           latestMoodScore <= veryLowMoodThreshold,
+           latestMoodDate.map({ calendar.isDate($0, inSameDayAs: todayStart) }) ?? true {
             return BadDayModeContext(
                 shouldShow: true,
                 trigger: .veryLowMood(latestMoodScore),
                 missedDays: missedDays,
-                latestMoodScore: latestMoodScore
+                latestMoodScore: latestMoodScore,
+                latestMoodDate: latestMoodDate
             )
         }
 
@@ -78,7 +86,8 @@ nonisolated enum BadDayModeService {
             shouldShow: false,
             trigger: nil,
             missedDays: missedDays,
-            latestMoodScore: latestMoodScore
+            latestMoodScore: latestMoodScore,
+            latestMoodDate: latestMoodDate
         )
     }
 

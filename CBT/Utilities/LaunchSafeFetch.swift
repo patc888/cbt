@@ -5,11 +5,13 @@ struct HomeDashboardSnapshot: Sendable {
     let activeDates: Set<Date>
     let completionSnapshot: DailyPlanCompletionSnapshot
     let recommendations: [DailyRecommendation]
+    let latestMoodScore: Int?
 
     static let empty = HomeDashboardSnapshot(
         activeDates: [],
         completionSnapshot: .empty,
-        recommendations: []
+        recommendations: [],
+        latestMoodScore: nil
     )
 }
 
@@ -200,6 +202,18 @@ enum LaunchSafeFetch {
             label: "homeDashboardSnapshot.moodDates"
         )
 
+        let latestMoodScore = fetch(
+            FetchDescriptor<MoodEntry>(
+                predicate: #Predicate<MoodEntry> {
+                    $0.isDeleted == false
+                },
+                sortBy: [SortDescriptor(\MoodEntry.createdAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.latestMood"
+        ).first?.moodScore
+
         let thoughtDates = createdDates(
             FetchDescriptor<ThoughtRecord>(
                 predicate: #Predicate<ThoughtRecord> {
@@ -361,7 +375,8 @@ enum LaunchSafeFetch {
         return HomeDashboardSnapshot(
             activeDates: activeDates,
             completionSnapshot: completionSnapshot,
-            recommendations: []
+            recommendations: [],
+            latestMoodScore: latestMoodScore
         )
     }
 

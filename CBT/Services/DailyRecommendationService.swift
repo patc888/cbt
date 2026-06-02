@@ -154,6 +154,488 @@ nonisolated struct MoodCheckInNextStepPlan: Hashable, Sendable {
     let recommendations: [DailyRecommendation]
 }
 
+nonisolated struct DailyPlanMoodSample: Hashable, Sendable {
+    let createdAt: Date
+    let moodScore: Int
+    let intensity: Int?
+    let emotions: [String]
+    let triggers: [String]
+    let sensations: [String]
+    let contextTags: [String]
+}
+
+nonisolated struct DailyPlanExerciseSummary: Hashable, Sendable {
+    let id: String
+    let title: String
+    let category: String
+    let duration: Int
+    let description: String
+    let isCompletedToday: Bool
+}
+
+nonisolated struct DailyPlanUserPreferences: Hashable, Sendable {
+    let goals: Set<String>
+    let interests: Set<String>
+
+    static let empty = DailyPlanUserPreferences(goals: [], interests: [])
+}
+
+nonisolated struct DailyPlanRecommendationInput: Hashable, Sendable {
+    let today: Date
+    let now: Date
+    let moodSamples: [DailyPlanMoodSample]
+    let thoughtRecordDistortions: [String]
+    let missedDays: Int?
+    let currentStreak: Int
+    let hasMoodToday: Bool
+    let hasThoughtRecordToday: Bool
+    let hasBreathingToday: Bool
+    let hasActivityCompletedToday: Bool
+    let incompleteExercise: DailyPlanExerciseSummary?
+    let completedExerciseIDs: Set<String>
+    let exercises: [DailyPlanExerciseSummary]
+    let preferences: DailyPlanUserPreferences
+    let hasAnyUserData: Bool
+}
+
+nonisolated struct DailyPlanRecommendationEngine: Sendable {
+    func recommendations(from input: DailyPlanRecommendationInput) -> [DailyRecommendation] {
+        if !input.hasAnyUserData {
+            return onboardingStarterPlan(input)
+        }
+
+        var recommendations = [DailyRecommendationType: DailyRecommendation]()
+
+        if let unfinished = input.incompleteExercise {
+            upsert(
+                recommendation(
+                    type: .libraryExercise,
+                    title: "Continue Where You Left Off",
+                    subtitle: unfinished.title,
+                    reason: "Because an exercise is still unfinished.",
+                    destination: .libraryExercise(exerciseID: unfinished.id),
+                    priority: 106,
+                    duration: unfinished.duration,
+                    isCompletedToday: unfinished.isCompletedToday
+                ),
+                into: &recommendations
+            )
+        }
+
+        if (input.missedDays ?? 0) >= 2 {
+            upsert(
+                recommendation(
+                    type: .moodCheckIn,
+                    title: "Gentle Restart",
+                    subtitle: "Start again with one light check-in.",
+                    reason: "Because it has been \(input.missedDays ?? 2) days since your last check-in.",
+                    destination: .moodCheckIn,
+                    priority: 100,
+                    duration: 1,
+                    isCompletedToday: input.hasMoodToday
+                ),
+                into: &recommendations
+            )
+            upsert(
+                recommendation(
+                    type: .breathingReset,
+                    title: "Bad Day Mode Reset",
+                    subtitle: "One steady minute, no pressure.",
+                    reason: "Because a gentle restart works best when the first step is small.",
+                    destination: .breathingReset(durationSeconds: 60),
+                    priority: 92,
+                    duration: 1,
+                    isCompletedToday: input.hasBreathingToday
+                ),
+                into: &recommendations
+            )
+        }
+
+        if highStressTrend(in: input) {
+            let reason = input.moodSamples.first.map { sample in
+                Calendar.current.isDateInYesterday(sample.createdAt)
+                    ? "Because stress was high yesterday."
+                    : "Because recent stress or anxiety has been high."
+            } ?? "Because recent stress or anxiety has been high."
+            upsert(
+                recommendation(
+                    type: .breathingReset,
+                    title: "Breathing Reset",
+                    subtitle: "Lower the stress signal first.",
+                    reason: reason,
+                    destination: .breathingReset(durationSeconds: 120),
+                    priority: 96,
+                    duration: 2,
+                    isCompletedToday: input.hasBreathingToday
+                ),
+                into: &recommendations
+            )
+            if let exercise = firstExercise(matching: ["Grounding", "Anxiety Reset", "Distress Tolerance"], in: input) {
+                upsert(
+                    recommendation(
+                        type: .libraryExercise,
+                        title: exercise.title,
+                        subtitle: exercise.description,
+                        reason: "Because grounding can help when anxiety or stress is elevated.",
+                        destination: .libraryExercise(exerciseID: exercise.id),
+                        priority: 88,
+                        duration: exercise.duration,
+                        isCompletedToday: exercise.isCompletedToday
+                    ),
+                    into: &recommendations
+                )
+            }
+        }
+
+        if lowMoodTrend(in: input), let exercise = firstExercise(matching: ["Behavioral Activation", "Self Compassion", "Gratitude"], in: input) {
+            upsert(
+                recommendation(
+                    type: .behavioralActivation,
+                    title: "Tiny Win",
+                    subtitle: "Choose one small nourishing action.",
+                    reason: "Because recent mood has been low.",
+                    destination: .behavioralActivation,
+                    priority: 90,
+                    duration: 5,
+                    isCompletedToday: input.hasActivityCompletedToday
+                ),
+                into: &recommendations
+            )
+            upsert(
+                recommendation(
+                    type: .libraryExercise,
+                    title: exercise.title,
+                    subtitle: exercise.description,
+                    reason: "Because low energy responds better to small, doable steps.",
+                    destination: .libraryExercise(exerciseID: exercise.id),
+                    priority: 82,
+                    duration: exercise.duration,
+                    isCompletedToday: exercise.isCompletedToday
+                ),
+                into: &recommendations
+            )
+        }
+
+        if let trigger = repeatedTrigger(in: input), let exercise = exerciseFor(trigger: trigger, in: input) {
+            upsert(
+                recommendation(
+                    type: .libraryExercise,
+                    title: exercise.title,
+                    subtitle: exercise.description,
+                    reason: "Because \(trigger) has shown up repeatedly in recent check-ins.",
+                    destination: .libraryExercise(exerciseID: exercise.id),
+                    priority: 86,
+                    duration: exercise.duration,
+                    isCompletedToday: exercise.isCompletedToday
+                ),
+                into: &recommendations
+            )
+        }
+
+        if let distortion = mostFrequent(input.thoughtRecordDistortions), !input.hasThoughtRecordToday {
+            upsert(
+                recommendation(
+                    type: .thoughtRecord,
+                    title: "Thought Record",
+                    subtitle: "Work through one automatic thought.",
+                    reason: "Because you recently logged \(distortion).",
+                    destination: .thoughtRecord,
+                    priority: 78,
+                    duration: 8,
+                    isCompletedToday: input.hasThoughtRecordToday
+                ),
+                into: &recommendations
+            )
+        }
+
+        if input.currentStreak > 0, !input.hasMoodToday {
+            upsert(
+                recommendation(
+                    type: .moodCheckIn,
+                    title: "Keep Your Streak Going",
+                    subtitle: "A quick check-in counts as today’s practice.",
+                    reason: "Because your current streak is \(input.currentStreak) \(input.currentStreak == 1 ? "day" : "days").",
+                    destination: .moodCheckIn,
+                    priority: 84,
+                    duration: 1,
+                    isCompletedToday: input.hasMoodToday
+                ),
+                into: &recommendations
+            )
+        }
+
+        addPreferenceRecommendation(from: input, into: &recommendations)
+        addFallbacks(from: input, into: &recommendations)
+
+        return recommendations.values
+            .sorted {
+                if $0.priority == $1.priority {
+                    return $0.title < $1.title
+                }
+                return $0.priority > $1.priority
+            }
+            .prefix(4)
+            .map { $0 }
+    }
+
+    private func onboardingStarterPlan(_ input: DailyPlanRecommendationInput) -> [DailyRecommendation] {
+        [
+            recommendation(
+                type: .moodCheckIn,
+                title: "Mood Check-In",
+                subtitle: "Start with one gentle check-in.",
+                reason: "Because there is no Daily Plan history yet.",
+                destination: .moodCheckIn,
+                priority: 82,
+                duration: 1,
+                isCompletedToday: input.hasMoodToday
+            ),
+            recommendation(
+                type: .breathingReset,
+                title: "3-Minute Breathing",
+                subtitle: "A short reset before anything deeper.",
+                reason: "Because breathing is an easy first practice with no setup.",
+                destination: .breathingReset(durationSeconds: 180),
+                priority: 78,
+                duration: 3,
+                isCompletedToday: input.hasBreathingToday
+            ),
+            recommendation(
+                type: .courseLesson,
+                title: "Intro to CBT Course",
+                subtitle: "Learn the basics at your own pace.",
+                reason: "Because a quick orientation makes the tools easier to use.",
+                destination: .introToCBT,
+                priority: 72,
+                duration: 4,
+                isCompletedToday: false
+            )
+        ]
+    }
+
+    private func addFallbacks(
+        from input: DailyPlanRecommendationInput,
+        into recommendations: inout [DailyRecommendationType: DailyRecommendation]
+    ) {
+        if !input.hasMoodToday {
+            upsert(
+                recommendation(
+                    type: .moodCheckIn,
+                    title: "Mood Check-In",
+                    subtitle: "Capture how you feel right now.",
+                    reason: "Because a check-in gives today a starting point.",
+                    destination: .moodCheckIn,
+                    priority: 60,
+                    duration: 1,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        }
+
+        if !input.hasBreathingToday {
+            upsert(
+                recommendation(
+                    type: .breathingReset,
+                    title: "Breathing Reset",
+                    subtitle: "Take one minute to slow the pace.",
+                    reason: "Because a short reset is available whenever you want one.",
+                    destination: .breathingReset(durationSeconds: 60),
+                    priority: 54,
+                    duration: 1,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        }
+
+        if !input.hasThoughtRecordToday {
+            upsert(
+                recommendation(
+                    type: .thoughtRecord,
+                    title: "Thought Record",
+                    subtitle: "Work through one automatic thought.",
+                    reason: "Because no thought record has been logged today.",
+                    destination: .thoughtRecord,
+                    priority: 50,
+                    duration: 8,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        }
+
+        if recommendations.count < 2, !input.hasActivityCompletedToday {
+            upsert(
+                recommendation(
+                    type: .behavioralActivation,
+                    title: "Plan One Small Activity",
+                    subtitle: "Pick a small nourishing or mastery task.",
+                    reason: "Because a concrete activity gives the day a reachable next step.",
+                    destination: .behavioralActivation,
+                    priority: 46,
+                    duration: 5,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        }
+    }
+
+    private func addPreferenceRecommendation(
+        from input: DailyPlanRecommendationInput,
+        into recommendations: inout [DailyRecommendationType: DailyRecommendation]
+    ) {
+        if input.preferences.interests.contains(DailyPlanInterest.breathing.rawValue), !input.hasBreathingToday {
+            upsert(
+                recommendation(
+                    type: .breathingReset,
+                    title: "Breathing Reset",
+                    subtitle: "Use your preferred quick reset.",
+                    reason: "Because breathing is one of your Daily Plan interests.",
+                    destination: .breathingReset(durationSeconds: 60),
+                    priority: 70,
+                    duration: 1,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        }
+
+        if input.preferences.goals.contains(DailyPlanGoal.understandThoughts.rawValue), !input.hasThoughtRecordToday {
+            upsert(
+                recommendation(
+                    type: .thoughtRecord,
+                    title: "Thought Record",
+                    subtitle: "Make one thought easier to inspect.",
+                    reason: "Because understanding thoughts is one of your Daily Plan goals.",
+                    destination: .thoughtRecord,
+                    priority: 68,
+                    duration: 8,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        }
+    }
+
+    private func highStressTrend(in input: DailyPlanRecommendationInput) -> Bool {
+        let recent = Array(input.moodSamples.prefix(5))
+        guard !recent.isEmpty else { return false }
+        return recent.contains { sample in
+            (sample.intensity ?? 0) >= 7 || searchableText(for: sample).containsAny([
+                "anxious", "anxiety", "stress", "stressed", "overwhelmed", "panic", "worried", "worry"
+            ])
+        }
+    }
+
+    private func lowMoodTrend(in input: DailyPlanRecommendationInput) -> Bool {
+        let recent = Array(input.moodSamples.prefix(3))
+        guard !recent.isEmpty else { return false }
+        let average = Double(recent.map(\.moodScore).reduce(0, +)) / Double(recent.count)
+        return average <= 3.5 || recent.first?.moodScore ?? 10 <= 3
+    }
+
+    private func repeatedTrigger(in input: DailyPlanRecommendationInput) -> String? {
+        mostFrequent(input.moodSamples.prefix(8).flatMap(\.triggers), minimumCount: 2)
+    }
+
+    private func exerciseFor(trigger: String, in input: DailyPlanRecommendationInput) -> DailyPlanExerciseSummary? {
+        let lowered = trigger.lowercased()
+        if lowered.contains("work") || lowered.contains("school") || lowered.contains("deadline") {
+            return firstExercise(matching: ["Thought Reframing", "Cognitive Distortions"], in: input)
+        }
+        if lowered.contains("sleep") || lowered.contains("tired") {
+            return firstExercise(matching: ["Wellness Basics", "Mindfulness"], in: input)
+        }
+        if lowered.contains("conflict") || lowered.contains("relationship") || lowered.contains("family") {
+            return firstExercise(matching: ["Emotion Regulation", "Self Compassion"], in: input)
+        }
+        return firstExercise(matching: ["Grounding", "Thought Reframing", "Behavioral Activation"], in: input)
+    }
+
+    private func firstExercise(matching categories: [String], in input: DailyPlanRecommendationInput) -> DailyPlanExerciseSummary? {
+        let matches = categories.flatMap { category in
+            input.exercises.filter { $0.category.caseInsensitiveCompare(category) == .orderedSame }
+        }
+        return matches.first { !input.completedExerciseIDs.contains($0.id) }
+            ?? matches.first
+            ?? input.exercises.first { !input.completedExerciseIDs.contains($0.id) }
+            ?? input.exercises.first
+    }
+
+    private func mostFrequent(_ values: [String], minimumCount: Int = 1) -> String? {
+        var counts = [String: (display: String, count: Int)]()
+        for value in values {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let key = trimmed.lowercased()
+            let current = counts[key] ?? (display: trimmed, count: 0)
+            counts[key] = (display: current.display, count: current.count + 1)
+        }
+
+        return counts.values
+            .filter { $0.count >= minimumCount }
+            .sorted {
+                if $0.count == $1.count {
+                    return $0.display < $1.display
+                }
+                return $0.count > $1.count
+            }
+            .first?
+            .display
+    }
+
+    private func searchableText(for sample: DailyPlanMoodSample) -> String {
+        (sample.emotions + sample.triggers + sample.sensations + sample.contextTags)
+            .joined(separator: " ")
+            .lowercased()
+    }
+
+    private func upsert(
+        _ recommendation: DailyRecommendation,
+        into recommendations: inout [DailyRecommendationType: DailyRecommendation]
+    ) {
+        guard let existing = recommendations[recommendation.type] else {
+            recommendations[recommendation.type] = recommendation
+            return
+        }
+
+        if recommendation.priority > existing.priority {
+            recommendations[recommendation.type] = recommendation
+        }
+    }
+
+    private func recommendation(
+        type: DailyRecommendationType,
+        title: String,
+        subtitle: String,
+        reason: String,
+        destination: DailyRecommendationDestination,
+        priority: Int,
+        duration: Int,
+        isCompletedToday: Bool
+    ) -> DailyRecommendation {
+        DailyRecommendation(
+            id: "\(type.rawValue)-\(destination.deepLink)",
+            type: type,
+            title: title,
+            subtitle: subtitle,
+            reason: reason,
+            destination: destination,
+            priority: priority,
+            estimatedDurationMinutes: max(1, duration),
+            isCompletedToday: isCompletedToday
+        )
+    }
+}
+
+private extension String {
+    func containsAny(_ terms: [String]) -> Bool {
+        terms.contains { contains($0) }
+    }
+}
+
 private extension MoodCheckInRecommendationInput {
     var isLowMood: Bool {
         moodScore <= 2 || containsAny(["sad", "lonely", "hopeless", "numb", "depressed"])

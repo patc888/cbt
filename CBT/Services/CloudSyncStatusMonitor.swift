@@ -25,6 +25,14 @@ final class CloudSyncStatusMonitor: ObservableObject {
     private let defaults: UserDefaults
     private var eventObserver: NSObjectProtocol?
 
+    private struct EventSnapshot: Sendable {
+        let displayName: String
+        let endDate: Date?
+        let succeeded: Bool
+        let errorDescription: String?
+        let shouldUpdateLastSyncDate: Bool
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         if let storedDate = defaults.object(forKey: Self.lastSyncDateKey) as? Date {
@@ -66,21 +74,29 @@ final class CloudSyncStatusMonitor: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            Task { @MainActor in
-                self?.handleSyncEvent(notification)
+            guard let event = notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event else {
+                return
+            }
+
+            let eventName = Self.displayName(for: event.type)
+            let snapshot = EventSnapshot(
+                displayName: eventName,
+                endDate: event.endDate,
+                succeeded: event.succeeded,
+                errorDescription: event.error?.localizedDescription,
+                shouldUpdateLastSyncDate: Self.shouldUpdateLastSyncDate(for: event.type)
+            )
+            Task { @MainActor [weak self, snapshot] in
+                self?.handleSyncEvent(snapshot)
             }
         }
     }
 
-    private func handleSyncEvent(_ notification: Notification) {
-        guard let event = notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event else {
-            return
-        }
+    private func handleSyncEvent(_ event: EventSnapshot) {
+        let eventName = event.displayName
 
-        let eventName = displayName(for: event.type)
-
-        if let error = event.error {
-            status = .error(error.localizedDescription)
+        if let errorDescription = event.errorDescription {
+            status = .error(errorDescription)
             latestEventSummary = "\(eventName) failed"
             return
         }
@@ -94,7 +110,7 @@ final class CloudSyncStatusMonitor: ObservableObject {
         if event.succeeded {
             status = .synced
             latestEventSummary = "\(eventName) completed"
-            if shouldUpdateLastSyncDate(for: event.type) {
+            if event.shouldUpdateLastSyncDate {
                 lastSyncDate = event.endDate ?? Date()
             }
         } else {
@@ -103,7 +119,7 @@ final class CloudSyncStatusMonitor: ObservableObject {
         }
     }
 
-    private func displayName(for eventType: NSPersistentCloudKitContainer.EventType) -> String {
+    private static func displayName(for eventType: NSPersistentCloudKitContainer.EventType) -> String {
         switch eventType {
         case .setup:
             return "CloudKit setup"
@@ -116,7 +132,7 @@ final class CloudSyncStatusMonitor: ObservableObject {
         }
     }
 
-    private func shouldUpdateLastSyncDate(for eventType: NSPersistentCloudKitContainer.EventType) -> Bool {
+    private static func shouldUpdateLastSyncDate(for eventType: NSPersistentCloudKitContainer.EventType) -> Bool {
         switch eventType {
         case .import, .export:
             return true

@@ -14,7 +14,11 @@ struct CBTDataStore {
         contextTags: [String] = [],
         activityTags: [String] = [],
         notes: String? = nil,
-        intensity: Int? = nil
+        intensity: Int? = nil,
+        anxietyStressScore: Int? = nil,
+        energyScore: Int? = nil,
+        sleepQualityScore: Int? = nil,
+        helpedToday: String? = nil
     ) throws -> MoodEntry {
         let entry = MoodEntry(
             createdAt: createdAt,
@@ -25,7 +29,11 @@ struct CBTDataStore {
             contextTags: contextTags,
             activityTags: activityTags,
             notes: notes,
-            intensity: intensity
+            intensity: intensity,
+            anxietyStressScore: anxietyStressScore,
+            energyScore: energyScore,
+            sleepQualityScore: sleepQualityScore,
+            helpedToday: helpedToday
         )
         modelContext.insert(entry)
         try modelContext.save()

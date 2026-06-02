@@ -16,6 +16,10 @@ final class MoodEntry: SoftDeletableRecord {
     var sensationsStorage: String?
     var contextTagsStorage: String?
     var activityTagsStorage: String?
+    var anxietyStressScore: Int?
+    var energyScore: Int?
+    var sleepQualityScore: Int?
+    var helpedToday: String?
 
     var emotions: [String] {
         get { StringArrayStorage.decode(emotionsStorage) }
@@ -73,6 +77,10 @@ final class MoodEntry: SoftDeletableRecord {
         activityTags: [String] = [],
         notes: String? = nil,
         intensity: Int? = nil,
+        anxietyStressScore: Int? = nil,
+        energyScore: Int? = nil,
+        sleepQualityScore: Int? = nil,
+        helpedToday: String? = nil,
         isDeleted: Bool = false
     ) {
         self.id = id
@@ -85,6 +93,10 @@ final class MoodEntry: SoftDeletableRecord {
         self.activityTagsStorage = StringArrayStorage.encode(activityTags)
         self.notes = notes
         self.intensity = intensity
+        self.anxietyStressScore = anxietyStressScore.map(Self.clampMoodScore)
+        self.energyScore = energyScore.map(Self.clampMoodScore)
+        self.sleepQualityScore = sleepQualityScore.map(Self.clampMoodScore)
+        self.helpedToday = helpedToday
         self.isDeleted = isDeleted
     }
 

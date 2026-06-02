@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var attemptingNewThoughtRecord = false
     @State private var showingTipModal = false
     @State private var selectedMoodForFlow: MoodColor? = nil
+    @State private var showingBadDayMode = false
     var body: some View {
         NavigationStack {
             ZStack {
@@ -39,7 +40,8 @@ struct HomeView: View {
                         attemptingNewMoodEntry: $attemptingNewMoodEntry,
                         attemptingNewThoughtRecord: $attemptingNewThoughtRecord,
                         showingTipModal: $showingTipModal,
-                        selectedMoodForFlow: $selectedMoodForFlow
+                        selectedMoodForFlow: $selectedMoodForFlow,
+                        showingBadDayMode: $showingBadDayMode
                     )
                 }
                 .accessibilityIdentifier("home-scroll-view")
@@ -71,6 +73,10 @@ struct HomeView: View {
         .sheet(isPresented: $showingNewThoughtRecord) {
             NewThoughtRecordFlowView()
                 .dsSheetPresentation()
+        }
+        .sheet(isPresented: $showingBadDayMode) {
+            BadDayModeView()
+                .dsSheetPresentation(detents: [.large])
         }
     }
 
@@ -112,6 +118,7 @@ private struct HomeDashboardContent: View {
     @Binding var attemptingNewThoughtRecord: Bool
     @Binding var showingTipModal: Bool
     @Binding var selectedMoodForFlow: MoodColor?
+    @Binding var showingBadDayMode: Bool
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
@@ -120,6 +127,7 @@ private struct HomeDashboardContent: View {
     @AppStorage(DailyRecommendationService.lastHomeVisitKey) private var lastHomeVisitInterval: Double = 0
     @AppStorage("cbt_home_tomorrowAnchor") private var tomorrowAnchorID = ""
     @AppStorage("cbt_home_tomorrowAnchorUpdatedAt") private var tomorrowAnchorUpdatedAt: Double = 0
+    @AppStorage("cbt_bad_day_mode_last_auto_presented_day") private var lastBadDayModeAutoPresentedDay = ""
     @State private var viewModel = HomeDashboardViewModel()
     @State private var refreshNonce = 0
     @State private var hasAppeared = false
@@ -152,7 +160,8 @@ private struct HomeDashboardContent: View {
         attemptingNewMoodEntry: Binding<Bool>,
         attemptingNewThoughtRecord: Binding<Bool>,
         showingTipModal: Binding<Bool>,
-        selectedMoodForFlow: Binding<MoodColor?>
+        selectedMoodForFlow: Binding<MoodColor?>,
+        showingBadDayMode: Binding<Bool>
     ) {
         self._selectedTab = selectedTab
         self._selectedDate = selectedDate
@@ -162,6 +171,7 @@ private struct HomeDashboardContent: View {
         self._attemptingNewThoughtRecord = attemptingNewThoughtRecord
         self._showingTipModal = showingTipModal
         self._selectedMoodForFlow = selectedMoodForFlow
+        self._showingBadDayMode = showingBadDayMode
     }
 
     var body: some View {
@@ -224,6 +234,11 @@ private struct HomeDashboardContent: View {
                         TipOfTheDayPlanCard(
                             completionState: viewModel.completionSnapshot.state(for: .tipOfTheDay),
                             action: { showingTipModal = true }
+                        )
+
+                        BadDayModeShortcutCard(
+                            context: viewModel.badDayContext,
+                            action: { showingBadDayMode = true }
                         )
 
                         TomorrowAnchorCard(
@@ -331,7 +346,20 @@ private struct HomeDashboardContent: View {
             recommendations: recommendations
         )
 
+        presentBadDayModeIfNeeded(context: viewModel.badDayContext)
         recordHomeVisitIfNeeded()
+    }
+
+    private func presentBadDayModeIfNeeded(context: BadDayModeContext) {
+        guard context.shouldShow, context.trigger != .manual else { return }
+        let dayKey = BadDayModeAutoPresentationKey.key(
+            for: selectedDate,
+            trigger: context.trigger,
+            calendar: calendar
+        )
+        guard lastBadDayModeAutoPresentedDay != dayKey else { return }
+        lastBadDayModeAutoPresentedDay = dayKey
+        showingBadDayMode = true
     }
 
     private func currentSessionLastHomeVisit() -> Date? {

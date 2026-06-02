@@ -14,6 +14,10 @@ enum AchievementUnlockCondition: String, CaseIterable, Codable, Hashable, Sendab
     case assessmentsCompleted = "AssessmentsCompleted"
     case activeWeeksCount = "ActiveWeeksCount"
     case contentModalitiesTried = "ContentModalitiesTried"
+    case returnedAfterMissedDay = "ReturnedAfterMissedDay"
+    case copingToolsTried = "CopingToolsTried"
+    case reflectionCount = "ReflectionCount"
+    case badDayModeUsed = "BadDayModeUsed"
 
     var label: String {
         switch self {
@@ -29,6 +33,10 @@ enum AchievementUnlockCondition: String, CaseIterable, Codable, Hashable, Sendab
         case .assessmentsCompleted: return "Assessments"
         case .activeWeeksCount: return "Active Weeks"
         case .contentModalitiesTried: return "Content Styles"
+        case .returnedAfterMissedDay: return "Returning"
+        case .copingToolsTried: return "Coping Tools"
+        case .reflectionCount: return "Reflections"
+        case .badDayModeUsed: return "Support"
         }
     }
 
@@ -46,6 +54,10 @@ enum AchievementUnlockCondition: String, CaseIterable, Codable, Hashable, Sendab
         case .assessmentsCompleted: return "assessments"
         case .activeWeeksCount: return "weeks"
         case .contentModalitiesTried: return "styles"
+        case .returnedAfterMissedDay: return "returns"
+        case .copingToolsTried: return "tools"
+        case .reflectionCount: return "reflections"
+        case .badDayModeUsed: return "used"
         }
     }
 }

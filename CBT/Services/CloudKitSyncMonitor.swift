@@ -11,7 +11,7 @@ final class CloudKitSyncMonitor {
         case error(String)
     }
 
-    enum EventKind: String {
+    enum EventKind: String, Sendable {
         case setup
         case `import`
         case export
@@ -43,6 +43,24 @@ final class CloudKitSyncMonitor {
     @ObservationIgnored private var eventObserver: NSObjectProtocol?
     @ObservationIgnored private var activeEvents: [UUID: EventKind] = [:]
 
+    private struct EventSnapshot: Sendable {
+        let identifier: UUID
+        let kind: EventKind
+        let startDate: Date
+        let endDate: Date?
+        let succeeded: Bool
+        let errorDescription: String?
+
+        init(_ event: NSPersistentCloudKitContainer.Event) {
+            self.identifier = event.identifier
+            self.kind = EventKind(event.type)
+            self.startDate = event.startDate
+            self.endDate = event.endDate
+            self.succeeded = event.succeeded
+            self.errorDescription = event.error?.localizedDescription
+        }
+    }
+
     init(notificationCenter: NotificationCenter? = nil) {
         let notificationCenter = notificationCenter ?? .default
         self.notificationCenter = notificationCenter
@@ -51,8 +69,13 @@ final class CloudKitSyncMonitor {
             object: nil,
             queue: nil
         ) { [weak self] notification in
-            Task { @MainActor in
-                self?.handleEventNotification(notification)
+            guard let event = notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event else {
+                return
+            }
+
+            let snapshot = EventSnapshot(event)
+            Task { @MainActor [weak self, snapshot] in
+                self?.handle(snapshot)
             }
         }
     }
@@ -94,16 +117,8 @@ final class CloudKitSyncMonitor {
         return "No SwiftData CloudKit events observed this launch."
     }
 
-    private func handleEventNotification(_ notification: Notification) {
-        guard let event = notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event else {
-            return
-        }
-
-        handle(event)
-    }
-
-    private func handle(_ event: NSPersistentCloudKitContainer.Event) {
-        let kind = EventKind(event.type)
+    private func handle(_ event: EventSnapshot) {
+        let kind = event.kind
         lastEventDate = event.endDate ?? event.startDate
 
         if event.endDate == nil {
@@ -116,10 +131,10 @@ final class CloudKitSyncMonitor {
 
         activeEvents.removeValue(forKey: event.identifier)
 
-        if let error = event.error {
+        if let errorDescription = event.errorDescription {
             currentEventKind = kind
-            lastError = error.localizedDescription
-            status = .error(error.localizedDescription)
+            lastError = errorDescription
+            status = .error(errorDescription)
             return
         }
 
