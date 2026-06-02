@@ -10,8 +10,8 @@ nonisolated enum DailyRecommendationType: String, Hashable, Sendable {
     case libraryExercise
     case courseLesson
     case behavioralActivation
-    case safetySupport
     case sleepWindDown
+    case safetySupport
 
     var iconName: String {
         switch self {
@@ -29,10 +29,10 @@ nonisolated enum DailyRecommendationType: String, Hashable, Sendable {
             return "graduationcap.fill"
         case .behavioralActivation:
             return "calendar.badge.clock"
-        case .safetySupport:
-            return "hand.raised.fill"
         case .sleepWindDown:
             return "moon.stars.fill"
+        case .safetySupport:
+            return "cross.case.fill"
         }
     }
 }
@@ -47,8 +47,8 @@ nonisolated enum DailyRecommendationDestination: Hashable, Sendable {
     case program(programID: String)
     case introToCBT
     case behavioralActivation
-    case safetySupport
     case assessments
+    case safetySupport
 
     var deepLink: String {
         switch self {
@@ -70,10 +70,10 @@ nonisolated enum DailyRecommendationDestination: Hashable, Sendable {
             return "cbt://daily-plan/intro-to-cbt"
         case .behavioralActivation:
             return "cbt://exercises/activity-planner"
-        case .safetySupport:
-            return "cbt://daily-plan/support"
         case .assessments:
             return "cbt://assessments"
+        case .safetySupport:
+            return "cbt://safety-plan"
         }
     }
 }
@@ -234,23 +234,23 @@ struct DailyRecommendationService {
                         isCompletedToday: false
                     ),
                     makeRecommendation(
-                        type: .safetySupport,
-                        title: "Open safety/support resources",
-                        subtitle: "Keep extra support close without making this a big thing.",
-                        reason: "When mood is very low, support should be easy to reach.",
-                        destination: .safetySupport,
+                        type: .breathingReset,
+                        title: "One-minute grounding",
+                        subtitle: "Slow the pace before choosing what comes next.",
+                        reason: "When mood is low, a brief reset can make the next step feel smaller.",
+                        destination: .breathingReset(durationSeconds: 60),
                         priority: 92,
-                        duration: 2,
+                        duration: 1,
                         isCompletedToday: false
                     ),
                     makeRecommendation(
-                        type: .guidedJournal,
-                        title: "Self-compassion journal",
-                        subtitle: "Write with the voice you would use for a friend.",
-                        reason: "A warmer inner voice can soften the next few minutes.",
-                        destination: .guidedJournal(kind: "self_compassion"),
+                        type: .safetySupport,
+                        title: "Open your safety plan",
+                        subtitle: "Keep support steps and trusted contacts close.",
+                        reason: "Safety resources should stay reachable whenever mood is very low.",
+                        destination: .safetySupport,
                         priority: 84,
-                        duration: 4,
+                        duration: 2,
                         isCompletedToday: false
                     )
                 ]
@@ -573,22 +573,6 @@ struct DailyRecommendationService {
 
         var recommendations = [DailyRecommendationType: DailyRecommendation]()
 
-        if veryLowMood {
-            upsert(
-                makeRecommendation(
-                    type: .safetySupport,
-                    title: "Support Options",
-                    subtitle: "Choose a steady next step and people you can contact.",
-                    reason: "Your latest mood check-in was very low.",
-                    destination: .safetySupport,
-                    priority: 96,
-                    duration: 2,
-                    isCompletedToday: false
-                ),
-                into: &recommendations
-            )
-        }
-
         if missedCheckIn {
             let reason = missedCheckInDays.map { days in
                 days <= 1 ? "No mood check-in has been logged today." : "It has been \(days) days since the last mood check-in."
@@ -899,22 +883,12 @@ struct DailyRecommendationService {
     ) -> [DailyRecommendation] {
         [
             makeRecommendation(
-                type: .safetySupport,
-                title: "Support/Safety Resources",
-                subtitle: "Open support options and next-step resources.",
-                reason: "When mood is very low, extra support should be close by.",
-                destination: .safetySupport,
-                priority: 100,
-                duration: 2,
-                isCompletedToday: false
-            ),
-            makeRecommendation(
                 type: .breathingReset,
                 title: "Grounding + Breathing",
                 subtitle: "Settle your body before choosing next steps.",
                 reason: "Your latest mood check-in was very low.",
                 destination: .breathingReset(durationSeconds: 180),
-                priority: 98,
+                priority: 100,
                 duration: 3,
                 isCompletedToday: hasBreathingToday
             ),
@@ -927,6 +901,16 @@ struct DailyRecommendationService {
                 priority: 94,
                 duration: 5,
                 isCompletedToday: oneSmallStepCompletedToday
+            ),
+            makeRecommendation(
+                type: .safetySupport,
+                title: "Open Safety Plan",
+                subtitle: "Review support steps and trusted contacts.",
+                reason: "Safety resources stay available when mood is very low.",
+                destination: .safetySupport,
+                priority: 88,
+                duration: 2,
+                isCompletedToday: false
             )
         ]
     }

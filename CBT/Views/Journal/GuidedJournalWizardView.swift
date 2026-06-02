@@ -84,148 +84,145 @@ struct GuidedJournalWizardView: View {
     // MARK: - Wizard Step
 
     private var wizardContent: some View {
-        VStack(spacing: 0) {
-            progressView
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(spacing: 0) {
+                    progressView
 
-            Spacer()
+                    promptBlock
+                        .padding(.top, 28)
 
-            VStack(spacing: 14) {
-                // Step Badge
-                Text("Step \(currentStepIndex + 1) of \(template.prompts.count)")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(accent)
+                    editorBlock
+                        .padding(.top, 24)
+
+                    Spacer(minLength: 24)
+
+                    wizardNavigationButtons
+                        .padding(.top, 12)
+                }
+                .frame(minHeight: proxy.size.height, alignment: .top)
+            }
+            .scrollDismissesKeyboard(.interactively)
+        }
+    }
+
+    private var promptBlock: some View {
+        VStack(spacing: 14) {
+            Text("Step \(currentStepIndex + 1) of \(template.prompts.count)")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(accent)
+                .textCase(.uppercase)
+                .tracking(1.5)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .background(accent.opacity(0.12))
+                .clipShape(Capsule())
+
+            if let stepTitle = currentStep.title,
+               !stepTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(stepTitle)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.secondaryText)
                     .textCase(.uppercase)
-                    .tracking(1.5)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
-                    .background(accent.opacity(0.12))
-                    .clipShape(Capsule())
-
-                if let stepTitle = currentStep.title,
-                   !stepTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text(stepTitle)
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.secondaryText)
-                        .textCase(.uppercase)
-                        .tracking(1)
-                }
-
-                // Prompt
-                Text(currentStep.text)
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .tracking(1)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(Theme.primaryText)
-                    .padding(.horizontal, 32)
-                    .id(currentStepIndex) // Force re-render for animation
-
-                if let helperText = currentStep.helperText ?? template.helperText,
-                   !helperText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text(helperText)
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Theme.secondaryText)
-                        .padding(.horizontal, 36)
-                }
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
-            // Text Input Box
-            ZStack(alignment: .topLeading) {
-                TextEditor(text: $responses[currentStepIndex])
-                    .font(.system(size: 16, design: .rounded))
-                    .foregroundStyle(Theme.primaryText)
-                    .scrollContentBackground(.hidden)
-                    .focused($isEditorFocused)
-                    .padding(16)
-                    .frame(minHeight: 140, maxHeight: 200)
-                    .background(Theme.cardBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(
-                                isEditorFocused ? accent.opacity(0.6) : Theme.secondaryText.opacity(0.12),
-                                lineWidth: isEditorFocused ? 1.8 : 0.8
-                            )
-                    )
+            Text(currentStep.text)
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Theme.primaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 32)
+                .id(currentStepIndex)
 
-                if responses[currentStepIndex].isEmpty,
-                   let placeholder = currentStep.placeholder,
-                   !placeholder.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text(placeholder)
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundStyle(Theme.secondaryText.opacity(0.65))
-                        .padding(.horizontal, 22)
-                        .padding(.vertical, 24)
-                        .allowsHitTesting(false)
-                }
+            if let helperText = currentStep.helperText ?? template.helperText,
+               !helperText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(helperText)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 36)
             }
-                .padding(.horizontal, 24)
-                .padding(.top, 24)
-                .animation(.easeInOut(duration: 0.2), value: isEditorFocused)
-                .onAppear { isEditorFocused = true }
+        }
+    }
 
-            Spacer()
+    private var editorBlock: some View {
+        ZStack(alignment: .topLeading) {
+            TextEditor(text: $responses[currentStepIndex])
+                .font(.system(size: 16, design: .rounded))
+                .foregroundStyle(Theme.primaryText)
+                .scrollContentBackground(.hidden)
+                .focused($isEditorFocused)
+                .padding(16)
+                .frame(minHeight: 140, maxHeight: 220)
+                .background(Theme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(
+                            isEditorFocused ? accent.opacity(0.6) : Theme.secondaryText.opacity(0.12),
+                            lineWidth: isEditorFocused ? 1.8 : 0.8
+                        )
+                )
 
-            // Navigation Buttons
-            HStack(spacing: 12) {
-                if currentStepIndex > 0 {
-                    Button(action: {
-                        HapticManager.shared.lightImpact()
-                        isEditorFocused = false
-                        currentStepIndex -= 1
-                    }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 14, weight: .semibold))
-                            Text("Back")
-                                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        }
-                        .foregroundStyle(accent)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(accent.opacity(0.12))
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .premiumPressEffect()
-                }
+            if responses[currentStepIndex].isEmpty,
+               let placeholder = currentStep.placeholder,
+               !placeholder.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(placeholder)
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundStyle(Theme.secondaryText.opacity(0.65))
+                    .padding(.horizontal, 22)
+                    .padding(.vertical, 24)
+                    .allowsHitTesting(false)
+            }
+        }
+        .padding(.horizontal, 24)
+        .animation(.easeInOut(duration: 0.2), value: isEditorFocused)
+        .onAppear { isEditorFocused = true }
+    }
 
+    private var wizardNavigationButtons: some View {
+        HStack(spacing: 12) {
+            if currentStepIndex > 0 {
                 Button(action: {
-                    if currentStepIndex < template.prompts.count - 1 {
-                        HapticManager.shared.selection()
-                        isEditorFocused = false
-                        currentStepIndex += 1
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            isEditorFocused = true
-                        }
-                    } else {
-                        HapticManager.shared.success()
-                        saveEntry()
-                    }
+                    HapticManager.shared.lightImpact()
+                    isEditorFocused = false
+                    currentStepIndex -= 1
                 }) {
                     HStack(spacing: 6) {
-                        Text(currentStepIndex < template.prompts.count - 1 ? "Next" : "Save")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                        Image(systemName: currentStepIndex < template.prompts.count - 1 ? "chevron.right" : "checkmark")
-                            .font(.system(size: 14, weight: .semibold))
+                        Image(systemName: "chevron.left")
+                        Text("Back")
                     }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        currentResponseTrimmed.isEmpty
-                            ? accent.opacity(0.4)
-                            : accent
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .shadow(color: currentResponseTrimmed.isEmpty ? Color.clear : accent.opacity(0.25), radius: 8, y: 4)
                 }
-                .disabled(currentResponseTrimmed.isEmpty)
-                .buttonStyle(.plain)
-                .premiumPressEffect()
+                .buttonStyle(DSButtonStyle(variant: .secondary, tint: accent, hapticType: nil))
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 24)
+
+            Button(action: {
+                if currentStepIndex < template.prompts.count - 1 {
+                    HapticManager.shared.selection()
+                    isEditorFocused = false
+                    currentStepIndex += 1
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        isEditorFocused = true
+                    }
+                } else {
+                    HapticManager.shared.success()
+                    saveEntry()
+                }
+            }) {
+                HStack(spacing: 6) {
+                    Text(currentStepIndex < template.prompts.count - 1 ? "Next" : "Save")
+                    Image(systemName: currentStepIndex < template.prompts.count - 1 ? "chevron.right" : "checkmark")
+                }
+            }
+            .disabled(currentResponseTrimmed.isEmpty)
+            .buttonStyle(DSButtonStyle(variant: .primary, tint: accent, hapticType: nil))
         }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 24)
     }
 
     // MARK: - Completion
@@ -280,16 +277,8 @@ struct GuidedJournalWizardView: View {
                 dismiss()
             }) {
                 Text("Done")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(accent)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .shadow(color: accent.opacity(0.3), radius: 10, y: 5)
             }
-            .buttonStyle(.plain)
-            .premiumPressEffect()
+            .buttonStyle(DSButtonStyle(variant: .primary, tint: accent, hapticType: nil))
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
         }

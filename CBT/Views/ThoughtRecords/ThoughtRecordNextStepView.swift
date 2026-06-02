@@ -26,10 +26,6 @@ struct ThoughtRecordNextStepView: View {
                 VStack(alignment: .leading, spacing: DSSpacing.large) {
                     header
 
-                    if plan.includesSupportResources {
-                        supportResourcesCard
-                    }
-
                     VStack(alignment: .leading, spacing: DSSpacing.small) {
                         Text("Smart Coach")
                             .font(.system(size: 13, weight: .bold, design: .rounded))
@@ -64,6 +60,7 @@ struct ThoughtRecordNextStepView: View {
         #else
         .sheet(isPresented: $showingBreathing) {
             breathingReset
+                .dsSheetPresentation()
         }
         #endif
         .sheet(isPresented: $showingGuidedJournal) {
@@ -81,6 +78,7 @@ struct ThoughtRecordNextStepView: View {
                         }
                     }
             }
+            .dsSheetPresentation()
         }
     }
 
@@ -121,39 +119,6 @@ struct ThoughtRecordNextStepView: View {
                     )
             }
         }
-    }
-
-    private var supportResourcesCard: some View {
-        VStack(alignment: .leading, spacing: DSSpacing.medium) {
-            Label("Support resources", systemImage: "lifepreserver")
-                .font(DSTypography.sectionTitle)
-                .foregroundStyle(DSTheme.primaryText)
-
-            Text("This record looked especially intense, so here are resources to keep close. This is not a diagnosis or counseling. If you might harm yourself or someone else, contact emergency services now. In the U.S., call or text 988 for immediate support.")
-                .font(DSTypography.caption)
-                .foregroundStyle(DSTheme.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Link(destination: URL(string: "https://988lifeline.org")!) {
-                HStack(spacing: DSSpacing.small) {
-                    Image(systemName: "arrow.up.forward.square")
-                    Text("Open 988 Lifeline")
-                    Spacer()
-                }
-                .font(DSTypography.button)
-                .foregroundStyle(DSTheme.warning)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(DSSpacing.large)
-        .background(
-            RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous)
-                .fill(DSTheme.warning.opacity(0.10))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous)
-                .stroke(DSTheme.warning.opacity(0.26), lineWidth: 1)
-        )
     }
 
     @ViewBuilder

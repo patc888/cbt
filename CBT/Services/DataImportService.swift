@@ -311,6 +311,7 @@ struct DataImportService {
                         linkedExerciseIDs: courseExport.linkedExerciseIDs,
                         linkedGuidedJournalIDs: courseExport.linkedGuidedJournalIDs,
                         finalReflectionPrompt: courseExport.finalReflectionPrompt,
+                        completionMessage: courseExport.completionMessage ?? "",
                         finalReflectionResponse: courseExport.finalReflectionResponse,
                         isPremium: courseExport.isPremium,
                         itemIDs: courseExport.itemIDs,
@@ -591,6 +592,7 @@ struct DataImportService {
         course.linkedExerciseIDs = export.linkedExerciseIDs
         course.linkedGuidedJournalIDs = export.linkedGuidedJournalIDs
         course.finalReflectionPrompt = export.finalReflectionPrompt
+        course.completionMessage = export.completionMessage ?? ""
         course.finalReflectionResponse = export.finalReflectionResponse
         course.isPremium = export.isPremium
         course.itemIDs = export.itemIDs

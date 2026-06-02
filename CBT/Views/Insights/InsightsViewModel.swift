@@ -41,6 +41,10 @@ private struct JournalSnapshot: Sendable {
     let createdAt: Date
 }
 
+private struct FlexibleJournalSnapshot: Sendable {
+    let date: Date
+}
+
 private struct InsightsCalculationResult: Sendable {
     let activeDaysCount: Int
     let dailyMoodAverages: [DailyMoodAverage]
@@ -62,6 +66,7 @@ private struct InsightsCalculationResult: Sendable {
     let currentStreak: Int
     let longestStreak: Int
     let patternSummary: InsightsPatternSummary
+    let personalGrowth: PersonalGrowthSnapshot
 }
 
 @MainActor
@@ -103,6 +108,7 @@ final class InsightsViewModel {
     var topDistortions: [DistortionCount] = []
     var contextTagCorrelations: [ContextTagMoodCorrelation] = []
     var patternSummary: InsightsPatternSummary = .empty
+    var personalGrowth: PersonalGrowthSnapshot = .empty
     
     @MainActor
     func recalculate(
@@ -112,6 +118,7 @@ final class InsightsViewModel {
         thoughtRecords: [ThoughtRecord],
         exerciseCompletions: [ExerciseCompletion],
         journalEntries: [JournalEntry],
+        flexibleJournalEntries: [FlexibleJournalEntry],
         moodGoalValue: Int
     ) async {
         isCalculating = true
@@ -149,6 +156,9 @@ final class InsightsViewModel {
         }
         let journals = journalEntries.map {
             JournalSnapshot(createdAt: $0.createdAt)
+        }
+        let flexibleJournals = flexibleJournalEntries.map {
+            FlexibleJournalSnapshot(date: $0.date)
         }
 
         let results = await Task.detached(priority: .userInitiated) {
@@ -300,6 +310,16 @@ final class InsightsViewModel {
                 calendar: calendar,
                 now: now
             )
+            let personalGrowth = makePersonalGrowthSnapshot(
+                moods: moods,
+                checkIns: checkIns,
+                thoughts: thoughts,
+                exercises: exercises,
+                journals: journals,
+                flexibleJournals: flexibleJournals,
+                calendar: calendar,
+                now: now
+            )
             
             // 10. Streaks (across all time)
             let allMoodDays = moodScores.map { calendar.startOfDay(for: $0.createdAt) }
@@ -333,7 +353,8 @@ final class InsightsViewModel {
                     moodVolatilityLast30Days: volatility,
                     currentStreak: 0,
                     longestStreak: 0,
-                    patternSummary: patternSummary
+                    patternSummary: patternSummary,
+                    personalGrowth: personalGrowth
                 )
             }
             
@@ -397,7 +418,8 @@ final class InsightsViewModel {
                 moodVolatilityLast30Days: volatility,
                 currentStreak: cStreak,
                 longestStreak: lStreak,
-                patternSummary: patternSummary
+                patternSummary: patternSummary,
+                personalGrowth: personalGrowth
             )
         }.value
         
@@ -422,6 +444,7 @@ final class InsightsViewModel {
             self.currentStreak = results.currentStreak
             self.longestStreak = results.longestStreak
             self.patternSummary = results.patternSummary
+            self.personalGrowth = results.personalGrowth
             
             self.isCalculating = false
         }
@@ -448,9 +471,93 @@ final class InsightsViewModel {
             topTriggers: topTriggers,
             topDistortions: topDistortions,
             contextTagCorrelations: contextTagCorrelations,
-            patternSummary: patternSummary
+            patternSummary: patternSummary,
+            personalGrowth: personalGrowth
         )
     }
+}
+
+private func makePersonalGrowthSnapshot(
+    moods: [MoodSnapshot],
+    checkIns: [MoodCheckInSnapshot],
+    thoughts: [ThoughtSnapshot],
+    exercises: [ExerciseSnapshot],
+    journals: [JournalSnapshot],
+    flexibleJournals: [FlexibleJournalSnapshot],
+    calendar: Calendar,
+    now: Date
+) -> PersonalGrowthSnapshot {
+    let threeMonthsAgo = calendar.date(byAdding: .month, value: -3, to: now) ?? now
+    let activityDates = moods.map(\.createdAt)
+        + checkIns.map(\.createdAt)
+        + thoughts.map(\.createdAt)
+        + exercises.map(\.createdAt)
+        + journals.map(\.createdAt)
+        + flexibleJournals.map(\.date)
+
+    let recentDates = activityDates.filter { $0 >= threeMonthsAgo && $0 <= now }
+    let entryCount = recentDates.count
+    let weekGroups = Dictionary(grouping: recentDates) { date in
+        calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? calendar.startOfDay(for: date)
+    }
+
+    let weekStarts = makeWeekStarts(from: threeMonthsAgo, through: now, calendar: calendar)
+    let weeklyEntryCounts = weekStarts.map { weekGroups[$0]?.count ?? 0 }
+    let averageEntriesPerWeek = weeklyEntryCounts.isEmpty ? 0 : Double(weeklyEntryCounts.reduce(0, +)) / Double(weeklyEntryCounts.count)
+    let consistencyScore = Int((min(averageEntriesPerWeek / 5.0, 1.0) * 100).rounded())
+
+    var emotionCounts: [String: (displayName: String, count: Int)] = [:]
+    for mood in moods {
+        for emotion in uniqueNormalizedItems(mood.emotions, style: .title) {
+            var bucket = emotionCounts[emotion.key] ?? (displayName: emotion.displayName, count: 0)
+            bucket.count += 1
+            emotionCounts[emotion.key] = bucket
+        }
+    }
+    for thought in thoughts {
+        for emotion in uniqueNormalizedItems(thought.emotions, style: .title) {
+            var bucket = emotionCounts[emotion.key] ?? (displayName: emotion.displayName, count: 0)
+            bucket.count += 1
+            emotionCounts[emotion.key] = bucket
+        }
+    }
+
+    let topEmotionTags = emotionCounts.values.map {
+        EmotionCount(name: $0.displayName, count: $0.count)
+    }
+    .sorted { first, second in
+        if first.count == second.count {
+            return first.name < second.name
+        }
+        return first.count > second.count
+    }
+    .prefix(3)
+    .map { $0 }
+
+    return PersonalGrowthSnapshot(
+        consistencyScore: consistencyScore,
+        entriesLastThreeMonths: entryCount,
+        averageEntriesPerWeek: averageEntriesPerWeek,
+        weeklyEntryCounts: weeklyEntryCounts,
+        milestones: UserMilestoneSchema.milestones(for: entryCount, achievedAt: recentDates.max()),
+        topEmotionTags: topEmotionTags
+    )
+}
+
+private func makeWeekStarts(from startDate: Date, through endDate: Date, calendar: Calendar) -> [Date] {
+    var starts: [Date] = []
+    var cursor = calendar.dateInterval(of: .weekOfYear, for: startDate)?.start ?? calendar.startOfDay(for: startDate)
+    let final = calendar.dateInterval(of: .weekOfYear, for: endDate)?.start ?? calendar.startOfDay(for: endDate)
+
+    while cursor <= final {
+        starts.append(cursor)
+        guard let next = calendar.date(byAdding: .weekOfYear, value: 1, to: cursor) else {
+            break
+        }
+        cursor = next
+    }
+
+    return starts
 }
 
 private enum InsightNameStyle {

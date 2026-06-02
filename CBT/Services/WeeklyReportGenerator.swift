@@ -544,8 +544,8 @@ private struct WeeklyReportPDFPage {
         drawEmotionTriggerSummary()
         drawActivityPatternSummary()
         drawThoughtRecordSummary()
-        drawCompletedExercises()
-        drawBreathingJournalSummary()
+        drawExercisesBreathingSummary()
+        drawJournalActivitySummary()
         drawSuggestedFocus()
         drawExcerptsIfNeeded()
         drawFooter()
@@ -599,14 +599,14 @@ private struct WeeklyReportPDFPage {
     }
 
     private mutating func drawEmotionTriggerSummary() {
-        drawSectionTitle("Emotion / Trigger Summary")
+        drawSectionTitle("Emotions / Triggers")
         drawFrequencyList("Top emotions", report.emotionSummary, emptyText: "No emotions recorded this week.")
         drawFrequencyList("Top triggers", report.triggerSummary, emptyText: "No triggers recorded this week.")
     }
 
     private mutating func drawActivityPatternSummary() {
         let activity = report.activityPatternSummary
-        drawSectionTitle("Activity Pattern Summary")
+        drawSectionTitle("Activity Patterns")
         var rows = [
             ("Active days", "\(activity.activeDays) of 7"),
             ("Tracked events", "\(activity.totalTrackedEvents)"),
@@ -625,7 +625,7 @@ private struct WeeklyReportPDFPage {
 
     private mutating func drawThoughtRecordSummary() {
         let thought = report.thoughtRecordSummary
-        drawSectionTitle("Thought Record Summary")
+        drawSectionTitle("Thought Patterns")
         drawKeyValueRows([
             ("Thought records", "\(thought.recordCount)"),
             ("Average intensity before", format(thought.averageIntensityBefore, suffix: "%")),
@@ -636,17 +636,20 @@ private struct WeeklyReportPDFPage {
         drawFrequencyList("Thought record emotions", thought.emotionSummary, emptyText: "No thought record emotions recorded this week.")
     }
 
-    private mutating func drawCompletedExercises() {
-        drawSectionTitle("Completed Exercises")
-        drawFrequencyList(nil, report.completedExercises, emptyText: "No CBT exercises completed this week.")
-    }
-
-    private mutating func drawBreathingJournalSummary() {
+    private mutating func drawExercisesBreathingSummary() {
         let summary = report.breathingJournalSummary
-        drawSectionTitle("Breathing / Journal Activity")
+        drawSectionTitle("Exercises and Breathing")
+        drawFrequencyList("Completed exercises", report.completedExercises, emptyText: "No CBT exercises completed this week.")
         drawKeyValueRows([
             ("Breathing sessions", "\(summary.breathingSessionCount)"),
-            ("Breathing time", durationText(seconds: summary.totalBreathingSeconds)),
+            ("Breathing time", durationText(seconds: summary.totalBreathingSeconds))
+        ])
+    }
+
+    private mutating func drawJournalActivitySummary() {
+        let summary = report.breathingJournalSummary
+        drawSectionTitle("Journal Activity")
+        drawKeyValueRows([
             ("Journal entries", "\(summary.journalEntryCount)"),
             ("Guided journal entries", "\(summary.flexibleJournalEntryCount)"),
             ("Timed journal entries", "\(summary.timedJournalEntryCount)")
@@ -654,7 +657,7 @@ private struct WeeklyReportPDFPage {
     }
 
     private mutating func drawSuggestedFocus() {
-        drawSectionTitle("Suggested Focus")
+        drawSectionTitle("Suggested Focus for Next Week")
         guard !report.suggestedFocus.isEmpty else {
             drawEmptyState("No focus suggestions available yet.")
             return

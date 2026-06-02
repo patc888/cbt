@@ -15,9 +15,9 @@ struct SubscriptionSettingsView: View {
         SettingsSection(title: "") {
             if !isPremium {
                 ProUpgradeCard(
-                    title: String(localized: "Full Access"),
-                    subtitle: String(localized: "Unlock AI insights, unlimited records, and premium themes."),
-                    ctaTitle: String(localized: "Update to Full Access"),
+                    title: String(localized: "CBT Premium"),
+                    subtitle: String(localized: "Subscribe to keep Premium access active as new tools roll out."),
+                    ctaTitle: String(localized: "View Premium Options"),
                     footnote: nil,
                     isFullColorTheme: themeManager.isImmersive,
                     action: {
@@ -30,20 +30,26 @@ struct SubscriptionSettingsView: View {
                     HStack(alignment: .top, spacing: 16) {
                         AppIconView(size: 60)
                             .cornerRadius(14)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(alignment: .center, spacing: 8) {
-                                Text(String(localized: "Full Access"))
-                                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                                    .foregroundStyle(Theme.primaryText)
-                                
-                                statusChip(title: String(localized: "Activated"))
-                                    .accessibilityValue("Activated")
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            ViewThatFits(in: .horizontal) {
+                                HStack(alignment: .center, spacing: 8) {
+                                    subscriptionTitle
+                                    statusChip(title: String(localized: "Activated"))
+                                        .accessibilityValue("Activated")
+                                }
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    subscriptionTitle
+                                    statusChip(title: String(localized: "Activated"))
+                                        .accessibilityValue("Activated")
+                                }
                             }
-                            
-                            Text(String(localized: "You have full access to all premium features."))
+
+                            Text(String(localized: "Thanks for keeping Premium active."))
                                 .font(.system(size: 14, weight: .medium, design: .rounded))
                                 .foregroundStyle(Theme.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
@@ -61,7 +67,16 @@ struct SubscriptionSettingsView: View {
         }
         .sheet(isPresented: $isShowingPaywall) {
             SubscriptionView()
+                .dsSheetPresentation(detents: [.large])
         }
+    }
+
+    @ViewBuilder
+    private var subscriptionTitle: some View {
+        Text(String(localized: "Premium"))
+            .font(.system(size: 20, weight: .bold, design: .rounded))
+            .foregroundStyle(Theme.primaryText)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     @ViewBuilder

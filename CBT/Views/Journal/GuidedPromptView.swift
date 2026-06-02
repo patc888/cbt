@@ -267,30 +267,18 @@ struct GuidedPromptView: View {
                 goBack()
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(accent)
-                    .frame(width: 52, height: 52)
-                    .background(accent.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .disabled(currentIndex == 0)
-            .opacity(currentIndex == 0 ? 0.35 : 1)
-            .buttonStyle(.plain)
+            .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(52), expands: false, tint: accent, hapticType: nil))
 
             Button {
                 HapticManager.shared.selection()
                 advanceOrSave()
             } label: {
                 Label(currentIndex == flow.cards.count - 1 ? String(localized: "Save") : String(localized: "Next"), systemImage: currentIndex == flow.cards.count - 1 ? "checkmark" : "chevron.right")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(currentResponse.isEmpty ? accent.opacity(0.45) : accent)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .disabled(currentResponse.isEmpty)
-            .buttonStyle(.plain)
+            .buttonStyle(DSButtonStyle(variant: .primary, size: .large, tint: accent, hapticType: nil))
         }
     }
 
@@ -314,14 +302,8 @@ struct GuidedPromptView: View {
                 dismiss()
             } label: {
                 Text(String(localized: "Done"))
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(accent)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(DSButtonStyle(variant: .primary, size: .large, tint: accent, hapticType: nil))
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
         }

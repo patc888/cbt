@@ -48,28 +48,16 @@ struct TimedSessionSheet: View {
                         manager.resume()
                     } label: {
                         Label("Resume", systemImage: "play.fill")
-                            .font(DSTypography.button)
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, DSSpacing.xLarge)
-                            .padding(.vertical, DSSpacing.medium)
-                            .background(accent)
-                            .clipShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(DSButtonStyle(variant: .primary, size: .medium, expands: false, tint: accent, hapticType: nil))
                 } else if manager.isRunning {
                     Button {
                         HapticManager.shared.lightImpact()
                         manager.pause()
                     } label: {
                         Label("Pause", systemImage: "pause.fill")
-                            .font(DSTypography.button)
-                            .foregroundStyle(accent)
-                            .padding(.horizontal, DSSpacing.xLarge)
-                            .padding(.vertical, DSSpacing.medium)
-                            .background(accent.opacity(0.12))
-                            .clipShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(DSButtonStyle(variant: .secondary, size: .medium, expands: false, tint: accent, hapticType: nil))
                 }
 
                 Button {
@@ -78,14 +66,8 @@ struct TimedSessionSheet: View {
                     onEndEarly()
                 } label: {
                     Label("End", systemImage: "stop.fill")
-                        .font(DSTypography.button)
-                        .foregroundStyle(DSTheme.destructive)
-                        .padding(.horizontal, DSSpacing.xLarge)
-                        .padding(.vertical, DSSpacing.medium)
-                        .background(DSTheme.destructive.opacity(0.12))
-                        .clipShape(Capsule())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(DSButtonStyle(variant: .destructive, size: .medium, expands: false, hapticType: nil))
             }
 
             Spacer()

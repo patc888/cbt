@@ -38,16 +38,9 @@ struct AddActivityView: View {
                                     HapticManager.shared.lightImpact()
                                 } label: {
                                     Text(cat)
-                                        .font(.system(.subheadline, design: .rounded).weight(.bold))
                                         .lineLimit(1)
-                                        .minimumScaleFactor(0.75)
-                                        .frame(maxWidth: .infinity, minHeight: 36)
-                                        .padding(.horizontal, 16)
-                                        .background(category == cat ? themeManager.selectedColor : Theme.tertiaryBackground)
-                                        .foregroundStyle(category == cat ? .white : Theme.primaryText)
-                                        .clipShape(Capsule())
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(DSSelectionButtonStyle(isSelected: category == cat, selectedColor: themeManager.selectedColor, size: .compact))
                             }
                         }
                         

@@ -6,19 +6,7 @@ struct UsageGate {
 
     @MainActor
     static func canCreateNewItem(in context: ModelContext) -> Bool {
-        // If they already paid, always allow
-        if SubscriptionManager.shared.isPremium {
-            return true
-        }
-        
-        // Count total entries across main categories
-        let thoughtCount = (try? context.fetchCount(FetchDescriptor<ThoughtRecord>())) ?? 0
-        let journalCount = (try? context.fetchCount(FetchDescriptor<JournalEntry>())) ?? 0
-        let moodCount = (try? context.fetchCount(FetchDescriptor<MoodEntry>())) ?? 0
-        
-        let totalCount = thoughtCount + journalCount + moodCount
-        
-        return totalCount < trialLimit
+        return true
     }
 }
 
@@ -47,6 +35,7 @@ struct UsageGateModifier: ViewModifier {
             }
             .sheet(isPresented: $showingPaywall) {
                 SubscriptionView()
+                    .dsSheetPresentation(detents: [.large])
             }
     }
 }

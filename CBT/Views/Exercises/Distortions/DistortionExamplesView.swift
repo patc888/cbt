@@ -110,28 +110,16 @@ struct DistortionExamplesView: View {
                         withAnimation { setRandomExample() }
                     }) {
                         Label("Shuffle", systemImage: "shuffle")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, Theme.paddingMedium)
-                            .background(Theme.tertiaryBackground)
-                            .foregroundColor(Theme.primaryText)
-                            .cornerRadius(12)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(DSButtonStyle(variant: .neutral, hapticType: nil))
                     
                     Button(action: {
                         HapticManager.shared.selection()
                         withAnimation { setNextExample() }
                     }) {
                         Label("Next", systemImage: "arrow.right")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, Theme.paddingMedium)
-                            .background(accent)
-                            .foregroundColor(Theme.backgroundColor)
-                            .cornerRadius(12)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(DSButtonStyle(variant: .primary, tint: accent, hapticType: nil))
                 }
                 .padding(.horizontal, Theme.paddingMedium)
                 .padding(.top, Theme.paddingSmall)
@@ -146,13 +134,8 @@ struct DistortionExamplesView: View {
                         }
                     } label: {
                         Label("Practice Timer", systemImage: "timer")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, Theme.paddingMedium)
-                            .background(accent.opacity(0.12))
-                            .foregroundColor(accent)
-                            .cornerRadius(12)
                     }
+                    .buttonStyle(DSButtonStyle(variant: .secondary, tint: accent, hapticType: .light))
                     .padding(.horizontal, Theme.paddingMedium)
                 }
                 
@@ -176,6 +159,7 @@ struct DistortionExamplesView: View {
         .sheet(isPresented: $showingSaveSession) {
             if let summary = completedSummary {
                 SaveSessionView(summary: summary)
+                    .dsSheetPresentation()
             }
         }
         .onDisappear {
@@ -210,20 +194,16 @@ struct DistortionExamplesView: View {
                     timerManager.resume()
                 } label: {
                     Image(systemName: "play.fill")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(accent)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(36), expands: false, tint: accent, hapticType: nil))
             } else {
                 Button {
                     HapticManager.shared.lightImpact()
                     timerManager.pause()
                 } label: {
                     Image(systemName: "pause.fill")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(accent)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(36), expands: false, tint: accent, hapticType: nil))
             }
 
             Button {
@@ -231,10 +211,8 @@ struct DistortionExamplesView: View {
                 timerManager.endEarly()
             } label: {
                 Image(systemName: "stop.fill")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(DSTheme.destructive)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(DSButtonStyle(variant: .destructive, size: .icon(36), expands: false, hapticType: nil))
         }
         .padding(.horizontal, DSSpacing.large)
         .padding(.vertical, DSSpacing.medium)

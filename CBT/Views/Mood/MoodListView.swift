@@ -73,6 +73,7 @@ struct MoodListView: View {
         }
         .sheet(isPresented: $showingNewEntry) {
             MoodCheckinView()
+                .dsSheetPresentation()
         }
         .withUsageGate(isAttemptingAction: $attemptingNewEntry) {
             showingNewEntry = true
@@ -118,13 +119,14 @@ fileprivate struct MoodEntryRow: View {
                         .frame(width: 48, height: 48)
                     Group {
                         if let validColor = MoodColor(rawValue: entry.moodScore) {
-                            validColor.iconView
+                            validColor.icon(size: 24)
+                                .foregroundStyle(validColor.iconColor(with: themeManager.selectedColor))
                         } else {
                             Image(systemName: "face.smiling")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundStyle(themeManager.selectedColor)
                         }
                     }
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(themeManager.selectedColor)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {

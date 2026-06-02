@@ -185,6 +185,9 @@ struct RootTabView: View {
         appearance.configureWithTransparentBackground()
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
+        
+        UIScrollView.appearance().isDirectionalLockEnabled = true
+        UIScrollView.appearance().alwaysBounceHorizontal = false
 #endif
     }
 

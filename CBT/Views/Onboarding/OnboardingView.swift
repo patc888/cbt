@@ -65,59 +65,20 @@ enum DailyPlanInterest: String, CaseIterable, Identifiable {
 
 struct OnboardingView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @AppStorage(DailyPlanPersonalizationKeys.onboardingCompleted) private var onboardingCompleted = false
     @AppStorage(DailyPlanPersonalizationKeys.goals) private var savedGoals = ""
     @AppStorage(DailyPlanPersonalizationKeys.interests) private var savedInterests = ""
 
-    @State private var selectedPage = 0
     @State private var selectedGoals: Set<DailyPlanGoal> = []
     @State private var selectedInterests: Set<DailyPlanInterest> = []
-
-    private let pageCount = 5
 
     var body: some View {
         ZStack {
             ThemedBackground().ignoresSafeArea()
 
             VStack(spacing: 18) {
-                TabView(selection: $selectedPage) {
-                    OnboardingInfoPage(
-                        systemImage: "brain.head.profile",
-                        title: "CBT for Self-Help",
-                        message: "CBT helps you notice thoughts, feelings, body cues, and actions, then practice small skills that may make the next step easier."
-                    )
-                    .tag(0)
-
-                    OnboardingInfoPage(
-                        systemImage: "lock.shield.fill",
-                        title: "Private by Design",
-                        message: "Your check-ins, journals, and plans stay in your app data. When iCloud sync is available, it uses your private iCloud account."
-                    )
-                    .tag(1)
-
-                    OnboardingInfoPage(
-                        systemImage: "face.smiling",
-                        title: "Gentle Check-Ins",
-                        message: "Check-ins are quick snapshots. They can help the app show patterns over time, and you can use them at your own pace."
-                    )
-                    .tag(2)
-
-                    OnboardingInfoPage(
-                        systemImage: "cross.case.fill",
-                        title: "Not Emergency Care",
-                        message: "This app can support self-reflection and coping practice, but it is not crisis care. If you may be in immediate danger, contact local emergency services now."
-                    )
-                    .tag(3)
-
-                    personalizePage
-                        .tag(4)
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-
-                pageDots
-                    .padding(.bottom, 4)
+                personalizePage
 
                 bottomControls
                     .padding(.horizontal, 24)
@@ -164,30 +125,12 @@ struct OnboardingView: View {
         }
     }
 
-    private var pageDots: some View {
-        HStack(spacing: 7) {
-            ForEach(0..<pageCount, id: \.self) { index in
-                Capsule()
-                    .fill(index == selectedPage ? themeManager.selectedColor : Theme.tertiaryText.opacity(0.28))
-                    .frame(width: index == selectedPage ? 22 : 7, height: 7)
-                    .animation(reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.25, dampingFraction: 0.8), value: selectedPage)
-            }
-        }
-        .accessibilityHidden(true)
-    }
-
     private var bottomControls: some View {
         VStack(spacing: 10) {
             Button {
-                if selectedPage == pageCount - 1 {
-                    completeOnboarding()
-                } else {
-                    withAnimation(reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.32, dampingFraction: 0.82)) {
-                        selectedPage += 1
-                    }
-                }
+                completeOnboarding()
             } label: {
-                Label(selectedPage == pageCount - 1 ? "Start" : "Next", systemImage: selectedPage == pageCount - 1 ? "checkmark.circle.fill" : "arrow.right")
+                Label("Start", systemImage: "checkmark.circle.fill")
             }
             .buttonStyle(DSPrimaryButtonStyle())
 
@@ -195,12 +138,8 @@ struct OnboardingView: View {
                 completeOnboarding()
             } label: {
                 Text("Skip for Now")
-                    .font(DSTypography.button)
-                    .foregroundStyle(themeManager.selectedColor)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(DSSecondaryButtonStyle(size: .medium))
         }
     }
 
@@ -225,23 +164,11 @@ struct OnboardingView: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 14, weight: .bold))
                 Text(title)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.78)
             }
-            .font(.system(.subheadline, design: .rounded).weight(.semibold))
-            .foregroundStyle(isSelected ? .white : Theme.primaryText)
-            .frame(maxWidth: .infinity, minHeight: 44)
-            .padding(.horizontal, 10)
-            .background(isSelected ? themeManager.selectedColor : DSTheme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(isSelected ? Color.clear : Theme.secondaryText.opacity(0.14), lineWidth: 1)
-            )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DSSelectionButtonStyle(isSelected: isSelected, selectedColor: themeManager.selectedColor, size: .medium))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
@@ -273,21 +200,6 @@ struct OnboardingView: View {
             .map(\.rawValue)
             .joined(separator: ",")
         onboardingCompleted = true
-    }
-}
-
-private struct OnboardingInfoPage: View {
-    let systemImage: String
-    let title: String
-    let message: String
-
-    var body: some View {
-        VStack {
-            Spacer(minLength: 24)
-            OnboardingHeader(systemImage: systemImage, title: title, message: message)
-                .padding(.horizontal, 28)
-            Spacer(minLength: 24)
-        }
     }
 }
 

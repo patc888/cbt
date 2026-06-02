@@ -91,24 +91,24 @@ final class ContextualNotificationService: NSObject, UNUserNotificationCenterDel
             NotificationTemplate(
                 id: identifier(for: .beforeWork),
                 lifeEvent: .beforeWork,
-                title: String(localized: "Take one steady minute"),
-                body: String(localized: "A short breathing reset can help you start work grounded."),
+                title: String(localized: "Prepare with one steady minute"),
+                body: String(localized: "Take a brief breathing reset before work starts so you can arrive with a clearer body, a calmer pace, and one workable next step."),
                 trigger: dailyTrigger(hour: 8, minute: 30),
                 deepLink: .breathing
             ),
             NotificationTemplate(
                 id: identifier(for: .duringCommute),
                 lifeEvent: .duringCommute,
-                title: String(localized: "A calm thought for the road"),
-                body: String(localized: "Open an affirmation for a quick mental reset."),
+                title: String(localized: "Reset between places"),
+                body: String(localized: "Open a short affirmation to leave the last stretch behind and bring your attention gently to what comes next."),
                 trigger: dailyTrigger(hour: 17, minute: 30),
                 deepLink: .affirmation
             ),
             NotificationTemplate(
                 id: identifier(for: .beforeBed),
                 lifeEvent: .beforeBed,
-                title: String(localized: "Close the day gently"),
-                body: String(localized: "Capture a quick reflection before bed."),
+                title: String(localized: "Close the day with care"),
+                body: String(localized: "Capture a few lines about what happened, what you handled, and what your mind can set down tonight."),
                 trigger: dailyTrigger(hour: 21, minute: 30),
                 deepLink: .journal
             )

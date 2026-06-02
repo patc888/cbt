@@ -201,6 +201,7 @@ struct BreathingResetView: View {
         }
         .sheet(item: $completedSummary) { summary in
             SaveSessionView(summary: summary)
+                .dsSheetPresentation()
         }
     }
 

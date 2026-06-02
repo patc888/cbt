@@ -31,8 +31,7 @@ struct CycleEducationPage: View {
                 
                 HStack {
                     Button("Reset") { withAnimation { step = 0 } }
-                        .font(.caption.bold())
-                        .foregroundStyle(Theme.secondaryText)
+                        .buttonStyle(DSButtonStyle(variant: .neutral, size: .compact, expands: false, hapticType: .light))
                     
                     Spacer()
                     
@@ -41,12 +40,7 @@ struct CycleEducationPage: View {
                             withAnimation(.spring()) { step += 1 }
                         }
                     }
-                    .font(.subheadline.bold())
-                    .foregroundStyle(themeManager.selectedColor)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(themeManager.selectedColor.opacity(0.1))
-                    .cornerRadius(20)
+                    .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: false, tint: themeManager.selectedColor, hapticType: .light))
                 }
                 .padding(.top, 8)
             }

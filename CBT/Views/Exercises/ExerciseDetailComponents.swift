@@ -16,13 +16,8 @@ struct ExerciseFlowProgressHeader: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Theme.secondaryText)
-                    .padding(8)
-                    .background(Theme.tertiaryBackground)
-                    .clipShape(Circle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(DSButtonStyle(variant: .neutral, size: .icon(36), expands: false, hapticType: nil))
             .accessibilityLabel("Exit exercise")
         }
         .padding(.horizontal, 20)
@@ -51,13 +46,8 @@ struct ExerciseFlowNavigationBar: View {
                             Image(systemName: "chevron.left")
                             Text("Back")
                         }
-                        .font(.system(.subheadline, design: .rounded).weight(.bold))
-                        .foregroundColor(accent)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(accent.opacity(0.1))
-                        .clipShape(Capsule())
                     }
+                    .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: false, tint: accent, hapticType: .light))
                     .accessibilityLabel("Go back to previous step")
                 } else {
                     Spacer().frame(width: 80)
@@ -68,26 +58,14 @@ struct ExerciseFlowNavigationBar: View {
                 if currentStep < totalPages - 1 {
                     Button(action: onNext) {
                         Text(currentStep == 0 ? "Start Session" : "Next Step")
-                            .font(.system(.subheadline, design: .rounded).weight(.bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(accent)
-                            .clipShape(Capsule())
-                            .shadow(color: accent.opacity(0.3), radius: 8, y: 4)
                     }
+                    .buttonStyle(DSButtonStyle(variant: .primary, size: .compact, expands: false, tint: accent, hapticType: .medium))
                     .accessibilityLabel(currentStep == 0 ? "Start exercise" : "Go to next step")
                 } else {
                     Button(action: onFinish) {
                         Text("Finish")
-                            .font(.system(.subheadline, design: .rounded).weight(.bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Theme.successGreen)
-                            .clipShape(Capsule())
-                            .shadow(color: Theme.successGreen.opacity(0.3), radius: 8, y: 4)
                     }
+                    .buttonStyle(DSButtonStyle(variant: .primary, size: .compact, expands: false, tint: Theme.successGreen, hapticType: .success))
                 }
             }
             .padding(.horizontal, 20)
@@ -198,13 +176,8 @@ struct ExerciseOverviewPage: View {
                             Image(systemName: "timer")
                             Text("Start with \(exercise.duration)m Timer")
                         }
-                        .font(.system(.headline, design: .rounded).weight(.bold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(accent)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
+                    .buttonStyle(DSButtonStyle(variant: .primary, tint: accent))
 
                     if let pattern = exercise.breathingPattern, let onJumpToBreathing {
                         Button(action: onJumpToBreathing) {
@@ -212,13 +185,8 @@ struct ExerciseOverviewPage: View {
                                 Image(systemName: "wind")
                                 Text("Guided \(pattern.name)")
                             }
-                            .font(.system(.headline, design: .rounded).weight(.bold))
-                            .foregroundColor(accent)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(accent.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                         }
+                        .buttonStyle(DSButtonStyle(variant: .secondary, tint: accent, hapticType: .light))
                     }
                 }
                 .padding(.top, 12)
@@ -538,12 +506,7 @@ struct ExerciseTimerBar: View {
             action()
         }) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(color)
-                .frame(width: 36, height: 36)
-                .background(color.opacity(0.12))
-                .clipShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(36), expands: false, tint: color, hapticType: nil))
     }
 }

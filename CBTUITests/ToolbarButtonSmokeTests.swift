@@ -6,7 +6,7 @@ final class ToolbarButtonSmokeTests: XCTestCase {
     }
 
     func testBottomToolbarButtonsDoNotCrash() throws {
-        let app = XCUIApplication()
+        let app = makeApp()
         app.launch()
 
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
@@ -58,7 +58,7 @@ final class ToolbarButtonSmokeTests: XCTestCase {
     }
 
     func testExerciseBottomNavigationDoesNotCrashOnRepeatedTaps() throws {
-        let app = XCUIApplication()
+        let app = makeApp()
         app.launch()
 
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
@@ -92,7 +92,7 @@ final class ToolbarButtonSmokeTests: XCTestCase {
     }
 
     func testMoodCheckinStepButtonsDoNotCrashOnRepeatedTaps() throws {
-        let app = XCUIApplication()
+        let app = makeApp()
         app.launch()
 
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
@@ -118,7 +118,7 @@ final class ToolbarButtonSmokeTests: XCTestCase {
     }
 
     func testThoughtRecordStepButtonsDoNotCrashOnRepeatedTaps() throws {
-        let app = XCUIApplication()
+        let app = makeApp()
         app.launch()
 
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
@@ -144,5 +144,12 @@ final class ToolbarButtonSmokeTests: XCTestCase {
             back.doubleTap()
             XCTAssertEqual(app.state, .runningForeground, "App crashed after repeated thought-record Back taps")
         }
+    }
+
+    private func makeApp() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchEnvironment["CBT_USE_IN_MEMORY_STORE"] = "1"
+        app.launchArguments += ["-cbt_onboardingCompleted", "YES"]
+        return app
     }
 }

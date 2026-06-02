@@ -48,6 +48,7 @@ struct MoodSuggestionsView: View {
         }
         .sheet(isPresented: $showingThoughtRecord) {
             NewThoughtRecordFlowView()
+                .dsSheetPresentation()
         }
         #if os(iOS)
         .fullScreenCover(isPresented: $showingBreathing) {
@@ -78,6 +79,7 @@ struct MoodSuggestionsView: View {
                     onDismiss: { showingBreathing = false }
                 )
             }
+            .dsSheetPresentation()
         }
         #endif
     }
@@ -123,14 +125,8 @@ private struct SuggestionButton: View {
                     .font(.caption)
                     .foregroundStyle(DSTheme.secondaryText)
             }
-            .padding(16)
             .foregroundStyle(themeManager.selectedColor)
-            .background(
-                RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous)
-                    .fill(DSTheme.cardBackground)
-                    .shadow(color: themeManager.selectedColor.opacity(0.07), radius: 12, y: 6)
-            )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DSButtonStyle(variant: .neutral, size: .large, hapticType: nil))
     }
 }

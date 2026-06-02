@@ -37,7 +37,7 @@ struct RemindersSettingsSection: View {
                 icon: "bell.badge.fill",
                 iconColor: themeManager.primaryColor,
                 title: String(localized: "Reminders"),
-                subtitle: String(localized: "Personal check-ins, activities, courses, breathing, and sleep"),
+                subtitle: String(localized: "Mood check-ins, reflections, reports, activities, courses, breathing, quotes, and sleep support"),
                 isOn: Binding(
                     get: { isAnyReminderEnabled },
                     set: { newValue in
@@ -53,7 +53,7 @@ struct RemindersSettingsSection: View {
                     icon: "gearshape.2.fill",
                     iconColor: themeManager.primaryColor,
                     title: String(localized: "Advanced Reminders"),
-                    subtitle: String(localized: "Enable each type and adjust timing")
+                    subtitle: String(localized: "Choose reminder types, schedules, life-event prompts, and quiet hours")
                 ) {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))

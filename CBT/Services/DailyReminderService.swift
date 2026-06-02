@@ -19,9 +19,9 @@ enum DailyCheckInKind: String, CaseIterable, Identifiable {
     var notificationBody: String {
         switch self {
         case .morningIntentions:
-            return String(localized: "Set one gentle intention before the day gets moving.")
+            return String(localized: "Choose one grounded intention for the day before everything gets moving.")
         case .eveningReflection:
-            return String(localized: "Close the day with a short guided journal prompt.")
+            return String(localized: "Close the day with a short guided reflection on what happened, what mattered, and what can rest.")
         }
     }
 

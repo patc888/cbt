@@ -11,30 +11,27 @@ struct DismissButton: View {
 
     var style: Style = .chevron
 
+    private var tint: Color {
+        switch style {
+        case .chevron:
+            return themeManager.selectedColor
+        case let .xmarkCircle(_, foreground):
+            return foreground
+        }
+    }
+
     var body: some View {
         Button(action: { dismiss() }) {
             switch style {
             case .chevron:
                 Image(systemName: "chevron.right")
-                    .font(.system(.body, weight: .bold))
-                    .foregroundStyle(themeManager.selectedColor)
-                    .padding(8)
                     .accessibilityLabel("Go back")
-            case let .xmarkCircle(background, foreground):
-                ZStack {
-                    Circle()
-                        .fill(background)
-                    Image(systemName: "xmark")
-                        .font(.system(.body, weight: .bold))
-                        .foregroundStyle(foreground)
-                }
-                .frame(width: 44, height: 44)
-                .accessibilityLabel("Dismiss")
+            case .xmarkCircle:
+                Image(systemName: "xmark")
+                    .accessibilityLabel("Dismiss")
             }
         }
-        .buttonStyle(.plain)
-        .frame(minWidth: 44, minHeight: 44)
-        .contentShape(Rectangle())
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(44), expands: false, tint: tint, hapticType: .light))
 #if targetEnvironment(macCatalyst)
         .focusable(true)
         .keyboardShortcut(.cancelAction)

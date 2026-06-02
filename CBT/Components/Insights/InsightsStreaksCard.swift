@@ -94,13 +94,26 @@ struct InsightsStreaksCard: View {
             }
         }
         .padding(22)
-        .background(heroBackground)
-        .shadow(
-            color: accent.opacity(colorScheme == .dark ? 0.32 : 0.2),
-            radius: colorScheme == .dark ? 26 : 18,
-            x: 0,
-            y: colorScheme == .dark ? 18 : 10
-        )
+        .background {
+            ZStack {
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    #if canImport(UIKit)
+                    .fill(Color(UIColor.systemBackground))
+                    #elseif canImport(AppKit)
+                    .fill(Color(nsColor: .windowBackgroundColor))
+                    #else
+                    .fill(Color.black)
+                    #endif
+                    .shadow(
+                        color: accent.opacity(colorScheme == .dark ? 0.32 : 0.2),
+                        radius: colorScheme == .dark ? 26 : 18,
+                        x: 0,
+                        y: colorScheme == .dark ? 18 : 10
+                    )
+
+                heroBackground
+            }
+        }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
         .onAppear {

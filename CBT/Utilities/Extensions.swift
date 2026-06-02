@@ -5,7 +5,11 @@ struct CardStyleModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .background(DSTheme.cardBackground)
+            .background(
+                RoundedRectangle(cornerRadius: DSCornerRadius.large, style: .continuous)
+                    .fill(DSTheme.cardBackground)
+                    .cardShadow(colorScheme: colorScheme)
+            )
             .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.large, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: DSCornerRadius.large, style: .continuous)
@@ -14,7 +18,6 @@ struct CardStyleModifier: ViewModifier {
                         lineWidth: 0.8
                     )
             )
-            .cardShadow(colorScheme: colorScheme)
     }
 }
 

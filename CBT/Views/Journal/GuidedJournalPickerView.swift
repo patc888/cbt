@@ -88,6 +88,7 @@ struct GuidedJournalPickerView: View {
             GuidedJournalWizardView(template: template) {
                 Task { await refreshEntries() }
             }
+            .dsSheetPresentation()
         }
         .task {
             await refreshEntries()

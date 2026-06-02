@@ -121,5 +121,324 @@
     "localAssetFilename": "five-senses-grounding.mp3",
     "transcript": "Name five things you can see. Four things you can feel. Three things you can hear. Two things you can smell. One thing you can taste. Let the room hold you.",
     "isPremium": false
+  },
+  {
+    "id": "audio_1_minute_reset",
+    "title": "1-Minute Reset",
+    "description": "A brief guided reset for interrupting stress and returning attention to the next small step.",
+    "category": "Quick Resets",
+    "approaches": [
+      "Mindfulness",
+      "CBT"
+    ],
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Audio",
+    "duration": 1,
+    "difficulty": "Beginner",
+    "tags": [
+      "quick reset",
+      "stress",
+      "present moment",
+      "breathing"
+    ],
+    "type": "meditation",
+    "localAssetFilename": "1-minute-reset.mp3",
+    "transcript": "Pause for one minute. Feel your feet, soften your shoulders, and notice one slow breath in. Let the breath out a little longer than it came in. Name one thing that is true right now, then choose the next kind action.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_3_minute_breathing_space",
+    "title": "3-Minute Breathing Space",
+    "description": "A compact breathwork practice for checking in, gathering attention, and widening back to the body.",
+    "category": "Breathwork",
+    "approaches": [
+      "Mindfulness",
+      "CBT"
+    ],
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Audio",
+    "duration": 3,
+    "difficulty": "Beginner",
+    "tags": [
+      "breathing space",
+      "breathwork",
+      "check-in",
+      "anxiety"
+    ],
+    "type": "breathwork",
+    "localAssetFilename": "3-minute-breathing-space.mp3",
+    "transcript": "First, notice what is here: thoughts, feelings, and body sensations. Next, gather attention around the breath, following one inhale and one exhale at a time. Finally, widen attention to the whole body and carry that steadiness forward.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_5_minute_grounding",
+    "title": "5-Minute Grounding",
+    "description": "A sensory grounding track for moments when anxiety feels loud or attention feels scattered.",
+    "category": "Grounding",
+    "approaches": [
+      "Mindfulness",
+      "DBT"
+    ],
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Audio",
+    "duration": 5,
+    "difficulty": "Beginner",
+    "tags": [
+      "grounding",
+      "five senses",
+      "anxiety",
+      "present moment"
+    ],
+    "type": "grounding",
+    "localAssetFilename": "5-minute-grounding.mp3",
+    "transcript": "Look around and name five things you can see. Notice four points of contact or texture. Listen for three sounds. Find two scents or neutral smells. Notice one taste, or simply the feeling of air. Let the room be enough for this moment.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_body_scan",
+    "title": "Body Scan",
+    "description": "A gentle body awareness meditation for noticing tension and practicing release without force.",
+    "category": "Mindfulness",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "topics": [
+      "Stress & Burnout",
+      "Sleep & Wind Down"
+    ],
+    "format": "Audio",
+    "duration": 10,
+    "difficulty": "Intermediate",
+    "tags": [
+      "body scan",
+      "tension release",
+      "mindfulness",
+      "relaxation"
+    ],
+    "type": "meditation",
+    "localAssetFilename": "body-scan.mp3",
+    "transcript": "Bring attention to the top of the head, then the face and jaw. Notice the neck, shoulders, arms, and hands. Move through the chest, belly, back, hips, legs, and feet. At each place, notice what is present and let the next breath make room.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_sleep_wind_down",
+    "title": "Sleep Wind-Down",
+    "description": "A slow bedtime practice for closing the day and helping the body prepare for rest.",
+    "category": "Sleep",
+    "approaches": [
+      "Mindfulness",
+      "Self-Compassion"
+    ],
+    "topics": [
+      "Sleep & Wind Down",
+      "Stress & Burnout"
+    ],
+    "format": "Audio",
+    "duration": 12,
+    "difficulty": "Intermediate",
+    "tags": [
+      "sleep",
+      "wind down",
+      "bedtime",
+      "relaxation"
+    ],
+    "type": "sleep",
+    "localAssetFilename": "sleep-wind-down.mp3",
+    "transcript": "Let the day be done for now. Notice where your body is supported. If unfinished thoughts appear, thank the mind and set them down for tomorrow. Lengthen the exhale, soften the forehead and jaw, and allow rest to arrive at its own pace.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_self_compassion_pause",
+    "title": "Self-Compassion Pause",
+    "description": "A supportive pause for responding to self-criticism with steadier, kinder language.",
+    "category": "Self-Compassion",
+    "approaches": [
+      "Self-Compassion",
+      "Mindfulness"
+    ],
+    "topics": [
+      "Depression Support",
+      "Stress & Burnout"
+    ],
+    "format": "Audio",
+    "duration": 4,
+    "difficulty": "Beginner",
+    "tags": [
+      "self-compassion",
+      "inner critic",
+      "kindness",
+      "shame"
+    ],
+    "type": "meditation",
+    "localAssetFilename": "self-compassion-pause.mp3",
+    "transcript": "This is a hard moment. Hard moments are part of being human. Place a hand somewhere comfortable if that helps. Offer yourself one phrase you would say to someone you care about: may I be patient, may I be kind, may I take the next gentle step.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_anxiety_calming_practice",
+    "title": "Anxiety Calming Practice",
+    "description": "A guided calming practice for easing anxious activation and reconnecting with immediate safety cues.",
+    "category": "Anxiety Reset",
+    "approaches": [
+      "Mindfulness",
+      "CBT"
+    ],
+    "topics": [
+      "Anxiety Tools",
+      "Stress & Burnout"
+    ],
+    "format": "Audio",
+    "duration": 8,
+    "difficulty": "Intermediate",
+    "tags": [
+      "anxiety",
+      "calming",
+      "nervous system",
+      "safety cues"
+    ],
+    "type": "meditation",
+    "localAssetFilename": "anxiety-calming-practice.mp3",
+    "transcript": "Notice that anxiety is present, and also notice what is stable around you. Feel the support under your body. Breathe out slowly and look for three cues of safety. Let thoughts be thoughts for a few breaths, then ask what would help by one percent.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_rain_soundscape",
+    "title": "Rain Soundscape",
+    "description": "A looping rain placeholder for gentle background sound during resets, journaling, or winding down.",
+    "category": "Soundscapes",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "topics": [
+      "Stress & Burnout",
+      "Sleep & Wind Down"
+    ],
+    "format": "Audio",
+    "duration": 20,
+    "difficulty": "Advanced",
+    "tags": [
+      "rain",
+      "soundscape",
+      "ambient",
+      "sleep"
+    ],
+    "type": "soundscape",
+    "localAssetFilename": "rain-soundscape.mp3",
+    "transcript": "Ambient rain soundscape placeholder. No spoken guidance.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_ocean_soundscape",
+    "title": "Ocean Soundscape",
+    "description": "A looping ocean placeholder for steady ambient support while focusing or settling.",
+    "category": "Soundscapes",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "topics": [
+      "Stress & Burnout",
+      "Sleep & Wind Down"
+    ],
+    "format": "Audio",
+    "duration": 20,
+    "difficulty": "Advanced",
+    "tags": [
+      "ocean",
+      "waves",
+      "soundscape",
+      "ambient"
+    ],
+    "type": "soundscape",
+    "localAssetFilename": "ocean-soundscape.mp3",
+    "transcript": "Ambient ocean soundscape placeholder. No spoken guidance.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_brown_noise",
+    "title": "Brown Noise",
+    "description": "A low, steady ambient placeholder intended for masking distractions or supporting rest.",
+    "category": "Soundscapes",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "topics": [
+      "Productivity / Procrastination",
+      "Sleep & Wind Down",
+      "Stress & Burnout"
+    ],
+    "format": "Audio",
+    "duration": 30,
+    "difficulty": "Advanced",
+    "tags": [
+      "brown noise",
+      "focus",
+      "ambient",
+      "sleep"
+    ],
+    "type": "soundscape",
+    "localAssetFilename": "brown-noise.mp3",
+    "transcript": "Brown noise ambient placeholder. No spoken guidance.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_forest_soundscape",
+    "title": "Forest Soundscape",
+    "description": "A nature ambience placeholder for calm background listening and mindful pauses.",
+    "category": "Soundscapes",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "topics": [
+      "Stress & Burnout",
+      "Sleep & Wind Down"
+    ],
+    "format": "Audio",
+    "duration": 20,
+    "difficulty": "Advanced",
+    "tags": [
+      "forest",
+      "nature",
+      "soundscape",
+      "ambient"
+    ],
+    "type": "soundscape",
+    "localAssetFilename": "forest-soundscape.mp3",
+    "transcript": "Ambient forest soundscape placeholder. No spoken guidance.",
+    "isPremium": false
+  },
+  {
+    "id": "audio_focus_ambient_loop",
+    "title": "Focus Ambient Loop",
+    "description": "A simple ambient loop placeholder for quiet concentration, planning, or journaling.",
+    "category": "Focus",
+    "approaches": [
+      "Mindfulness"
+    ],
+    "topics": [
+      "Productivity / Procrastination",
+      "Stress & Burnout"
+    ],
+    "format": "Audio",
+    "duration": 25,
+    "difficulty": "Advanced",
+    "tags": [
+      "focus",
+      "ambient",
+      "loop",
+      "concentration"
+    ],
+    "type": "soundscape",
+    "localAssetFilename": "focus-ambient-loop.mp3",
+    "transcript": "Focus ambient loop placeholder. No spoken guidance.",
+    "isPremium": false
   }
 ]

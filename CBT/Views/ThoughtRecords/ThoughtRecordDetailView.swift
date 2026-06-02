@@ -161,6 +161,8 @@ fileprivate struct DetailSection<Content: View>: View {
 }
 
 fileprivate struct IntensityBadge: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let title: String
     let intensity: Int
     
@@ -176,7 +178,7 @@ fileprivate struct IntensityBadge: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(Theme.toggleBackgroundColor(for: .light))
+        .background(Theme.toggleBackgroundColor(for: colorScheme))
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }

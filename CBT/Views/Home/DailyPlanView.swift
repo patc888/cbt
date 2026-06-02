@@ -71,31 +71,42 @@ struct DailyPlanView: View {
         }
         .padding(18)
         .background {
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(DSTheme.cardBackground)
-                .overlay {
-                    LinearGradient(
-                        colors: [
-                            themeManager.selectedColor.opacity(colorScheme == .dark ? 0.2 : 0.1),
-                            themeManager.secondaryColor.opacity(colorScheme == .dark ? 0.14 : 0.06),
-                            .clear
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+            ZStack {
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    #if canImport(UIKit)
+                    .fill(Color(UIColor.systemBackground))
+                    #elseif canImport(AppKit)
+                    .fill(Color(nsColor: .windowBackgroundColor))
+                    #else
+                    .fill(Color.black)
+                    #endif
+                    .shadow(
+                        color: themeManager.selectedColor.opacity(colorScheme == .dark ? 0.18 : 0.07),
+                        radius: colorScheme == .dark ? 18 : 10,
+                        x: 0,
+                        y: colorScheme == .dark ? 12 : 6
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 26, style: .continuous)
-                        .strokeBorder(themeManager.selectedColor.opacity(0.16), lineWidth: 1)
-                }
+
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(DSTheme.cardBackground)
+                    .overlay {
+                        LinearGradient(
+                            colors: [
+                                themeManager.selectedColor.opacity(colorScheme == .dark ? 0.2 : 0.1),
+                                themeManager.secondaryColor.opacity(colorScheme == .dark ? 0.14 : 0.06),
+                                .clear
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                            .strokeBorder(themeManager.selectedColor.opacity(0.16), lineWidth: 1)
+                    }
+            }
         }
-        .shadow(
-            color: themeManager.selectedColor.opacity(colorScheme == .dark ? 0.18 : 0.07),
-            radius: colorScheme == .dark ? 18 : 10,
-            x: 0,
-            y: colorScheme == .dark ? 12 : 6
-        )
     }
 
     private var header: some View {
@@ -465,33 +476,16 @@ private struct DailyPlanQuickActionButton: View {
                 Text(title)
                     .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.primaryText)
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .minimumScaleFactor(0.72)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 9)
-            .frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
-            .background {
-                RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                accent.opacity(colorScheme == .dark ? 0.15 : 0.08),
-                                themeManager.secondaryColor.opacity(colorScheme == .dark ? 0.1 : 0.04)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay {
-                        RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall, style: .continuous)
-                            .strokeBorder(accent.opacity(0.16), lineWidth: 1)
-                    }
-            }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, tint: accent, hapticType: nil))
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
         .accessibilityLabel(isCompleted ? "\(title), completed" : title)
         .accessibilityHint(String(localized: "Tap to open"))
     }

@@ -2,67 +2,30 @@ import SwiftUI
 
 struct PermissionDeniedView: View {
     let type: PermissionManager.PermissionType
-    @Environment(ThemeManager.self) private var themeManager
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
-            
-            // Icon
-            ZStack {
-                Circle()
-                    .fill(themeManager.primaryColor.opacity(0.1))
-                    .frame(width: 80, height: 80)
-                
-                Image(systemName: iconName)
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundStyle(themeManager.primaryColor)
-            }
-            
-            VStack(spacing: 12) {
-                Text(title)
-                    .font(DSTypography.pageTitle)
-                    .foregroundStyle(Theme.primaryText)
-                    .multilineTextAlignment(.center)
-                
-                Text(message)
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-            }
-            
-            Spacer()
-            
-            VStack(spacing: 12) {
-                Button(action: {
+        FeatureModalPresenter {
+            DSFeatureModal(
+                systemImage: iconName,
+                title: title,
+                subtitle: message,
+                primaryTitle: String(localized: "Open System Settings"),
+                primaryAction: {
                     PermissionManager.shared.openSettings()
-                }) {
-                    Text(String(localized: "Open System Settings"))
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(themeManager.primaryColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .shadow(color: themeManager.primaryColor.opacity(0.3), radius: 8, x: 0, y: 4)
-                }
-                
-                Button(action: {
+                },
+                secondaryTitle: String(localized: "Maybe Later"),
+                secondaryAction: {
+                    HapticManager.shared.lightImpact()
                     dismiss()
-                }) {
-                    Text(String(localized: "Maybe Later"))
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Theme.secondaryText)
-                        .padding(.vertical, 12)
+                },
+                closeAction: {
+                    HapticManager.shared.lightImpact()
+                    dismiss()
                 }
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 20)
+            )
         }
-        .padding()
-        .background(ThemedBackground().ignoresSafeArea())
+        .dsSheetPresentation(detents: [.medium])
     }
     
     private var iconName: String {

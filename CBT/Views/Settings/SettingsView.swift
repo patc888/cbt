@@ -1,4 +1,5 @@
 import OSLog
+import StoreKit
 import SwiftUI
 import SwiftData
 
@@ -116,20 +117,6 @@ private struct SettingsDashboardContent: View {
             )
 
             SettingsSection(title: String(localized: "Tools")) {
-                NavigationLink(destination: SafetyPlanView()) {
-                    SettingsRow(
-                        icon: "cross.case.fill",
-                        iconColor: themeManager.selectedColor,
-                        title: String(localized: "Safety Plan"),
-                        subtitle: String(localized: "Prepare contacts and coping steps for difficult moments")
-                    ) {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Theme.secondaryText)
-                    }
-                }
-                .buttonStyle(.plain)
-
                 NavigationLink(destination: BreathingResetView()) {
                     SettingsRow(
                         icon: "wind",
@@ -137,9 +124,7 @@ private struct SettingsDashboardContent: View {
                         title: String(localized: "Breathing Reset"),
                         subtitle: String(localized: "Guided box breathing session")
                     ) {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Theme.secondaryText)
+                        SettingsDisclosureIndicator()
                     }
                 }
                 .buttonStyle(.plain)
@@ -151,6 +136,8 @@ private struct SettingsDashboardContent: View {
                 WhatIsCBTSettingsCard()
             }
             .buttonStyle(.plain)
+
+            ShareFeedbackSettingsView()
 
             AboutSettingsView()
 
@@ -170,6 +157,16 @@ private struct WhatIsCBTSettingsCard: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                #if canImport(UIKit)
+                .fill(Color(UIColor.systemBackground))
+                #elseif canImport(AppKit)
+                .fill(Color(nsColor: .windowBackgroundColor))
+                #else
+                .fill(Color.black)
+                #endif
+                .shadow(color: themeManager.selectedColor.opacity(colorScheme == .dark ? 0.16 : 0.22), radius: 18, x: 0, y: 10)
+
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(
                     LinearGradient(
@@ -227,7 +224,6 @@ private struct WhatIsCBTSettingsCard: View {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(.white.opacity(0.22), lineWidth: 1)
         }
-        .shadow(color: themeManager.selectedColor.opacity(colorScheme == .dark ? 0.16 : 0.22), radius: 18, x: 0, y: 10)
         .accessibilityElement(children: .combine)
     }
 
@@ -276,6 +272,60 @@ private struct CBTCardPill: View {
     }
 }
 
+private struct ShareFeedbackSettingsView: View {
+    @Environment(\.openURL) private var openURL
+    @Environment(ThemeManager.self) private var themeManager
+
+    private let appShareURL = URL(string: "https://apps.apple.com/us/app/cognitive-behavioral-therapy/id6760043548")
+    private let shareMessage = String(localized: "I have been using CBT for private mood tracking, thought records, and guided self-help tools.")
+
+    var body: some View {
+        SettingsSection(title: String(localized: "Share")) {
+            if let appShareURL {
+                ShareLink(
+                    item: appShareURL,
+                    subject: Text(String(localized: "CBT")),
+                    message: Text(shareMessage)
+                ) {
+                    SettingsRow(
+                        icon: "square.and.arrow.up",
+                        iconColor: themeManager.selectedColor,
+                        title: String(localized: "Share App")
+                    ) {
+                        SettingsDisclosureIndicator()
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+
+            Button {
+                HapticManager.shared.lightImpact()
+                if let url = URL(string: "itms-apps://apps.apple.com/app/id6760043548?action=write-review") {
+                    openURL(url)
+                }
+            } label: {
+                SettingsRow(
+                    icon: "star.bubble",
+                    iconColor: themeManager.selectedColor,
+                    title: String(localized: "Write a Review")
+                ) {
+                    SettingsDisclosureIndicator()
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+private struct SettingsDisclosureIndicator: View {
+    var body: some View {
+        Image(systemName: "chevron.right")
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(Theme.secondaryText)
+            .accessibilityHidden(true)
+    }
+}
+
 
 struct PrivacyFooter: View {
     @Environment(ThemeManager.self) private var themeManager
@@ -301,8 +351,7 @@ struct PrivacyFooter: View {
 
 private struct VersionFooterView: View {
     private var appVersionText: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.7"
-        return "Version \(version)"
+        return "2.0.0"
     }
 
     var body: some View {

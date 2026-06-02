@@ -23,7 +23,7 @@ private enum WeeklyReportExportDetail: String, CaseIterable, Identifiable {
 }
 
 struct WeeklyReportView: View {
-    let weekStart: Date
+    @State private var selectedWeek: Date
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -40,6 +40,10 @@ struct WeeklyReportView: View {
 
     private let pdfExportService = PDFExportService()
 
+    init(weekStart: Date = Date()) {
+        _selectedWeek = State(initialValue: weekStart)
+    }
+
     var body: some View {
         ZStack {
             ThemedBackground()
@@ -48,16 +52,18 @@ struct WeeklyReportView: View {
             ScrollView {
                 VStack(spacing: 12) {
                     headline
+                    weekNavigator
 
                     if isLoading {
-                        ProgressView()
-                            .padding(.vertical, 40)
-                    } else if let report, reportHasAnyData(report) {
+                        weeklyReportLoadingState
+                    } else if let report, reportHasEnoughData(report) {
                         reportHeader(report)
                         exportOptions
                         reportSections(report)
-                    } else if report != nil {
-                        weeklyReportEmptyState
+                    } else if let report {
+                        weeklyReportEmptyState(recordCount: reportDataPointCount(report))
+                    } else if let errorMessage {
+                        weeklyReportErrorState(errorMessage)
                     } else {
                         SupportiveEmptyStateView(
                             systemImage: "doc.badge.exclamationmark",
@@ -85,8 +91,13 @@ struct WeeklyReportView: View {
         .hideNavigationBar()
         .sheet(isPresented: $showingMoodCheckIn) {
             MoodCheckinView()
+                .dsSheetPresentation()
         }
-        .task(id: "\(weekStart.timeIntervalSinceReferenceDate)-\(detailLevel.rawValue)") {
+        .onChange(of: showingMoodCheckIn) { _, isPresented in
+            guard !isPresented else { return }
+            Task { await refreshReport() }
+        }
+        .task(id: "\(selectedWeek.timeIntervalSinceReferenceDate)-\(detailLevel.rawValue)") {
             await refreshReport()
         }
         .fileExporter(
@@ -118,11 +129,8 @@ struct WeeklyReportView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(.body, weight: .bold))
-                        .foregroundStyle(themeManager.selectedColor)
-                        .frame(width: 44, height: 44)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(44), expands: false, tint: themeManager.selectedColor, hapticType: .light))
                 .accessibilityLabel("Go back")
             },
             trailing: {
@@ -130,15 +138,50 @@ struct WeeklyReportView: View {
                     Task { await exportPDF() }
                 } label: {
                     Image(systemName: isExporting ? "clock" : "square.and.arrow.up")
-                        .font(.system(.body, weight: .bold))
-                        .foregroundStyle(themeManager.selectedColor)
-                        .frame(width: 44, height: 44)
                 }
-                .buttonStyle(.plain)
-                .disabled(report == nil || isExporting)
-                .accessibilityLabel("Export weekly report PDF")
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(44), expands: false, tint: themeManager.selectedColor, hapticType: .light))
+                .disabled(!canExportReport)
+                .accessibilityLabel("Share or export weekly report PDF")
             }
         )
+    }
+
+    private var weekNavigator: some View {
+        DSCardContainer {
+            HStack(spacing: 12) {
+                Button {
+                    moveWeek(by: -1)
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(40), expands: false, tint: themeManager.selectedColor, hapticType: .light))
+                .accessibilityLabel("Previous week")
+
+                VStack(spacing: 4) {
+                    Text("Week of")
+                        .font(.system(.caption2, design: .rounded).weight(.black))
+                        .foregroundStyle(Theme.secondaryText.opacity(0.75))
+                        .textCase(.uppercase)
+
+                    Text(selectedWeekRangeText)
+                        .font(DSTypography.sectionTitle)
+                        .foregroundStyle(Theme.primaryText)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.75)
+                }
+                .frame(maxWidth: .infinity)
+
+                Button {
+                    moveWeek(by: 1)
+                } label: {
+                    Image(systemName: "chevron.right")
+                }
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(40), expands: false, tint: themeManager.selectedColor, hapticType: .light))
+                .disabled(!canMoveToNextWeek)
+                .accessibilityLabel("Next week")
+            }
+        }
     }
 
     private func reportHeader(_ report: WeeklyReportGenerator.Report) -> some View {
@@ -165,7 +208,7 @@ struct WeeklyReportView: View {
     private var exportOptions: some View {
         DSCardContainer {
             VStack(alignment: .leading, spacing: 12) {
-                DSSectionHeader(title: "PDF Export", subtitle: "Choose how much private text to include.")
+                DSSectionHeader(title: "Share / Export", subtitle: "Save a PDF using the existing weekly report export.")
 
                 SegmentedToggle(
                     selection: $detailLevel,
@@ -187,19 +230,53 @@ struct WeeklyReportView: View {
                 Button {
                     Task { await exportPDF() }
                 } label: {
-                    Label("Export PDF", systemImage: "square.and.arrow.up")
+                    Label("Share / Export PDF", systemImage: "square.and.arrow.up")
                 }
                 .buttonStyle(DSPrimaryButtonStyle())
-                .disabled(isExporting || report == nil)
+                .disabled(!canExportReport)
             }
         }
     }
 
-    private var weeklyReportEmptyState: some View {
+    private var weeklyReportLoadingState: some View {
+        DSCardContainer {
+            VStack(spacing: 12) {
+                ProgressView()
+                    .controlSize(.large)
+                    .tint(themeManager.selectedColor)
+
+                Text("Preparing weekly report...")
+                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                    .foregroundStyle(Theme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 24)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Loading weekly report")
+        }
+    }
+
+    private func weeklyReportErrorState(_ message: String) -> some View {
+        SupportiveEmptyStateView(
+            systemImage: "exclamationmark.triangle.fill",
+            title: "Could Not Load Report",
+            message: message,
+            actionTitle: "Try Again",
+            actionSystemImage: "arrow.clockwise"
+        ) {
+            Task { await refreshReport() }
+        }
+        .padding(Theme.paddingMedium)
+        .cardStyle()
+    }
+
+    private func weeklyReportEmptyState(recordCount: Int?) -> some View {
         SupportiveEmptyStateView(
             systemImage: "doc.text.magnifyingglass",
             title: "Weekly Report",
-            message: "Weekly reports summarize your self-tracking once this week has at least one check-in or practice record.",
+            message: weeklyReportEmptyMessage(recordCount: recordCount),
             actionTitle: "Add Check-In",
             actionSystemImage: "face.smiling"
         ) {
@@ -222,12 +299,12 @@ struct WeeklyReportView: View {
             ])
         }
 
-        WeeklyReportSection(title: "Emotion / Trigger Summary", systemImage: "heart.text.square") {
+        WeeklyReportSection(title: "Emotions / Triggers", systemImage: "heart.text.square") {
             WeeklyFrequencyList(title: "Top emotions", frequencies: report.emotionSummary, emptyText: "No emotions recorded this week.")
             WeeklyFrequencyList(title: "Top triggers", frequencies: report.triggerSummary, emptyText: "No triggers recorded this week.")
         }
 
-        WeeklyReportSection(title: "Activity Pattern Summary", systemImage: "calendar.badge.clock") {
+        WeeklyReportSection(title: "Activity Patterns", systemImage: "calendar.badge.clock") {
             let activity = report.activityPatternSummary
             WeeklySummaryRows(rows: [
                 WeeklySummaryRowData(title: "Active days", value: "\(activity.activeDays) of 7"),
@@ -240,7 +317,7 @@ struct WeeklyReportView: View {
             WeeklyFrequencyList(title: "Activity categories", frequencies: activity.plannedActivityCategories, emptyText: "No completed planned activities recorded this week.")
         }
 
-        WeeklyReportSection(title: "Thought Record Summary", systemImage: "brain.head.profile") {
+        WeeklyReportSection(title: "Thought Patterns", systemImage: "brain.head.profile") {
             let thought = report.thoughtRecordSummary
             WeeklySummaryRows(rows: [
                 WeeklySummaryRowData(title: "Thought records", value: "\(thought.recordCount)"),
@@ -249,24 +326,28 @@ struct WeeklyReportView: View {
                 WeeklySummaryRowData(title: "Average change", value: formatSigned(thought.averageIntensityChange, suffix: " points"))
             ])
             WeeklyFrequencyList(title: "Common distortions", frequencies: thought.distortionSummary, emptyText: "No distortions recorded this week.")
+            WeeklyFrequencyList(title: "Thought record emotions", frequencies: thought.emotionSummary, emptyText: "No thought record emotions recorded this week.")
         }
 
-        WeeklyReportSection(title: "Completed Exercises", systemImage: "figure.mind.and.body") {
-            WeeklyFrequencyList(title: nil, frequencies: report.completedExercises, emptyText: "No CBT exercises completed this week.")
-        }
-
-        WeeklyReportSection(title: "Breathing / Journal Activity", systemImage: "lungs.fill") {
+        WeeklyReportSection(title: "Exercises and Breathing", systemImage: "figure.mind.and.body") {
             let summary = report.breathingJournalSummary
+            WeeklyFrequencyList(title: "Completed exercises", frequencies: report.completedExercises, emptyText: "No CBT exercises completed this week.")
             WeeklySummaryRows(rows: [
                 WeeklySummaryRowData(title: "Breathing sessions", value: "\(summary.breathingSessionCount)"),
-                WeeklySummaryRowData(title: "Breathing time", value: durationText(seconds: summary.totalBreathingSeconds)),
+                WeeklySummaryRowData(title: "Breathing time", value: durationText(seconds: summary.totalBreathingSeconds))
+            ])
+        }
+
+        WeeklyReportSection(title: "Journal Activity", systemImage: "book.closed") {
+            let summary = report.breathingJournalSummary
+            WeeklySummaryRows(rows: [
                 WeeklySummaryRowData(title: "Journal entries", value: "\(summary.journalEntryCount)"),
                 WeeklySummaryRowData(title: "Guided journal entries", value: "\(summary.flexibleJournalEntryCount)"),
                 WeeklySummaryRowData(title: "Timed journal entries", value: "\(summary.timedJournalEntryCount)")
             ])
         }
 
-        WeeklyReportSection(title: "Suggested Focus", systemImage: "scope") {
+        WeeklyReportSection(title: "Suggested Focus for Next Week", systemImage: "scope") {
             if report.suggestedFocus.isEmpty {
                 Text("Focus suggestions appear after this week has enough patterns to summarize.")
                     .font(DSTypography.caption)
@@ -320,15 +401,33 @@ struct WeeklyReportView: View {
         }
     }
 
-    private func reportHasAnyData(_ report: WeeklyReportGenerator.Report) -> Bool {
-        report.moodSummary.recordCount > 0 ||
-        report.activityPatternSummary.totalTrackedEvents > 0 ||
-        report.thoughtRecordSummary.recordCount > 0 ||
-        !report.completedExercises.isEmpty ||
-        report.breathingJournalSummary.breathingSessionCount > 0 ||
-        report.breathingJournalSummary.journalEntryCount > 0 ||
-        report.breathingJournalSummary.flexibleJournalEntryCount > 0 ||
-        report.breathingJournalSummary.timedJournalEntryCount > 0
+    private var canExportReport: Bool {
+        guard let report else { return false }
+        return reportHasEnoughData(report) && !isExporting
+    }
+
+    private func reportHasEnoughData(_ report: WeeklyReportGenerator.Report) -> Bool {
+        reportDataPointCount(report) >= 2
+    }
+
+    private func reportDataPointCount(_ report: WeeklyReportGenerator.Report) -> Int {
+        let exerciseCount = report.completedExercises.reduce(0) { $0 + $1.count }
+        return report.moodSummary.recordCount +
+            report.thoughtRecordSummary.recordCount +
+            exerciseCount +
+            report.breathingJournalSummary.breathingSessionCount +
+            report.breathingJournalSummary.journalEntryCount +
+            report.breathingJournalSummary.flexibleJournalEntryCount +
+            report.activityPatternSummary.completedPlannedActivities
+    }
+
+    private func weeklyReportEmptyMessage(recordCount: Int?) -> String {
+        guard let recordCount, recordCount > 0 else {
+            return "Weekly reports summarize your self-tracking once this week has a few check-ins or practice records."
+        }
+
+        let recordWord = recordCount == 1 ? "record" : "records"
+        return "This week has \(recordCount) \(recordWord), which is still a little light for a useful weekly summary. Add another check-in, thought record, exercise, breathing session, or journal entry to build the report."
     }
 
     @MainActor
@@ -339,7 +438,7 @@ struct WeeklyReportView: View {
         do {
             report = try WeeklyReportGenerator().generateReport(
                 from: modelContext,
-                weekStart: weekStart,
+                weekStart: selectedWeek,
                 includeExcerpts: detailLevel.includesExcerpts
             )
         } catch {
@@ -350,14 +449,14 @@ struct WeeklyReportView: View {
 
     @MainActor
     private func exportPDF() async {
-        guard !isExporting else { return }
+        guard canExportReport else { return }
         isExporting = true
         defer { isExporting = false }
 
         do {
             let fileURL = try pdfExportService.exportWeeklyReportURL(
                 from: modelContext,
-                weekStart: weekStart,
+                weekStart: selectedWeek,
                 includeExcerpts: detailLevel.includesExcerpts
             )
             pdfExportDocument = PDFExportDocument(fileURL: fileURL)
@@ -368,11 +467,39 @@ struct WeeklyReportView: View {
     }
 
     private var defaultFilename: String {
-        "CBT_Weekly_Report_\(Self.filenameFormatter.string(from: weekStart)).pdf"
+        "CBT_Weekly_Report_\(Self.filenameFormatter.string(from: selectedWeekInterval.start)).pdf"
     }
 
     private func dateRangeText(_ report: WeeklyReportGenerator.Report) -> String {
-        "\(report.dateRange.start.formatted(date: .abbreviated, time: .omitted)) - \(report.displayEndDate.formatted(date: .abbreviated, time: .omitted))"
+        formattedRange(start: report.dateRange.start, end: report.dateRange.end)
+    }
+
+    private var selectedWeekInterval: DateInterval {
+        Calendar.current.dateInterval(of: .weekOfYear, for: selectedWeek)
+            ?? DateInterval(start: Calendar.current.startOfDay(for: selectedWeek), duration: 7 * 24 * 60 * 60)
+    }
+
+    private var selectedWeekRangeText: String {
+        formattedRange(start: selectedWeekInterval.start, end: selectedWeekInterval.end)
+    }
+
+    private var canMoveToNextWeek: Bool {
+        let currentWeek = Calendar.current.dateInterval(of: .weekOfYear, for: Date())
+            ?? DateInterval(start: Calendar.current.startOfDay(for: Date()), duration: 7 * 24 * 60 * 60)
+        return selectedWeekInterval.start < currentWeek.start
+    }
+
+    private func moveWeek(by weeks: Int) {
+        guard let newDate = Calendar.current.date(byAdding: .weekOfYear, value: weeks, to: selectedWeek) else {
+            return
+        }
+
+        selectedWeek = newDate
+    }
+
+    private func formattedRange(start: Date, end: Date) -> String {
+        let inclusiveEnd = Calendar.current.date(byAdding: .second, value: -1, to: end) ?? end
+        return "\(start.formatted(date: .abbreviated, time: .omitted)) - \(inclusiveEnd.formatted(date: .abbreviated, time: .omitted))"
     }
 
     private func moodRangeText(_ mood: WeeklyReportGenerator.MoodSummary) -> String {
@@ -466,11 +593,13 @@ private struct WeeklySummaryRows: View {
                         Text(row.title)
                             .font(DSTypography.caption)
                             .foregroundStyle(Theme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
 
                         if let subtitle = row.subtitle, !subtitle.isEmpty {
                             Text(subtitle)
                                 .font(.system(size: 11, design: .rounded))
                                 .foregroundStyle(Theme.secondaryText.opacity(0.75))
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                     Spacer(minLength: 12)
@@ -478,6 +607,8 @@ private struct WeeklySummaryRows: View {
                         .font(.system(size: 15, weight: .bold, design: .rounded))
                         .foregroundStyle(Theme.primaryText)
                         .multilineTextAlignment(.trailing)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.72)
                 }
                 .padding(.vertical, 8)
 

@@ -47,6 +47,30 @@ enum AppTokens {
             ColorPalette(primary: Color(hex: AppColorTheme.teal.primaryHex), secondary: Color(hex: AppColorTheme.teal.secondaryHex))
         }
 
+        static var mint: ColorPalette {
+            ColorPalette(primary: Color(hex: AppColorTheme.mint.primaryHex), secondary: Color(hex: AppColorTheme.mint.secondaryHex))
+        }
+
+        static var rose: ColorPalette {
+            ColorPalette(primary: Color(hex: AppColorTheme.rose.primaryHex), secondary: Color(hex: AppColorTheme.rose.secondaryHex))
+        }
+
+        static var coral: ColorPalette {
+            ColorPalette(primary: Color(hex: AppColorTheme.coral.primaryHex), secondary: Color(hex: AppColorTheme.coral.secondaryHex))
+        }
+
+        static var lavender: ColorPalette {
+            ColorPalette(primary: Color(hex: AppColorTheme.lavender.primaryHex), secondary: Color(hex: AppColorTheme.lavender.secondaryHex))
+        }
+
+        static var lime: ColorPalette {
+            ColorPalette(primary: Color(hex: AppColorTheme.lime.primaryHex), secondary: Color(hex: AppColorTheme.lime.secondaryHex))
+        }
+
+        static var graphite: ColorPalette {
+            ColorPalette(primary: Color(hex: AppColorTheme.graphite.primaryHex), secondary: Color(hex: AppColorTheme.graphite.secondaryHex))
+        }
+
         static var primaryText: Color { .primary }
         static var secondaryText: Color { .secondary }
         static var tertiaryText: Color { .secondary }

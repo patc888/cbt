@@ -50,13 +50,20 @@ struct InsightsWeeklyReportCard: View {
                     Text(String(localized: "Preparing weekly report..."))
                         .font(.system(size: 14, design: .rounded))
                         .foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.vertical, 20)
-            } else if errorMessage != nil {
-                Text(String(localized: "Weekly report could not load right now."))
-                    .font(.system(size: 14, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText)
-                    .padding(.vertical, 12)
+            } else if let errorMessage {
+                Label {
+                    Text(errorMessage.isEmpty ? String(localized: "Weekly report could not load right now.") : errorMessage)
+                        .font(.system(size: 14, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(DSTheme.warning)
+                }
+                .padding(.vertical, 12)
             } else if let report {
                 reportContent(report)
             } else {
@@ -104,22 +111,14 @@ struct InsightsWeeklyReportCard: View {
             HStack(spacing: 8) {
                 Button(action: onPreviousWeek) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 13, weight: .bold))
-                        .frame(width: 32, height: 32)
-                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(themeManager.selectedColor)
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(34), expands: false, tint: themeManager.selectedColor, hapticType: .light))
                 .accessibilityLabel(String(localized: "Previous week"))
 
                 Button(action: onNextWeek) {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .bold))
-                        .frame(width: 32, height: 32)
-                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(canMoveForward ? themeManager.selectedColor : Theme.secondaryText.opacity(0.45))
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(34), expands: false, tint: themeManager.selectedColor, hapticType: .light))
                 .disabled(!canMoveForward)
                 .accessibilityLabel(String(localized: "Next week"))
 
@@ -127,12 +126,8 @@ struct InsightsWeeklyReportCard: View {
                     Task { await exportWeeklyPDF() }
                 } label: {
                     Image(systemName: isExportingPDF ? "clock" : "square.and.arrow.up")
-                        .font(.system(size: 13, weight: .bold))
-                        .frame(width: 32, height: 32)
-                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(canExportReport ? themeManager.selectedColor : Theme.secondaryText.opacity(0.45))
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(34), expands: false, tint: themeManager.selectedColor, hapticType: .light))
                 .disabled(!canExportReport)
                 .accessibilityLabel(String(localized: "Export weekly report PDF"))
             }
@@ -145,11 +140,7 @@ struct InsightsWeeklyReportCard: View {
             weeklyReportEmptyState
         } else {
             VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .top, spacing: 16) {
-                    reportValue(title: String(localized: "Check-ins"), value: "\(report.moodCheckInCount)", subtitle: String(localized: "mood"))
-                    reportValue(title: String(localized: "Avg Mood"), value: averageMoodText(report.averageMood), subtitle: String(localized: "out of 10"))
-                    reportValue(title: String(localized: "Trend"), value: trendValue(report.moodTrend), subtitle: trendSubtitle(report.moodTrend))
-                }
+                reportMetrics(report)
 
                 patternSection(report)
                 completionSection(report)
@@ -191,6 +182,22 @@ struct InsightsWeeklyReportCard: View {
 
     private var canExportReport: Bool {
         report?.hasAnyData == true && !isExportingPDF
+    }
+
+    private func reportMetrics(_ report: WeeklyReport) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 16) {
+                reportValue(title: String(localized: "Check-ins"), value: "\(report.moodCheckInCount)", subtitle: String(localized: "mood"))
+                reportValue(title: String(localized: "Avg Mood"), value: averageMoodText(report.averageMood), subtitle: String(localized: "out of 10"))
+                reportValue(title: String(localized: "Trend"), value: trendValue(report.moodTrend), subtitle: trendSubtitle(report.moodTrend))
+            }
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 12, alignment: .top)], spacing: 12) {
+                reportValue(title: String(localized: "Check-ins"), value: "\(report.moodCheckInCount)", subtitle: String(localized: "mood"))
+                reportValue(title: String(localized: "Avg Mood"), value: averageMoodText(report.averageMood), subtitle: String(localized: "out of 10"))
+                reportValue(title: String(localized: "Trend"), value: trendValue(report.moodTrend), subtitle: trendSubtitle(report.moodTrend))
+            }
+        }
     }
 
     private func pdfExportSection(_ report: WeeklyReport) -> some View {

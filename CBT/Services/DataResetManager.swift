@@ -17,7 +17,55 @@ final class DataResetManager {
     private nonisolated static let cloudSyncKey = "com.melichan.CBT.cloudSyncEnabled"
     private nonisolated static let localPreferenceKeys = [
         cloudSyncKey,
-        "lastCloudSyncDate"
+        "lastCloudSyncDate",
+        "cbt_onboardingCompleted",
+        "cbt_dailyPlanGoalIDs",
+        "cbt_dailyPlanInterestIDs",
+        "appColorTheme",
+        "userTheme",
+        "appThemeImmersive",
+        "hapticsEnabled",
+        "interactionSoundsEnabled",
+        "strongHapticsEnabled",
+        AppConfiguration.showStreakInToolbarKey,
+        "appLockEnabled",
+        "autoLockDelay",
+        "hideAppSwitcher",
+        "cbt_moodReminderEnabled",
+        "cbt_reflectionReminderEnabled",
+        "cbt_weeklyReportReminderEnabled",
+        "cbt_breathingResetReminderEnabled",
+        "cbt_plannedActivityReminderEnabled",
+        "cbt_courseContinuationReminderEnabled",
+        "cbt_sleepWindDownReminderEnabled",
+        "cbt_quoteOfTheDayEnabled",
+        "cbt_contextualBeforeWorkEnabled",
+        "cbt_contextualDuringCommuteEnabled",
+        "cbt_contextualBeforeBedEnabled",
+        "cbt_moodReminderHour",
+        "cbt_moodReminderMinute",
+        "cbt_reflectionReminderHour",
+        "cbt_reflectionReminderMinute",
+        "cbt_weeklyReportReminderHour",
+        "cbt_weeklyReportReminderMinute",
+        "cbt_weeklyReportReminderWeekday",
+        "cbt_breathingResetReminderHour",
+        "cbt_breathingResetReminderMinute",
+        "cbt_courseContinuationReminderHour",
+        "cbt_courseContinuationReminderMinute",
+        "cbt_sleepWindDownReminderHour",
+        "cbt_sleepWindDownReminderMinute",
+        "cbt_quietHoursEnabled",
+        "cbt_quietHoursStartHour",
+        "cbt_quietHoursStartMinute",
+        "cbt_quietHoursEndHour",
+        "cbt_quietHoursEndMinute",
+        "cbt_moodGoalValue",
+        "cbt_home_lastOpenedAt",
+        StreakReengagementNotificationService.lastLoginTimestampKey,
+        StreakReengagementNotificationService.lastDailyCheckTimestampKey,
+        "cbt.achievements.weeklyReportViewed",
+        "affirmation_favorites_v1"
     ]
     
     nonisolated static var isCloudSyncEnabled: Bool {
@@ -44,9 +92,9 @@ final class DataResetManager {
         clearCloudKeyValueStore()
     }
 
-    func resetLocalPreferences() {
+    func resetLocalPreferences(_ defaults: UserDefaults = .standard) {
         for key in Self.localPreferenceKeys {
-            UserDefaults.standard.removeObject(forKey: key)
+            defaults.removeObject(forKey: key)
         }
     }
 

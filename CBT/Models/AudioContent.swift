@@ -51,6 +51,7 @@ struct AudioContentSeed: Codable, Identifiable, Equatable {
     let format: String?
     let duration: Int
     let difficulty: String?
+    let tags: [String]?
     let type: AudioContentType
     let localAssetFilename: String
     let transcript: String
@@ -73,6 +74,10 @@ struct AudioContentSeed: Codable, Identifiable, Equatable {
     var displayDifficulty: String {
         let trimmed = difficulty?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmed.isEmpty ? LibraryTaxonomy.defaultDifficulty(forDuration: duration) : trimmed
+    }
+
+    var displayTags: [String] {
+        LibraryTaxonomy.normalizedValues(tags ?? [])
     }
 }
 

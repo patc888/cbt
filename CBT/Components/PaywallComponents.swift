@@ -34,7 +34,6 @@ struct ProUpgradeCard: View {
             }
 
             Button(action: {
-                HapticManager.shared.mediumImpact()
                 action()
             }) {
                 ZStack {
@@ -43,18 +42,10 @@ struct ProUpgradeCard: View {
                             .tint(.white)
                     } else {
                         Text(ctaTitle)
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
                     }
                 }
-                .foregroundStyle(.white)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 32)
-                .frame(maxWidth: .infinity)
-                .background(primaryColor)
-                .clipShape(Capsule())
             }
-            .buttonStyle(.plain)
-            .premiumPressEffect()
+            .buttonStyle(DSButtonStyle(variant: .primary, size: .medium, tint: primaryColor))
             .disabled(isLoading)
 
             if let footnote {

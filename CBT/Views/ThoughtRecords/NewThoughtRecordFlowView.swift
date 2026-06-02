@@ -143,6 +143,7 @@ struct NewThoughtRecordFlowView: View {
                         onDismiss: { viewModel.showBreathing = false }
                     )
                 }
+                .dsSheetPresentation()
             }
             #endif
         }

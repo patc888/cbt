@@ -139,6 +139,7 @@ nonisolated struct CourseExport: Codable, Sendable {
     let linkedExerciseIDs: [String]
     let linkedGuidedJournalIDs: [String]
     let finalReflectionPrompt: String?
+    let completionMessage: String?
     let finalReflectionResponse: String?
     let isPremium: Bool
     let itemIDs: [String]
@@ -438,6 +439,7 @@ struct DataExportService {
                 linkedExerciseIDs: $0.linkedExerciseIDs,
                 linkedGuidedJournalIDs: $0.linkedGuidedJournalIDs,
                 finalReflectionPrompt: $0.finalReflectionPrompt,
+                completionMessage: $0.completionMessage,
                 finalReflectionResponse: $0.finalReflectionResponse,
                 isPremium: $0.isPremium,
                 itemIDs: $0.itemIDs,

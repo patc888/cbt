@@ -1,273 +1,6 @@
 import SwiftData
 import SwiftUI
 
-private enum PersonalityTrait: String, CaseIterable, Identifiable {
-    case openness = "Openness"
-    case conscientiousness = "Conscientiousness"
-    case extraversion = "Extraversion"
-    case agreeableness = "Agreeableness"
-    case neuroticism = "Neuroticism"
-
-    var id: String { rawValue }
-
-    var definition: PersonalityTraitDefinition {
-        PersonalityAssessmentDefinitionStore.definition.traitDefinition(for: self)
-    }
-
-    var symbolName: String { definition.symbolName }
-
-    func bandLabel(for score: Double) -> String {
-        definition.band(for: score).label
-    }
-
-    func explanation(for score: Double) -> String {
-        definition.band(for: score).interpretation
-    }
-}
-
-private struct PersonalityTraitDefinition: Identifiable {
-    var id: String { trait.rawValue }
-
-    let trait: PersonalityTrait
-    let symbolName: String
-    let bands: [PersonalityScoreBand]
-
-    func band(for score: Double) -> PersonalityScoreBand {
-        bands.first { $0.contains(score) } ?? bands[bands.count / 2]
-    }
-}
-
-private struct PersonalityScoreBand: Identifiable {
-    var id: String { "\(label)-\(range.lowerBound)-\(range.upperBound)" }
-
-    let label: String
-    let range: ClosedRange<Double>
-    let interpretation: String
-
-    func contains(_ score: Double) -> Bool {
-        score >= range.lowerBound && score <= range.upperBound
-    }
-}
-
-private struct PersonalityAnswerScale {
-    let minimumValue: Int
-    let maximumValue: Int
-    let minimumLabel: String
-    let maximumLabel: String
-    let answers: [Int]
-}
-
-private struct PersonalityNextStep: Identifiable {
-    enum Destination {
-        case guidedJournal
-        case activityPlanner
-        case exercises
-    }
-
-    let id: String
-    let title: String
-    let subtitle: String
-    let symbolName: String
-    let destination: Destination
-}
-
-private struct PersonalityAssessmentDefinition {
-    let id: String
-    let title: String
-    let subtitle: String
-    let description: String
-    let disclaimer: String
-    let questions: [PersonalityQuestion]
-    let answerScale: PersonalityAnswerScale
-    let traits: [PersonalityTraitDefinition]
-    let resultTitle: String
-    let interpretation: String
-    let saveButtonTitle: String
-    let savedButtonTitle: String
-    let recommendedNextSteps: [PersonalityNextStep]
-
-    func traitDefinition(for trait: PersonalityTrait) -> PersonalityTraitDefinition {
-        guard let definition = traits.first(where: { $0.trait == trait }) else {
-            preconditionFailure("Missing personality trait definition for \(trait.rawValue)")
-        }
-
-        return definition
-    }
-}
-
-private struct PersonalityQuestion: Identifiable {
-    let id: Int
-    let trait: PersonalityTrait
-    let text: String
-    let isReverseScored: Bool
-
-    func scoredValue(for answer: Int, answerScale: PersonalityAnswerScale) -> Int {
-        isReverseScored ? answerScale.minimumValue + answerScale.maximumValue - answer : answer
-    }
-}
-
-private struct PersonalityResults: Equatable {
-    let opennessScore: Double
-    let conscientiousnessScore: Double
-    let extraversionScore: Double
-    let agreeablenessScore: Double
-    let neuroticismScore: Double
-
-    func score(for trait: PersonalityTrait) -> Double {
-        switch trait {
-        case .openness:
-            return opennessScore
-        case .conscientiousness:
-            return conscientiousnessScore
-        case .extraversion:
-            return extraversionScore
-        case .agreeableness:
-            return agreeablenessScore
-        case .neuroticism:
-            return neuroticismScore
-        }
-    }
-
-    var averageScore: Double {
-        let scores = PersonalityTrait.allCases.map { score(for: $0) }
-        return scores.reduce(0, +) / Double(scores.count)
-    }
-
-    var highestTraits: [PersonalityTrait] {
-        let maximumScore = PersonalityTrait.allCases.map { score(for: $0) }.max() ?? 0
-        return PersonalityTrait.allCases.filter { abs(score(for: $0) - maximumScore) < 0.5 }
-    }
-
-    var lowestTraits: [PersonalityTrait] {
-        let minimumScore = PersonalityTrait.allCases.map { score(for: $0) }.min() ?? 0
-        return PersonalityTrait.allCases.filter { abs(score(for: $0) - minimumScore) < 0.5 }
-    }
-
-    var patternSummary: String {
-        let highText = highestTraits.map(\.rawValue).joined(separator: ", ")
-        let lowText = lowestTraits.map(\.rawValue).joined(separator: ", ")
-        return "Your strongest relative signal is \(highText). Your lowest relative signal is \(lowText). Treat these as conversation starters for self-reflection, not fixed labels."
-    }
-}
-
-private enum PersonalityAssessmentDefinitionStore {
-    static let definition = PersonalityAssessmentDefinition(
-        id: "big-five",
-        title: "Big Five",
-        subtitle: "OCEAN self-discovery snapshot",
-        description: "A compact OCEAN snapshot for self-reflection: Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism.",
-        disclaimer: "This assessment is for self-discovery and entertainment purposes only. It is not a diagnosis, psychological evaluation, or clinical evaluation.",
-        questions: [
-            PersonalityQuestion(id: 0, trait: .extraversion, text: "I am someone who is outgoing, sociable.", isReverseScored: false),
-            PersonalityQuestion(id: 1, trait: .extraversion, text: "I am someone who is reserved, quiet.", isReverseScored: true),
-            PersonalityQuestion(id: 2, trait: .agreeableness, text: "I am someone who is generally trusting.", isReverseScored: false),
-            PersonalityQuestion(id: 3, trait: .agreeableness, text: "I am someone who tends to find fault with others.", isReverseScored: true),
-            PersonalityQuestion(id: 4, trait: .conscientiousness, text: "I am someone who does a thorough job.", isReverseScored: false),
-            PersonalityQuestion(id: 5, trait: .conscientiousness, text: "I am someone who tends to be lazy or easily distracted.", isReverseScored: true),
-            PersonalityQuestion(id: 6, trait: .neuroticism, text: "I am someone who is relaxed, handles stress well.", isReverseScored: true),
-            PersonalityQuestion(id: 7, trait: .neuroticism, text: "I am someone who gets nervous easily.", isReverseScored: false),
-            PersonalityQuestion(id: 8, trait: .openness, text: "I am someone who has an active imagination.", isReverseScored: false),
-            PersonalityQuestion(id: 9, trait: .openness, text: "I am someone who has relatively few artistic interests.", isReverseScored: true)
-        ],
-        answerScale: PersonalityAnswerScale(
-            minimumValue: 1,
-            maximumValue: 5,
-            minimumLabel: "Disagree strongly",
-            maximumLabel: "Agree strongly",
-            answers: Array(1...5)
-        ),
-        traits: [
-            PersonalityTraitDefinition(
-                trait: .openness,
-                symbolName: "sparkles",
-                bands: [
-                    PersonalityScoreBand(label: "Lower", range: 0...34.99, interpretation: "Lower scores can reflect preference for familiarity, practicality, and concrete routines."),
-                    PersonalityScoreBand(label: "Middle", range: 35...65.99, interpretation: "Middle scores often reflect flexibility: this trait may show up more strongly in some contexts than others."),
-                    PersonalityScoreBand(label: "Higher", range: 66...100, interpretation: "Higher scores often reflect imagination, curiosity, and comfort with novelty.")
-                ]
-            ),
-            PersonalityTraitDefinition(
-                trait: .conscientiousness,
-                symbolName: "checkmark.seal",
-                bands: [
-                    PersonalityScoreBand(label: "Lower", range: 0...34.99, interpretation: "Lower scores can reflect flexibility, spontaneity, and less emphasis on structure."),
-                    PersonalityScoreBand(label: "Middle", range: 35...65.99, interpretation: "Middle scores often reflect flexibility: this trait may show up more strongly in some contexts than others."),
-                    PersonalityScoreBand(label: "Higher", range: 66...100, interpretation: "Higher scores often reflect organization, follow-through, and careful effort.")
-                ]
-            ),
-            PersonalityTraitDefinition(
-                trait: .extraversion,
-                symbolName: "person.2",
-                bands: [
-                    PersonalityScoreBand(label: "Lower", range: 0...34.99, interpretation: "Lower scores can reflect reserved energy, quiet focus, and comfort with solitude."),
-                    PersonalityScoreBand(label: "Middle", range: 35...65.99, interpretation: "Middle scores often reflect flexibility: this trait may show up more strongly in some contexts than others."),
-                    PersonalityScoreBand(label: "Higher", range: 66...100, interpretation: "Higher scores often reflect social energy, assertiveness, and stimulation seeking.")
-                ]
-            ),
-            PersonalityTraitDefinition(
-                trait: .agreeableness,
-                symbolName: "heart",
-                bands: [
-                    PersonalityScoreBand(label: "Lower", range: 0...34.99, interpretation: "Lower scores can reflect directness, skepticism, and stronger personal boundaries."),
-                    PersonalityScoreBand(label: "Middle", range: 35...65.99, interpretation: "Middle scores often reflect flexibility: this trait may show up more strongly in some contexts than others."),
-                    PersonalityScoreBand(label: "Higher", range: 66...100, interpretation: "Higher scores often reflect trust, cooperation, and warmth toward others.")
-                ]
-            ),
-            PersonalityTraitDefinition(
-                trait: .neuroticism,
-                symbolName: "waveform.path.ecg",
-                bands: [
-                    PersonalityScoreBand(label: "Lower", range: 0...34.99, interpretation: "Lower scores can reflect steadiness, stress tolerance, and emotional calm."),
-                    PersonalityScoreBand(label: "Middle", range: 35...65.99, interpretation: "Middle scores often reflect flexibility: this trait may show up more strongly in some contexts than others."),
-                    PersonalityScoreBand(label: "Higher", range: 66...100, interpretation: "Higher scores often reflect more emotional sensitivity and stress reactivity.")
-                ]
-            )
-        ],
-        resultTitle: "Trait Overview",
-        interpretation: "Scores are rough 0-100 trait estimates from a compact 10-prompt reflection. Higher does not mean better, and lower does not mean worse. Each trait can be useful or costly depending on the situation.",
-        saveButtonTitle: "Save Reflection",
-        savedButtonTitle: "Saved",
-        recommendedNextSteps: [
-            PersonalityNextStep(id: "guided-journal", title: "Guided Journal", subtitle: "Turn the snapshot into a short reflection.", symbolName: "pencil.and.list.clipboard", destination: .guidedJournal),
-            PersonalityNextStep(id: "activity-planner", title: "Activity Planner", subtitle: "Plan a task that fits your energy and style.", symbolName: "calendar.badge.clock", destination: .activityPlanner),
-            PersonalityNextStep(id: "exercises", title: "Exercises", subtitle: "Browse coping tools that match what you noticed.", symbolName: "figure.mind.and.body", destination: .exercises)
-        ]
-    )
-}
-
-private enum PersonalityAssessmentEngine {
-    static var questions: [PersonalityQuestion] {
-        PersonalityAssessmentDefinitionStore.definition.questions
-    }
-
-    static func results(from answers: [Int?]) -> PersonalityResults? {
-        let definition = PersonalityAssessmentDefinitionStore.definition
-        guard answers.count == definition.questions.count, answers.allSatisfy({ $0 != nil }) else {
-            return nil
-        }
-
-        var rawScores: [PersonalityTrait: Int] = [:]
-
-        for question in definition.questions {
-            guard let answer = answers[question.id] else { return nil }
-            rawScores[question.trait, default: 0] += question.scoredValue(for: answer, answerScale: definition.answerScale)
-        }
-
-        return PersonalityResults(
-            opennessScore: percentage(fromTwoItemRawScore: rawScores[.openness, default: 0]),
-            conscientiousnessScore: percentage(fromTwoItemRawScore: rawScores[.conscientiousness, default: 0]),
-            extraversionScore: percentage(fromTwoItemRawScore: rawScores[.extraversion, default: 0]),
-            agreeablenessScore: percentage(fromTwoItemRawScore: rawScores[.agreeableness, default: 0]),
-            neuroticismScore: percentage(fromTwoItemRawScore: rawScores[.neuroticism, default: 0])
-        )
-    }
-
-    private static func percentage(fromTwoItemRawScore rawScore: Int) -> Double {
-        let clamped = min(10, max(2, rawScore))
-        return (Double(clamped - 2) / 8.0) * 100.0
-    }
-}
-
 struct PersonalityAssessmentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
@@ -293,7 +26,7 @@ struct PersonalityAssessmentView: View {
     }
 
     private var definition: PersonalityAssessmentDefinition {
-        PersonalityAssessmentDefinitionStore.definition
+        PersonalityAssessmentCatalog.definition
     }
 
     var body: some View {
@@ -503,18 +236,8 @@ private struct PersonalityChoiceButton: View {
     var body: some View {
         Button(action: action) {
             Text("\(value)")
-                .font(.system(.headline, design: .rounded).weight(.bold))
-                .foregroundStyle(isSelected ? .white : Theme.primaryText)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(isSelected ? themeManager.selectedColor : DSTheme.elevatedFill)
-                .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall, style: .continuous)
-                        .strokeBorder(isSelected ? themeManager.selectedColor.opacity(0.6) : DSTheme.separator.opacity(0.24), lineWidth: 1)
-                )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DSSelectionButtonStyle(isSelected: isSelected, selectedColor: themeManager.selectedColor, size: .icon(52), expands: false))
         .accessibilityLabel("\(value)")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
@@ -541,16 +264,12 @@ private struct PersonalityWizardControls: View {
                 }
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(currentQuestion == 0 ? Theme.tertiaryText : themeManager.selectedColor)
-                    .frame(width: 48, height: 48)
-                    .background(currentQuestion == 0 ? Color.clear : DSTheme.elevatedFill, in: Circle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(48), expands: false, tint: themeManager.selectedColor, hapticType: nil))
             .disabled(currentQuestion == 0)
             .accessibilityLabel("Previous")
 
-            Text(isResultPage ? "Trait Overview" : "\(currentQuestion + 1) of \(questionCount)")
+            Text(isResultPage ? PersonalityAssessmentCatalog.definition.resultTitle : "\(currentQuestion + 1) of \(questionCount)")
                 .font(.system(.subheadline, design: .rounded).weight(.bold))
                 .foregroundStyle(Theme.secondaryText)
                 .frame(maxWidth: .infinity)
@@ -562,12 +281,8 @@ private struct PersonalityWizardControls: View {
                 }
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle((canAdvance || isComplete) ? .white : Theme.tertiaryText)
-                    .frame(width: 48, height: 48)
-                    .background((canAdvance || isComplete) ? themeManager.selectedColor : Color.clear, in: Circle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(DSButtonStyle(variant: .primary, size: .icon(48), expands: false, tint: themeManager.selectedColor, hapticType: nil))
             .disabled(isResultPage || (!canAdvance && !isComplete))
             .accessibilityLabel("Next")
         }
@@ -597,7 +312,7 @@ private struct PersonalityResultsPage: View {
     }
 
     private var definition: PersonalityAssessmentDefinition {
-        PersonalityAssessmentDefinitionStore.definition
+        PersonalityAssessmentCatalog.definition
     }
 
     var body: some View {
@@ -627,19 +342,14 @@ private struct PersonalityResultsPage: View {
                     printTitle: "\(definition.title) Result"
                 )
 
-                PersonalityNextStepsSection(steps: definition.recommendedNextSteps)
+                AssessmentNextStepsSection(steps: definition.recommendedNextSteps)
 
                 Button {
                     saveAction()
                 } label: {
                     Label(didSave ? definition.savedButtonTitle : definition.saveButtonTitle, systemImage: didSave ? "checkmark.circle.fill" : "tray.and.arrow.down")
-                        .font(.system(.headline, design: .rounded).weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(themeManager.selectedColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall, style: .continuous))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(DSButtonStyle(variant: .primary, size: .large, tint: themeManager.selectedColor))
                 .disabled(didSave || results == nil)
 
                 PersonalitySaveStatus(didSave: didSave, errorMessage: saveErrorMessage)
@@ -679,79 +389,6 @@ private struct PersonalitySaveStatus: View {
                 .font(.system(.caption, design: .rounded).weight(.semibold))
                 .foregroundStyle(.red)
                 .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-}
-
-private struct PersonalityNextStepsSection: View {
-    let steps: [PersonalityNextStep]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Recommended Next Steps")
-                .font(.system(.headline, design: .rounded).weight(.bold))
-                .foregroundStyle(Theme.primaryText)
-
-            VStack(spacing: 10) {
-                ForEach(steps) { step in
-                    NavigationLink(destination: PersonalityNextStepDestinationView(step: step)) {
-                        PersonalityNextStepRow(step: step)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-}
-
-private struct PersonalityNextStepRow: View {
-    @Environment(ThemeManager.self) private var themeManager
-    let step: PersonalityNextStep
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: step.symbolName)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(themeManager.selectedColor)
-                .frame(width: 36, height: 36)
-                .background(themeManager.selectedColor.opacity(0.12), in: Circle())
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(step.title)
-                    .font(.system(.subheadline, design: .rounded).weight(.bold))
-                    .foregroundStyle(Theme.primaryText)
-                    .multilineTextAlignment(.leading)
-
-                Text(step.subtitle)
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 8)
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(Theme.tertiaryText)
-                .padding(.top, 10)
-        }
-        .padding(Theme.paddingMedium)
-        .cardStyle()
-        .accessibilityElement(children: .combine)
-    }
-}
-
-private struct PersonalityNextStepDestinationView: View {
-    let step: PersonalityNextStep
-
-    var body: some View {
-        switch step.destination {
-        case .guidedJournal:
-            GuidedJournalPickerView()
-        case .activityPlanner:
-            ActivityPlannerView()
-        case .exercises:
-            ExercisesView()
         }
     }
 }
@@ -823,7 +460,7 @@ private struct PersonalityTraitResultRow: View {
 
 private enum PersonalityAssessmentReport {
     static func exportText(results: PersonalityResults?, completedAt: Date) -> String {
-        let definition = PersonalityAssessmentDefinitionStore.definition
+        let definition = PersonalityAssessmentCatalog.definition
         guard let results else {
             return """
             \(definition.title) Result
@@ -869,7 +506,7 @@ private struct PersonalityDisclaimer: View {
                 .font(.system(size: 18, weight: .semibold))
                 .padding(.top, 1)
 
-            Text(PersonalityAssessmentDefinitionStore.definition.disclaimer)
+            Text(PersonalityAssessmentCatalog.definition.disclaimer)
                 .font(.system(.subheadline, design: .rounded).weight(.semibold))
                 .foregroundStyle(Theme.primaryText)
                 .fixedSize(horizontal: false, vertical: true)

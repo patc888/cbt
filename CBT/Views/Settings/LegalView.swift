@@ -5,15 +5,16 @@ struct LegalView: View {
     @Environment(ThemeManager.self) private var themeManager
     
     private var appVersionText: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.7"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.8"
         return "Version \(version)"
     }
 
+    private let privacyPolicyURL = URL(string: "https://xeo.com/CBT/privacy-policy.html")
+    private let termsURL = URL(string: "https://xeo.com/CBT/terms.html")
+
     var body: some View {
         NavigationStack {
-            ZStack {
-                ThemedBackground().ignoresSafeArea()
-                
+            DSSheetContainer(maxContentWidth: 720) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         LegalSection(title: "Privacy Policy") {
@@ -37,15 +38,52 @@ struct LegalView: View {
                                 LegalBullet(text: "Data safety is dependent on your device security.")
                             }
                         }
+
+                        if privacyPolicyURL != nil || termsURL != nil {
+                            SettingsSection(title: "Online Policies") {
+                                if let privacyPolicyURL {
+                                    Link(destination: privacyPolicyURL) {
+                                        SettingsRow(
+                                            icon: "lock.shield",
+                                            iconColor: themeManager.selectedColor,
+                                            title: "Privacy Policy",
+                                            subtitle: "Open the current privacy policy"
+                                        ) {
+                                            Image(systemName: "chevron.right")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundStyle(Theme.secondaryText)
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+
+                                if let termsURL {
+                                    Link(destination: termsURL) {
+                                        SettingsRow(
+                                            icon: "doc.text",
+                                            iconColor: themeManager.selectedColor,
+                                            title: "Terms of Use",
+                                            subtitle: "Open the current terms"
+                                        ) {
+                                            Image(systemName: "chevron.right")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundStyle(Theme.secondaryText)
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
                         
                         Text(appVersionText)
                             .font(.system(.caption, design: .rounded))
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 16)
                     }
-                    .padding(20)
-                    .responsiveMaxWidth()
+                    .padding(.vertical, DSSpacing.small)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .scrollIndicators(.hidden)
             }
             .navigationTitle("Legal")
             #if os(iOS)
@@ -59,6 +97,7 @@ struct LegalView: View {
                 }
             }
         }
+        .dsSheetPresentation(detents: [.large])
     }
 }
 

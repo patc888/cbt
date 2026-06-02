@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DistortionStepView: View {
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.colorScheme) private var colorScheme
     @Bindable var viewModel: NewThoughtRecordViewModel
 
     var body: some View {
@@ -30,8 +31,8 @@ struct DistortionStepView: View {
                             .accessibilityLabel("New distortion")
                         Button(action: { viewModel.addDistortion() }) {
                             Image(systemName: "plus.circle.fill")
-                                .foregroundColor(themeManager.selectedColor)
                         }
+                        .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(44), expands: false, tint: themeManager.selectedColor, hapticType: .light))
                         .accessibilityLabel("Add distortion")
                     }
 
@@ -58,8 +59,8 @@ struct DistortionStepView: View {
                                     }
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 6)
-                                    .background(Theme.toggleBackgroundColor(for: .light))
-                                    .clipShape(Capsule())
+                                    .background(Theme.toggleBackgroundColor(for: colorScheme))
+                                    .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous))
                                 }
                             }
                         }

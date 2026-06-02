@@ -10,21 +10,13 @@ struct DistortionButton: View {
         Button(action: action) {
             HStack {
                 Text(item.title)
-                    .font(.system(.headline, design: .rounded).weight(.bold))
-                    .foregroundStyle(isSelected ? .white : Theme.primaryText)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.72)
-                    .fixedSize(horizontal: false, vertical: true)
                 Spacer()
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.white)
                 }
             }
-            .padding()
-            .background(isSelected ? AnyView(themeColor) : Theme.cardBackground)
-            .cornerRadius(12)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DSSelectionButtonStyle(isSelected: isSelected, selectedColor: themeColor, size: .large))
     }
 }

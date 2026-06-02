@@ -7,26 +7,22 @@ struct ListActionPillButton: View {
     var hapticType: HapticType = .light
     let action: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
         Button {
-            HapticManager.shared.trigger(hapticType)
             action()
         } label: {
             Text(title)
-                .font(font)
-                .foregroundColor(color)
-                .multilineTextAlignment(.center)
                 .lineLimit(2)
-                .minimumScaleFactor(0.75)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Theme.cardBackground)
-                .clipShape(Capsule())
-                .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.05 : 0), radius: colorScheme == .dark ? 2 : 0)
+                .font(font)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            DSButtonStyle(
+                variant: .secondary,
+                size: .compact,
+                expands: false,
+                tint: color,
+                hapticType: hapticType
+            )
+        )
     }
 }

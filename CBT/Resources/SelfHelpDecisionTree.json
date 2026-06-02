@@ -1,0 +1,31 @@
+{
+  "id": "root",
+  "prompt": "How are you feeling?",
+  "options": [
+    {
+      "id": "overwhelmed",
+      "label": "Overwhelmed",
+      "action": {
+        "type": "boxBreathing",
+        "title": "Box Breathing",
+        "durationSeconds": 60
+      }
+    },
+    {
+      "id": "anxious",
+      "label": "Anxious",
+      "action": {
+        "type": "thoughtReframing",
+        "title": "Thought Reframing"
+      }
+    },
+    {
+      "id": "sad",
+      "label": "Sad",
+      "action": {
+        "type": "moodLiftPlan",
+        "title": "Mood Lift Plan"
+      }
+    }
+  ]
+}

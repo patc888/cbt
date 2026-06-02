@@ -57,9 +57,11 @@ struct TimelineView: View {
         }
         .sheet(isPresented: $showingAddMood) {
             MoodCheckinView()
+                .dsSheetPresentation()
         }
         .sheet(isPresented: $showingAddThought) {
             NewThoughtRecordFlowView()
+                .dsSheetPresentation()
         }
         .withUsageGate(isAttemptingAction: $attemptingAddMood) {
             showingAddMood = true
@@ -143,15 +145,8 @@ private struct TimelineDashboardContent: View {
                                 Image(systemName: "face.smiling")
                                 Text("Log First Mood")
                             }
-                            .font(.system(.subheadline, design: .rounded).weight(.bold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .foregroundStyle(.white)
-                            .background(themeManager.selectedColor)
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .shadow(color: themeManager.selectedColor.opacity(0.3), radius: 10, y: 5)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(DSButtonStyle(variant: .primary, size: .large, tint: themeManager.selectedColor, hapticType: nil))
 
                         Button {
                             HapticManager.shared.lightImpact()
@@ -161,14 +156,8 @@ private struct TimelineDashboardContent: View {
                                 Image(systemName: "brain")
                                 Text("New Thought Record")
                             }
-                            .font(.system(.subheadline, design: .rounded).weight(.bold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .foregroundStyle(themeManager.secondaryColor)
-                            .background(themeManager.secondaryColor.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(DSButtonStyle(variant: .secondary, size: .large, tint: themeManager.secondaryColor, hapticType: nil))
                     }
                     .padding(.horizontal, 48)
                     .padding(.top, 24)

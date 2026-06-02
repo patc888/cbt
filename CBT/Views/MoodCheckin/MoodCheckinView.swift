@@ -474,27 +474,10 @@ struct MoodSelectionChip: View {
                 }
 
                 Text(title)
-                    .font(DSTypography.body.weight(.semibold))
                     .lineLimit(2)
-                    .minimumScaleFactor(0.72)
-                    .multilineTextAlignment(.center)
             }
-            .foregroundStyle(isSelected ? Color.white : DSTheme.primaryText)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity, minHeight: 48)
-            .background(
-                RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous)
-                    .fill(isSelected ? accent : DSTheme.cardBackground)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous)
-                    .stroke(isSelected ? Color.white.opacity(0.22) : DSTheme.separator.opacity(0.2), lineWidth: 1)
-            )
-            .shadow(color: isSelected ? accent.opacity(0.22) : .clear, radius: 12, y: 6)
-            .scaleEffect(isSelected ? 1.02 : 1)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DSSelectionButtonStyle(isSelected: isSelected, selectedColor: accent, size: .medium))
         .accessibilityLabel(title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityHint(isSelected ? "Removes \(title)" : "Adds \(title)")

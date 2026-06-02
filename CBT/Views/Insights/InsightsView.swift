@@ -38,7 +38,7 @@ struct InsightsView: View {
 
                 DeferredRenderView {
                     VStack {
-                        AppScreenHeadline(title: String(localized: "Insights"))
+                        InsightsHeadline()
                             .padding(.horizontal)
                         Spacer()
                     }
@@ -61,9 +61,11 @@ struct InsightsView: View {
         }
         .sheet(isPresented: $showingAddMood) {
             MoodCheckinView()
+                .dsSheetPresentation()
         }
         .sheet(isPresented: $showingAddThought) {
             NewThoughtRecordFlowView()
+                .dsSheetPresentation()
         }
         .withUsageGate(isAttemptingAction: $attemptingAddMood) {
             showingAddMood = true
@@ -75,6 +77,31 @@ struct InsightsView: View {
 }
 
 // MARK: - Subviews
+
+private struct InsightsHeadline: View {
+    @Environment(ThemeManager.self) private var themeManager
+
+    var body: some View {
+        TopHeadlineView(
+            title: String(localized: "Insights"),
+            leading: {
+                StreakToolbarButton()
+            },
+            trailing: {
+                NavigationLink {
+                    WeeklyReportView()
+                } label: {
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.system(.body, weight: .bold))
+                        .foregroundStyle(themeManager.selectedColor)
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(String(localized: "Open weekly report"))
+            }
+        )
+    }
+}
 
 private struct InsightsDashboardContent: View {
     @Binding var timeRange: InsightsTimeRange
@@ -90,6 +117,7 @@ private struct InsightsDashboardContent: View {
     @State private var thoughtRecords: [ThoughtRecord] = []
     @State private var exerciseCompletions: [ExerciseCompletion] = []
     @State private var journalEntries: [JournalEntry] = []
+    @State private var flexibleJournalEntries: [FlexibleJournalEntry] = []
     @State private var viewModel = InsightsViewModel()
     @State private var hasAppeared = false
     @State private var selectedWeeklyReportDate = Date()
@@ -112,14 +140,14 @@ private struct InsightsDashboardContent: View {
         Group {
             if viewModel.isCalculating {
                 VStack(spacing: 12) {
-                    AppScreenHeadline(title: String(localized: "Insights"))
+                    InsightsHeadline()
                     Spacer()
                     InsightsLoadingStateView()
                     Spacer()
                 }
-            } else if moodEntries.isEmpty && moodCheckIns.isEmpty && thoughtRecords.isEmpty && exerciseCompletions.isEmpty && journalEntries.isEmpty {
+            } else if moodEntries.isEmpty && moodCheckIns.isEmpty && thoughtRecords.isEmpty && exerciseCompletions.isEmpty && journalEntries.isEmpty && flexibleJournalEntries.isEmpty {
                 VStack(spacing: 0) {
-                    AppScreenHeadline(title: String(localized: "Insights"))
+                    InsightsHeadline()
                         .padding(.horizontal, 16)
                     
                     InsightsEmptyStateView(
@@ -130,7 +158,7 @@ private struct InsightsDashboardContent: View {
             } else {
                 ScrollView {
                     VStack(spacing: 12) {
-                        AppScreenHeadline(title: String(localized: "Insights"))
+                        InsightsHeadline()
 
                         InsightsStreaksCard(
                             snapshot: viewModel.dashboardSnapshot,
@@ -147,10 +175,15 @@ private struct InsightsDashboardContent: View {
                         )
                         .insightsEntrance(index: 1, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
+                        PersonalGrowthDashboardCard(
+                            snapshot: viewModel.personalGrowth
+                        )
+                        .insightsEntrance(index: 2, isVisible: hasAppeared, reduceMotion: reduceMotion)
+
                         InsightsPatternSpotlightSection(
                             summary: viewModel.patternSummary
                         )
-                        .insightsEntrance(index: 2, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        .insightsEntrance(index: 3, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
                         InsightsTrendsCard(
                             timeRange: timeRange,
@@ -160,7 +193,7 @@ private struct InsightsDashboardContent: View {
                             moodVolatilityLast30Days: viewModel.moodVolatilityLast30Days,
                             moodGoalValue: moodGoalValue
                         )
-                        .insightsEntrance(index: 3, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        .insightsEntrance(index: 4, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
                         InsightsWeeklyOverviewCard(
                             weeklyMoodAverages: viewModel.weeklyMoodAverages,
@@ -169,7 +202,7 @@ private struct InsightsDashboardContent: View {
                         .onAppear {
                             AchievementService.shared.recordWeeklyReportViewed(in: modelContext)
                         }
-                        .insightsEntrance(index: 4, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        .insightsEntrance(index: 5, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
                         InsightsWeeklyReportCard(
                             report: weeklyReport,
@@ -184,18 +217,18 @@ private struct InsightsDashboardContent: View {
                         .onAppear {
                             AchievementService.shared.recordWeeklyReportViewed(in: modelContext)
                         }
-                        .insightsEntrance(index: 5, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        .insightsEntrance(index: 6, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
                         InsightsGoalProgressSection(
                             snapshot: viewModel.dashboardSnapshot,
                             moodGoalValue: moodGoalValue
                         )
-                        .insightsEntrance(index: 6, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        .insightsEntrance(index: 7, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
                         InsightsTopMetricsSection(
                             snapshot: viewModel.dashboardSnapshot
                         )
-                        .insightsEntrance(index: 7, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        .insightsEntrance(index: 8, isVisible: hasAppeared, reduceMotion: reduceMotion)
                     }
                     .padding(.horizontal, 16)
                     .padding(.bottom, LayoutMetrics.floatingToolbarBottomInset + 12)
@@ -216,7 +249,7 @@ private struct InsightsDashboardContent: View {
         }
         // Keep the task identity lightweight; avoid hashing live SwiftData
         // records during body evaluation.
-        .task(id: "\(timeRange.rawValue)|\(moodGoalValue)|\(moodEntries.count)|\(moodCheckIns.count)|\(thoughtRecords.count)|\(exerciseCompletions.count)|\(journalEntries.count)") {
+        .task(id: "\(timeRange.rawValue)|\(moodGoalValue)|\(moodEntries.count)|\(moodCheckIns.count)|\(thoughtRecords.count)|\(exerciseCompletions.count)|\(journalEntries.count)|\(flexibleJournalEntries.count)") {
             await recalculateData()
         }
         .task(id: selectedWeeklyReportDate.timeIntervalSinceReferenceDate) {
@@ -241,6 +274,7 @@ private struct InsightsDashboardContent: View {
         thoughtRecords = LaunchSafeFetch.thoughtRecords(from: modelContext).reversed()
         exerciseCompletions = LaunchSafeFetch.exerciseCompletions(from: modelContext).reversed()
         journalEntries = LaunchSafeFetch.journalEntries(from: modelContext).reversed()
+        flexibleJournalEntries = LaunchSafeFetch.flexibleJournalEntries(from: modelContext).reversed()
     }
 
     private func recalculateData() async {
@@ -251,6 +285,7 @@ private struct InsightsDashboardContent: View {
             thoughtRecords: thoughtRecords,
             exerciseCompletions: exerciseCompletions,
             journalEntries: journalEntries,
+            flexibleJournalEntries: flexibleJournalEntries,
             moodGoalValue: moodGoalValue
         )
     }

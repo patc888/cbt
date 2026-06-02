@@ -18,7 +18,7 @@ struct AppearanceSettingsView: View {
     @Namespace private var fullColorNamespace
     @Namespace private var hapticNamespace
     @Namespace private var soundNamespace
-    @AppStorage("cbt_showStreakInToolbar") private var showStreakInToolbar = true
+    @AppStorage(AppConfiguration.showStreakInToolbarKey) private var showStreakInToolbar = true
     @AppStorage("interactionSoundsEnabled") private var soundsEnabled = true
     
     @State private var isIconExpanded = false

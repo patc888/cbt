@@ -60,6 +60,7 @@ struct FloatingBottomToolbar: View {
         }
         .sheet(isPresented: $showingMoodEntry, onDismiss: { selectedMood = nil }) {
             MoodCheckinView(initialMood: selectedMood)
+                .dsSheetPresentation()
         }
         .withUsageGate(isAttemptingAction: $attemptingNewMoodEntry) {
             showingMoodEntry = true
@@ -149,8 +150,7 @@ struct FloatingBottomToolbar: View {
                                 .frame(width: 56, height: 56)
                                 .shadow(color: themeManager.selectedColor.opacity(0.3), radius: 4, x: 0, y: 2)
 
-                            quickMoodIcon(for: mood, backgroundColor: moodColor)
-                                .font(.system(size: 24, weight: .semibold))
+                            quickMoodIcon(for: mood)
                                 .foregroundStyle(.white)
                         }
                     }
@@ -197,75 +197,7 @@ struct FloatingBottomToolbar: View {
     }
 
     @ViewBuilder
-    private func quickMoodIcon(for mood: MoodColor, backgroundColor: Color) -> some View {
-        switch mood {
-        case .veryLow:
-            ToolbarFrownFaceIcon(isFilled: true, featureColor: backgroundColor)
-                .frame(width: 24, height: 24)
-        case .low:
-            ToolbarFrownFaceIcon(isFilled: false, featureColor: .white)
-                .frame(width: 24, height: 24)
-        case .neutral, .good, .great:
-            mood.iconView
-        }
-    }
-}
-
-private struct ToolbarFrownFaceIcon: View {
-    let isFilled: Bool
-    let featureColor: Color
-
-    var body: some View {
-        GeometryReader { proxy in
-            let size = min(proxy.size.width, proxy.size.height)
-            let lineWidth = max(size * 0.085, 1.6)
-
-            ZStack {
-                if isFilled {
-                    Circle()
-                        .fill(Color.white)
-                    faceFeatures(size: size, color: featureColor, lineWidth: lineWidth)
-                } else {
-                    Circle()
-                        .stroke(Color.white, lineWidth: lineWidth)
-                    faceFeatures(size: size, color: .white, lineWidth: lineWidth)
-                }
-            }
-            .frame(width: size, height: size)
-            .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-        }
-        .aspectRatio(1, contentMode: .fit)
-    }
-
-    private func faceFeatures(size: CGFloat, color: Color, lineWidth: CGFloat) -> some View {
-        ZStack {
-            Circle()
-                .fill(color)
-                .frame(width: size * 0.13, height: size * 0.13)
-                .position(x: size * 0.37, y: size * 0.4)
-
-            Circle()
-                .fill(color)
-                .frame(width: size * 0.13, height: size * 0.13)
-                .position(x: size * 0.63, y: size * 0.4)
-
-            FrownMouth()
-                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
-                .frame(width: size * 0.42, height: size * 0.2)
-                .position(x: size * 0.5, y: size * 0.68)
-        }
-        .frame(width: size, height: size)
-    }
-}
-
-private struct FrownMouth: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.addQuadCurve(
-            to: CGPoint(x: rect.maxX, y: rect.maxY),
-            control: CGPoint(x: rect.midX, y: rect.minY)
-        )
-        return path
+    private func quickMoodIcon(for mood: MoodColor) -> some View {
+        mood.icon(size: 24)
     }
 }

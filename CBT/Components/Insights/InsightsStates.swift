@@ -2,14 +2,21 @@ import SwiftUI
 
 struct InsightsLoadingStateView: View {
     var body: some View {
-        VStack {
+        VStack(spacing: 12) {
             ProgressView()
-                .padding()
+                .controlSize(.large)
             Text(String(localized: "Crunching your data..."))
                 .foregroundStyle(Theme.secondaryText)
-                .font(.subheadline)
+                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.vertical, 40)
+        .frame(maxWidth: .infinity)
+        .padding(Theme.paddingMedium)
+        .cardStyle()
+        .padding(.horizontal, 32)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(String(localized: "Loading insights"))
     }
 }
 
@@ -34,5 +41,7 @@ struct InsightsEmptyStateView: View {
 
             Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.bottom, LayoutMetrics.floatingToolbarBottomInset + 12)
     }
 }

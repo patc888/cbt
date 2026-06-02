@@ -98,14 +98,9 @@ struct WhatIsCBTPagerView: View {
                 }
             } label: {
                 Text(currentPage == CBTPage.allCases.count - 1 ? "Start My Journey" : "Next")
-                    .font(.system(.headline, design: .rounded).bold())
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(themeManager.selectedColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(Theme.cornerRadiusMedium)
-                    .padding(.horizontal, 24)
             }
+            .buttonStyle(DSButtonStyle(variant: .primary, tint: themeManager.selectedColor, hapticType: nil))
+            .padding(.horizontal, 24)
             .padding(.bottom, 20)
             .frame(maxWidth: 400)
         }

@@ -85,9 +85,8 @@ private struct MoodCircleButton: View {
                         )
                         .shadow(color: isSelected ? mood.color(with: themeManager.selectedColor).opacity(0.22) : .clear, radius: 12, y: 6)
                     
-                    mood.iconView
-                        .font(.system(size: iconSize))
-                        .foregroundStyle(mood.color(with: themeManager.selectedColor))
+                    mood.icon(size: iconSize)
+                        .foregroundStyle(mood.iconColor(with: themeManager.selectedColor))
                         .scaleEffect(isSelected ? 1.08 : 1.0)
                 }
 

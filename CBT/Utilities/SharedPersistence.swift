@@ -5,7 +5,7 @@ enum SharedPersistence {
     static let cloudKitContainerID = AppConfiguration.cloudKitContainerIdentifier
     static let storeFileName = "default.store"
 
-    static let schema = Schema([
+    static let currentModelTypes: [any PersistentModel.Type] = [
         UserSettings.self,
         MoodEntry.self,
         ThoughtRecord.self,
@@ -15,6 +15,7 @@ enum SharedPersistence {
         AssessmentLog.self,
         PersonalityAssessmentLog.self,
         ProgramProgress.self,
+        ChallengeSession.self,
         FlexibleJournalEntry.self,
         MoodCheckIn.self,
         BreathingSession.self,
@@ -23,7 +24,9 @@ enum SharedPersistence {
         Course.self,
         Achievement.self,
         AudioContent.self
-    ])
+    ]
+
+    static let schema = Schema(currentModelTypes)
 
     // MARK: - Factory
 

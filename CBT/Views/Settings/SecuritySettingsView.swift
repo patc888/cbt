@@ -60,9 +60,7 @@ struct SecuritySettingsView: View {
         }
         .sheet(isPresented: $showingPrivacyInfo) {
             PrivacyInfoPopup()
-                .presentationDetents([.medium])
-                .presentationCornerRadius(Theme.cornerRadiusXLarge)
-                .presentationBackground { Theme.secondaryBackground }
+                .dsSheetPresentation(detents: [.medium])
         }
         .onAppear {
             securityManager.checkBiometrics()
@@ -87,77 +85,29 @@ struct SecuritySettingsView: View {
 
 struct PrivacyInfoPopup: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(ThemeManager.self) private var themeManager
     
     var body: some View {
-        VStack(spacing: 24) {
-            Capsule()
-                .fill(Theme.tertiaryText.opacity(0.3))
-                .frame(width: 40, height: 5)
-                .padding(.top, 10)
-            
-            VStack(spacing: 16) {
-                Image(systemName: "hand.raised.shield.fill")
-                    .font(.system(size: 44))
-                    .foregroundStyle(themeManager.primaryColor)
-                    .padding(.bottom, 8)
-                
-                Text("Your Data is Private")
-                    .font(DSTypography.pageTitle)
-                    .foregroundStyle(Theme.primaryText)
-                
-                Text("We believe your data belongs only to you. This app is designed with privacy at its core.")
-                    .font(.system(size: 16, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Theme.secondaryText)
-                    .padding(.horizontal)
-            }
-            
-            VStack(alignment: .leading, spacing: 16) {
-                PrivacyPoint(icon: "nosign", text: "No trackers or 3rd party analytics")
-                PrivacyPoint(icon: "internaldrive.fill", text: "Stored locally on this device while sync is unavailable")
-                PrivacyPoint(icon: "lock.fill", text: "Device-level security helps protect local data")
-                PrivacyPoint(icon: "person.badge.shield.checkmark.fill", text: "We never sell or share your data")
-            }
-            .padding(.horizontal, 24)
-            
-            Spacer(minLength: 20)
-            
-            Button(action: {
-                HapticManager.shared.lightImpact()
-                dismiss()
-            }) {
-                Text("Got it")
-                    .font(.system(.body, design: .rounded))
-                    .fontWeight(.bold)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(themeManager.primaryColor)
-                    .clipShape(Capsule())
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 20)
-        }
-    }
-}
-
-
-struct PrivacyPoint: View {
-    @Environment(ThemeManager.self) private var themeManager
-    let icon: String
-    let text: String
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundStyle(themeManager.primaryColor)
-                .frame(width: 24)
-            
-            Text(text)
-                .font(.system(size: 15, weight: .medium, design: .rounded))
-                .foregroundStyle(Theme.primaryText)
+        FeatureModalPresenter {
+            DSFeatureModal(
+                systemImage: "hand.raised.shield.fill",
+                title: "Your Data is Private",
+                subtitle: "We believe your data belongs only to you. This app is designed with privacy at its core.",
+                bullets: [
+                    DSBullet(icon: "nosign", text: "No trackers or 3rd party analytics"),
+                    DSBullet(icon: "internaldrive.fill", text: "Stored locally on this device while sync is unavailable"),
+                    DSBullet(icon: "lock.fill", text: "Device-level security helps protect local data"),
+                    DSBullet(icon: "person.badge.shield.checkmark.fill", text: "We never sell or share your data")
+                ],
+                primaryTitle: "Got it",
+                primaryAction: {
+                    HapticManager.shared.lightImpact()
+                    dismiss()
+                },
+                closeAction: {
+                    HapticManager.shared.lightImpact()
+                    dismiss()
+                }
+            )
         }
     }
 }

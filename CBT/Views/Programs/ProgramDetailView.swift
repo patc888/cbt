@@ -203,18 +203,10 @@ struct ProgramDetailView: View {
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: "checkmark")
-                                .font(.system(size: 14, weight: .bold))
                             Text("Mark Day \(day.dayNumber) Completed")
                         }
-                        .font(.system(.headline, design: .rounded).weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, minHeight: 48)
-                        .background(themeManager.selectedColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .shadow(color: themeManager.selectedColor.opacity(0.3), radius: 10, y: 5)
                     }
-                    .buttonStyle(.plain)
-                    .premiumPressEffect()
+                    .buttonStyle(DSButtonStyle(variant: .primary, size: .large, tint: themeManager.selectedColor, hapticType: nil))
                     .padding(.top, 6)
                 }
             } else {

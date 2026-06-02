@@ -114,6 +114,7 @@ final class AdvancedDataSettingsViewModel {
             let libraryItems = try modelContext.fetch(FetchDescriptor<LibraryItem>())
             let courses = try modelContext.fetch(FetchDescriptor<Course>())
             let audioContents = try modelContext.fetch(FetchDescriptor<AudioContent>())
+            let userSettings = try modelContext.fetch(FetchDescriptor<UserSettings>())
 
             for record in moodEntries { modelContext.delete(record) }
             for record in thoughtRecords { modelContext.delete(record) }
@@ -131,6 +132,7 @@ final class AdvancedDataSettingsViewModel {
             for record in libraryItems { modelContext.delete(record) }
             for record in courses { modelContext.delete(record) }
             for record in audioContents { modelContext.delete(record) }
+            for settings in userSettings { modelContext.delete(settings) }
 
             try modelContext.save()
 

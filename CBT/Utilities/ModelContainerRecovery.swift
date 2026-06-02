@@ -52,27 +52,14 @@ struct ModelContainerRecovery {
             let cloudKitFailure = error
 
             do {
-                logger.warning("Detected likely schema conflict. Retrying without CloudKit before resetting the store.")
+                logger.warning("Detected likely schema conflict. Retrying without CloudKit while preserving the existing store.")
                 let container = try makeLocalOnlyContainer(storeURL: storeURL)
                 return RecoveryResult(container: container, cloudKitEnabled: false, cloudKitFailure: cloudKitFailure)
             } catch {
                 logger.error("Local-only recovery attempt failed: \(String(describing: error), privacy: .public)")
-            }
-
-            guard let storeURL else {
+                logger.warning("Leaving the persistent store in place. The app can fall back to temporary storage without resetting user data.")
                 throw error
             }
-
-            let archivedStores = try quarantineStoreFiles(at: storeURL)
-            if archivedStores.isEmpty {
-                logger.warning("No existing store files were found to quarantine before reset.")
-            } else {
-                let archivedPaths = archivedStores.map { $0.path(percentEncoded: false) }.joined(separator: ", ")
-                logger.warning("Quarantined conflicting store files before reset: \(archivedPaths, privacy: .public)")
-            }
-
-            let container = try makePreferredContainer(storeURL: storeURL)
-            return RecoveryResult(container: container, cloudKitEnabled: true, cloudKitFailure: nil)
         }
     }
 
@@ -102,10 +89,10 @@ struct ModelContainerRecovery {
 
     private func localOnlyConfiguration(storeURL: URL?) -> ModelConfiguration {
         if let storeURL {
-            return ModelConfiguration("Default", schema: schema, url: storeURL)
+            return ModelConfiguration("Default", schema: schema, url: storeURL, cloudKitDatabase: .none)
         }
 
-        return ModelConfiguration("Default", schema: schema)
+        return ModelConfiguration("Default", schema: schema, cloudKitDatabase: .none)
     }
 
     private func resolvedStoreURL() -> URL? {
@@ -114,6 +101,7 @@ struct ModelContainerRecovery {
             .appendingPathComponent(storeName)
     }
 
+    /// Debug/test utility only. App launch recovery must not move a user's production store.
     func quarantineStoreFiles(at storeURL: URL) throws -> [URL] {
         let fileManager = FileManager.default
         let quarantineSuffix = ISO8601DateFormatter.fileSafeTimestamp.string(from: Date())
@@ -157,7 +145,7 @@ struct ModelContainerRecovery {
         }
     }
 
-    static func isLikelySchemaConflict(_ error: Error) -> Bool {
+    nonisolated static func isLikelySchemaConflict(_ error: Error) -> Bool {
         let nsError = error as NSError
 
         if nsError.domain == NSCocoaErrorDomain {

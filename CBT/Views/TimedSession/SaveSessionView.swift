@@ -142,14 +142,8 @@ struct SaveSessionView: View {
                                         }
                                     } label: {
                                         Text(tag)
-                                            .font(.system(size: 13, weight: selectedTags.contains(tag) ? .bold : .medium, design: .rounded))
-                                            .padding(.horizontal, DSSpacing.medium)
-                                            .padding(.vertical, DSSpacing.small)
-                                            .background(selectedTags.contains(tag) ? accent : DSTheme.elevatedFill)
-                                            .foregroundStyle(selectedTags.contains(tag) ? .white : DSTheme.primaryText)
-                                            .clipShape(Capsule())
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(DSSelectionButtonStyle(isSelected: selectedTags.contains(tag), selectedColor: accent, size: .compact, expands: false))
                                 }
                             }
                         }

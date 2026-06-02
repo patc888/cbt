@@ -1,6 +1,7 @@
 import Foundation
 
 enum SessionSourceKind: String, CaseIterable {
+    case audio = "audio"
     case breathing = "breathing"
     case affirmation = "affirmation"
     case distortionExample = "distortionExample"
@@ -8,6 +9,7 @@ enum SessionSourceKind: String, CaseIterable {
 
     var displayName: String {
         switch self {
+        case .audio: return String(localized: "Audio")
         case .breathing: return String(localized: "Breathing")
         case .affirmation: return String(localized: "Affirmations")
         case .distortionExample: return String(localized: "Distortion Practice")
@@ -17,6 +19,7 @@ enum SessionSourceKind: String, CaseIterable {
 
     var iconName: String {
         switch self {
+        case .audio: return "headphones"
         case .breathing: return "wind"
         case .affirmation: return "sparkles"
         case .distortionExample: return "brain.head.profile"

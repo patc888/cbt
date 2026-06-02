@@ -15,7 +15,7 @@ struct AssessmentDocumentActions: View {
             ShareLink(item: shareText) {
                 AssessmentDocumentActionLabel(title: "Share", systemImage: "square.and.arrow.up")
             }
-            .buttonStyle(.plain)
+            .buttonStyle(DSButtonStyle(variant: .secondary, size: .medium, hapticType: nil))
             .simultaneousGesture(TapGesture().onEnded {
                 HapticManager.shared.lightImpact()
             })
@@ -26,7 +26,7 @@ struct AssessmentDocumentActions: View {
             } label: {
                 AssessmentDocumentActionLabel(title: "Print", systemImage: "printer")
             }
-            .buttonStyle(.plain)
+            .buttonStyle(DSButtonStyle(variant: .secondary, size: .medium, hapticType: nil))
         }
         .alert("Couldn't Print", isPresented: Binding(
             get: { printErrorMessage != nil },
@@ -71,21 +71,11 @@ struct AssessmentDocumentActions: View {
 }
 
 private struct AssessmentDocumentActionLabel: View {
-    @Environment(ThemeManager.self) private var themeManager
     let title: String
     let systemImage: String
 
     var body: some View {
         Label(title, systemImage: systemImage)
-            .font(.system(.subheadline, design: .rounded).weight(.bold))
-            .foregroundStyle(themeManager.selectedColor)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(DSTheme.elevatedFill, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall, style: .continuous)
-                    .strokeBorder(themeManager.selectedColor.opacity(0.18), lineWidth: 1)
-            )
     }
 }
 

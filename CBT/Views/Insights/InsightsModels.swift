@@ -146,4 +146,5 @@ struct InsightsDashboardSnapshot: Sendable {
     let topDistortions: [DistortionCount]
     let contextTagCorrelations: [ContextTagMoodCorrelation]
     let patternSummary: InsightsPatternSummary
+    let personalGrowth: PersonalGrowthSnapshot
 }

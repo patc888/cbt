@@ -241,7 +241,7 @@ struct CBTPaywallTemplateView: View {
                         HapticManager.shared.mediumImpact()
                         onTryAgain()
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(DSSecondaryButtonStyle(size: .medium))
                 }
                 .padding()
             } else {
@@ -328,20 +328,11 @@ struct CBTPaywallTemplateView: View {
                             .tint(.white)
                     } else {
                         Text(buttonCTAText())
-                            .font(.system(.title3, design: .rounded, weight: .bold))
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(
-                    Capsule()
-                        .fill(themeManager.primaryColor)
-                        .shadow(color: colorScheme == .dark ? themeManager.primaryColor.opacity(0.4) : .clear, radius: colorScheme == .dark ? 12 : 0, x: 0, y: colorScheme == .dark ? 6 : 0)
-                )
-                .foregroundColor(.white)
             }
             .disabled(selectedPlanID == nil || isPurchasing || availableProductsEmpty)
-            .opacity((selectedPlanID == nil || availableProductsEmpty) ? 0.6 : 1.0)
+            .buttonStyle(DSButtonStyle(variant: .primary, tint: themeManager.primaryColor, hapticType: nil))
 
             if let planID = selectedPlanID {
                 let allProducts = [yearlyProduct, monthlyProduct, lifetimeProduct].compactMap { $0 }
@@ -359,12 +350,12 @@ struct CBTPaywallTemplateView: View {
 
     private func buttonCTAText() -> String {
         guard let planID = selectedPlanID else {
-            return String(localized: "Update to Full Access")
+            return String(localized: "Continue")
         }
 
         let allProducts = [yearlyProduct, monthlyProduct, lifetimeProduct].compactMap { $0 }
         guard let product = allProducts.first(where: { $0.id == planID }) else {
-            return String(localized: "Update to Full Access")
+            return String(localized: "Continue")
         }
 
         if product.isYearly {
@@ -395,7 +386,7 @@ struct CBTPaywallTemplateView: View {
                     .font(.system(.title3, design: .rounded, weight: .bold))
                     .foregroundStyle(.primary)
 
-                Text(String(localized: "Share CBT Full Access with up to 5 family members in your Apple iCloud family group."))
+                Text(String(localized: "Share with up to 5 family members in your Apple iCloud family group."))
                     .font(.system(.subheadline, design: .rounded, weight: .medium))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -446,12 +437,8 @@ struct CBTPaywallTemplateView: View {
             onClose()
         }) {
             Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 30))
-                .foregroundStyle(.secondary.opacity(0.4))
-                .padding(20)
         }
-        .frame(minWidth: 44, minHeight: 44)
-        .contentShape(Rectangle())
+        .buttonStyle(DSButtonStyle(variant: .neutral, size: .icon(44), expands: false, hapticType: nil))
         .accessibilityLabel(String(localized: "Close"))
     }
 }
@@ -705,15 +692,15 @@ struct SubscriptionConfig: Codable, Equatable {
 
 extension SubscriptionConfig {
     static let cbt = SubscriptionConfig(
-        title: "CBT Full Access",
-        subtitle: "Unlock the complete CBT toolkit for clearer thoughts, steadier moods, and private progress across your devices.",
+        title: "CBT Premium",
+        subtitle: "Subscribe to keep Premium access active as the app grows.",
         features: [
-            SubscriptionFeature(icon: "brain.head.profile", title: "Unlimited Thought Records", description: "Log every thought record, mood check-in, journal session, and exercise you need."),
-            SubscriptionFeature(icon: "chart.xyaxis.line", title: "Deeper Insights", description: "See patterns across moods, triggers, distortions, and the practices that help most."),
-            SubscriptionFeature(icon: "icloud.fill", title: "Private iCloud Sync", description: "Keep your CBT work safely available across your Apple devices."),
-            SubscriptionFeature(icon: "paintpalette.fill", title: "Premium Personalization", description: "Use the complete set of themes, app icons, and calming visual styles.")
+            SubscriptionFeature(icon: "star.fill", title: "Premium Access", description: "Keep your account ready for subscriber benefits as new tools and updates are introduced."),
+            SubscriptionFeature(icon: "sparkles", title: "Ongoing Updates", description: "Premium helps fund improvements, polish, and new ideas."),
+            SubscriptionFeature(icon: "icloud.fill", title: "Same App, Same Data", description: "Your tracking data stays available across your devices."),
+            SubscriptionFeature(icon: "checkmark.seal.fill", title: "Flexible Options", description: "Choose monthly, yearly, or lifetime Premium access through the App Store.")
         ],
-        ctaTitle: "Update to Full Access",
+        ctaTitle: "Continue",
         secondaryActions: [
             SecondaryAction(title: "Restore", actionID: "restore"),
             SecondaryAction(title: "Terms of Use", actionID: "terms"),

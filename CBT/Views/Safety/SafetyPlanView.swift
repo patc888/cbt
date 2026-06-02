@@ -190,12 +190,8 @@ private struct SafetyPlanEditor: View {
     private func addButton(title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: "plus")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 34, height: 34)
-                .background(themeManager.selectedColor)
-                .clipShape(Circle())
         }
+        .buttonStyle(DSButtonStyle(variant: .primary, size: .icon(36), expands: false, tint: themeManager.selectedColor, hapticType: .light))
         .accessibilityLabel(title)
     }
 
@@ -291,12 +287,17 @@ private struct EditableStringListSection: View {
                     VStack(spacing: DSSpacing.small) {
                         ForEach(values.indices, id: \.self) { index in
                             HStack(alignment: .top, spacing: DSSpacing.small) {
-                                TextField(placeholder, text: $values[index], axis: .vertical)
+                                TextField(placeholder, text: Binding(
+                                    get: { index < values.count ? values[index] : "" },
+                                    set: { if index < values.count { values[index] = $0 } }
+                                ), axis: .vertical)
                                     .lineLimit(1...4)
                                     .textFieldStyle(.roundedBorder)
 
                                 Button(role: .destructive) {
-                                    values.remove(at: index)
+                                    if index < values.count {
+                                        values.remove(at: index)
+                                    }
                                 } label: {
                                     Image(systemName: "minus.circle.fill")
                                         .font(.system(size: 22))

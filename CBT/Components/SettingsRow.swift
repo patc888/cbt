@@ -27,20 +27,26 @@ struct SettingsRow<Content: View>: View {
             verticalLayout
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title)\(subtitle != nil ? ", \(subtitle ?? "")" : "")")
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var accessibilityText: String {
+        guard let subtitle, !subtitle.isEmpty else {
+            return title
+        }
+
+        return "\(title), \(subtitle)"
     }
 
     private var leadingContent: some View {
         HStack(alignment: .top, spacing: 10) {
             if let icon = icon {
-                if let iconColor = iconColor {
-                    Image(systemName: icon)
-                        .foregroundStyle(iconColor)
-                        .font(.system(size: 18))
-                        .frame(width: 24)
-                        .padding(.top, 1)
-                        .accessibilityHidden(true)
-                }
+                Image(systemName: icon)
+                    .foregroundStyle(iconColor ?? Theme.secondaryText)
+                    .font(.system(size: 18))
+                    .frame(width: 24)
+                    .padding(.top, 1)
+                    .accessibilityHidden(true)
             }
 
             VStack(alignment: .leading, spacing: 2) {

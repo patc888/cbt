@@ -52,6 +52,7 @@ final class Course {
     var linkedExerciseIDsStorage: String = "[]"
     var linkedGuidedJournalIDsStorage: String = "[]"
     var finalReflectionPrompt: String?
+    var completionMessage: String = ""
     var finalReflectionResponse: String?
     var isPremium: Bool = false
     var itemIDsStorage: String = "[]"
@@ -157,6 +158,7 @@ final class Course {
         linkedExerciseIDs: [String]? = nil,
         linkedGuidedJournalIDs: [String] = [],
         finalReflectionPrompt: String? = nil,
+        completionMessage: String = "",
         finalReflectionResponse: String? = nil,
         isPremium: Bool = false,
         itemIDs: [String],
@@ -183,6 +185,7 @@ final class Course {
         self.linkedExerciseIDsStorage = StringArrayStorage.encode(linkedExerciseIDs ?? itemIDs)
         self.linkedGuidedJournalIDsStorage = StringArrayStorage.encode(linkedGuidedJournalIDs)
         self.finalReflectionPrompt = finalReflectionPrompt
+        self.completionMessage = completionMessage
         self.finalReflectionResponse = finalReflectionResponse
         self.isPremium = isPremium
         self.itemIDsStorage = StringArrayStorage.encode(itemIDs)
@@ -258,6 +261,7 @@ final class Course {
         linkedExerciseIDsStorage = seed.linkedExerciseIDsStorage
         linkedGuidedJournalIDsStorage = seed.linkedGuidedJournalIDsStorage
         finalReflectionPrompt = seed.finalReflectionPrompt
+        completionMessage = seed.completionMessage
         isPremium = seed.isPremium
         itemIDs = seed.itemIDs
         syncLessonDerivedMetadata()

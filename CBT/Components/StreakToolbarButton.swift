@@ -3,7 +3,7 @@ import SwiftUI
 
 struct StreakToolbarButton: View {
     @Environment(ThemeManager.self) private var themeManager
-    @AppStorage("cbt_showStreakInToolbar") private var showStreakInToolbar = true
+    @AppStorage(AppConfiguration.showStreakInToolbarKey) private var showStreakInToolbar = true
     @Query(sort: \MoodEntry.createdAt, order: .reverse) private var moodEntries: [MoodEntry]
     @Query(sort: \ThoughtRecord.createdAt, order: .reverse) private var thoughtRecords: [ThoughtRecord]
     @Query(sort: \ExerciseCompletion.createdAt, order: .reverse) private var exerciseCompletions: [ExerciseCompletion]
@@ -154,30 +154,29 @@ private struct StreakSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    StreakHeroCard(snapshot: snapshot, animate: hasAppeared && !reduceMotion)
-                        .streakEntrance(index: 0, isVisible: hasAppeared, reduceMotion: reduceMotion)
+            DSSheetContainer(maxContentWidth: 760) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        StreakHeroCard(snapshot: snapshot, animate: hasAppeared && !reduceMotion)
+                            .streakEntrance(index: 0, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
-                    StreakStatsRow(snapshot: snapshot)
-                        .streakEntrance(index: 1, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        StreakStatsRow(snapshot: snapshot)
+                            .streakEntrance(index: 1, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
-                    AchievementsProfileSection(
-                        achievements: achievements,
-                        progress: achievementProgress
-                    )
-                    .streakEntrance(index: 2, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        AchievementsProfileSection(
+                            achievements: achievements,
+                            progress: achievementProgress
+                        )
+                        .streakEntrance(index: 2, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
-                    StreakCalendarMonth(activeDays: snapshot.activeDays, animate: hasAppeared && !reduceMotion)
-                        .streakEntrance(index: 3, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        StreakCalendarMonth(activeDays: snapshot.activeDays, animate: hasAppeared && !reduceMotion)
+                            .streakEntrance(index: 3, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                    }
+                    .padding(.vertical, DSSpacing.small)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 24)
-                .responsiveMaxWidth()
-                .frame(maxWidth: .infinity)
+                .scrollIndicators(.hidden)
             }
-            .background(ThemedBackground().ignoresSafeArea())
             .navigationTitle("Streak")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -205,9 +204,7 @@ private struct StreakSheet: View {
                 refreshAchievements()
             }
         }
-        #if os(iOS)
-        .presentationDetents([.large])
-        #endif
+        .dsSheetPresentation(detents: [.large])
     }
 
     private func refreshAchievements() {

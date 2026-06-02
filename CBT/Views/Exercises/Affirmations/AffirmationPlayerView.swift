@@ -148,6 +148,7 @@ struct AffirmationPlayerView: View {
         .sheet(isPresented: $showingSaveSession) {
             if let summary = completedSummary {
                 SaveSessionView(summary: summary)
+                    .dsSheetPresentation()
             }
         }
         .onDisappear {
@@ -183,10 +184,8 @@ struct AffirmationPlayerView: View {
                     timerManager.resume()
                 } label: {
                     Image(systemName: "play.fill")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(accent)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(36), expands: false, tint: accent, hapticType: nil))
                 .accessibilityLabel("Resume timer")
             } else {
                 Button {
@@ -194,10 +193,8 @@ struct AffirmationPlayerView: View {
                     timerManager.pause()
                 } label: {
                     Image(systemName: "pause.fill")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(accent)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(36), expands: false, tint: accent, hapticType: nil))
                 .accessibilityLabel("Pause timer")
             }
 
@@ -206,10 +203,8 @@ struct AffirmationPlayerView: View {
                 timerManager.endEarly()
             } label: {
                 Image(systemName: "stop.fill")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(DSTheme.destructive)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(DSButtonStyle(variant: .destructive, size: .icon(36), expands: false, hapticType: nil))
             .accessibilityLabel("Stop timer")
         }
         .padding(.horizontal, DSSpacing.large)
@@ -240,12 +235,8 @@ struct AffirmationPlayerView: View {
                     }
                 } label: {
                     Image(systemName: "timer")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(accent)
-                        .padding(DSSpacing.small)
-                        .background(DSTheme.elevatedFill)
-                        .clipShape(Circle())
                 }
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(36), expands: false, tint: accent, hapticType: .light))
                 .accessibilityLabel("Session timer")
                 .accessibilityHint("Select a duration to start a timed session")
             }

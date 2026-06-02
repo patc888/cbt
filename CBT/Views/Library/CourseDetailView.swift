@@ -9,6 +9,7 @@ struct CourseDetailView: View {
     @Bindable var course: Course
 
     @Query private var settings: [UserSettings]
+    @Query private var challengeSessions: [ChallengeSession]
 
     let libraryItems: [LibraryItem]
 
@@ -17,6 +18,7 @@ struct CourseDetailView: View {
     @State private var finalReflectionDraft: String
     @State private var selectedJournalTemplate: JournalTemplate?
     @State private var showingPaywall = false
+    @State private var showingCelebration = false
 
     private var lessons: [CourseLesson] {
         let courseLessons = course.lessons
@@ -43,8 +45,16 @@ struct CourseDetailView: View {
     }
 
     private var currentLesson: CourseLesson? {
+        if let session = challengeSession {
+            return session.getNextStep(from: lessons)
+        }
+
         guard lessons.indices.contains(currentIndex) else { return lessons.first }
         return lessons[currentIndex]
+    }
+
+    private var challengeSession: ChallengeSession? {
+        challengeSessions.first
     }
 
     private var linkedJournalTemplates: [JournalTemplate] {
@@ -54,7 +64,7 @@ struct CourseDetailView: View {
     }
 
     private var hasFullAccess: Bool {
-        !course.isPremium || subscriptionManager.isPremium || (settings.first?.isPremium ?? false)
+        return true
     }
 
     private var displayLessonCount: Int {
@@ -66,6 +76,8 @@ struct CourseDetailView: View {
         self.libraryItems = libraryItems
         self._currentIndex = State(initialValue: course.progressIndex(in: libraryItems))
         self._finalReflectionDraft = State(initialValue: course.finalReflectionResponse ?? "")
+        let challengeID = course.id
+        self._challengeSessions = Query(filter: #Predicate<ChallengeSession> { $0.challengeID == challengeID })
     }
 
     var body: some View {
@@ -77,6 +89,7 @@ struct CourseDetailView: View {
                     AppScreenHeadline(title: course.title)
 
                     overviewCard
+                    completionMessageCard
 
                     if lessons.isEmpty {
                         emptyCourseState
@@ -103,14 +116,42 @@ struct CourseDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .onAppear {
-            currentIndex = course.progressIndex(in: libraryItems)
+            syncChallengeSession()
             finalReflectionDraft = course.finalReflectionResponse ?? ""
         }
         .sheet(item: $selectedJournalTemplate) { template in
             GuidedJournalWizardView(template: template)
+                .dsSheetPresentation()
         }
         .sheet(isPresented: $showingPaywall) {
             SubscriptionView()
+                .dsSheetPresentation(detents: [.large])
+        }
+        .sheet(isPresented: $showingCelebration) {
+            ChallengeCelebrationModal(challengeTitle: course.title)
+                .dsSheetPresentation(detents: [.medium])
+        }
+    }
+
+    @ViewBuilder
+    private var completionMessageCard: some View {
+        let message = course.completionMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+        if course.isCompleted, !message.isEmpty {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Theme.successGreen)
+                    .padding(.top, 1)
+
+                Text(message)
+                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                    .foregroundStyle(Theme.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(Theme.paddingMedium)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.successGreen.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusMedium, style: .continuous))
         }
     }
 
@@ -179,13 +220,14 @@ struct CourseDetailView: View {
 
     private var metadataWrap: some View {
         let approach = course.approaches.first ?? course.approach
-        let topic = course.topics.first ?? course.category
+        let category = course.category
 
         return ViewThatFits(in: .horizontal) {
             HStack(spacing: 6) {
                 metadataPill(course.displayFormat)
+                metadataPill(course.approach)
                 metadataPill(approach)
-                metadataPill(topic)
+                metadataPill(category)
                 metadataPill(course.displayDifficulty)
                 metadataPill("\(displayLessonCount) lessons")
                 metadataPill("\(course.estimatedTotalDuration)m")
@@ -195,8 +237,9 @@ struct CourseDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     metadataPill(course.displayFormat)
+                    metadataPill(course.approach)
                     metadataPill(approach)
-                    metadataPill(topic)
+                    metadataPill(category)
                 }
                 HStack(spacing: 6) {
                     metadataPill(course.displayDifficulty)
@@ -210,6 +253,8 @@ struct CourseDetailView: View {
 
     private func currentLessonCard(_ lesson: CourseLesson) -> some View {
         VStack(alignment: .leading, spacing: 14) {
+            challengeProgressHeader
+
             HStack {
                 Text("Lesson \(currentIndex + 1)")
                     .font(.system(size: 13, weight: .bold, design: .rounded))
@@ -402,6 +447,30 @@ struct CourseDetailView: View {
         }
     }
 
+    private var challengeProgressHeader: some View {
+        let total = max(lessons.count, 1)
+        let completedSteps = min(challengeSession?.currentStepIndex ?? course.completedLessonCount, total)
+        let fraction = Double(completedSteps) / Double(total)
+
+        return VStack(spacing: 8) {
+            HStack {
+                Text((challengeSession?.isCompleted ?? course.isCompleted) ? "Challenge done" : "Step \(completedSteps + 1) of \(total)")
+                    .font(.system(.caption, design: .rounded).weight(.semibold))
+                    .foregroundStyle((challengeSession?.isCompleted ?? course.isCompleted) ? Theme.successGreen : Theme.secondaryText)
+
+                Spacer()
+
+                Text("\(Int(fraction * 100))%")
+                    .font(.system(.caption, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.secondaryText)
+            }
+
+            ProgressView(value: fraction)
+                .tint((challengeSession?.isCompleted ?? course.isCompleted) ? Theme.successGreen : themeManager.selectedColor)
+                .animation(.easeInOut(duration: 0.25), value: fraction)
+        }
+    }
+
     private var lockedCourseCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
@@ -446,6 +515,9 @@ struct CourseDetailView: View {
             Text(title)
                 .font(.system(.caption2, design: .rounded).weight(.bold))
                 .foregroundStyle(Theme.secondaryText)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(Theme.tertiaryBackground)
@@ -514,7 +586,10 @@ struct CourseDetailView: View {
     }
 
     private func complete(_ lesson: CourseLesson) {
+        let session = ensureChallengeSession()
         course.markCompleted(lesson: lesson)
+        let didFinishChallenge = session.advance(totalSteps: lessons.count)
+        currentIndex = min(session.currentStepIndex, max(lessons.count - 1, 0))
 
         if let nextIndex = lessons.firstIndex(where: { !course.isLessonCompleted($0) }) {
             currentIndex = nextIndex
@@ -524,11 +599,37 @@ struct CourseDetailView: View {
             try modelContext.save()
             AchievementService.shared.evaluateAchievements(in: modelContext)
             HapticManager.shared.success()
+            if didFinishChallenge {
+                showingCelebration = true
+            }
             Task { @MainActor in
                 await PersonalizedReminderService.shared.refreshEnabledReminders(modelContext: modelContext)
             }
         } catch {
             AppLogger.make(category: "Library").error("Failed to save course progress: \(error.localizedDescription, privacy: .private)")
+        }
+    }
+
+    private func ensureChallengeSession() -> ChallengeSession {
+        if let challengeSession {
+            return challengeSession
+        }
+
+        let session = ChallengeSession(challengeID: course.id)
+        session.syncWithCompletedSteps(course.completedLessonCount, totalSteps: lessons.count)
+        modelContext.insert(session)
+        return session
+    }
+
+    private func syncChallengeSession() {
+        let session = ensureChallengeSession()
+        session.syncWithCompletedSteps(course.completedLessonCount, totalSteps: lessons.count)
+        currentIndex = min(session.currentStepIndex, max(lessons.count - 1, 0))
+
+        do {
+            try modelContext.save()
+        } catch {
+            AppLogger.make(category: "Library").error("Failed to save challenge session: \(error.localizedDescription, privacy: .private)")
         }
     }
 
@@ -542,6 +643,54 @@ struct CourseDetailView: View {
             HapticManager.shared.success()
         } catch {
             AppLogger.make(category: "Library").error("Failed to save final reflection: \(error.localizedDescription, privacy: .private)")
+        }
+    }
+}
+
+private struct ChallengeCelebrationModal: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(ThemeManager.self) private var themeManager
+
+    let challengeTitle: String
+
+    var body: some View {
+        DSSheetContainer {
+            VStack(spacing: 18) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 34, weight: .bold))
+                    .foregroundStyle(themeManager.selectedColor)
+                    .frame(width: 72, height: 72)
+                    .background(themeManager.selectedColor.opacity(0.12), in: Circle())
+
+                VStack(spacing: 8) {
+                    Text("Challenge Done")
+                        .font(.system(.title2, design: .rounded).weight(.bold))
+                        .foregroundStyle(Theme.primaryText)
+
+                    Text("You finished \(challengeTitle). Take a moment to notice the follow-through.")
+                        .font(.system(.subheadline, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Button {
+                    HapticManager.shared.lightImpact()
+                    dismiss()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark")
+                        Text("Continue")
+                    }
+                    .font(.system(.headline, design: .rounded).weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .background(themeManager.selectedColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(Theme.paddingMedium)
         }
     }
 }

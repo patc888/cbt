@@ -122,10 +122,8 @@ struct BreathingControlsBar: View {
         if isRunning || canResume {
             Button(action: onStop) {
                 Image(systemName: "xmark")
-                    .font(.system(.body, weight: .bold))
-                    .frame(width: 54, height: 54)
             }
-            .buttonStyle(BreathingResetButtonStyle())
+            .buttonStyle(DSDestructiveButtonStyle(size: .icon(54), expands: false))
             .accessibilityLabel("Stop and reset")
         }
     }
@@ -139,18 +137,5 @@ struct BreathingControlsBar: View {
         URL(fileURLWithPath: fileName)
             .deletingPathExtension()
             .lastPathComponent
-    }
-}
-
-private struct BreathingResetButtonStyle: ButtonStyle {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundStyle(DSTheme.destructive)
-            .background(DSTheme.destructive.opacity(0.12))
-            .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous))
-            .opacity(configuration.isPressed ? 0.85 : 1)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.99 : 1)
     }
 }

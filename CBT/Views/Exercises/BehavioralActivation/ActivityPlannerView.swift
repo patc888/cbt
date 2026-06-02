@@ -54,6 +54,7 @@ struct ActivityPlannerView: View {
         }
         .sheet(isPresented: $showingAddActivity) {
             AddActivityView()
+                .dsSheetPresentation()
         }
     }
 
@@ -63,15 +64,9 @@ struct ActivityPlannerView: View {
             showingAddActivity = true
         } label: {
             Label("Schedule Activity", systemImage: "plus.circle.fill")
-                .font(.system(.headline, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .frame(maxWidth: .infinity, minHeight: 48)
-                .background(themeManager.selectedColor)
-                .clipShape(Capsule())
-                .shadow(color: themeManager.selectedColor.opacity(0.3), radius: 10, y: 5)
         }
+        .buttonStyle(DSButtonStyle(variant: .primary, tint: themeManager.selectedColor, hapticType: nil))
     }
     
     private var headerSection: some View {
@@ -191,6 +186,7 @@ struct ActivityRow: View {
         .buttonStyle(.plain)
         .sheet(isPresented: $showingCompletion) {
             ActivityCompletionView(activity: activity)
+                .dsSheetPresentation()
         }
     }
 }
@@ -207,7 +203,7 @@ struct CategoryBadge: View {
             .padding(.vertical, 4)
             .background(Color.accentColor.opacity(0.1))
             .foregroundStyle(Color.accentColor)
-            .clipShape(Capsule())
+            .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous))
     }
 }
 

@@ -73,6 +73,7 @@ struct ThoughtRecordListView: View {
         }
         .sheet(isPresented: $showingNewRecord) {
             NewThoughtRecordFlowView()
+                .dsSheetPresentation()
         }
         .withUsageGate(isAttemptingAction: $attemptingNewRecord) {
             showingNewRecord = true

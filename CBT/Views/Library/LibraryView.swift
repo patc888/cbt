@@ -492,13 +492,8 @@ struct LibraryView: View {
                         Image(systemName: "line.3.horizontal.decrease.circle")
                         Text(selectedMetadataFilter.rawValue)
                     }
-                    .font(.system(.subheadline, design: .rounded).weight(.bold))
-                    .foregroundStyle(themeManager.selectedColor)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 9)
-                    .background(themeManager.selectedColor.opacity(0.1))
-                    .clipShape(Capsule())
                 }
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: false, tint: themeManager.selectedColor, hapticType: nil))
 
                 Spacer()
 
@@ -510,11 +505,8 @@ struct LibraryView: View {
                         HapticManager.shared.selection()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(Theme.secondaryText)
-                            .frame(width: 34, height: 34)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(DSButtonStyle(variant: .neutral, size: .icon(34), expands: false, hapticType: nil))
                     .accessibilityLabel("Clear library filters")
                 }
             }
@@ -537,14 +529,8 @@ struct LibraryView: View {
                         HapticManager.shared.selection()
                     } label: {
                         Text(value)
-                            .font(.system(.caption, design: .rounded).weight(.bold))
-                            .foregroundStyle(selectedMetadataValue == value ? Theme.backgroundColor : Theme.primaryText)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(selectedMetadataValue == value ? themeManager.selectedColor : Theme.tertiaryBackground)
-                            .clipShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(DSSelectionButtonStyle(isSelected: selectedMetadataValue == value, selectedColor: themeManager.selectedColor, size: .compact, expands: false))
                     .accessibilityAddTraits(selectedMetadataValue == value ? .isSelected : [])
                 }
             }
@@ -562,14 +548,8 @@ struct LibraryView: View {
                         HapticManager.shared.selection()
                     } label: {
                         Text(approach)
-                            .font(.system(.caption, design: .rounded).weight(.bold))
-                            .foregroundStyle(selectedApproach == approach ? Theme.backgroundColor : Theme.primaryText)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(selectedApproach == approach ? themeManager.selectedColor : Theme.tertiaryBackground)
-                            .clipShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(DSSelectionButtonStyle(isSelected: selectedApproach == approach, selectedColor: themeManager.selectedColor, size: .compact, expands: false))
                     .accessibilityAddTraits(selectedApproach == approach ? .isSelected : [])
                     .accessibilityLabel("\(approach) approach filter")
                 }
@@ -587,14 +567,8 @@ struct LibraryView: View {
                         HapticManager.shared.selection()
                     } label: {
                         Text(category)
-                            .font(.system(.caption, design: .rounded).weight(.bold))
-                            .foregroundStyle(selectedCategory == category ? Theme.backgroundColor : Theme.primaryText)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(selectedCategory == category ? themeManager.selectedColor : Theme.tertiaryBackground)
-                            .clipShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(DSSelectionButtonStyle(isSelected: selectedCategory == category, selectedColor: themeManager.selectedColor, size: .compact, expands: false))
                     .accessibilityAddTraits(selectedCategory == category ? .isSelected : [])
                 }
             }
@@ -782,22 +756,16 @@ struct LibraryView: View {
                     Text(title)
                         .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.primaryText)
-                    Text(subtitle)
+                Text(subtitle)
                         .font(.system(.caption, design: .rounded))
                         .foregroundStyle(Theme.secondaryText)
                 }
 
                 Spacer()
                 Image(systemName: "play.circle.fill")
-                    .font(.system(.title3))
-                    .foregroundStyle(themeManager.selectedColor)
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 10)
-            .background(Theme.toggleBackgroundColor(for: colorScheme))
-            .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, tint: themeManager.selectedColor, hapticType: .light))
     }
 
     private func iconCircle(_ systemImage: String, color: Color? = nil) -> some View {
@@ -1017,13 +985,14 @@ struct LibraryView: View {
 
     private func courseMetadataRow(_ course: Course, lessonCount: Int) -> some View {
         let approach = course.approaches.first ?? course.approach
-        let topic = course.topics.first ?? course.category
+        let category = course.category
 
         return ViewThatFits(in: .horizontal) {
             HStack(spacing: 6) {
                 courseMetadataPill(course.displayFormat)
+                courseMetadataPill(course.approach)
                 courseMetadataPill(approach)
-                courseMetadataPill(topic)
+                courseMetadataPill(category)
                 courseMetadataPill(course.displayDifficulty)
                 courseMetadataPill("\(lessonCount) lessons")
                 courseMetadataPill("\(course.estimatedTotalDuration)m")
@@ -1032,11 +1001,12 @@ struct LibraryView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     courseMetadataPill(course.displayFormat)
+                    courseMetadataPill(course.approach)
                     courseMetadataPill(approach)
                     courseMetadataPill(course.displayDifficulty)
                 }
                 HStack(spacing: 6) {
-                    courseMetadataPill(topic)
+                    courseMetadataPill(category)
                     courseMetadataPill("\(lessonCount) lessons")
                     courseMetadataPill("\(course.estimatedTotalDuration)m")
                 }
@@ -1281,6 +1251,7 @@ struct LibraryView: View {
             fields.append(audioContent.type.displayName)
             fields.append(audioContent.localAssetFilename)
             fields.append(audioContent.transcript)
+            fields.append(contentsOf: audioContent.displayTags)
             fields.append(audioContent.isPremium ? "premium" : "free")
         }
 
@@ -1300,6 +1271,7 @@ struct LibraryView: View {
             course.category,
             course.displayFormat,
             course.displayDifficulty,
+            course.completionMessage,
             "\(course.estimatedTotalDuration) minutes"
         ]
         fields.append(contentsOf: course.approaches)
@@ -1471,11 +1443,12 @@ private struct AudioContentDisplay {
 }
 
 private struct LibraryAudioView: View {
-    @StateObject private var audioPlayer = AudioPlayerService.shared
     @State private var subscriptionManager = SubscriptionManager.shared
     @State private var showingPaywall = false
+    @State private var completedSummary: SessionSummary?
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Environment(ThemeManager.self) private var themeManager
 
     @Query(sort: \AudioContent.title)
@@ -1501,11 +1474,18 @@ private struct LibraryAudioView: View {
     }
 
     private var isUnlocked: Bool {
-        !displayContent.isPremium || subscriptionManager.isPremium || (settings.first?.isPremium ?? false)
+        return true
     }
 
-    private var isCurrentAudioPlaying: Bool {
-        audioPlayer.isPlayingAsset(named: displayContent.localAssetFilename)
+    private var playerContent: AudioPlayerContent {
+        AudioPlayerContent(
+            id: displayContent.id,
+            title: displayContent.title,
+            description: displayContent.description,
+            assetFilename: displayContent.localAssetFilename,
+            durationSeconds: displayContent.duration * 60,
+            systemImage: displayContent.type.systemImage
+        )
     }
 
     var body: some View {
@@ -1515,8 +1495,8 @@ private struct LibraryAudioView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     AppScreenHeadline(title: displayContent.title)
 
+                    audioPlayerCard
                     audioHeaderCard
-                    playbackCard
 
                     if !displayContent.transcript.isEmpty {
                         transcriptCard
@@ -1531,10 +1511,31 @@ private struct LibraryAudioView: View {
         }
         .sheet(isPresented: $showingPaywall) {
             SubscriptionView()
+                .dsSheetPresentation(detents: [.large])
         }
-        .onDisappear {
-            audioPlayer.stop()
+        .sheet(item: $completedSummary) { summary in
+            SaveSessionView(summary: summary)
+                .dsSheetPresentation()
         }
+    }
+
+    private var audioPlayerCard: some View {
+        MindfulnessAudioPlayerView(
+            content: playerContent,
+            isUnlocked: isUnlocked,
+            onRequestUnlock: {
+                showingPaywall = true
+            },
+            onClose: {
+                dismiss()
+            },
+            onCompleted: { completion in
+                markPlaybackCompleted(completion)
+            },
+            onSaveCompletedSession: { completion in
+                completedSummary = makeSessionSummary(from: completion)
+            }
+        )
     }
 
     private var audioHeaderCard: some View {
@@ -1547,85 +1548,51 @@ private struct LibraryAudioView: View {
                     .background(themeManager.selectedColor.opacity(0.12), in: Circle())
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(displayContent.description)
-                        .font(.system(.body, design: .rounded))
-                        .foregroundStyle(Theme.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Details")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .textCase(.uppercase)
+                        .foregroundStyle(Theme.secondaryText)
 
                     metadataPills
                 }
             }
 
-            HStack(spacing: 10) {
-                Button {
-                    toggleFavorite()
-                } label: {
-                    Label(displayContent.isFavorite ? "Favorited" : "Favorite", systemImage: displayContent.isFavorite ? "heart.fill" : "heart")
-                        .frame(maxWidth: .infinity, minHeight: 44)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    favoriteButton
+                    completionButton
                 }
-                .buttonStyle(DSSecondaryButtonStyle())
-                .accessibilityLabel(displayContent.isFavorite ? "Remove from favorites" : "Add to favorites")
 
-                Button {
-                    toggleCompletion()
-                } label: {
-                    Label(displayContent.isCompleted ? "Completed" : "Mark Done", systemImage: displayContent.isCompleted ? "checkmark.circle.fill" : "checkmark")
-                        .frame(maxWidth: .infinity, minHeight: 44)
+                VStack(spacing: 10) {
+                    favoriteButton
+                    completionButton
                 }
-                .buttonStyle(DSSecondaryButtonStyle())
-                .accessibilityLabel(displayContent.isCompleted ? "Mark audio incomplete" : "Mark audio complete")
             }
         }
         .padding(Theme.paddingMedium)
         .cardStyle()
     }
 
-    private var playbackCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Local Asset")
-                        .font(.system(.caption, design: .rounded).weight(.bold))
-                        .foregroundStyle(Theme.secondaryText)
-
-                    Text(displayContent.localAssetFilename)
-                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                        .foregroundStyle(Theme.primaryText)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                }
-
-                Spacer()
-
-                if displayContent.isPremium {
-                    Image(systemName: isUnlocked ? "lock.open.fill" : "lock.fill")
-                        .font(.system(.headline, weight: .bold))
-                        .foregroundStyle(isUnlocked ? Theme.successGreen : themeManager.selectedColor)
-                        .accessibilityHidden(true)
-                }
-            }
-
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 10) {
-                    playPauseButton
-                    stopButton
-                }
-
-                VStack(spacing: 10) {
-                    playPauseButton
-                    stopButton
-                }
-            }
-
-            if let errorMessage = audioPlayer.errorMessage {
-                Text(errorMessage)
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+    private var favoriteButton: some View {
+        Button {
+            toggleFavorite()
+        } label: {
+            Label(displayContent.isFavorite ? "Favorited" : "Favorite", systemImage: displayContent.isFavorite ? "heart.fill" : "heart")
+                .frame(maxWidth: .infinity, minHeight: 44)
         }
-        .padding(Theme.paddingMedium)
-        .cardStyle()
+        .buttonStyle(DSSecondaryButtonStyle())
+        .accessibilityLabel(displayContent.isFavorite ? "Remove from favorites" : "Add to favorites")
+    }
+
+    private var completionButton: some View {
+        Button {
+            toggleCompletion()
+        } label: {
+            Label(displayContent.isCompleted ? "Completed" : "Mark Done", systemImage: displayContent.isCompleted ? "checkmark.circle.fill" : "checkmark")
+                .frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .buttonStyle(DSSecondaryButtonStyle())
+        .accessibilityLabel(displayContent.isCompleted ? "Mark audio incomplete" : "Mark audio complete")
     }
 
     private var transcriptCard: some View {
@@ -1667,38 +1634,6 @@ private struct LibraryAudioView: View {
         }
     }
 
-    private var playPauseButton: some View {
-        Button {
-            handlePlayPause()
-        } label: {
-            Label(isCurrentAudioPlaying ? "Pause" : (isUnlocked ? "Play" : "Unlock"), systemImage: isCurrentAudioPlaying ? "pause.fill" : (isUnlocked ? "play.fill" : "lock.fill"))
-                .font(.system(.headline, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity, minHeight: 48)
-                .background(themeManager.selectedColor)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(isCurrentAudioPlaying ? "Pause audio" : (isUnlocked ? "Play audio" : "Unlock premium audio"))
-    }
-
-    private var stopButton: some View {
-        Button {
-            audioPlayer.stop()
-        } label: {
-            Image(systemName: "stop.fill")
-                .font(.system(.headline, weight: .bold))
-                .foregroundStyle(Theme.secondaryText)
-                .frame(width: 52, height: 48)
-                .background(Theme.tertiaryBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .disabled(!isCurrentAudioPlaying)
-        .opacity(isCurrentAudioPlaying ? 1 : 0.55)
-        .accessibilityLabel("Stop audio")
-    }
-
     private func metadataPill(_ title: String) -> some View {
         Text(title)
             .font(.system(.caption2, design: .rounded).weight(.bold))
@@ -1709,21 +1644,37 @@ private struct LibraryAudioView: View {
             .clipShape(Capsule())
     }
 
-    private func handlePlayPause() {
-        if !isUnlocked {
-            HapticManager.shared.warning()
-            showingPaywall = true
-            return
+    private func markPlaybackCompleted(_ completion: AudioPlaybackCompletion) {
+        guard let content = editableAudioContent() else { return }
+        content.markCompleted(at: completion.endedAt)
+        saveAudioState(successHaptic: false)
+    }
+
+    private func makeSessionSummary(from completion: AudioPlaybackCompletion) -> SessionSummary {
+        let summaryBody = audioSessionSummaryBody()
+        return SessionSummary(
+            sourceKind: .audio,
+            sourceID: completion.content.id,
+            title: completion.content.title,
+            bodyText: summaryBody,
+            durationSeconds: completion.durationSeconds,
+            startedAt: completion.startedAt,
+            endedAt: completion.endedAt
+        )
+    }
+
+    private func audioSessionSummaryBody() -> String {
+        var sections = [displayContent.description]
+
+        if !displayContent.transcript.isEmpty {
+            let transcriptTitle = displayContent.type == .soundscape ? "Guidance" : "Transcript"
+            sections.append("\(transcriptTitle):\n\(displayContent.transcript)")
         }
 
-        if isCurrentAudioPlaying {
-            audioPlayer.pause()
-        } else {
-            audioPlayer.playLocalAsset(
-                named: displayContent.localAssetFilename,
-                loop: displayContent.type == .soundscape
-            )
-        }
+        return sections
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n\n")
     }
 
     private func toggleFavorite() {

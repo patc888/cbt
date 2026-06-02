@@ -60,19 +60,10 @@ struct LockView: View {
                 }) {
                     HStack(spacing: 12) {
                         Image(systemName: "lock.open.fill")
-                            .font(.system(size: 20, weight: .bold))
                         Text("Unlock App")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
                     }
-                    .foregroundColor(themeManager.primaryColor)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
-                    .background(
-                        Capsule()
-                            .fill(.white)
-                            .shadow(color: Color.black.opacity(0.15), radius: 12, x: 0, y: 6)
-                    )
                 }
+                .buttonStyle(DSButtonStyle(variant: .inverted, size: .large, tint: themeManager.primaryColor, hapticType: nil))
                 .padding(.horizontal, 40)
                 .padding(.bottom, 60)
             }

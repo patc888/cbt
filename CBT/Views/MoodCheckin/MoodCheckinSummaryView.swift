@@ -34,9 +34,8 @@ struct MoodCheckinSummaryView: View {
                                     .frame(width: 96, height: 96)
                                     .overlay(Circle().stroke(accent.opacity(0.22), lineWidth: 1))
                                 
-                                mood.iconView
-                                    .font(.system(size: 48))
-                                    .foregroundStyle(accent)
+                                mood.icon(size: 48)
+                                    .foregroundStyle(mood.iconColor(with: themeManager.selectedColor))
                             }
                             
                             VStack(alignment: .leading, spacing: 8) {

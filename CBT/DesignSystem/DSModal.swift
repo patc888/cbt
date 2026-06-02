@@ -9,6 +9,7 @@ struct DSBullet: Identifiable, Hashable {
 struct DSFeatureModal: View {
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
 
+    let systemImage: String?
     let title: String
     let subtitle: String?
     let bullets: [DSBullet]
@@ -20,6 +21,7 @@ struct DSFeatureModal: View {
     let closeAction: (() -> Void)?
 
     init(
+        systemImage: String? = nil,
         title: String,
         subtitle: String? = nil,
         bullets: [DSBullet] = [],
@@ -30,6 +32,7 @@ struct DSFeatureModal: View {
         showsCloseButton: Bool = true,
         closeAction: (() -> Void)? = nil
     ) {
+        self.systemImage = systemImage
         self.title = title
         self.subtitle = subtitle
         self.bullets = bullets
@@ -48,6 +51,20 @@ struct DSFeatureModal: View {
     var body: some View {
         DSCardContainer {
             VStack(alignment: .leading, spacing: DSSpacing.large) {
+                if let systemImage {
+                    ZStack {
+                        Circle()
+                            .fill(accent.opacity(0.12))
+                            .frame(width: 68, height: 68)
+
+                        Image(systemName: systemImage)
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(accent)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
+                }
+
                 HStack(alignment: .top, spacing: DSSpacing.small) {
                     VStack(alignment: .leading, spacing: DSSpacing.small) {
                         Text(title)

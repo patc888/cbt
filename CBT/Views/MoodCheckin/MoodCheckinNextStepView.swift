@@ -19,7 +19,6 @@ struct MoodCheckinNextStepState {
 
 struct MoodCheckinNextStepView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Environment(\.openURL) private var openURL
 
     let state: MoodCheckinNextStepState
     let onSkip: () -> Void
@@ -29,6 +28,7 @@ struct MoodCheckinNextStepView: View {
     @State private var showingBreathing = false
     @State private var breathingDurationSeconds = 60
     @State private var showingThoughtRecord = false
+    @State private var showingSafetySupport = false
 
     private var accent: Color {
         state.summary.color?.color(with: themeManager.selectedColor) ?? themeManager.selectedColor
@@ -54,6 +54,13 @@ struct MoodCheckinNextStepView: View {
         }
         .sheet(isPresented: $showingThoughtRecord) {
             NewThoughtRecordFlowView()
+                .dsSheetPresentation()
+        }
+        .sheet(isPresented: $showingSafetySupport) {
+            NavigationStack {
+                SafetyPlanView()
+            }
+            .dsSheetPresentation()
         }
         #if os(iOS)
         .fullScreenCover(isPresented: $showingBreathing) {
@@ -62,6 +69,7 @@ struct MoodCheckinNextStepView: View {
         #else
         .sheet(isPresented: $showingBreathing) {
             breathingView
+                .dsSheetPresentation()
         }
         #endif
     }
@@ -103,9 +111,8 @@ struct MoodCheckinNextStepView: View {
                             .frame(width: 54, height: 54)
 
                         if let color = state.summary.color {
-                            color.iconView
-                                .font(.system(size: 26, weight: .semibold))
-                                .foregroundStyle(accent)
+                            color.icon(size: 26)
+                                .foregroundStyle(color.iconColor(with: themeManager.selectedColor))
                         } else {
                             Image(systemName: "face.smiling")
                                 .font(.system(size: 24, weight: .semibold))
@@ -189,12 +196,8 @@ struct MoodCheckinNextStepView: View {
                 onSkip()
             } label: {
                 Text("Skip for now")
-                    .font(DSTypography.body.weight(.semibold))
-                    .foregroundStyle(DSTheme.secondaryText)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(DSSecondaryButtonStyle(size: .medium))
         }
     }
 
@@ -245,17 +248,17 @@ struct MoodCheckinNextStepView: View {
             }
             .buttonStyle(.plain)
 
-        case .safetySupport:
+        case .thoughtRecord:
             Button {
-                openSupportResources()
+                showingThoughtRecord = true
             } label: {
                 RecommendationRow(recommendation: recommendation, accent: accent)
             }
             .buttonStyle(.plain)
 
-        case .thoughtRecord:
+        case .safetySupport:
             Button {
-                showingThoughtRecord = true
+                showingSafetySupport = true
             } label: {
                 RecommendationRow(recommendation: recommendation, accent: accent)
             }
@@ -279,11 +282,6 @@ struct MoodCheckinNextStepView: View {
 
             FlowLikeChipRow(items: items)
         }
-    }
-
-    private func openSupportResources() {
-        guard let url = URL(string: "https://xeo.com/CBT/support.html") else { return }
-        openURL(url)
     }
 
     private var breathingView: some View {

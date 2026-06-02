@@ -396,19 +396,11 @@ private struct ExercisesDashboardContent: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(themeManager.selectedColor)
                 Text(title)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Theme.primaryText)
                 Spacer()
                 Image(systemName: "arrow.up.forward.square")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Theme.secondaryText)
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 10)
-            .background(Theme.toggleBackgroundColor(for: .light))
-            .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, tint: themeManager.selectedColor, hapticType: .light))
     }
 
     private func categoryChip(_ category: String) -> some View {
@@ -417,14 +409,8 @@ private struct ExercisesDashboardContent: View {
             HapticManager.shared.lightImpact()
         } label: {
                 Text(category)
-                    .font(.system(.caption, design: .rounded).weight(.bold))
-                    .foregroundStyle(selectedCategory == category ? Theme.backgroundColor : Theme.primaryText)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(selectedCategory == category ? themeManager.selectedColor : Theme.tertiaryBackground)
-                    .clipShape(Capsule())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(DSSelectionButtonStyle(isSelected: selectedCategory == category, selectedColor: themeManager.selectedColor, size: .compact, expands: false))
             .accessibilityAddTraits(selectedCategory == category ? .isSelected : [])
             .accessibilityLabel("\(category) category filter")
     }
@@ -436,14 +422,8 @@ private struct ExercisesDashboardContent: View {
             HapticManager.shared.lightImpact()
         } label: {
             Text(approach)
-                .font(.system(.caption, design: .rounded).weight(.bold))
-                .foregroundStyle(selectedApproach == approach ? Theme.backgroundColor : Theme.primaryText)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(selectedApproach == approach ? themeManager.selectedColor : Theme.tertiaryBackground)
-                .clipShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DSSelectionButtonStyle(isSelected: selectedApproach == approach, selectedColor: themeManager.selectedColor, size: .compact, expands: false))
         .accessibilityAddTraits(selectedApproach == approach ? .isSelected : [])
         .accessibilityLabel("\(approach) approach filter")
     }

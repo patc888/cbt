@@ -28,11 +28,11 @@ struct SettingsPickerButton: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(
-            Capsule()
+            RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous)
                 .fill(themeManager.selectedColor.opacity(isExpanded ? 0.15 : 0.1))
         )
         .overlay(
-            Capsule()
+            RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous)
                 .stroke(themeManager.selectedColor, lineWidth: isExpanded ? 2 : 0)
         )
     }
@@ -59,11 +59,11 @@ struct SettingsDropdownButton: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(
-            Capsule()
+            RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous)
                 .fill(themeManager.selectedColor.opacity(isExpanded ? 0.15 : 0.1))
         )
         .overlay(
-            Capsule()
+            RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous)
                 .stroke(themeManager.selectedColor, lineWidth: isExpanded ? 2 : 0)
         )
     }

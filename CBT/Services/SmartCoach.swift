@@ -4,7 +4,6 @@ struct SmartCoachPlan: Hashable {
     let headline: String
     let subtitle: String
     let recommendations: [SmartCoachRecommendation]
-    let includesSupportResources: Bool
 }
 
 struct SmartCoachRecommendation: Identifiable, Hashable {
@@ -28,34 +27,12 @@ struct SmartCoachRecommendation: Identifiable, Hashable {
 enum SmartCoach {
     static func nextSteps(for record: ThoughtRecord) -> SmartCoachPlan {
         let recommendations = recommendations(for: record)
-        let supportRecommended = includesSupportResources(for: record)
 
         return SmartCoachPlan(
             headline: "Nice work noticing this",
             subtitle: "You can stop here, or choose one small next step.",
-            recommendations: recommendations,
-            includesSupportResources: supportRecommended
+            recommendations: recommendations
         )
-    }
-
-    static func includesSupportResources(for record: ThoughtRecord) -> Bool {
-        let highDistress = record.intensityBefore >= 80 || record.intensityAfter >= 70
-        let veryNegativeMood = containsAnyKeyword(
-            in: record.emotions + [record.automaticThought],
-            keywords: [
-                "hopeless",
-                "worthless",
-                "despair",
-                "depressed",
-                "very low",
-                "panic",
-                "terrified",
-                "overwhelmed",
-                "numb"
-            ]
-        )
-
-        return highDistress || veryNegativeMood
     }
 
     private static func recommendations(for record: ThoughtRecord) -> [SmartCoachRecommendation] {

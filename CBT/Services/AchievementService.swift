@@ -479,7 +479,10 @@ final class AchievementService {
             streakCount: Self.longestDailyRun(from: activeDates),
             exercisesCompleted: exerciseCompletions.count,
             thoughtRecordsCount: thoughts.count,
-            moodCheckInCount: max(moodEntries.count, moodCheckIns.count),
+            moodCheckInCount: Self.uniqueMoodCheckInCount(
+                moodEntries: moodEntries,
+                moodCheckIns: moodCheckIns
+            ),
             guidedJournalCount: flexibleJournals.count,
             breathingSessionCount: breathingSessions.count,
             coursesCompleted: courses.filter(\.isCompleted).count,
@@ -492,6 +495,27 @@ final class AchievementService {
                 courses: courses
             ).count
         )
+    }
+
+    private static func uniqueMoodCheckInCount(
+        moodEntries: [MoodEntry],
+        moodCheckIns: [MoodCheckIn]
+    ) -> Int {
+        let entryTimestamps = moodEntries.map(normalizedTimestamp)
+        let checkInTimestamps = moodCheckIns.map(normalizedTimestamp)
+        return Set(entryTimestamps + checkInTimestamps).count
+    }
+
+    private static func normalizedTimestamp(_ moodEntry: MoodEntry) -> Int64 {
+        normalizedTimestamp(moodEntry.createdAt)
+    }
+
+    private static func normalizedTimestamp(_ moodCheckIn: MoodCheckIn) -> Int64 {
+        normalizedTimestamp(moodCheckIn.createdAt)
+    }
+
+    private static func normalizedTimestamp(_ date: Date) -> Int64 {
+        Int64((date.timeIntervalSince1970 * 1_000).rounded())
     }
 
     private static func longestDailyRun(from activeDays: [Date], calendar: Calendar = .current) -> Int {

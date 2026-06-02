@@ -124,28 +124,39 @@ private struct InsightsFeaturedPatternCard: View {
         }
         .padding(18)
         .background {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            themeManager.selectedColor,
-                            secondaryAccent.opacity(colorScheme == .dark ? 0.95 : 0.9),
-                            themeManager.selectedColor.opacity(colorScheme == .dark ? 0.7 : 0.78)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .overlay {
-                    ZStack {
-                        InsightsPatternTexture()
+            ZStack {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    #if canImport(UIKit)
+                    .fill(Color(UIColor.systemBackground))
+                    #elseif canImport(AppKit)
+                    .fill(Color(nsColor: .windowBackgroundColor))
+                    #else
+                    .fill(Color.black)
+                    #endif
+                    .shadow(color: themeManager.selectedColor.opacity(colorScheme == .dark ? 0.24 : 0.12), radius: 14, x: 0, y: 8)
 
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .strokeBorder(.white.opacity(0.2), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                themeManager.selectedColor,
+                                secondaryAccent.opacity(colorScheme == .dark ? 0.95 : 0.9),
+                                themeManager.selectedColor.opacity(colorScheme == .dark ? 0.7 : 0.78)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay {
+                        ZStack {
+                            InsightsPatternTexture()
+
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .strokeBorder(.white.opacity(0.2), lineWidth: 1)
+                        }
                     }
-                }
+            }
         }
-        .shadow(color: themeManager.selectedColor.opacity(colorScheme == .dark ? 0.24 : 0.12), radius: 14, x: 0, y: 8)
         .accessibilityElement(children: .combine)
     }
 }

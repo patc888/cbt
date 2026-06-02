@@ -88,6 +88,31 @@ struct DataSettingsSection: View {
                     style: isCloudKitStoreEnabled ? .label : .dot
                 )
             }
+
+            SettingsRow(
+                icon: "externaldrive.fill",
+                iconColor: themeManager.primaryColor,
+                title: "Export Backup",
+                subtitle: "Save a full CBT JSON backup"
+            ) {
+                exportBackupControl
+            }
+
+            SettingsRow(
+                icon: "square.and.arrow.down",
+                iconColor: themeManager.primaryColor,
+                title: "Import Backup",
+                subtitle: "Merge records from a CBT JSON backup"
+            ) {
+                importBackupControl
+            }
+
+            if let operation = viewModel.activeBackupOperation {
+                Text(operation.statusText)
+                    .font(.system(size: 12, design: .rounded))
+                    .foregroundStyle(Theme.secondaryText)
+                    .padding(.horizontal, 12)
+            }
             
             Button {
                 HapticManager.shared.lightImpact()
@@ -111,6 +136,7 @@ struct DataSettingsSection: View {
         }
         .sheet(isPresented: $showingWeeklyReportCheckIn) {
             MoodCheckinView()
+                .dsSheetPresentation()
         }
         .alert("Restore Error", isPresented: Binding(get: { viewModel.errorMessage != nil }, set: { if !$0 { viewModel.errorMessage = nil } })) {
             Button("OK", role: .cancel) {}
@@ -205,22 +231,66 @@ struct DataSettingsSection: View {
         return "Using local storage until iCloud is available"
     }
 
+    private var exportBackupControl: some View {
+        Group {
+            if isExportingBackup {
+                ProgressView()
+                    .controlSize(.small)
+            } else {
+                Button("Export") {
+                    HapticManager.shared.mediumImpact()
+                    Task {
+                        await viewModel.exportData(container: modelContext.container)
+                    }
+                }
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: false, tint: themeManager.primaryColor, hapticType: nil))
+                .disabled(viewModel.activeBackupOperation != nil)
+            }
+        }
+    }
+
+    private var importBackupControl: some View {
+        Group {
+            if isImportingBackup {
+                ProgressView()
+                    .controlSize(.small)
+            } else {
+                Button("JSON File") {
+                    HapticManager.shared.mediumImpact()
+                    viewModel.showingFileImporter = true
+                }
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: false, tint: themeManager.primaryColor, hapticType: nil))
+                .disabled(viewModel.activeBackupOperation != nil)
+            }
+        }
+    }
+
+    private var isExportingBackup: Bool {
+        guard case .exporting = viewModel.activeBackupOperation else { return false }
+        return true
+    }
+
+    private var isImportingBackup: Bool {
+        guard case .importing = viewModel.activeBackupOperation else { return false }
+        return true
+    }
+
     private var hasWeeklyReportData: Bool {
         !moodEntries.isEmpty || !thoughtRecords.isEmpty || !assessmentLogs.isEmpty
     }
 
     private var advancedDataOptionsSheet: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    advancedDataOptionsContent
-                        .padding(.horizontal, 16)
-                    storageAuditRow
-                        .padding(.horizontal, 16)
+            DSSheetContainer(maxContentWidth: 680) {
+                ScrollView {
+                    VStack(spacing: DSSpacing.large) {
+                        advancedDataOptionsContent
+                        storageAuditRow
+                    }
+                    .padding(.vertical, DSSpacing.small)
                 }
-                .padding(.vertical, 20)
+                .scrollIndicators(.hidden)
             }
-            .background(Theme.secondaryBackground)
             .navigationTitle("Advanced Data Options")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -240,7 +310,7 @@ struct DataSettingsSection: View {
                     .environment(themeManager)
             }
         }
-        .presentationDetents([.large])
+        .dsSheetPresentation(detents: [.large])
     }
 
     private var storageAuditRow: some View {

@@ -54,57 +54,57 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
     var settingsSubtitle: String {
         switch self {
         case .dailyMoodCheckIn:
-            return String(localized: "A gentle nudge to notice how you feel")
+            return String(localized: "Track mood, body signals, and context at the time you choose")
         case .eveningReflection:
-            return String(localized: "A quiet prompt to close the day")
+            return String(localized: "Review what stood out today and what you may need next")
         case .weeklyReport:
-            return String(localized: "Once a week, when your insights are ready")
+            return String(localized: "Look back at trends, streaks, entries, and progress once a week")
         case .breathingReset:
-            return String(localized: "A short pause for your body")
+            return String(localized: "Create a brief pause when your body could use more room")
         case .plannedActivity:
-            return String(localized: "Uses the time saved on each planned activity")
+            return String(localized: "Uses each saved activity time and only reminds you about upcoming plans")
         case .courseContinuation:
-            return String(localized: "Suggests continuing an active course")
+            return String(localized: "Return to an active course when you have space to continue")
         case .sleepWindDown:
-            return String(localized: "A calm reminder before your sleep routine")
+            return String(localized: "Begin a quieter routine before bed with reflection and closure")
         }
     }
 
     var notificationTitle: String {
         switch self {
         case .dailyMoodCheckIn:
-            return String(localized: "A gentle check-in")
+            return String(localized: "Check in with yourself")
         case .eveningReflection:
-            return String(localized: "A soft place to land")
+            return String(localized: "Reflect before the day closes")
         case .weeklyReport:
-            return String(localized: "Your week, gently summarized")
+            return String(localized: "Your weekly insight is ready")
         case .breathingReset:
-            return String(localized: "One steady minute")
+            return String(localized: "Make room for one steady minute")
         case .plannedActivity:
-            return String(localized: "A planned activity is coming up")
+            return String(localized: "Your planned activity is coming up")
         case .courseContinuation:
-            return String(localized: "Continue your course")
+            return String(localized: "Continue your CBT course")
         case .sleepWindDown:
-            return String(localized: "Time to soften the edges")
+            return String(localized: "Begin your sleep wind-down")
         }
     }
 
     var notificationBody: String {
         switch self {
         case .dailyMoodCheckIn:
-            return String(localized: "How are you feeling right now? A few taps can help you notice the pattern.")
+            return String(localized: "Take a moment to name your mood, intensity, and context. A quick check-in can make patterns easier to see over time.")
         case .eveningReflection:
-            return String(localized: "When you have a moment, reflect on one thing from today and what you need next.")
+            return String(localized: "Look back with care: what stood out, what felt hard, and what would help you tomorrow?")
         case .weeklyReport:
-            return String(localized: "Your insights are ready when you want to look back with curiosity.")
+            return String(localized: "Review mood trends, entries, achievements, and patterns from the week when you are ready to reflect.")
         case .breathingReset:
-            return String(localized: "A short breathing reset is here if your body could use a little room.")
+            return String(localized: "Pause for a guided breathing reset to help your body settle before you continue.")
         case .plannedActivity:
-            return String(localized: "If it still fits, start with one small step.")
+            return String(localized: "If this still fits your day, begin with the first small step and adjust as needed.")
         case .courseContinuation:
-            return String(localized: "Continue your active course when you have a comfortable pocket of time.")
+            return String(localized: "Pick up the next lesson or exercise when you have a comfortable pocket of time.")
         case .sleepWindDown:
-            return String(localized: "A quiet reflection can help your mind settle before sleep.")
+            return String(localized: "A quiet reflection can help your mind review the day, set down loose ends, and move toward rest.")
         }
     }
 
@@ -320,7 +320,7 @@ final class PersonalizedReminderService {
             let displayTitle = displayTitle(for: activity)
             let content = notificationContent(
                 for: .plannedActivity,
-                body: String(localized: "\(displayTitle) is on your plan. If it still fits, start with one small step."),
+                body: String(localized: "\(displayTitle) is on your plan. If it still fits your day, begin with the first small step and adjust as needed."),
                 extraUserInfo: [
                     Self.plannedActivityIDUserInfoKey: activity.id.uuidString
                 ]
@@ -350,7 +350,7 @@ final class PersonalizedReminderService {
 
         try await scheduleRepeatingReminder(
             .courseContinuation,
-            body: String(localized: "Continue \(course.title) when you have a comfortable pocket of time."),
+            body: String(localized: "Continue \(course.title) when you have a comfortable pocket of time for the next lesson or exercise."),
             hour: hour,
             minute: minute,
             weekday: PersonalizedReminderType.courseContinuation.defaultWeekday,
@@ -514,6 +514,150 @@ final class PersonalizedReminderService {
     }
 
     private func add(_ request: UNNotificationRequest) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            notificationCenter.add(request) { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: ())
+                }
+            }
+        }
+    }
+}
+
+final class StreakReengagementNotificationService {
+    static let shared = StreakReengagementNotificationService()
+
+    static let lastLoginTimestampKey = "last_login_timestamp"
+    static let lastDailyCheckTimestampKey = "cbt_streak_reengagement_last_daily_check_timestamp"
+
+    private let notificationCenter: UNUserNotificationCenter
+    private let defaults: UserDefaults
+    private let notificationIdentifier = "streak_reengagement_mood_check_in"
+    private let inactivityThreshold: TimeInterval = 48 * 60 * 60
+
+    init(
+        notificationCenter: UNUserNotificationCenter = .current(),
+        defaults: UserDefaults = .standard
+    ) {
+        self.notificationCenter = notificationCenter
+        self.defaults = defaults
+    }
+
+    @MainActor
+    func handleAppLogin(
+        modelContext: ModelContext,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) async {
+        let previousLogin = defaults.object(forKey: Self.lastLoginTimestampKey) as? Date
+        defer {
+            defaults.set(now, forKey: Self.lastLoginTimestampKey)
+        }
+
+        let lastCheck = defaults.object(forKey: Self.lastDailyCheckTimestampKey) as? Date
+        guard Self.shouldRunDailyCheck(lastCheck: lastCheck, now: now, calendar: calendar) else {
+            return
+        }
+
+        defaults.set(now, forKey: Self.lastDailyCheckTimestampKey)
+
+        guard
+            let previousLogin,
+            Self.hasBeenAwayFor48Hours(lastLogin: previousLogin, now: now)
+        else {
+            return
+        }
+
+        let status = await PermissionManager.shared.status(for: .notifications)
+        guard status.isAuthorized else { return }
+
+        do {
+            let streakCount = try currentMoodStreak(modelContext: modelContext, calendar: calendar, now: now)
+            try await sendNotification(streakCount: streakCount)
+        } catch {
+            return
+        }
+    }
+
+    static func shouldRunDailyCheck(lastCheck: Date?, now: Date, calendar: Calendar) -> Bool {
+        guard let lastCheck else { return true }
+        return !calendar.isDate(lastCheck, inSameDayAs: now)
+    }
+
+    static func hasBeenAwayFor48Hours(lastLogin: Date, now: Date) -> Bool {
+        now.timeIntervalSince(lastLogin) >= 48 * 60 * 60
+    }
+
+    static func notificationBody(streakCount: Int) -> String {
+        if streakCount > 0 {
+            return "Your \(streakCount)-day streak is waiting for you! Take 30 seconds to log your mood."
+        }
+
+        return "Checking in takes only 30 seconds. How are you doing today?"
+    }
+
+    @MainActor
+    private func currentMoodStreak(modelContext: ModelContext, calendar: Calendar, now: Date) throws -> Int {
+        let moodEntries = try modelContext.fetch(FetchDescriptor<MoodEntry>())
+            .filter { !$0.isDeleted }
+            .map(\.createdAt)
+        let moodCheckIns = try modelContext.fetch(FetchDescriptor<MoodCheckIn>())
+            .filter { !$0.isDeleted }
+            .map(\.createdAt)
+        let days = Set((moodEntries + moodCheckIns).map { calendar.startOfDay(for: $0) })
+
+        return Self.currentStreak(from: days, calendar: calendar, today: calendar.startOfDay(for: now))
+    }
+
+    static func currentStreak(from days: Set<Date>, calendar: Calendar, today: Date) -> Int {
+        let sortedDays = days.sorted()
+        guard !sortedDays.isEmpty else { return 0 }
+
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+        guard let lastActiveDay = sortedDays.last, lastActiveDay >= yesterday else {
+            return 0
+        }
+
+        var currentStreak = 1
+        guard sortedDays.count > 1 else { return currentStreak }
+
+        for index in (0..<(sortedDays.count - 1)).reversed() {
+            let previous = sortedDays[index]
+            let current = sortedDays[index + 1]
+            let dayDifference = calendar.dateComponents([.day], from: previous, to: current).day ?? 0
+
+            if dayDifference == 1 {
+                currentStreak += 1
+            } else {
+                break
+            }
+        }
+
+        return currentStreak
+    }
+
+    private func sendNotification(streakCount: Int) async throws {
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: [notificationIdentifier])
+        notificationCenter.removeDeliveredNotifications(withIdentifiers: [notificationIdentifier])
+
+        let content = UNMutableNotificationContent()
+        content.title = String(localized: "Check in with yourself")
+        content.body = Self.notificationBody(streakCount: streakCount)
+        content.sound = .default
+        content.userInfo = [
+            PersonalizedReminderService.notificationKindUserInfoKey: PersonalizedReminderService.notificationKind,
+            PersonalizedReminderService.reminderTypeUserInfoKey: "streakReengagement",
+            PersonalizedReminderService.deepLinkUserInfoKey: ContextualNotificationDeepLink.moodCheckIn.url.absoluteString
+        ]
+
+        let request = UNNotificationRequest(
+            identifier: notificationIdentifier,
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
+
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             notificationCenter.add(request) { error in
                 if let error {

@@ -2,14 +2,14 @@ import XCTest
 @testable import CBT
 
 final class SmartCoachTests: XCTestCase {
-    func testIncludesSupportResourcesForHighDistress() {
+    func testRecommendsBreathingForHighDistress() {
         let record = ThoughtRecord(
             emotions: ["Overwhelmed"],
             intensityBefore: 88,
             intensityAfter: 72
         )
 
-        XCTAssertTrue(SmartCoach.nextSteps(for: record).includesSupportResources)
+        XCTAssertTrue(SmartCoach.nextSteps(for: record).recommendations.contains { $0.kind == .breathingReset })
     }
 
     func testRecommendsRelatedDistortionAndHelpfulReframe() {
@@ -32,7 +32,7 @@ final class SmartCoachTests: XCTestCase {
         XCTAssertTrue(recommendations.contains { $0.kind == .saveHelpfulReframe })
     }
 
-    func testLowerDistressRecordDoesNotShowSupportResources() {
+    func testLowerDistressRecordDoesNotShowBreathingReset() {
         let record = ThoughtRecord(
             emotions: ["Frustrated"],
             balancedThought: "I can revisit this calmly.",
@@ -40,6 +40,6 @@ final class SmartCoachTests: XCTestCase {
             intensityAfter: 30
         )
 
-        XCTAssertFalse(SmartCoach.nextSteps(for: record).includesSupportResources)
+        XCTAssertFalse(SmartCoach.nextSteps(for: record).recommendations.contains { $0.kind == .breathingReset })
     }
 }

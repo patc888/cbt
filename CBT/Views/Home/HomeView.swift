@@ -66,9 +66,11 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showingNewMoodEntry, onDismiss: { selectedMoodForFlow = nil }) {
             MoodCheckinView(initialMood: selectedMoodForFlow)
+                .dsSheetPresentation()
         }
         .sheet(isPresented: $showingNewThoughtRecord) {
             NewThoughtRecordFlowView()
+                .dsSheetPresentation()
         }
     }
 
@@ -113,7 +115,6 @@ private struct HomeDashboardContent: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.openURL) private var openURL
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(DailyRecommendationService.lastHomeVisitKey) private var lastHomeVisitInterval: Double = 0
@@ -125,6 +126,7 @@ private struct HomeDashboardContent: View {
     @State private var selectedExercise: Exercise?
     @State private var showingActivityPlanner = false
     @State private var showingIntroToCBT = false
+    @State private var showingSafetySupport = false
     private var calendar: Calendar { .current }
 
     private var heroItems: [DailyPlanItem] {
@@ -246,6 +248,7 @@ private struct HomeDashboardContent: View {
             }
         }) {
             TipOfTheDayModal(isPresented: $showingTipModal)
+                .dsSheetPresentation(detents: [.medium])
         }
         .sheet(item: $selectedExercise, onDismiss: {
             refreshNonce &+= 1
@@ -253,6 +256,7 @@ private struct HomeDashboardContent: View {
             NavigationStack {
                 ExerciseDetailView(exercise: exercise)
             }
+            .dsSheetPresentation()
         }
         .sheet(isPresented: $showingActivityPlanner, onDismiss: {
             refreshNonce &+= 1
@@ -260,11 +264,19 @@ private struct HomeDashboardContent: View {
             NavigationStack {
                 ActivityPlannerView()
             }
+            .dsSheetPresentation()
         }
         .sheet(isPresented: $showingIntroToCBT) {
             NavigationStack {
                 WhatIsCBTPagerView()
             }
+            .dsSheetPresentation()
+        }
+        .sheet(isPresented: $showingSafetySupport) {
+            NavigationStack {
+                SafetyPlanView()
+            }
+            .dsSheetPresentation()
         }
         .onChange(of: showingNewMoodEntry) { _, isPresented in
             guard !isPresented else { return }
@@ -348,10 +360,6 @@ private struct HomeDashboardContent: View {
             presentBreathingReset(durationSeconds: durationSeconds)
         case .behavioralActivation:
             showingActivityPlanner = true
-        case .safetySupport:
-            if let url = URL(string: "https://xeo.com/CBT/support.html") {
-                openURL(url)
-            }
         case .libraryExercise(let exerciseID):
             if let exercise = LibraryService.shared.exercise(withID: exerciseID) {
                 selectedExercise = exercise
@@ -366,6 +374,8 @@ private struct HomeDashboardContent: View {
             selectedTab = .exercises
         case .assessments:
             selectedTab = .assessments
+        case .safetySupport:
+            showingSafetySupport = true
         }
     }
 
@@ -469,18 +479,35 @@ private struct HomeHeroCard: View {
         }
         .padding(22)
         .background {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            accent,
-                            secondaryAccent.opacity(colorScheme == .dark ? 0.95 : 0.9),
-                            accent.opacity(colorScheme == .dark ? 0.72 : 0.82)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+            ZStack {
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    #if canImport(UIKit)
+                    .fill(Color(UIColor.systemBackground))
+                    #elseif canImport(AppKit)
+                    .fill(Color(nsColor: .windowBackgroundColor))
+                    #else
+                    .fill(Color.black)
+                    #endif
+                    .shadow(
+                        color: accent.opacity(colorScheme == .dark ? 0.32 : 0.18),
+                        radius: colorScheme == .dark ? 26 : 18,
+                        x: 0,
+                        y: colorScheme == .dark ? 18 : 10
                     )
-                )
+
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                accent,
+                                secondaryAccent.opacity(colorScheme == .dark ? 0.95 : 0.9),
+                                accent.opacity(colorScheme == .dark ? 0.72 : 0.82)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
                 .overlay {
                     ZStack {
                         HomeHeroGlowPattern(animate: animate)
@@ -496,12 +523,6 @@ private struct HomeHeroCard: View {
                     }
                 }
         }
-        .shadow(
-            color: accent.opacity(colorScheme == .dark ? 0.32 : 0.18),
-            radius: colorScheme == .dark ? 26 : 18,
-            x: 0,
-            y: colorScheme == .dark ? 18 : 10
-        )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(dateLabel), \(headline). \(subheadline)")
     }

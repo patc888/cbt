@@ -12,6 +12,12 @@ enum AppColorTheme: String, CaseIterable, Identifiable {
     case red = "Red"
     case indigo = "Indigo"
     case teal = "Teal"
+    case mint = "Mint"
+    case rose = "Rose"
+    case coral = "Coral"
+    case lavender = "Lavender"
+    case lime = "Lime"
+    case graphite = "Graphite"
 
     var id: String { rawValue }
 
@@ -27,6 +33,12 @@ enum AppColorTheme: String, CaseIterable, Identifiable {
         case .red: return "FF3B30"
         case .indigo: return "5856D6"
         case .teal: return "30B0C7"
+        case .mint: return "00C7BE"
+        case .rose: return "F43F5E"
+        case .coral: return "FF6B4A"
+        case .lavender: return "C084FC"
+        case .lime: return "65A30D"
+        case .graphite: return "64748B"
         }
     }
 
@@ -42,6 +54,12 @@ enum AppColorTheme: String, CaseIterable, Identifiable {
         case .red: return "CC2F26"
         case .indigo: return "3634A3"
         case .teal: return "1A778C"
+        case .mint: return "008C82"
+        case .rose: return "BE123C"
+        case .coral: return "C2410C"
+        case .lavender: return "7E22CE"
+        case .lime: return "3F6212"
+        case .graphite: return "334155"
         }
     }
 }

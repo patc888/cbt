@@ -57,6 +57,7 @@ struct SegmentedToggle<T: Hashable, Label: View>: View {
                         .opacity(hideUnselectedLabels && selection != option ? 0 : 1)
                         .lineLimit(1)
                         .minimumScaleFactor(0.45)
+                        .multilineTextAlignment(.center)
                         .padding(.vertical, verticalPadding)
                         .frame(width: useMinWidth ? minWidth : nil)
                         .frame(maxWidth: useMinWidth ? nil : .infinity)
@@ -80,7 +81,8 @@ struct SegmentedToggle<T: Hashable, Label: View>: View {
                         )
                 }
                 .buttonStyle(PlainButtonStyle())
-                .frame(height: 32)
+                .frame(minHeight: 32)
+                .contentShape(Rectangle())
             }
         }
         .background(
