@@ -22,8 +22,13 @@ struct GuidedJournalWizardView: View {
         themeManager?.secondaryColor ?? .accentColor.opacity(0.8)
     }
 
-    private var currentStep: JournalPromptStep {
-        template.prompts[currentStepIndex]
+    private var currentStep: JournalPromptStep? {
+        guard template.prompts.indices.contains(currentStepIndex) else { return nil }
+        return template.prompts[currentStepIndex]
+    }
+
+    private var hasPrompts: Bool {
+        !template.prompts.isEmpty && responses.indices.contains(currentStepIndex)
     }
 
     init(template: JournalTemplate, onSave: (() -> Void)? = nil) {
@@ -41,6 +46,8 @@ struct GuidedJournalWizardView: View {
                     if isCompleted {
                         completionView
                             .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    } else if !hasPrompts {
+                        emptyTemplateView
                     } else {
                         wizardContent
                             .transition(.asymmetric(
@@ -118,7 +125,7 @@ struct GuidedJournalWizardView: View {
                 .background(accent.opacity(0.12))
                 .clipShape(Capsule())
 
-            if let stepTitle = currentStep.title,
+            if let stepTitle = currentStep?.title,
                !stepTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text(stepTitle)
                     .font(.system(size: 13, weight: .bold, design: .rounded))
@@ -129,7 +136,7 @@ struct GuidedJournalWizardView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Text(currentStep.text)
+            Text(currentStep?.text ?? "")
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Theme.primaryText)
@@ -137,7 +144,7 @@ struct GuidedJournalWizardView: View {
                 .padding(.horizontal, 32)
                 .id(currentStepIndex)
 
-            if let helperText = currentStep.helperText ?? template.helperText,
+            if let helperText = currentStep?.helperText ?? template.helperText,
                !helperText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text(helperText)
                     .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -169,7 +176,7 @@ struct GuidedJournalWizardView: View {
                 )
 
             if responses[currentStepIndex].isEmpty,
-               let placeholder = currentStep.placeholder,
+               let placeholder = currentStep?.placeholder,
                !placeholder.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text(placeholder)
                     .font(.system(size: 16, weight: .medium, design: .rounded))
@@ -284,9 +291,26 @@ struct GuidedJournalWizardView: View {
         }
     }
 
+    private var emptyTemplateView: some View {
+        SupportiveEmptyStateView(
+            systemImage: "pencil.and.list.clipboard",
+            title: "Template Unavailable",
+            message: "This guided journal template does not have any prompts to show right now.",
+            actionTitle: "Close",
+            actionSystemImage: "xmark"
+        ) {
+            HapticManager.shared.lightImpact()
+            dismiss()
+        }
+        .padding(Theme.paddingMedium)
+        .cardStyle()
+        .padding(.horizontal, 24)
+    }
+
     // MARK: - Helpers
 
     private var currentResponseTrimmed: String {
+        guard responses.indices.contains(currentStepIndex) else { return "" }
         responses[currentStepIndex].trimmingCharacters(in: .whitespacesAndNewlines)
     }
 

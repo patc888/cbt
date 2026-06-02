@@ -1074,7 +1074,11 @@ enum PersonalityAssessmentEngine {
         var rawScores: [PersonalityTrait: Int] = [:]
 
         for question in definition.questions {
-            guard let answer = answers[question.id] else { return nil }
+            guard answers.indices.contains(question.id),
+                  let answer = answers[question.id]
+            else {
+                return nil
+            }
             rawScores[question.trait, default: 0] += question.scoredValue(for: answer, answerScale: definition.answerScale)
         }
 

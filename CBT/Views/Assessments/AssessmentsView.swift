@@ -208,6 +208,16 @@ private struct AssessmentQuizView: View {
         answers.allSatisfy { $0 != nil }
     }
 
+    private var canAdvanceFromCurrentQuestion: Bool {
+        guard currentQuestion < kind.questions.count,
+              answers.indices.contains(currentQuestion)
+        else {
+            return false
+        }
+
+        return answers[currentQuestion] != nil
+    }
+
     init(kind: AssessmentKind) {
         self.kind = kind
         _answers = State(initialValue: Array(repeating: nil, count: kind.questions.count))
@@ -250,7 +260,7 @@ private struct AssessmentQuizView: View {
                 AssessmentQuizControls(
                     currentQuestion: $currentQuestion,
                     questionCount: kind.questions.count,
-                    canAdvance: currentQuestion < kind.questions.count && answers[currentQuestion] != nil,
+                    canAdvance: canAdvanceFromCurrentQuestion,
                     isComplete: isComplete
                 )
             }

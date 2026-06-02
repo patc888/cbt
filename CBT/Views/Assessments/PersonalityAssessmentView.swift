@@ -21,6 +21,16 @@ struct PersonalityAssessmentView: View {
         answers.allSatisfy { $0 != nil }
     }
 
+    private var canAdvanceFromCurrentQuestion: Bool {
+        guard currentQuestion < PersonalityAssessmentEngine.questions.count,
+              answers.indices.contains(currentQuestion)
+        else {
+            return false
+        }
+
+        return answers[currentQuestion] != nil
+    }
+
     private var results: PersonalityResults? {
         PersonalityAssessmentEngine.results(from: answers)
     }
@@ -132,7 +142,7 @@ struct PersonalityAssessmentView: View {
             PersonalityWizardControls(
                 currentQuestion: $currentQuestion,
                 questionCount: PersonalityAssessmentEngine.questions.count,
-                canAdvance: currentQuestion < PersonalityAssessmentEngine.questions.count && answers[currentQuestion] != nil,
+                canAdvance: canAdvanceFromCurrentQuestion,
                 isComplete: isComplete
             )
         }

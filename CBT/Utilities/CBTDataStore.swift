@@ -143,4 +143,33 @@ extension ModelContext {
     var cbtStore: CBTDataStore {
         CBTDataStore(modelContext: self)
     }
+
+    func deleteAllCBTRecords() throws {
+        try deleteAll(MoodEntry.self)
+        try deleteAll(ThoughtRecord.self)
+        try deleteAll(ExerciseCompletion.self)
+        try deleteAll(JournalEntry.self)
+        try deleteAll(PlannedActivity.self)
+        try deleteAll(AssessmentLog.self)
+        try deleteAll(PersonalityAssessmentLog.self)
+        try deleteAll(ProgramProgress.self)
+        try deleteAll(ChallengeSession.self)
+        try deleteAll(FlexibleJournalEntry.self)
+        try deleteAll(MoodCheckIn.self)
+        try deleteAll(BreathingSession.self)
+        try deleteAll(SafetyPlan.self)
+        try deleteAll(Achievement.self)
+        try deleteAll(LibraryItem.self)
+        try deleteAll(Course.self)
+        try deleteAll(AudioContent.self)
+        try deleteAll(UserSettings.self)
+
+        try save()
+    }
+
+    private func deleteAll<T: PersistentModel>(_ modelType: T.Type) throws {
+        for record in try fetch(FetchDescriptor<T>()) {
+            delete(record)
+        }
+    }
 }

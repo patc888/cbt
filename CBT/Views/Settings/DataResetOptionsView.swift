@@ -161,75 +161,7 @@ struct DataResetOptionsView: View {
 
     @MainActor
     private func deleteAllSwiftDataRecords() throws {
-        for record in try modelContext.fetch(FetchDescriptor<MoodEntry>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<ThoughtRecord>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<ExerciseCompletion>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<JournalEntry>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<PlannedActivity>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<AssessmentLog>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<PersonalityAssessmentLog>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<ProgramProgress>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<FlexibleJournalEntry>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<MoodCheckIn>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<BreathingSession>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<SafetyPlan>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<Achievement>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<LibraryItem>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<Course>()) {
-            modelContext.delete(record)
-        }
-
-        for record in try modelContext.fetch(FetchDescriptor<AudioContent>()) {
-            modelContext.delete(record)
-        }
-
-        for settings in try modelContext.fetch(FetchDescriptor<UserSettings>()) {
-            modelContext.delete(settings)
-        }
-
-        try modelContext.save()
+        try modelContext.deleteAllCBTRecords()
     }
 
     private var localResetDescription: String {

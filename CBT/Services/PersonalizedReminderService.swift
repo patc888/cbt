@@ -4,6 +4,7 @@ import UserNotifications
 
 enum PersonalizedReminderType: String, CaseIterable, Identifiable {
     case dailyMoodCheckIn
+    case streakReengagement
     case eveningReflection
     case weeklyReport
     case breathingReset
@@ -17,6 +18,8 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         switch self {
         case .dailyMoodCheckIn:
             return String(localized: "Daily Mood Check-In")
+        case .streakReengagement:
+            return String(localized: "Streak Re-Engagement")
         case .eveningReflection:
             return String(localized: "Evening Reflection")
         case .weeklyReport:
@@ -36,6 +39,8 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         switch self {
         case .dailyMoodCheckIn:
             return "face.smiling"
+        case .streakReengagement:
+            return "flame.fill"
         case .eveningReflection:
             return "moon.stars.fill"
         case .weeklyReport:
@@ -55,6 +60,8 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         switch self {
         case .dailyMoodCheckIn:
             return String(localized: "Track mood, body signals, and context at the time you choose")
+        case .streakReengagement:
+            return String(localized: "Return to a quick mood check-in after two days away")
         case .eveningReflection:
             return String(localized: "Review what stood out today and what you may need next")
         case .weeklyReport:
@@ -73,6 +80,8 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
     var notificationTitle: String {
         switch self {
         case .dailyMoodCheckIn:
+            return String(localized: "Check in with yourself")
+        case .streakReengagement:
             return String(localized: "Check in with yourself")
         case .eveningReflection:
             return String(localized: "Reflect before the day closes")
@@ -93,6 +102,8 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         switch self {
         case .dailyMoodCheckIn:
             return String(localized: "Take a moment to name your mood, intensity, and context. A quick check-in can make patterns easier to see over time.")
+        case .streakReengagement:
+            return String(localized: "A 30-second mood check-in can keep your pattern visible when you are ready to return.")
         case .eveningReflection:
             return String(localized: "Look back with care: what stood out, what felt hard, and what would help you tomorrow?")
         case .weeklyReport:
@@ -110,7 +121,7 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
 
     var defaultHour: Int {
         switch self {
-        case .dailyMoodCheckIn:
+        case .dailyMoodCheckIn, .streakReengagement:
             return 9
         case .eveningReflection:
             return 20
@@ -143,7 +154,7 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
     }
 
     var showsTimePicker: Bool {
-        self != .plannedActivity
+        self != .plannedActivity && self != .streakReengagement
     }
 
     var isWeekly: Bool {
@@ -151,12 +162,12 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
     }
 
     var requiresModelContext: Bool {
-        self == .plannedActivity || self == .courseContinuation
+        self == .plannedActivity || self == .courseContinuation || self == .streakReengagement
     }
 
     var deepLink: ContextualNotificationDeepLink {
         switch self {
-        case .dailyMoodCheckIn:
+        case .dailyMoodCheckIn, .streakReengagement:
             return .moodCheckIn
         case .eveningReflection:
             return .eveningReflection
@@ -177,6 +188,8 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         switch self {
         case .dailyMoodCheckIn:
             return "cbt_moodReminderEnabled"
+        case .streakReengagement:
+            return "cbt_streakReengagementReminderEnabled"
         case .eveningReflection:
             return "cbt_reflectionReminderEnabled"
         case .weeklyReport:
@@ -196,6 +209,8 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         switch self {
         case .dailyMoodCheckIn:
             return "cbt_moodReminderHour"
+        case .streakReengagement:
+            return nil
         case .eveningReflection:
             return "cbt_reflectionReminderHour"
         case .weeklyReport:
@@ -215,6 +230,8 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         switch self {
         case .dailyMoodCheckIn:
             return "cbt_moodReminderMinute"
+        case .streakReengagement:
+            return nil
         case .eveningReflection:
             return "cbt_reflectionReminderMinute"
         case .weeklyReport:
@@ -286,6 +303,8 @@ final class PersonalizedReminderService {
                         hour: storedInt(for: type.hourDefaultsKey, defaultValue: type.defaultHour),
                         minute: storedInt(for: type.minuteDefaultsKey, defaultValue: type.defaultMinute)
                     )
+                } else if type == .streakReengagement {
+                    await StreakReengagementNotificationService.shared.refreshReminder(modelContext: modelContext)
                 } else {
                     try await schedule(
                         type,
@@ -362,6 +381,8 @@ final class PersonalizedReminderService {
 
     func cancel(_ type: PersonalizedReminderType) {
         switch type {
+        case .streakReengagement:
+            StreakReengagementNotificationService.shared.cancel()
         case .plannedActivity:
             cancelRequests(withPrefix: plannedActivityIdentifierPrefix)
         default:
@@ -531,6 +552,7 @@ final class StreakReengagementNotificationService {
 
     static let lastLoginTimestampKey = "last_login_timestamp"
     static let lastDailyCheckTimestampKey = "cbt_streak_reengagement_last_daily_check_timestamp"
+    static let enabledDefaultsKey = "cbt_streakReengagementReminderEnabled"
 
     private let notificationCenter: UNUserNotificationCenter
     private let defaults: UserDefaults
@@ -551,31 +573,33 @@ final class StreakReengagementNotificationService {
         now: Date = Date(),
         calendar: Calendar = .current
     ) async {
-        let previousLogin = defaults.object(forKey: Self.lastLoginTimestampKey) as? Date
-        defer {
-            defaults.set(now, forKey: Self.lastLoginTimestampKey)
-        }
+        defaults.set(now, forKey: Self.lastLoginTimestampKey)
+        await refreshReminder(modelContext: modelContext, now: now, calendar: calendar)
+    }
 
-        let lastCheck = defaults.object(forKey: Self.lastDailyCheckTimestampKey) as? Date
-        guard Self.shouldRunDailyCheck(lastCheck: lastCheck, now: now, calendar: calendar) else {
-            return
-        }
-
-        defaults.set(now, forKey: Self.lastDailyCheckTimestampKey)
-
-        guard
-            let previousLogin,
-            Self.hasBeenAwayFor48Hours(lastLogin: previousLogin, now: now)
-        else {
+    @MainActor
+    func refreshReminder(
+        modelContext: ModelContext,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) async {
+        guard defaults.bool(forKey: Self.enabledDefaultsKey) else {
+            cancel()
             return
         }
 
         let status = await PermissionManager.shared.status(for: .notifications)
-        guard status.isAuthorized else { return }
+        guard status.isAuthorized else {
+            cancel()
+            return
+        }
 
         do {
             let streakCount = try currentMoodStreak(modelContext: modelContext, calendar: calendar, now: now)
-            try await sendNotification(streakCount: streakCount)
+            try await scheduleNotification(
+                streakCount: streakCount,
+                triggerDate: Self.nextReengagementDate(from: now)
+            )
         } catch {
             return
         }
@@ -590,12 +614,16 @@ final class StreakReengagementNotificationService {
         now.timeIntervalSince(lastLogin) >= 48 * 60 * 60
     }
 
+    static func nextReengagementDate(from date: Date) -> Date {
+        date.addingTimeInterval(48 * 60 * 60)
+    }
+
     static func notificationBody(streakCount: Int) -> String {
         if streakCount > 0 {
-            return "Your \(streakCount)-day streak is waiting for you! Take 30 seconds to log your mood."
+            return "Your \(streakCount)-day streak can keep going with one 30-second mood check-in."
         }
 
-        return "Checking in takes only 30 seconds. How are you doing today?"
+        return "A 30-second mood check-in can make it easier to notice your pattern today."
     }
 
     @MainActor
@@ -638,9 +666,13 @@ final class StreakReengagementNotificationService {
         return currentStreak
     }
 
-    private func sendNotification(streakCount: Int) async throws {
+    func cancel() {
         notificationCenter.removePendingNotificationRequests(withIdentifiers: [notificationIdentifier])
         notificationCenter.removeDeliveredNotifications(withIdentifiers: [notificationIdentifier])
+    }
+
+    private func scheduleNotification(streakCount: Int, triggerDate: Date) async throws {
+        cancel()
 
         let content = UNMutableNotificationContent()
         content.title = String(localized: "Check in with yourself")
@@ -655,7 +687,10 @@ final class StreakReengagementNotificationService {
         let request = UNNotificationRequest(
             identifier: notificationIdentifier,
             content: content,
-            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+            trigger: UNCalendarNotificationTrigger(
+                dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: triggerDate),
+                repeats: false
+            )
         )
 
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in

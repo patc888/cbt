@@ -487,77 +487,18 @@ private func makePersonalGrowthSnapshot(
     calendar: Calendar,
     now: Date
 ) -> PersonalGrowthSnapshot {
-    let threeMonthsAgo = calendar.date(byAdding: .month, value: -3, to: now) ?? now
-    let activityDates = moods.map(\.createdAt)
-        + checkIns.map(\.createdAt)
-        + thoughts.map(\.createdAt)
-        + exercises.map(\.createdAt)
-        + journals.map(\.createdAt)
-        + flexibleJournals.map(\.date)
+    let events = moods.map { PersonalGrowthActivityEvent(date: $0.createdAt, emotionTags: $0.emotions) }
+        + checkIns.map { PersonalGrowthActivityEvent(date: $0.createdAt) }
+        + thoughts.map { PersonalGrowthActivityEvent(date: $0.createdAt, emotionTags: $0.emotions) }
+        + exercises.map { PersonalGrowthActivityEvent(date: $0.createdAt) }
+        + journals.map { PersonalGrowthActivityEvent(date: $0.createdAt) }
+        + flexibleJournals.map { PersonalGrowthActivityEvent(date: $0.date) }
 
-    let recentDates = activityDates.filter { $0 >= threeMonthsAgo && $0 <= now }
-    let entryCount = recentDates.count
-    let weekGroups = Dictionary(grouping: recentDates) { date in
-        calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? calendar.startOfDay(for: date)
-    }
-
-    let weekStarts = makeWeekStarts(from: threeMonthsAgo, through: now, calendar: calendar)
-    let weeklyEntryCounts = weekStarts.map { weekGroups[$0]?.count ?? 0 }
-    let averageEntriesPerWeek = weeklyEntryCounts.isEmpty ? 0 : Double(weeklyEntryCounts.reduce(0, +)) / Double(weeklyEntryCounts.count)
-    let consistencyScore = Int((min(averageEntriesPerWeek / 5.0, 1.0) * 100).rounded())
-
-    var emotionCounts: [String: (displayName: String, count: Int)] = [:]
-    for mood in moods {
-        for emotion in uniqueNormalizedItems(mood.emotions, style: .title) {
-            var bucket = emotionCounts[emotion.key] ?? (displayName: emotion.displayName, count: 0)
-            bucket.count += 1
-            emotionCounts[emotion.key] = bucket
-        }
-    }
-    for thought in thoughts {
-        for emotion in uniqueNormalizedItems(thought.emotions, style: .title) {
-            var bucket = emotionCounts[emotion.key] ?? (displayName: emotion.displayName, count: 0)
-            bucket.count += 1
-            emotionCounts[emotion.key] = bucket
-        }
-    }
-
-    let topEmotionTags = emotionCounts.values.map {
-        EmotionCount(name: $0.displayName, count: $0.count)
-    }
-    .sorted { first, second in
-        if first.count == second.count {
-            return first.name < second.name
-        }
-        return first.count > second.count
-    }
-    .prefix(3)
-    .map { $0 }
-
-    return PersonalGrowthSnapshot(
-        consistencyScore: consistencyScore,
-        entriesLastThreeMonths: entryCount,
-        averageEntriesPerWeek: averageEntriesPerWeek,
-        weeklyEntryCounts: weeklyEntryCounts,
-        milestones: UserMilestoneSchema.milestones(for: entryCount, achievedAt: recentDates.max()),
-        topEmotionTags: topEmotionTags
+    return PersonalGrowthCalculator.snapshot(
+        events: events,
+        referenceDate: now,
+        calendar: calendar
     )
-}
-
-private func makeWeekStarts(from startDate: Date, through endDate: Date, calendar: Calendar) -> [Date] {
-    var starts: [Date] = []
-    var cursor = calendar.dateInterval(of: .weekOfYear, for: startDate)?.start ?? calendar.startOfDay(for: startDate)
-    let final = calendar.dateInterval(of: .weekOfYear, for: endDate)?.start ?? calendar.startOfDay(for: endDate)
-
-    while cursor <= final {
-        starts.append(cursor)
-        guard let next = calendar.date(byAdding: .weekOfYear, value: 1, to: cursor) else {
-            break
-        }
-        cursor = next
-    }
-
-    return starts
 }
 
 private enum InsightNameStyle {

@@ -118,6 +118,8 @@ private struct HomeDashboardContent: View {
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(DailyRecommendationService.lastHomeVisitKey) private var lastHomeVisitInterval: Double = 0
+    @AppStorage("cbt_home_tomorrowAnchor") private var tomorrowAnchorID = ""
+    @AppStorage("cbt_home_tomorrowAnchorUpdatedAt") private var tomorrowAnchorUpdatedAt: Double = 0
     @State private var viewModel = HomeDashboardViewModel()
     @State private var refreshNonce = 0
     @State private var hasAppeared = false
@@ -222,6 +224,12 @@ private struct HomeDashboardContent: View {
                         TipOfTheDayPlanCard(
                             completionState: viewModel.completionSnapshot.state(for: .tipOfTheDay),
                             action: { showingTipModal = true }
+                        )
+
+                        TomorrowAnchorCard(
+                            selectedAnchor: tomorrowAnchor,
+                            updatedAt: tomorrowAnchorDate,
+                            onSelect: saveTomorrowAnchor
                         )
                     }
                 }
@@ -390,6 +398,252 @@ private struct HomeDashboardContent: View {
                 refreshNonce &+= 1
             }
         )
+    }
+
+    private var tomorrowAnchor: TomorrowAnchor? {
+        TomorrowAnchor(rawValue: tomorrowAnchorID)
+    }
+
+    private var tomorrowAnchorDate: Date? {
+        guard tomorrowAnchorUpdatedAt > 0 else { return nil }
+        return Date(timeIntervalSince1970: tomorrowAnchorUpdatedAt)
+    }
+
+    private func saveTomorrowAnchor(_ anchor: TomorrowAnchor) {
+        HapticManager.shared.selection()
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+            tomorrowAnchorID = anchor.rawValue
+            tomorrowAnchorUpdatedAt = Date().timeIntervalSince1970
+        }
+    }
+}
+
+private enum TomorrowAnchor: String, CaseIterable, Identifiable {
+    case mood
+    case breathing
+    case thought
+    case activity
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .mood:
+            return String(localized: "Mood")
+        case .breathing:
+            return String(localized: "Reset")
+        case .thought:
+            return String(localized: "Thought")
+        case .activity:
+            return String(localized: "Activity")
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .mood:
+            return String(localized: "Check in before the day gets loud.")
+        case .breathing:
+            return String(localized: "Start with one minute of breathing.")
+        case .thought:
+            return String(localized: "Catch one thought and reframe it.")
+        case .activity:
+            return String(localized: "Plan one nourishing action.")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .mood:
+            return "face.smiling"
+        case .breathing:
+            return "wind"
+        case .thought:
+            return "brain.head.profile"
+        case .activity:
+            return "calendar.badge.clock"
+        }
+    }
+}
+
+private struct TomorrowAnchorCard: View {
+    @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.colorScheme) private var colorScheme
+
+    let selectedAnchor: TomorrowAnchor?
+    let updatedAt: Date?
+    let onSelect: (TomorrowAnchor) -> Void
+
+    private var statusText: String {
+        guard let selectedAnchor else {
+            return String(localized: "Pick one tiny thing to come back for tomorrow.")
+        }
+
+        if let updatedAt, Calendar.current.isDateInToday(updatedAt) {
+            return String(localized: "\(selectedAnchor.title) is saved for tomorrow.")
+        }
+
+        return String(localized: "Your next anchor is \(selectedAnchor.title.lowercased()).")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: 12) {
+                    headerIcon
+                    titleBlock
+                    Spacer(minLength: 8)
+                    savedBadge
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 12) {
+                        headerIcon
+                        titleBlock
+                    }
+                    savedBadge
+                }
+            }
+
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 118), spacing: 8)],
+                alignment: .leading,
+                spacing: 8
+            ) {
+                ForEach(TomorrowAnchor.allCases) { anchor in
+                    TomorrowAnchorButton(
+                        anchor: anchor,
+                        isSelected: anchor == selectedAnchor
+                    ) {
+                        onSelect(anchor)
+                    }
+                }
+            }
+
+            if let selectedAnchor {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "arrow.uturn.forward.circle.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(themeManager.selectedColor)
+                        .padding(.top, 1)
+
+                    Text(selectedAnchor.subtitle)
+                        .font(.system(.caption, design: .rounded).weight(.medium))
+                        .foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(18)
+        .background {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(DSTheme.cardBackground)
+                .overlay {
+                    LinearGradient(
+                        colors: [
+                            themeManager.selectedColor.opacity(colorScheme == .dark ? 0.16 : 0.08),
+                            themeManager.secondaryColor.opacity(colorScheme == .dark ? 0.1 : 0.04),
+                            .clear
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .strokeBorder(themeManager.selectedColor.opacity(0.14), lineWidth: 1)
+                }
+        }
+        .shadow(
+            color: themeManager.selectedColor.opacity(colorScheme == .dark ? 0.14 : 0.05),
+            radius: colorScheme == .dark ? 16 : 8,
+            x: 0,
+            y: colorScheme == .dark ? 10 : 5
+        )
+        .accessibilityElement(children: .contain)
+    }
+
+    private var headerIcon: some View {
+        Image(systemName: selectedAnchor?.systemImage ?? "arrow.forward.circle.fill")
+            .font(.system(size: 18, weight: .black))
+            .foregroundStyle(.white)
+            .frame(width: 42, height: 42)
+            .background(
+                LinearGradient(
+                    colors: [themeManager.selectedColor, themeManager.secondaryColor],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                in: Circle()
+            )
+            .accessibilityHidden(true)
+    }
+
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(String(localized: "Tomorrow's Anchor"))
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.primaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+
+            Text(statusText)
+                .font(.system(.caption, design: .rounded).weight(.medium))
+                .foregroundStyle(Theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var savedBadge: some View {
+        if selectedAnchor != nil {
+            Label(String(localized: "Saved"), systemImage: "checkmark.circle.fill")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(Theme.successGreen)
+                .lineLimit(1)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 6)
+                .background(Theme.successGreen.opacity(0.1), in: Capsule())
+        }
+    }
+}
+
+private struct TomorrowAnchorButton: View {
+    @Environment(ThemeManager.self) private var themeManager
+
+    let anchor: TomorrowAnchor
+    let isSelected: Bool
+    let action: () -> Void
+
+    private var accent: Color {
+        isSelected ? Theme.successGreen : themeManager.selectedColor
+    }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : anchor.systemImage)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 18)
+                    .accessibilityHidden(true)
+
+                Text(anchor.title)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.primaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, tint: accent, hapticType: nil))
+        .frame(minHeight: 44)
+        .accessibilityLabel(isSelected ? "\(anchor.title), saved for tomorrow" : anchor.title)
     }
 }
 

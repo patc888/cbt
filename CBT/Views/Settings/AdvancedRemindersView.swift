@@ -4,6 +4,7 @@ import UserNotifications
 
 struct AdvancedRemindersView: View {
     @AppStorage("cbt_moodReminderEnabled") private var dailyMoodCheckInEnabled = false
+    @AppStorage("cbt_streakReengagementReminderEnabled") private var streakReengagementEnabled = false
     @AppStorage("cbt_reflectionReminderEnabled") private var eveningReflectionEnabled = false
     @AppStorage("cbt_weeklyReportReminderEnabled") private var weeklyReportEnabled = false
     @AppStorage("cbt_breathingResetReminderEnabled") private var breathingResetEnabled = false
@@ -330,6 +331,8 @@ struct AdvancedRemindersView: View {
         switch reminderType {
         case .dailyMoodCheckIn:
             return dailyMoodCheckInEnabled
+        case .streakReengagement:
+            return streakReengagementEnabled
         case .eveningReflection:
             return eveningReflectionEnabled
         case .weeklyReport:
@@ -350,6 +353,8 @@ struct AdvancedRemindersView: View {
         switch reminderType {
         case .dailyMoodCheckIn:
             dailyMoodCheckInEnabled = isEnabled
+        case .streakReengagement:
+            streakReengagementEnabled = isEnabled
         case .eveningReflection:
             eveningReflectionEnabled = isEnabled
         case .weeklyReport:
@@ -367,6 +372,10 @@ struct AdvancedRemindersView: View {
 
     private func subtitle(for reminderType: PersonalizedReminderType) -> String {
         if reminderType == .plannedActivity {
+            return reminderType.settingsSubtitle
+        }
+
+        if reminderType == .streakReengagement {
             return reminderType.settingsSubtitle
         }
 
@@ -410,6 +419,8 @@ struct AdvancedRemindersView: View {
         switch reminderType {
         case .dailyMoodCheckIn:
             return dailyMoodCheckInHour
+        case .streakReengagement:
+            return reminderType.defaultHour
         case .eveningReflection:
             return eveningReflectionHour
         case .weeklyReport:
@@ -429,6 +440,8 @@ struct AdvancedRemindersView: View {
         switch reminderType {
         case .dailyMoodCheckIn:
             return dailyMoodCheckInMinute
+        case .streakReengagement:
+            return reminderType.defaultMinute
         case .eveningReflection:
             return eveningReflectionMinute
         case .weeklyReport:
@@ -449,6 +462,8 @@ struct AdvancedRemindersView: View {
         case .dailyMoodCheckIn:
             dailyMoodCheckInHour = hour
             dailyMoodCheckInMinute = minute
+        case .streakReengagement:
+            break
         case .eveningReflection:
             eveningReflectionHour = hour
             eveningReflectionMinute = minute
@@ -648,6 +663,8 @@ struct AdvancedRemindersView: View {
 
         do {
             switch reminderType {
+            case .streakReengagement:
+                await StreakReengagementNotificationService.shared.refreshReminder(modelContext: modelContext)
             case .plannedActivity:
                 try await personalizedReminderService.schedulePlannedActivityReminders(modelContext: modelContext)
             case .courseContinuation:
