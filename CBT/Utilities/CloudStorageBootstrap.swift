@@ -94,7 +94,7 @@ enum CloudStorageBootstrap {
         }
     }
 
-    private static func userVisibleCloudKitFailureReason(from error: Error) -> String {
+    nonisolated private static func userVisibleCloudKitFailureReason(from error: Error) -> String {
         if ModelContainerRecovery.isLikelySchemaConflict(error) {
             return "CloudKit storage could not start because the local data model appears incompatible with the synced CloudKit schema."
         }

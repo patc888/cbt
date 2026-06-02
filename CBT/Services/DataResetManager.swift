@@ -32,6 +32,7 @@ final class DataResetManager {
         "autoLockDelay",
         "hideAppSwitcher",
         "cbt_moodReminderEnabled",
+        StreakReengagementNotificationService.enabledDefaultsKey,
         "cbt_reflectionReminderEnabled",
         "cbt_weeklyReportReminderEnabled",
         "cbt_breathingResetReminderEnabled",

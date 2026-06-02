@@ -88,12 +88,16 @@ final class CBTTests: XCTestCase {
             now: now
         ))
         XCTAssertEqual(
+            StreakReengagementNotificationService.nextReengagementDate(from: now),
+            now.addingTimeInterval(48 * 60 * 60)
+        )
+        XCTAssertEqual(
             StreakReengagementNotificationService.notificationBody(streakCount: 4),
-            "Your 4-day streak is waiting for you! Take 30 seconds to log your mood."
+            "Your 4-day streak can keep going with one 30-second mood check-in."
         )
         XCTAssertEqual(
             StreakReengagementNotificationService.notificationBody(streakCount: 0),
-            "Checking in takes only 30 seconds. How are you doing today?"
+            "A 30-second mood check-in can make it easier to notice your pattern today."
         )
     }
 
@@ -127,6 +131,40 @@ final class CBTTests: XCTestCase {
         XCTAssertNil(AppTheme.system.colorScheme)
         XCTAssertEqual(AppTheme.light.colorScheme, .light)
         XCTAssertEqual(AppTheme.dark.colorScheme, .dark)
+    }
+
+    func testPersonalGrowthCalculatorAggregatesConsistencyMilestonesAndEmotionTags() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let referenceDate = Self.date(calendar, 2026, 6, 1, 12)
+
+        let events = try (0..<20).map { index -> PersonalGrowthActivityEvent in
+            let date = try XCTUnwrap(calendar.date(byAdding: .day, value: -index, to: referenceDate))
+            let emotions: [String]
+            if index < 8 {
+                emotions = ["calm"]
+            } else if index < 13 {
+                emotions = ["anxious"]
+            } else if index < 16 {
+                emotions = ["hopeful"]
+            } else {
+                emotions = ["tired"]
+            }
+            return PersonalGrowthActivityEvent(date: date, emotionTags: emotions)
+        }
+
+        let snapshot = PersonalGrowthCalculator.snapshot(
+            events: events,
+            referenceDate: referenceDate,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(snapshot.entriesLastThreeMonths, 20)
+        XCTAssertEqual(snapshot.consistencyScore, 29)
+        XCTAssertEqual(snapshot.milestones.filter(\.isAchieved).map(\.badgeID), ["growth.entries.5", "growth.entries.20"])
+        XCTAssertEqual(UserMilestoneSchema.badgeID(forExactEntryCount: 50), "growth.entries.50")
+        XCTAssertEqual(snapshot.topEmotionTags.map(\.name), ["Calm", "Anxious", "Tired"])
+        XCTAssertEqual(snapshot.topEmotionTags.map(\.count), [8, 5, 4])
     }
 
     @MainActor

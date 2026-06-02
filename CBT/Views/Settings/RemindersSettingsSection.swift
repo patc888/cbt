@@ -4,6 +4,7 @@ import UserNotifications
 
 struct RemindersSettingsSection: View {
     @AppStorage("cbt_moodReminderEnabled") private var dailyMoodCheckInEnabled = false
+    @AppStorage("cbt_streakReengagementReminderEnabled") private var streakReengagementEnabled = false
     @AppStorage("cbt_reflectionReminderEnabled") private var eveningReflectionEnabled = false
     @AppStorage("cbt_weeklyReportReminderEnabled") private var weeklyReportEnabled = false
     @AppStorage("cbt_breathingResetReminderEnabled") private var breathingResetEnabled = false
@@ -22,6 +23,7 @@ struct RemindersSettingsSection: View {
 
     private var isAnyReminderEnabled: Bool {
         dailyMoodCheckInEnabled ||
+        streakReengagementEnabled ||
         eveningReflectionEnabled ||
         weeklyReportEnabled ||
         breathingResetEnabled ||
@@ -37,7 +39,7 @@ struct RemindersSettingsSection: View {
                 icon: "bell.badge.fill",
                 iconColor: themeManager.primaryColor,
                 title: String(localized: "Reminders"),
-                subtitle: String(localized: "Mood check-ins, reflections, reports, activities, courses, breathing, quotes, and sleep support"),
+                subtitle: String(localized: "Mood check-ins, re-engagement, reflections, reports, activities, courses, breathing, quotes, and sleep support"),
                 isOn: Binding(
                     get: { isAnyReminderEnabled },
                     set: { newValue in
@@ -103,6 +105,7 @@ struct RemindersSettingsSection: View {
             guard canSchedule else { return }
             await MainActor.run {
                 dailyMoodCheckInEnabled = true
+                streakReengagementEnabled = true
                 eveningReflectionEnabled = true
                 weeklyReportEnabled = true
                 breathingResetEnabled = true
@@ -116,6 +119,7 @@ struct RemindersSettingsSection: View {
         } else {
             await MainActor.run {
                 dailyMoodCheckInEnabled = false
+                streakReengagementEnabled = false
                 eveningReflectionEnabled = false
                 weeklyReportEnabled = false
                 breathingResetEnabled = false

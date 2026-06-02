@@ -557,7 +557,7 @@ final class StreakReengagementNotificationService {
     private let notificationCenter: UNUserNotificationCenter
     private let defaults: UserDefaults
     private let notificationIdentifier = "streak_reengagement_mood_check_in"
-    private let inactivityThreshold: TimeInterval = 48 * 60 * 60
+    private static let inactivityThreshold: TimeInterval = 48 * 60 * 60
 
     init(
         notificationCenter: UNUserNotificationCenter = .current(),
@@ -611,11 +611,11 @@ final class StreakReengagementNotificationService {
     }
 
     static func hasBeenAwayFor48Hours(lastLogin: Date, now: Date) -> Bool {
-        now.timeIntervalSince(lastLogin) >= 48 * 60 * 60
+        now.timeIntervalSince(lastLogin) >= inactivityThreshold
     }
 
     static func nextReengagementDate(from date: Date) -> Date {
-        date.addingTimeInterval(48 * 60 * 60)
+        date.addingTimeInterval(inactivityThreshold)
     }
 
     static func notificationBody(streakCount: Int) -> String {

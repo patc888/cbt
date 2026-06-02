@@ -2,7 +2,7 @@ import OSLog
 import SwiftData
 import SwiftUI
 
-private enum LibraryMetadataFilter: String, CaseIterable, Identifiable {
+enum LibraryMetadataFilter: String, CaseIterable, Identifiable {
     case all = "All"
     case approach = "Approach"
     case topic = "Topic"
@@ -54,18 +54,26 @@ struct LibraryView: View {
         ExerciseService.shared.exercises
     }
 
+    private var libraryFilter: LibraryFilter {
+        LibraryFilter(metadataFilter: selectedMetadataFilter, metadataValue: selectedMetadataValue)
+    }
+
+    private var searchQuery: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private var allExerciseItems: [LibraryItem] {
         libraryItems.filter { $0.format == LibraryItemType.exercise.rawValue }
     }
 
     private var exerciseItems: [LibraryItem] {
-        allExerciseItems.filter(itemMatchesSelectedMetadataFilter)
+        allExerciseItems.filter(libraryFilter.matches(item:))
     }
 
     private var guidedPracticeItems: [LibraryItem] {
         libraryItems
             .filter { $0.format != LibraryItemType.exercise.rawValue }
-            .filter(itemMatchesSelectedMetadataFilter)
+            .filter(libraryFilter.matches(item:))
     }
 
     private var behavioralActivationItems: [LibraryItem] {
@@ -91,22 +99,19 @@ struct LibraryView: View {
         let categoryItems = selectedCategory == LibraryTaxonomy.allFilterLabel
             ? approachFilteredExerciseItems
             : approachFilteredExerciseItems.filter { $0.category == selectedCategory }
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return categoryItems }
+        guard !searchQuery.isEmpty else { return categoryItems }
 
-        return categoryItems.filter { itemMatchesSearch($0, query: query) }
+        return categoryItems.filter { LibraryFilter.itemMatchesSearch($0, query: searchQuery) }
     }
 
     private var visibleGuidedPracticeItems: [LibraryItem] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return guidedPracticeItems }
-        return guidedPracticeItems.filter { itemMatchesSearch($0, query: query) }
+        guard !searchQuery.isEmpty else { return guidedPracticeItems }
+        return guidedPracticeItems.filter { LibraryFilter.itemMatchesSearch($0, query: searchQuery) }
     }
 
     private var visibleCourses: [Course] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return courses.filter { course in
-            courseMatchesSelectedMetadataFilter(course) && courseMatchesSearch(course, query: query)
+            libraryFilter.matches(course: course) && LibraryFilter.courseMatchesSearch(course, query: searchQuery)
         }
     }
 
@@ -130,7 +135,7 @@ struct LibraryView: View {
     }
 
     private var hasActiveMetadataFilter: Bool {
-        selectedMetadataFilter != .all && selectedMetadataValue != LibraryTaxonomy.allFilterLabel
+        libraryFilter.hasActiveMetadataFilter
     }
 
     private var shouldShowCoursesSection: Bool {
@@ -146,34 +151,7 @@ struct LibraryView: View {
     }
 
     private var shouldShowAffirmationsSection: Bool {
-        let formatMatches = selectedMetadataFilter != .format ||
-            selectedMetadataValue == LibraryTaxonomy.allFilterLabel ||
-            selectedMetadataValue == LibraryItemType.affirmation.rawValue
-        guard formatMatches else { return false }
-
-        guard matchesSelectedMetadataFilter(
-            approaches: ["Positive Psychology", "Self-Compassion"],
-            topics: ["Anxiety Tools", "Depression Support", "Sleep & Wind Down", "Stress & Burnout"],
-            format: LibraryItemType.affirmation.rawValue,
-            difficulty: "Beginner"
-        ) else {
-            return false
-        }
-
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return true }
-
-        let fields = [
-            "Affirmation Practice",
-            "Affirmations",
-            "Positive Psychology",
-            "Self-Compassion",
-            "Anxiety Tools",
-            "Depression Support",
-            "Sleep & Wind Down"
-        ]
-        let haystack = fields.joined(separator: " ").lowercased()
-        return terms(in: query).allSatisfy { haystack.contains($0) }
+        libraryFilter.matchesAffirmationSection(query: searchQuery)
     }
 
     private var groupedExerciseItems: [(category: String, items: [LibraryItem])] {
@@ -1127,19 +1105,19 @@ struct LibraryView: View {
     }
 
     private var emptyLibraryMessage: String {
-        searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasActiveMetadataFilter
+        searchQuery.isEmpty && !hasActiveMetadataFilter
             ? "Exercises are short CBT and self-help practices you can use one at a time. The library can be refreshed if they have not loaded yet."
             : "Exercises are short CBT and self-help practices. The current filters are hiding them."
     }
 
     private var coursesEmptyMessage: String {
-        searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasActiveMetadataFilter
+        searchQuery.isEmpty && !hasActiveMetadataFilter
             ? "Courses collect related CBT and self-help practices into a simple learning path. The library can be refreshed if they have not loaded yet."
             : "Courses collect related practices into a learning path. The current filters are hiding them."
     }
 
     private var hasActiveLibraryFilters: Bool {
-        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !searchQuery.isEmpty ||
         hasActiveMetadataFilter ||
         selectedApproach != LibraryTaxonomy.allFilterLabel ||
         selectedCategory != LibraryTaxonomy.allFilterLabel
@@ -1155,145 +1133,7 @@ struct LibraryView: View {
     }
 
     private var showsProcrastinationCourse: Bool {
-        guard matchesSelectedMetadataFilter(
-            approaches: ["Behavioral Activation", "CBT"],
-            topics: ["Productivity / Procrastination", "Depression Support"],
-            format: LibraryItemType.course.rawValue,
-            difficulty: "Beginner"
-        ) else {
-            return false
-        }
-
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return true }
-
-        let fields = [
-            "Tackling Procrastination",
-            "Productivity / Procrastination",
-            "Behavioral Activation",
-            "CBT",
-            "Course",
-            "Beginner",
-            "avoidance emotion regulation momentum"
-        ]
-        return terms(in: query).allSatisfy { fields.joined(separator: " ").lowercased().contains($0) }
-    }
-
-    private func itemMatchesSelectedMetadataFilter(_ item: LibraryItem) -> Bool {
-        matchesSelectedMetadataFilter(
-            approaches: item.approaches,
-            topics: item.topics,
-            format: item.format,
-            difficulty: item.displayDifficulty
-        )
-    }
-
-    private func courseMatchesSelectedMetadataFilter(_ course: Course) -> Bool {
-        matchesSelectedMetadataFilter(
-            approaches: course.approaches,
-            topics: course.topics,
-            format: course.displayFormat,
-            difficulty: course.displayDifficulty
-        )
-    }
-
-    private func matchesSelectedMetadataFilter(
-        approaches: [String],
-        topics: [String],
-        format: String,
-        difficulty: String
-    ) -> Bool {
-        guard hasActiveMetadataFilter else { return true }
-
-        switch selectedMetadataFilter {
-        case .all:
-            return true
-        case .approach:
-            return approaches.contains { $0.caseInsensitiveCompare(selectedMetadataValue) == .orderedSame }
-        case .topic:
-            return topics.contains { $0.caseInsensitiveCompare(selectedMetadataValue) == .orderedSame }
-        case .format:
-            return format.caseInsensitiveCompare(selectedMetadataValue) == .orderedSame
-        case .difficulty:
-            return difficulty.caseInsensitiveCompare(selectedMetadataValue) == .orderedSame
-        }
-    }
-
-    private func itemMatchesSearch(_ item: LibraryItem, query: String) -> Bool {
-        let terms = terms(in: query)
-
-        guard !terms.isEmpty else { return true }
-
-        var fields = [
-            item.title,
-            item.category,
-            item.format,
-            item.displayDifficulty,
-            "\(item.duration) minutes"
-        ]
-        fields.append(contentsOf: item.approaches)
-        fields.append(contentsOf: item.topics)
-
-        if let exercise = LibraryService.shared.exercise(for: item) {
-            fields.append(exercise.description)
-            fields.append(contentsOf: exercise.steps)
-            fields.append(contentsOf: exercise.displayApproaches)
-            fields.append(contentsOf: exercise.displayTopics)
-            fields.append(exercise.displayDifficulty)
-            fields.append(exercise.displayFormat)
-            fields.appendIfPresent(exercise.completionSummary)
-            fields.appendIfPresent(exercise.journalReflection)
-            fields.append(contentsOf: exercise.tags ?? [])
-        }
-
-        if let audioContent = LibraryService.shared.audioContent(for: item) {
-            fields.append(audioContent.description)
-            fields.append(audioContent.type.displayName)
-            fields.append(audioContent.localAssetFilename)
-            fields.append(audioContent.transcript)
-            fields.append(contentsOf: audioContent.displayTags)
-            fields.append(audioContent.isPremium ? "premium" : "free")
-        }
-
-        let haystack = fields.joined(separator: " ").lowercased()
-        return terms.allSatisfy { haystack.contains($0) }
-    }
-
-    private func courseMatchesSearch(_ course: Course, query: String) -> Bool {
-        let terms = terms(in: query)
-        guard !terms.isEmpty else { return true }
-
-        var fields = [
-            course.title,
-            course.subtitle,
-            course.courseDescription,
-            course.approach,
-            course.category,
-            course.displayFormat,
-            course.displayDifficulty,
-            course.completionMessage,
-            "\(course.estimatedTotalDuration) minutes"
-        ]
-        fields.append(contentsOf: course.approaches)
-        fields.append(contentsOf: course.topics)
-        fields.append(contentsOf: course.lessons.flatMap { lesson in
-            [
-                lesson.title,
-                lesson.shortEducationalText,
-                lesson.keyTakeaway,
-                lesson.reflectionPrompt ?? ""
-            ]
-        })
-
-        let haystack = fields.joined(separator: " ").lowercased()
-        return terms.allSatisfy { haystack.contains($0) }
-    }
-
-    private func terms(in query: String) -> [String] {
-        query
-            .lowercased()
-            .split(whereSeparator: { $0.isWhitespace })
-            .map(String.init)
+        libraryFilter.matchesProcrastinationCourse(query: searchQuery)
     }
 
     private func sectionTitle(_ title: String) -> some View {
@@ -1315,13 +1155,6 @@ struct LibraryView: View {
     @MainActor
     private func refreshCompletions() async {
         completions = LaunchSafeFetch.exerciseCompletions(from: modelContext)
-    }
-}
-
-private extension Array where Element == String {
-    mutating func appendIfPresent(_ value: String?) {
-        guard let value, !value.isEmpty else { return }
-        append(value)
     }
 }
 
