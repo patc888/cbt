@@ -62,7 +62,7 @@ struct PersonalGrowthDashboardCard: View {
                     .font(.system(.body, design: .rounded).weight(.bold))
                     .foregroundStyle(Theme.primaryText)
 
-                Text("\(snapshot.entriesLastThreeMonths) entries • \(snapshot.averageEntriesPerWeek.formatted(.number.precision(.fractionLength(1)))) per week")
+                Text("\(snapshot.entriesLastThreeMonths) entries - \(snapshot.averageEntriesPerWeek.formatted(.number.precision(.fractionLength(1)))) per week")
                     .font(.system(.caption, design: .rounded))
                     .foregroundStyle(Theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -179,5 +179,62 @@ private struct PersonalGrowthEmotionBar: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(emotion.name): \(emotion.count) uses")
+    }
+}
+
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 0
+        let rows = rows(in: width, subviews: subviews)
+        return CGSize(
+            width: width,
+            height: rows.reduce(0) { $0 + $1.height } + CGFloat(max(rows.count - 1, 0)) * spacing
+        )
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var origin = bounds.origin
+        for row in rows(in: bounds.width, subviews: subviews) {
+            origin.x = bounds.minX
+            for item in row.items {
+                item.subview.place(
+                    at: origin,
+                    proposal: ProposedViewSize(item.size)
+                )
+                origin.x += item.size.width + spacing
+            }
+            origin.y += row.height + spacing
+        }
+    }
+
+    private func rows(in width: CGFloat, subviews: Subviews) -> [(items: [(subview: LayoutSubview, size: CGSize)], height: CGFloat)] {
+        var rows: [(items: [(subview: LayoutSubview, size: CGSize)], height: CGFloat)] = []
+        var currentItems: [(subview: LayoutSubview, size: CGSize)] = []
+        var currentWidth: CGFloat = 0
+        var currentHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            let nextWidth = currentItems.isEmpty ? size.width : currentWidth + spacing + size.width
+
+            if !currentItems.isEmpty && nextWidth > width {
+                rows.append((items: currentItems, height: currentHeight))
+                currentItems = [(subview, size)]
+                currentWidth = size.width
+                currentHeight = size.height
+            } else {
+                currentItems.append((subview, size))
+                currentWidth = nextWidth
+                currentHeight = max(currentHeight, size.height)
+            }
+        }
+
+        if !currentItems.isEmpty {
+            rows.append((items: currentItems, height: currentHeight))
+        }
+
+        return rows
     }
 }
