@@ -218,12 +218,12 @@ final class Course {
     }
 
     func orderedItems(from libraryItems: [LibraryItem]) -> [LibraryItem] {
-        let itemsByID = Dictionary(uniqueKeysWithValues: libraryItems.map { ($0.id, $0) })
+        let itemsByID = Self.libraryItemsByID(libraryItems)
         return itemIDs.compactMap { itemsByID[$0] }
     }
 
     func linkedItems(from libraryItems: [LibraryItem]) -> [LibraryItem] {
-        let itemsByID = Dictionary(uniqueKeysWithValues: libraryItems.map { ($0.id, $0) })
+        let itemsByID = Self.libraryItemsByID(libraryItems)
         return linkedExerciseIDs.compactMap { itemsByID[$0] }
     }
 
@@ -292,6 +292,14 @@ final class Course {
         } else {
             linkedExerciseIDsStorage = StringArrayStorage.encode(linkedExerciseIDs.isEmpty ? itemIDs : linkedExerciseIDs)
             lessonCount = max(lessonCount, itemIDs.count)
+        }
+    }
+
+    private static func libraryItemsByID(_ libraryItems: [LibraryItem]) -> [String: LibraryItem] {
+        libraryItems.reduce(into: [:]) { result, item in
+            if result[item.id] == nil {
+                result[item.id] = item
+            }
         }
     }
 }

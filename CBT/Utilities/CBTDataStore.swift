@@ -167,7 +167,7 @@ extension ModelContext {
         try save()
     }
 
-    private func deleteAll<T: PersistentModel>(_ modelType: T.Type) throws {
+    private func deleteAll<T: PersistentModel>(_: T.Type) throws {
         for record in try fetch(FetchDescriptor<T>()) {
             delete(record)
         }

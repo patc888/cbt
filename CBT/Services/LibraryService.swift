@@ -20,8 +20,8 @@ final class LibraryService {
         self.bundledExercises = exercises
         self.bundledAudioContent = audioContent
         self.bundledItems = exercises.compactMap(Self.makeLibraryItem) + audioContent.compactMap(Self.makeLibraryItem)
-        self.exercisesByID = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
-        self.audioContentByID = Dictionary(uniqueKeysWithValues: audioContent.map { ($0.id, $0) })
+        self.exercisesByID = Self.dictionaryByID(exercises)
+        self.audioContentByID = Self.dictionaryByID(audioContent)
     }
 
     func exercise(withID id: String) -> Exercise? {
@@ -227,7 +227,7 @@ final class LibraryService {
     }
 
     private static func defaultCourses(from items: [LibraryItem]) -> [Course] {
-        let itemsByID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
+        let itemsByID = dictionaryByID(items)
         return crashCourseSeeds.compactMap { seed in
             let lessons = makeLessons(from: seed.lessons, itemsByID: itemsByID)
             guard lessons.count == seed.lessons.count else { return nil }
@@ -250,6 +250,14 @@ final class LibraryService {
                 isPremium: false,
                 itemIDs: lessons.compactMap(\.linkedExerciseID)
             )
+        }
+    }
+
+    private static func dictionaryByID<T>(_ values: [T]) -> [String: T] where T: Identifiable, T.ID == String {
+        values.reduce(into: [:]) { result, value in
+            if result[value.id] == nil {
+                result[value.id] = value
+            }
         }
     }
 
