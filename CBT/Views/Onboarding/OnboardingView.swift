@@ -216,6 +216,12 @@ struct OnboardingView: View {
     @AppStorage(DailyPlanPersonalizationKeys.daypart) private var savedDaypart = ""
     @AppStorage(DailyPlanPersonalizationKeys.commonTriggers) private var savedCommonTriggers = ""
     @AppStorage(DailyPlanPersonalizationKeys.helpfulInterventions) private var savedHelpfulInterventions = ""
+    @AppStorage(DailyPlanPersonalizationKeys.onboardingReasons) private var savedOnboardingReasons = ""
+    @AppStorage(DailyPlanPersonalizationKeys.therapistStatus) private var savedTherapistStatus = ""
+    @AppStorage(DailyPlanPersonalizationKeys.hardSituations) private var savedHardSituations = ""
+    @AppStorage(DailyPlanPersonalizationKeys.twoWeekProgress) private var savedTwoWeekProgress = ""
+    @AppStorage(DailyPlanPersonalizationKeys.baselineAssessmentInterests) private var savedBaselineAssessmentInterests = ""
+    @AppStorage(DailyPlanPersonalizationKeys.openAssessmentsAfterOnboarding) private var openAssessmentsAfterOnboarding = false
 
     @State private var selectedGoals: Set<DailyPlanGoal> = []
     @State private var selectedInterests: Set<DailyPlanInterest> = []
@@ -224,6 +230,11 @@ struct OnboardingView: View {
     @State private var selectedCommonTriggers: Set<DailyPlanCommonTrigger> = []
     @State private var selectedHelpfulInterventions: Set<DailyPlanHelpfulIntervention> = []
     @State private var selectedValueIDs: Set<String> = []
+    @State private var selectedReasons: Set<OnboardingReason> = []
+    @State private var therapistStatus: TherapistSupportStatus = .preferNotToSay
+    @State private var selectedHardSituations: Set<HardSituation> = []
+    @State private var twoWeekProgress = ""
+    @State private var selectedBaselineAssessments: Set<AssessmentKind> = []
     @State private var phase: OnboardingPhase = .privacy
     @State private var selectedFirstWin: FirstSessionWinKind = .moodCheckIn
     @State private var onboardingError: String?
@@ -233,6 +244,7 @@ struct OnboardingView: View {
     private enum OnboardingPhase {
         case privacy
         case preferences
+        case baseline
         case guidance
         case firstWin
         case success(FirstSessionWinKind?)
@@ -278,6 +290,8 @@ struct OnboardingView: View {
             PrivacyWalkthroughView()
         case .preferences:
             personalizePage
+        case .baseline:
+            baselinePage
         case .guidance:
             guidancePage
         case .firstWin:

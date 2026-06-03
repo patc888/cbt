@@ -72,7 +72,7 @@ struct DailyPlanView: View {
         .padding(18)
         .background {
             ZStack {
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                     #if canImport(UIKit)
                     .fill(Color(UIColor.systemBackground))
                     #elseif canImport(AppKit)
@@ -87,7 +87,7 @@ struct DailyPlanView: View {
                         y: colorScheme == .dark ? 12 : 6
                     )
 
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                     .fill(DSTheme.cardBackground)
                     .overlay {
                         LinearGradient(
@@ -99,10 +99,10 @@ struct DailyPlanView: View {
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous))
                     }
                     .overlay {
-                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                             .strokeBorder(themeManager.selectedColor.opacity(0.16), lineWidth: 1)
                     }
             }

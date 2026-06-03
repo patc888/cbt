@@ -121,6 +121,19 @@ private struct SettingsDashboardContent: View {
                 }
             )
 
+            SettingsSection(title: String(localized: "Daily Plan")) {
+                ToggleRow(
+                    icon: "heart.text.square.fill",
+                    iconColor: themeManager.selectedColor,
+                    title: String(localized: "Comfort Mode"),
+                    subtitle: String(localized: "Show 1-2 tiny actions, soften plan language, and keep breathing, grounding, and safety support close."),
+                    isOn: Binding(
+                        get: { viewModel.comfortModeEnabled },
+                        set: { viewModel.updateComfortMode($0) }
+                    )
+                )
+            }
+
             SettingsSection(title: String(localized: "Tools")) {
                 Button {
                     viewModel.optInToFirstSevenDays()

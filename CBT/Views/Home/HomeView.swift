@@ -196,6 +196,11 @@ private struct HomeDashboardContent: View {
         return viewModel.completionSnapshot.state(for: item)
     }
 
+    private var bestNextStepContinueItem: HomeContinueItem? {
+        guard !viewModel.dailyPlanLoopState.isPlanComplete else { return nil }
+        return viewModel.dailyPlanLoopState.continueItem
+    }
+
     private var personalizedSpotlightCards: [HomePersonalizedCard] {
         viewModel.personalizedCards.filter { card in
             switch card.id {
@@ -291,11 +296,16 @@ private struct HomeDashboardContent: View {
                 if viewModel.isInitialized {
                     TodayBestNextStepCard(
                         recommendation: bestNextStepRecommendation,
+                        continueItem: bestNextStepContinueItem,
                         explanation: viewModel.dailyPlanLoopState.whyExplanation,
                         completionState: bestNextStepCompletionState,
                         isPlanComplete: viewModel.dailyPlanLoopState.isPlanComplete
                     ) {
-                        performRecommendation(bestNextStepRecommendation)
+                        if let item = bestNextStepContinueItem {
+                            performPersonalizedAction(item.action)
+                        } else {
+                            performRecommendation(bestNextStepRecommendation)
+                        }
                     }
                     .padding(.horizontal, 16)
                     .homeEntrance(index: shouldShowEasierDayPath ? 3 : 2, isVisible: hasAppeared, reduceMotion: reduceMotion)
@@ -387,9 +397,12 @@ private struct HomeDashboardContent: View {
                             onChooseValues: { showingValuesSetup = true }
                         )
 
-                        CopingPlanHomeCard {
+                        CrisisSupportNoticeView(
+                            style: .compact,
+                            onOpenPlan: {
                             showingSafetySupport = true
-                        }
+                            }
+                        )
 
                         BadDayModeShortcutCard(
                             context: viewModel.badDayContext,
@@ -1388,6 +1401,7 @@ private struct TodayBestNextStepCard: View {
     @Environment(\.colorScheme) private var colorScheme
 
     let recommendation: DailyRecommendation
+    let continueItem: HomeContinueItem?
     let explanation: String
     let completionState: PlanCardCompletionState
     let isPlanComplete: Bool
@@ -1408,6 +1422,9 @@ private struct TodayBestNextStepCard: View {
     }
 
     private var actionTitle: String {
+        if continueItem != nil {
+            return String(localized: "Continue")
+        }
         if isPlanComplete {
             return String(localized: "Open")
         }
@@ -1429,6 +1446,25 @@ private struct TodayBestNextStepCard: View {
         }
     }
 
+    private var iconName: String {
+        continueItem?.systemImage ?? recommendation.icon
+    }
+
+    private var title: String {
+        continueItem?.title ?? recommendation.title
+    }
+
+    private var subtitle: String {
+        continueItem?.subtitle ?? recommendation.subtitle
+    }
+
+    private var reasonText: String {
+        if continueItem != nil {
+            return String(localized: "This is already in progress, so finishing the next small piece is the clearest step.")
+        }
+        return explanation
+    }
+
     var body: some View {
         Button {
             HapticManager.shared.selection()
@@ -1436,7 +1472,7 @@ private struct TodayBestNextStepCard: View {
         } label: {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: recommendation.icon)
+                    Image(systemName: iconName)
                         .font(.system(size: 20, weight: .black))
                         .foregroundStyle(.white)
                         .frame(width: 46, height: 46)
@@ -1456,12 +1492,12 @@ private struct TodayBestNextStepCard: View {
                             .textCase(.uppercase)
                             .foregroundStyle(accent)
 
-                        Text(recommendation.title)
+                        Text(title)
                             .font(.system(.title3, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Text(recommendation.subtitle)
+                        Text(subtitle)
                             .font(.system(.subheadline, design: .rounded).weight(.medium))
                             .foregroundStyle(Theme.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)
@@ -1478,7 +1514,7 @@ private struct TodayBestNextStepCard: View {
                         .background(accent.opacity(colorScheme == .dark ? 0.18 : 0.1), in: Capsule())
                 }
 
-                Text(explanation)
+                Text(reasonText)
                     .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(Theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1533,7 +1569,7 @@ private struct TodayBestNextStepCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Today's Best Next Step. \(recommendation.title). \(recommendation.subtitle). \(explanation)")
+        .accessibilityLabel("Today's Best Next Step. \(title). \(subtitle). \(reasonText)")
         .accessibilityHint(String(localized: "Tap to open"))
     }
 }

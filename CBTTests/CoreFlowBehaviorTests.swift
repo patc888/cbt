@@ -253,8 +253,9 @@ final class CoreFlowBehaviorTests: XCTestCase {
         )
         moodDescriptor.fetchLimit = 1
 
-        let entry = try context.fetch(moodDescriptor).first ?? MoodEntry(createdAt: createdAt, moodScore: moodScore)
-        if entry.modelContext == nil {
+        let existingEntry = try context.fetch(moodDescriptor).first
+        let entry = existingEntry ?? MoodEntry(createdAt: createdAt, moodScore: moodScore)
+        if existingEntry == nil {
             context.insert(entry)
         }
         entry.moodScore = MoodEntry.clampMoodScore(moodScore)

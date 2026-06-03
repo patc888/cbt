@@ -51,7 +51,7 @@ struct SafetyPlanView: View {
         SupportiveEmptyStateView(
             systemImage: "cross.case.fill",
             title: String(localized: "Rough Patch Plan"),
-            message: String(localized: "Start by adding one warning sign and one grounding step you can use in a hard moment. This is not emergency care."),
+            message: String(localized: "Start while things are calm: add one warning sign, one grounding step, and one trusted contact you can use in a hard moment. This is not emergency care."),
             actionTitle: String(localized: "Create Rough Patch Plan"),
             actionSystemImage: "plus.circle.fill"
         ) {
@@ -386,9 +386,9 @@ struct CrisisSupportNoticeView: View {
     private var message: String {
         switch style {
         case .compact:
-            return String(localized: "This app is self-help, not medical care or emergency support. If you might harm yourself or someone else, or you are in immediate danger, contact local emergency services now. In the U.S. call or text 988 for crisis support.")
+            return String(localized: "This app is self-help, not medical care or emergency support. Make or update this plan while calm. If you might harm yourself or someone else, or you are in immediate danger, contact local emergency services now. In the U.S. call or text 988 for crisis support; resources vary by location.")
         case .full:
-            return String(localized: "CBT is a self-help tool. It is not medical care, therapy, diagnosis, treatment, or emergency support. If you might harm yourself or someone else, or you are in immediate danger, contact local emergency services now. In the U.S. call or text 988 for crisis support.")
+            return String(localized: "CBT is a self-help tool. It is not medical care, therapy, diagnosis, treatment, or emergency support. Make or update your rough patch plan while calm. If you might harm yourself or someone else, or you are in immediate danger, contact local emergency services now. In the U.S. call or text 988 for crisis support; resources and emergency numbers vary by location.")
         }
     }
 

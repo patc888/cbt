@@ -47,7 +47,7 @@ struct CopingToolkitView: View {
 
                         CrisisSupportNoticeView(
                             style: .full,
-                            planActionTitle: String(localized: "Open Coping Plan"),
+                            planActionTitle: String(localized: "Open Rough Patch Plan"),
                             onOpenPlan: {
                                 store.recordUsage("toolkit_need_help")
                                 showingCopingPlan = true
@@ -62,9 +62,9 @@ struct CopingToolkitView: View {
                         }
 
                         if savedPlanTools.isEmpty {
-                            emergencyKitEmptyCard
+                            self.emergencyKitEmptyCard
                         } else {
-                            emergencyKitSection(tools: savedPlanTools)
+                            self.emergencyKitSection(tools: savedPlanTools)
                         }
 
                         if !recentlyUsed.isEmpty {
@@ -442,25 +442,60 @@ struct CopingToolCard: View {
                     .accessibilityLabel(isFavorite ? "Remove favorite" : "Favorite")
                 }
 
-                HStack(spacing: 8) {
-                    Label(tool.durationLabel, systemImage: "clock")
-                    Text(tool.kind)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                    Spacer()
-                    Button(action: onPlanToggle) {
-                        Image(systemName: isSavedToPlan ? "pin.fill" : "pin")
-                    }
-                    .buttonStyle(DSButtonStyle(variant: .neutral, size: .icon(34), expands: false, hapticType: .light))
-                    .accessibilityLabel(isSavedToPlan ? "Remove from Emergency Kit" : "Pin to Emergency Kit")
-
-                    Button(action: onOpen) {
-                        Label("Start", systemImage: "play.fill")
-                    }
-                    .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: false, tint: themeManager.selectedColor, hapticType: .light))
+                ViewThatFits(in: .horizontal) {
+                    toolActionsLayout(axis: .horizontal)
+                    toolActionsLayout(axis: .vertical)
                 }
-                .font(.system(.caption, design: .rounded).weight(.semibold))
-                .foregroundStyle(Theme.secondaryText)
+            }
+        }
+    }
+
+    private var toolMeta: some View {
+        HStack(spacing: 8) {
+            Label(tool.durationLabel, systemImage: "clock")
+                .lineLimit(1)
+
+            Text(tool.kind)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .font(.system(.caption, design: .rounded).weight(.semibold))
+        .foregroundStyle(Theme.secondaryText)
+    }
+
+    private var pinButton: some View {
+        Button(action: onPlanToggle) {
+            Image(systemName: isSavedToPlan ? "pin.fill" : "pin")
+        }
+        .buttonStyle(DSButtonStyle(variant: .neutral, size: .icon(34), expands: false, hapticType: .light))
+        .accessibilityLabel(isSavedToPlan ? "Remove from Emergency Kit" : "Pin to Emergency Kit")
+    }
+
+    private var startButton: some View {
+        Button(action: onOpen) {
+            Label("Start", systemImage: "play.fill")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: false, tint: themeManager.selectedColor, hapticType: .light))
+    }
+
+    @ViewBuilder
+    private func toolActionsLayout(axis: Axis) -> some View {
+        if axis == .horizontal {
+            HStack(spacing: 8) {
+                toolMeta
+                Spacer(minLength: 8)
+                pinButton
+                startButton
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 10) {
+                toolMeta
+
+                HStack(spacing: 8) {
+                    Spacer(minLength: 0)
+                    pinButton
+                    startButton
+                }
             }
         }
     }

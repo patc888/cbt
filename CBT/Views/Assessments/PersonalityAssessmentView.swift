@@ -7,6 +7,7 @@ struct PersonalityAssessmentView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var hasStarted = false
+    @State private var hasCompletedGroundingPreparation = false
     @State private var currentQuestion = 0
     @State private var answers: [Int?] = Array(repeating: nil, count: PersonalityAssessmentEngine.questions.count)
     @State private var didSave = false
@@ -43,7 +44,9 @@ struct PersonalityAssessmentView: View {
         ZStack {
             ThemedBackground().ignoresSafeArea()
 
-            if hasStarted {
+            if hasStarted && !hasCompletedGroundingPreparation {
+                groundingPreparation
+            } else if hasStarted {
                 wizardContent
             } else {
                 introContent
@@ -141,6 +144,21 @@ struct PersonalityAssessmentView: View {
                 isComplete: isComplete
             )
         }
+    }
+
+    private var groundingPreparation: some View {
+        VStack {
+            GroundingPreparationView(
+                title: String(localized: "Ground Before the Assessment"),
+                message: String(localized: "This self-discovery assessment asks you to reflect on patterns that may feel personal. You can take a 30-second breathing reset first, or begin when you feel ready."),
+                continueTitle: String(localized: "Start Assessment")
+            ) {
+                hasCompletedGroundingPreparation = true
+            }
+            .padding(.horizontal, DSSpacing.large)
+            .responsiveMaxWidth()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func binding(for index: Int) -> Binding<Int?> {

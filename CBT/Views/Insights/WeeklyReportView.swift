@@ -703,3 +703,145 @@ private struct WeeklyFrequencyList: View {
         }
     }
 }
+
+private struct WeeklyPrepBulletList: View {
+    let title: String
+    let items: [String]
+    let emptyText: String
+
+    @Environment(ThemeManager.self) private var themeManager
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(DSTypography.caption.weight(.bold))
+                .foregroundStyle(Theme.secondaryText)
+
+            if items.isEmpty {
+                Text(emptyText)
+                    .font(DSTypography.caption)
+                    .foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(items, id: \.self) { item in
+                        HStack(alignment: .top, spacing: 8) {
+                            Circle()
+                                .fill(themeManager.selectedColor)
+                                .frame(width: 6, height: 6)
+                                .padding(.top, 6)
+                            Text(item)
+                                .font(DSTypography.body)
+                                .foregroundStyle(Theme.primaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct WeeklyPrepItemList: View {
+    let title: String
+    let items: [WeeklyReportGenerator.SessionPrepItem]
+    let emptyText: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(DSTypography.caption.weight(.bold))
+                .foregroundStyle(Theme.secondaryText)
+
+            if items.isEmpty {
+                Text(emptyText)
+                    .font(DSTypography.caption)
+                    .foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text(item.title)
+                                    .font(DSTypography.body.weight(.semibold))
+                                    .foregroundStyle(Theme.primaryText)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 8)
+                                if let date = item.date {
+                                    Text(date.formatted(date: .abbreviated, time: .omitted))
+                                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                                        .foregroundStyle(Theme.secondaryText)
+                                        .lineLimit(1)
+                                }
+                            }
+
+                            Text(item.detail)
+                                .font(DSTypography.caption)
+                                .foregroundStyle(Theme.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.vertical, 8)
+
+                        if index < items.count - 1 {
+                            Divider()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct WeeklyAssessmentChangeList: View {
+    let changes: [WeeklyReportGenerator.AssessmentChange]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Assessment changes")
+                .font(DSTypography.caption.weight(.bold))
+                .foregroundStyle(Theme.secondaryText)
+
+            if changes.isEmpty {
+                Text("No assessments were logged this week.")
+                    .font(DSTypography.caption)
+                    .foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(changes.enumerated()), id: \.element.id) { index, change in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text(change.title)
+                                    .font(DSTypography.body.weight(.semibold))
+                                    .foregroundStyle(Theme.primaryText)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 8)
+                                Text(change.latestScoreText)
+                                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                                    .foregroundStyle(Theme.primaryText)
+                                    .lineLimit(1)
+                            }
+
+                            Text(changeSubtitle(change))
+                                .font(DSTypography.caption)
+                                .foregroundStyle(Theme.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.vertical, 8)
+
+                        if index < changes.count - 1 {
+                            Divider()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func changeSubtitle(_ change: WeeklyReportGenerator.AssessmentChange) -> String {
+        let previous = change.previousScoreText.map { "Previous \($0). " } ?? ""
+        let interpretation = change.interpretation.map { " \($0)." } ?? ""
+        return "\(previous)\(change.changeText).\(interpretation)"
+    }
+}

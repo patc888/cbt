@@ -72,7 +72,7 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         case .streakReengagement:
             return String(localized: "Streak Re-Engagement")
         case .eveningReflection:
-            return String(localized: "Evening Closure")
+            return String(localized: "Gentle Evening Closeout")
         case .weeklyReport:
             return String(localized: "Weekly Review")
         case .breathingReset:
@@ -114,7 +114,7 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         case .streakReengagement:
             return String(localized: "Return to a quick mood check-in after two days away")
         case .eveningReflection:
-            return String(localized: "Close the day with a 2-minute reflection rhythm")
+            return String(localized: "Close the day with one win, one hard thing, and one tomorrow anchor")
         case .weeklyReport:
             return String(localized: "Look back at check-ins, triggers, practices, and tiny wins once a week")
         case .breathingReset:
@@ -156,7 +156,7 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         case .streakReengagement:
             return String(localized: "A 30-second mood check-in can keep your pattern visible when you are ready to return.")
         case .eveningReflection:
-            return String(localized: "Take two minutes for what happened, what helped, and what would make tomorrow easier.")
+            return String(localized: "Take two minutes for one win, one hard thing, and one small anchor for tomorrow.")
         case .weeklyReport:
             return String(localized: "Review check-ins, triggers, practices, and tiny wins from the week when you are ready to reflect.")
         case .breathingReset:

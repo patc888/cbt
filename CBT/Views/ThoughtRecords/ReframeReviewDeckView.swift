@@ -118,10 +118,14 @@ struct ReframeReviewDeckView: View {
                 Text("Reviewed \(lastReviewedAt.formatted(date: .abbreviated, time: .omitted))")
                     .font(DSTypography.caption)
                     .foregroundStyle(DSTheme.secondaryText)
+            } else if let dueDate = record.reframeFollowUpDueDate() {
+                Text("Re-review \(dueDate.formatted(date: .abbreviated, time: .omitted))")
+                    .font(DSTypography.caption)
+                    .foregroundStyle(DSTheme.secondaryText)
             }
 
-            if record.isReframeFollowUpDue() {
-                followUpQuestion
+            if isShowingBalancedThought && (record.isReframeFollowUpDue() || record.balancedThoughtBeliefLater != nil) {
+                followUpQuestion(for: record)
             }
 
             Button {
@@ -146,7 +150,7 @@ struct ReframeReviewDeckView: View {
         )
     }
 
-    private var followUpQuestion: some View {
+    private func followUpQuestion(for record: ThoughtRecord) -> some View {
         VStack(alignment: .leading, spacing: DSSpacing.small) {
             Text("Does this thought still feel believable?")
                 .font(.system(.headline, design: .rounded).weight(.bold))
@@ -154,25 +158,37 @@ struct ReframeReviewDeckView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: DSSpacing.small) {
-                Button {
-                    markReviewedAndAdvance()
-                } label: {
-                    Label("Still believable", systemImage: "checkmark.circle.fill")
-                }
-                .buttonStyle(DSPrimaryButtonStyle(size: .medium))
-
-                Button {
-                    markReviewedAndAdvance()
-                } label: {
-                    Label("Not quite", systemImage: "arrow.triangle.2.circlepath")
-                }
-                .buttonStyle(DSSecondaryButtonStyle(size: .medium))
+                beliefButton("Not yet", value: 25, record: record)
+                beliefButton("Somewhat", value: 60, record: record)
+                beliefButton("Yes", value: 90, record: record)
             }
         }
         .padding(DSSpacing.medium)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(themeManager.selectedColor.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.medium, style: .continuous))
+    }
+
+    private func beliefButton(_ title: String, value: Int, record: ThoughtRecord) -> some View {
+        let isSelected = record.balancedThoughtBeliefLater == value
+
+        return Button {
+            recordBelief(value, for: record)
+        } label: {
+            Text(title)
+                .font(DSTypography.caption.weight(.bold))
+                .foregroundStyle(isSelected ? .white : themeManager.selectedColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(
+                    RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous)
+                        .fill(isSelected ? themeManager.selectedColor : themeManager.selectedColor.opacity(0.10))
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title), \(value) percent believable")
     }
 
     private var controls: some View {

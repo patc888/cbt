@@ -340,6 +340,13 @@ struct GuidedJournalWizardView: View {
             }
             .padding(.horizontal, 24)
 
+            WhatHelpedFeedbackView(
+                activityKind: .guidedJournal,
+                itemID: template.storageKey,
+                sourceScreen: "guided_journal"
+            )
+            .padding(.horizontal, 24)
+
             Spacer()
 
             Button(action: {

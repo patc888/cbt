@@ -11,6 +11,7 @@ final class SettingsViewModel {
     var hapticsEnabled: Bool = true
     var appLockEnabled: Bool = false
     var discreetModeEnabled: Bool = false
+    var comfortModeEnabled: Bool = false
     var currentIcon: String?
     var journeyOptInMessage: String?
     
@@ -37,6 +38,8 @@ final class SettingsViewModel {
         self.appLockEnabled = settings?.appLockEnabled ?? false
         self.discreetModeEnabled = settings?.discreetModeEnabled ?? AppConfiguration.discreetModeEnabled()
         AppConfiguration.setDiscreetModeEnabled(self.discreetModeEnabled)
+        self.comfortModeEnabled = settings?.comfortModeEnabled ?? false
+        UserDefaults.standard.set(self.comfortModeEnabled, forKey: "cbtComfortModeEnabled")
         self.currentIcon = settings?.currentIcon
         self.isInitialized = true
     }
@@ -69,6 +72,13 @@ final class SettingsViewModel {
             await DailyReminderService.shared.refreshQuoteOfTheDayIfEnabled()
             await PersonalizedReminderService.shared.refreshEnabledReminders(modelContext: context)
         }
+    }
+
+    @MainActor
+    func updateComfortMode(_ enabled: Bool) {
+        comfortModeEnabled = enabled
+        UserDefaults.standard.set(enabled, forKey: "cbtComfortModeEnabled")
+        update { $0.comfortModeEnabled = enabled }
     }
 
     @MainActor

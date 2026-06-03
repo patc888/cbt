@@ -295,11 +295,6 @@ private struct InsightsFeaturedPatternCard: View {
                     .foregroundStyle(.white.opacity(0.78))
                     .fixedSize(horizontal: false, vertical: true)
 
-                if let actionDescription = card.actionDescription, !actionDescription.isEmpty {
-                    InsightsPatternActionHint(text: actionDescription, foregroundStyle: .white.opacity(0.86))
-                        .padding(.top, 2)
-                }
-
                 if let actionPrompt = card.actionPrompt, card.canCreatePlan {
                     VStack(alignment: .leading, spacing: 10) {
                         Text(actionPrompt)
@@ -398,11 +393,6 @@ private struct InsightsPatternSignalCard: View {
                         .font(.system(.caption, design: .rounded))
                         .foregroundStyle(Theme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
-
-                    if let actionDescription = card.actionDescription, !actionDescription.isEmpty {
-                        InsightsPatternActionHint(text: actionDescription, foregroundStyle: Theme.primaryText)
-                            .padding(.top, 4)
-                    }
                 }
                 .layoutPriority(1)
 
@@ -440,25 +430,6 @@ private struct InsightsPatternSignalCard: View {
         .padding(Theme.paddingMedium)
         .cardStyle()
         .accessibilityElement(children: .combine)
-    }
-}
-
-private struct InsightsPatternActionHint<S: ShapeStyle>: View {
-    let text: String
-    let foregroundStyle: S
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 6) {
-            Image(systemName: "hand.tap.fill")
-                .font(.system(size: 10, weight: .black))
-                .padding(.top, 2)
-                .accessibilityHidden(true)
-
-            Text(String(localized: "Try: \(text)"))
-                .font(.system(.caption, design: .rounded).weight(.bold))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .foregroundStyle(foregroundStyle)
     }
 }
 

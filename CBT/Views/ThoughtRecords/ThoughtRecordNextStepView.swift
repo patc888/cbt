@@ -32,6 +32,12 @@ struct ThoughtRecordNextStepView: View {
 
                     reassuranceCard
 
+                    WhatHelpedFeedbackView(
+                        activityKind: .thoughtRecord,
+                        itemID: record.id.uuidString,
+                        sourceScreen: "thought_record"
+                    )
+
                     VStack(alignment: .leading, spacing: DSSpacing.small) {
                         Text("One next step")
                             .font(.system(size: 13, weight: .bold, design: .rounded))

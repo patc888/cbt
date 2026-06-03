@@ -218,6 +218,7 @@ struct DistortionExamplesView: View {
         .padding(.vertical, DSSpacing.medium)
         .background(DSTheme.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous))
+        .sessionBoundaryDialog(manager: timerManager)
     }
     
     // MARK: - Timer Start

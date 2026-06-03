@@ -175,7 +175,7 @@ struct PlanCard<CTAContent: View>: View {
             .padding(Theme.paddingMedium)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                     .fill(DSTheme.cardBackground)
                     .overlay {
                         LinearGradient(
@@ -187,10 +187,10 @@ struct PlanCard<CTAContent: View>: View {
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous))
                     }
                     .overlay {
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                             .strokeBorder(cardBorderColor, lineWidth: 1)
                     }
             }

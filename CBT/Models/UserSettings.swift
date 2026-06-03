@@ -58,12 +58,16 @@ final class UserSettings {
     
     /// Subscription Settings
     var isPremium: Bool? = false
+
+    /// Daily Plan Settings
+    var comfortModeEnabled: Bool? = false
     
     init(
         hapticsEnabled: Bool = true,
         appLockEnabled: Bool = false,
         discreetModeEnabled: Bool = false,
         isPremium: Bool = false,
+        comfortModeEnabled: Bool = false,
         tonePreference: AppTonePreference = .gentle,
         singletonID: String = "default"
     ) {
@@ -73,6 +77,7 @@ final class UserSettings {
         self.appLockEnabled = appLockEnabled
         self.discreetModeEnabled = discreetModeEnabled
         self.isPremium = isPremium
+        self.comfortModeEnabled = comfortModeEnabled
         self.tonePreference = tonePreference.rawValue
     }
 }

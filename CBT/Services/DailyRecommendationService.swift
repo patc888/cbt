@@ -232,24 +232,40 @@ nonisolated struct DailyPlanUserPreferences: Hashable, Sendable {
     let interests: Set<String>
     let feedbackScores: [String: Int]
     let lighterPlanUntil: Date?
+    let preferredSessionLength: String?
+    let preferredDaypart: String?
+    let commonTriggers: Set<String>
+    let helpfulInterventions: Set<String>
 
     static let empty = DailyPlanUserPreferences(
         goals: [],
         interests: [],
         feedbackScores: [:],
-        lighterPlanUntil: nil
+        lighterPlanUntil: nil,
+        preferredSessionLength: nil,
+        preferredDaypart: nil,
+        commonTriggers: [],
+        helpfulInterventions: []
     )
 
     init(
         goals: Set<String>,
         interests: Set<String>,
         feedbackScores: [String: Int] = [:],
-        lighterPlanUntil: Date? = nil
+        lighterPlanUntil: Date? = nil,
+        preferredSessionLength: String? = nil,
+        preferredDaypart: String? = nil,
+        commonTriggers: Set<String> = [],
+        helpfulInterventions: Set<String> = []
     ) {
         self.goals = goals
         self.interests = interests
         self.feedbackScores = feedbackScores
         self.lighterPlanUntil = lighterPlanUntil
+        self.preferredSessionLength = preferredSessionLength
+        self.preferredDaypart = preferredDaypart
+        self.commonTriggers = commonTriggers
+        self.helpfulInterventions = helpfulInterventions
     }
 
     func feedbackScore(for type: DailyRecommendationType) -> Int {
@@ -504,7 +520,8 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
         addPreferenceRecommendation(from: input, into: &recommendations)
         addFallbacks(from: input, into: &recommendations)
 
-        let personalizedLimit = input.preferences.prefersLighterPlan(on: input.today) ? 2 : 4
+        let personalizedLimit = input.preferences.prefersLighterPlan(on: input.today) ||
+            input.preferences.preferredSessionLength == DailyPlanSessionLength.quick.rawValue ? 2 : 4
         return recommendations.values
             .sorted { lhs, rhs in
                 let lhsScore = bestNextStepScore(for: lhs, input: input)
@@ -793,6 +810,30 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
             }
         }
 
+        if let preferredDaypart = DailyPlanDaypart(rawValue: input.preferences.preferredDaypart ?? ""),
+           isPreferredDaypart(preferredDaypart, hour: hour) {
+            score += 8
+        }
+
+        if input.preferences.helpfulInterventions.contains(interventionID(for: recommendation.type)) {
+            score += 12
+        }
+
+        switch DailyPlanSessionLength(rawValue: input.preferences.preferredSessionLength ?? "") {
+        case .quick:
+            score -= max(0, recommendation.estimatedDurationMinutes - 3) * 5
+        case .standard:
+            if (4...8).contains(recommendation.estimatedDurationMinutes) {
+                score += 6
+            }
+        case .deeper:
+            if recommendation.estimatedDurationMinutes >= 6 {
+                score += 8
+            }
+        case nil:
+            break
+        }
+
         return score
     }
 
@@ -866,6 +907,102 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
                     priority: 66,
                     duration: 4,
                     isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        }
+
+        addHelpfulInterventionRecommendations(from: input, into: &recommendations)
+        addCommonTriggerRecommendations(from: input, into: &recommendations)
+    }
+
+    private func addHelpfulInterventionRecommendations(
+        from input: DailyPlanRecommendationInput,
+        into recommendations: inout [DailyRecommendationType: DailyRecommendation]
+    ) {
+        if input.preferences.helpfulInterventions.contains(DailyPlanHelpfulIntervention.breathing.rawValue), !input.hasBreathingToday {
+            upsert(
+                recommendation(
+                    type: .breathingReset,
+                    title: "Preferred Reset",
+                    subtitle: "Use a tool that has helped before.",
+                    reason: "Because breathing is one of the supports that helps you.",
+                    destination: .breathingReset(durationSeconds: 60),
+                    priority: 76,
+                    duration: 1,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        }
+
+        if input.preferences.helpfulInterventions.contains(DailyPlanHelpfulIntervention.thoughtRecord.rawValue), !input.hasThoughtRecordToday {
+            upsert(
+                recommendation(
+                    type: .thoughtRecord,
+                    title: "Helpful Thought Check",
+                    subtitle: "Use the kind of support that has worked for you.",
+                    reason: "Because thought checks are one of the supports that helps you.",
+                    destination: .thoughtRecord,
+                    priority: 74,
+                    duration: 6,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        }
+
+        if input.preferences.helpfulInterventions.contains(DailyPlanHelpfulIntervention.activity.rawValue), !input.hasActivityCompletedToday {
+            upsert(
+                recommendation(
+                    type: .behavioralActivation,
+                    title: "Helpful Tiny Action",
+                    subtitle: "Repeat a small action-based support.",
+                    reason: "Because tiny actions are one of the supports that helps you.",
+                    destination: .behavioralActivation,
+                    priority: 72,
+                    duration: 3,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        }
+
+        if input.preferences.helpfulInterventions.contains(DailyPlanHelpfulIntervention.journaling.rawValue) {
+            upsert(
+                recommendation(
+                    type: .guidedJournal,
+                    title: "Helpful Journal Prompt",
+                    subtitle: "Give the pattern a few lines.",
+                    reason: "Because journaling is one of the supports that helps you.",
+                    destination: .guidedJournal(kind: "open"),
+                    priority: 70,
+                    duration: 4,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        }
+    }
+
+    private func addCommonTriggerRecommendations(
+        from input: DailyPlanRecommendationInput,
+        into recommendations: inout [DailyRecommendationType: DailyRecommendation]
+    ) {
+        for trigger in input.preferences.commonTriggers {
+            guard let dailyPlanTrigger = DailyPlanCommonTrigger(rawValue: trigger),
+                  let exercise = exerciseFor(preferredTrigger: dailyPlanTrigger, in: input) else { continue }
+
+            upsert(
+                recommendation(
+                    type: .libraryExercise,
+                    title: exercise.title,
+                    subtitle: exercise.description,
+                    reason: "Because \(dailyPlanTrigger.title.lowercased()) is a common trigger for you.",
+                    destination: .libraryExercise(exerciseID: exercise.id),
+                    priority: 73,
+                    duration: exercise.duration,
+                    isCompletedToday: exercise.isCompletedToday
                 ),
                 into: &recommendations
             )
@@ -1492,7 +1629,7 @@ struct DailyRecommendationService {
                     dayEnd: dayEnd
                 )
             },
-            preferences: .empty,
+            preferences: DailyPlanFeedbackStore.shared.preferences(now: now, calendar: calendar),
             hasAnyUserData: !hasNoUserData,
             recentEngagementCount: activeDates.filter { $0 >= sevenDaysAgo }.count,
             helpfulnessScores: HelpfulnessFeedbackService.shared.recommendationScores(
@@ -1849,7 +1986,7 @@ struct DailyRecommendationService {
                 makeRecommendation(
                     type: .guidedJournal,
                     title: kind.title,
-                    subtitle: kind == .morningIntentions ? "Set one direction for the day." : "Close the day and make tomorrow easier.",
+                    subtitle: kind == .morningIntentions ? "Set one direction for the day." : "Name one win, one hard thing, and tomorrow's anchor.",
                     reason: "A guided prompt can make reflection easier to start.",
                     destination: .guidedJournal(kind: kind.rawValue),
                     priority: 46,

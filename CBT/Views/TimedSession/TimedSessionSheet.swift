@@ -6,7 +6,9 @@ struct TimedSessionSheet: View {
 
     var onEndEarly: () -> Void = {}
     var onSwitchToBreathing: () -> Void = {
-        BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
+        Task { @MainActor in
+            BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
+        }
     }
 
     private var accent: Color {
@@ -124,7 +126,9 @@ extension View {
         manager: TimedSessionManager,
         onSaveAndClose: @escaping () -> Void = {},
         onSwitchToBreathing: @escaping () -> Void = {
-            BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
+            Task { @MainActor in
+                BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
+            }
         }
     ) -> some View {
         modifier(

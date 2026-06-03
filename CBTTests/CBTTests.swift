@@ -942,6 +942,37 @@ final class CBTTests: XCTestCase {
         XCTAssertTrue(completed.isSavedReframe)
         XCTAssertTrue(completed.isFavoriteReframe)
         XCTAssertNotNil(completed.completedAt)
+        XCTAssertEqual(completed.savedReframeAt, completed.completedAt)
+        XCTAssertNil(completed.lastReviewedAt)
+    }
+
+    @MainActor
+    func testSavedReframeFollowUpIsDueOneDayLaterUntilReviewed() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let savedAt = Date(timeIntervalSince1970: 1_800_000_000)
+        let record = ThoughtRecord(
+            createdAt: savedAt,
+            balancedThought: "I can ask before assuming.",
+            intensityBefore: 80,
+            intensityAfter: 45,
+            isSavedReframe: true,
+            savedReframeAt: savedAt,
+            completedAt: savedAt
+        )
+        context.insert(record)
+        try context.save()
+
+        XCTAssertFalse(record.isReframeFollowUpDue(now: savedAt.addingTimeInterval(86_399)))
+        XCTAssertTrue(record.isReframeFollowUpDue(now: savedAt.addingTimeInterval(86_400)))
+
+        try context.cbtStore.updateSavedReframe(
+            record,
+            isSaved: true,
+            reviewedAt: savedAt.addingTimeInterval(86_500)
+        )
+
+        XCTAssertFalse(record.isReframeFollowUpDue(now: savedAt.addingTimeInterval(172_800)))
     }
 
     @MainActor
@@ -1032,7 +1063,7 @@ final class CBTTests: XCTestCase {
             "Values Check-In",
             "Control vs Influence",
             "Sleep Wind-Down Reflection",
-            "Evening Closure",
+            "Gentle Evening Closeout",
             "Burnout Check-In",
             "Three Good Things"
         ]
@@ -1603,17 +1634,18 @@ final class CBTTests: XCTestCase {
 
     @MainActor
     func testInsightsGenerateTriggerPatternCardsForRepeatedMonthlyTriggers() async {
-        let now = Date()
+        let calendar = Calendar.current
+        let monthStart = calendar.dateInterval(of: .month, for: Date())?.start ?? Date()
         let moods = (0..<4).map { index in
             MoodEntry(
-                createdAt: now.addingTimeInterval(Double(-index) * 3_600),
+                createdAt: monthStart.addingTimeInterval(Double(index + 9) * 3_600),
                 moodScore: 4,
                 emotions: ["Stressed"],
                 triggers: index == 0 ? ["Work", "work"] : ["Work"]
             )
         } + [
             MoodEntry(
-                createdAt: now.addingTimeInterval(-5 * 3_600),
+                createdAt: monthStart.addingTimeInterval(14 * 3_600),
                 moodScore: 6,
                 triggers: ["Family"]
             )
