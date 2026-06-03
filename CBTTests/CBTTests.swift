@@ -187,8 +187,8 @@ final class CBTTests: XCTestCase {
     }
 
     func testCurrentMigrationSchemaCoversAllPersistedModels() {
-        let currentModels = Set(CBTVersionedSchemaV11.models.map { String(reflecting: $0) })
-        let latestModels = Set(CBTVersionedSchemaV12.models.map { String(reflecting: $0) })
+        let currentModels = Set(CBTVersionedSchemaV12.models.map { String(reflecting: $0) })
+        let latestModels = Set(CBTVersionedSchemaV13.models.map { String(reflecting: $0) })
         let expectedModels = Set([
             UserSettings.self,
             MoodEntry.self,
@@ -213,14 +213,15 @@ final class CBTTests: XCTestCase {
             PersonalValue.self,
             ValueActionCompletion.self,
             DailyPlanCompletion.self,
-            FirstSevenDaysJourney.self
+            FirstSevenDaysJourney.self,
+            HelpfulnessFeedback.self
         ].map { String(reflecting: $0) })
-        let v11Models = expectedModels.subtracting([String(reflecting: FirstSevenDaysJourney.self)])
+        let v12Models = expectedModels.subtracting([String(reflecting: HelpfulnessFeedback.self)])
 
-        XCTAssertEqual(currentModels, v11Models)
+        XCTAssertEqual(currentModels, v12Models)
         XCTAssertEqual(latestModels, expectedModels)
-        XCTAssertEqual(CBTModelMigrationPlan.schemas.count, 12)
-        XCTAssertEqual(CBTModelMigrationPlan.stages.count, 11)
+        XCTAssertEqual(CBTModelMigrationPlan.schemas.count, 13)
+        XCTAssertEqual(CBTModelMigrationPlan.stages.count, 12)
     }
 
     @MainActor

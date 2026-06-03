@@ -79,10 +79,19 @@ struct ModelContainerRecovery {
         cloudKitDatabase: ModelConfiguration.CloudKitDatabase
     ) -> ModelConfiguration {
         if let storeURL {
-            return ModelConfiguration("Default", schema: schema, url: storeURL, cloudKitDatabase: cloudKitDatabase)
+            return ModelConfiguration(
+                SharedPersistence.configurationName,
+                schema: schema,
+                url: storeURL,
+                cloudKitDatabase: cloudKitDatabase
+            )
         }
 
-        return ModelConfiguration("Default", schema: schema, cloudKitDatabase: cloudKitDatabase)
+        return ModelConfiguration(
+            SharedPersistence.configurationName,
+            schema: schema,
+            cloudKitDatabase: cloudKitDatabase
+        )
     }
 
     private func resolvedStoreURL() -> URL? {

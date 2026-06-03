@@ -5,11 +5,7 @@ struct TimedSessionSheet: View {
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
 
     var onEndEarly: () -> Void = {}
-    var onSwitchToBreathing: () -> Void = {
-        Task { @MainActor in
-            BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
-        }
-    }
+    var onSwitchToBreathing: () -> Void = BreathingPresenter.presentOneMinuteReset
 
     private var accent: Color {
         themeManager?.selectedColor ?? .accentColor
@@ -125,11 +121,7 @@ extension View {
     func sessionBoundaryDialog(
         manager: TimedSessionManager,
         onSaveAndClose: @escaping () -> Void = {},
-        onSwitchToBreathing: @escaping () -> Void = {
-            Task { @MainActor in
-                BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
-            }
-        }
+        onSwitchToBreathing: @escaping () -> Void = BreathingPresenter.presentOneMinuteReset
     ) -> some View {
         modifier(
             SessionBoundaryDialogModifier(

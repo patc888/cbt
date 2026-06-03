@@ -1047,7 +1047,7 @@ private struct ValueActionHomeCard: View {
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                 .fill(DSTheme.cardBackground)
                 .overlay {
                     LinearGradient(
@@ -1412,6 +1412,9 @@ private struct TodayBestNextStepCard: View {
     }
 
     private var statusText: String {
+        if continueItem != nil {
+            return String(localized: "In progress")
+        }
         if isPlanComplete {
             return String(localized: "Optional")
         }
@@ -1541,7 +1544,7 @@ private struct TodayBestNextStepCard: View {
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                     .fill(DSTheme.cardBackground)
                     .overlay {
                         LinearGradient(
@@ -1553,10 +1556,10 @@ private struct TodayBestNextStepCard: View {
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous))
                     }
                     .overlay {
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                             .strokeBorder(accent.opacity(0.16), lineWidth: 1)
                     }
             }
@@ -2161,11 +2164,10 @@ private struct BadDayModeView: View {
     }
 
     private var needHelpNowCard: some View {
-        NeedHelpNowCard(
-            message: String(localized: "Open your rough patch plan before things build further. If you might be in immediate danger, contact local emergency services now. In the U.S. you can call or text 988 for crisis support.")
-        ) {
-            showingSafetySupport = true
-        }
+        CrisisSupportNoticeView(
+            style: .compact,
+            onOpenPlan: { showingSafetySupport = true }
+        )
     }
 
     private var header: some View {
@@ -2725,10 +2727,10 @@ private struct TomorrowAnchorCard: View {
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous))
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                         .strokeBorder(themeManager.selectedColor.opacity(0.14), lineWidth: 1)
                 }
         }
@@ -2910,7 +2912,7 @@ private struct HomeHeroCard: View {
         .padding(22)
         .background {
             ZStack {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
                     #if canImport(UIKit)
                     .fill(Color(UIColor.systemBackground))
                     #elseif canImport(AppKit)
@@ -2925,7 +2927,7 @@ private struct HomeHeroCard: View {
                         y: colorScheme == .dark ? 18 : 10
                     )
 
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [
@@ -2948,7 +2950,7 @@ private struct HomeHeroCard: View {
                             endPoint: .center
                         )
 
-                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
                             .strokeBorder(.white.opacity(0.22), lineWidth: 1)
                     }
                 }
@@ -3075,7 +3077,7 @@ private struct HomeHeroGlowPattern: View {
                 }
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .onAppear {
             updateDrift()
         }

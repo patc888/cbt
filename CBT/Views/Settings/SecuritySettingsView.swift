@@ -8,10 +8,13 @@ struct SecuritySettingsView: View {
     @EnvironmentObject private var securityManager: SecurityManager
     
     let appLockEnabled: Bool
+    let discreetModeEnabled: Bool
     @Namespace private var appLockNamespace
+    @Namespace private var discreetModeNamespace
     @Environment(ThemeManager.self) private var themeManager
     
     let onUpdateAppLock: (Bool) -> Void
+    let onUpdateDiscreetMode: (Bool) -> Void
     
     @State private var showingPrivacyInfo = false
     
@@ -39,6 +42,22 @@ struct SecuritySettingsView: View {
                     .disabled(!securityManager.isAppLockAvailable)
                     .opacity(securityManager.isAppLockAvailable ? 1 : 0.55)
                 }
+
+                SettingsRow(
+                    icon: "eye.slash.fill",
+                    iconColor: themeManager.selectedColor,
+                    title: "Discreet Mode",
+                    subtitle: "Use neutral notification text, widget labels, and CBT wording outside the app."
+                ) {
+                    SegmentedToggle(
+                        isOn: Binding(
+                            get: { discreetModeEnabled },
+                            set: { onUpdateDiscreetMode($0) }
+                        ),
+                        namespace: discreetModeNamespace
+                    )
+                }
+                .padding(.top, 12)
                 
                 Button(action: {
                     HapticManager.shared.lightImpact()

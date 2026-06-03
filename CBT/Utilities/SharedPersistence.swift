@@ -3,6 +3,7 @@ import SwiftData
 
 enum SharedPersistence {
     static let cloudKitContainerID = AppConfiguration.cloudKitContainerIdentifier
+    static let configurationName = "Default"
     static let storeFileName = "default.store"
 
     private static let modelRegistry: [PersistentModelRegistration] = [
@@ -83,7 +84,7 @@ enum SharedPersistence {
 
         if let storeURL {
             return ModelConfiguration(
-                "Default",
+                configurationName,
                 schema: schema,
                 url: storeURL,
                 cloudKitDatabase: cloudKitDatabase
@@ -91,7 +92,7 @@ enum SharedPersistence {
         }
 
         return ModelConfiguration(
-            "Default",
+            configurationName,
             schema: schema,
             cloudKitDatabase: cloudKitDatabase
         )

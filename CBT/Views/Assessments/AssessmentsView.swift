@@ -226,6 +226,7 @@ private struct AssessmentStartRow: View {
 }
 
 private struct AssessmentQuizView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -237,6 +238,7 @@ private struct AssessmentQuizView: View {
     @State private var saveErrorMessage: String?
     @State private var resultDate = Date()
     @State private var hasCompletedGroundingPreparation = false
+    @State private var showingReset = false
 
     private var totalScore: Int {
         kind.score(from: answers)
@@ -319,6 +321,15 @@ private struct AssessmentQuizView: View {
                     canAdvance: canAdvanceFromCurrentQuestion,
                     isComplete: isComplete
                 )
+
+                if currentQuestion < kind.questions.count {
+                    AssessmentNotReadyActions(
+                        comeBackLater: { dismiss() },
+                        resetInstead: { showingReset = true }
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+                }
                 }
             }
         }
@@ -336,6 +347,21 @@ private struct AssessmentQuizView: View {
         }
         .onDisappear {
             NotificationCenter.default.post(name: .quizFlowDidExit, object: nil)
+        }
+        .sheet(isPresented: $showingReset) {
+            NavigationStack {
+                BreathingResetView(
+                    durationSeconds: 60,
+                    pattern: .box,
+                    autoStart: true,
+                    showsDismissControl: true,
+                    showControls: true,
+                    hideBackground: false,
+                    onComplete: nil,
+                    onDismiss: { showingReset = false }
+                )
+            }
+            .dsSheetPresentation()
         }
     }
 
@@ -416,6 +442,41 @@ private struct AssessmentQuestionPage: View {
             .dsContentLayout()
             .padding(.vertical, 18)
         }
+    }
+}
+
+private struct AssessmentNotReadyActions: View {
+    @Environment(ThemeManager.self) private var themeManager
+    let comeBackLater: () -> Void
+    let resetInstead: () -> Void
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                actions
+            }
+
+            VStack(spacing: 10) {
+                actions
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var actions: some View {
+        Button {
+            resetInstead()
+        } label: {
+            Label("Do a 60-second reset instead", systemImage: "wind")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: true, tint: themeManager.selectedColor))
+
+        Button {
+            comeBackLater()
+        } label: {
+            Label("Come back later", systemImage: "clock")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: true, tint: themeManager.selectedColor))
     }
 }
 

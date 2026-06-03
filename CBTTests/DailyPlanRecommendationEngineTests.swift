@@ -148,6 +148,26 @@ final class DailyPlanRecommendationEngineTests: XCTestCase {
         XCTAssertEqual(mode, .full)
     }
 
+    func testHelpfulThoughtRecordFeedbackLiftsThoughtRecordRecommendation() {
+        let recommendations = engine.recommendations(from: input(
+            hasBreathingToday: false,
+            hasThoughtRecordToday: false,
+            helpfulnessScores: [.thoughtRecord: 1]
+        ))
+
+        XCTAssertEqual(recommendations.first?.type, .thoughtRecord)
+    }
+
+    func testUnhelpfulBreathingFeedbackSoftensBreathingRecommendation() {
+        let recommendations = engine.recommendations(from: input(
+            hasBreathingToday: false,
+            hasThoughtRecordToday: false,
+            helpfulnessScores: [.breathingReset: -1]
+        ))
+
+        XCTAssertEqual(recommendations.first?.type, .thoughtRecord)
+    }
+
     private func input(
         moodSamples: [DailyPlanMoodSample]? = nil,
         thoughtRecordDistortions: [String] = [],
@@ -161,7 +181,8 @@ final class DailyPlanRecommendationEngineTests: XCTestCase {
         completedExerciseIDs: Set<String> = [],
         preferences: DailyPlanUserPreferences = .empty,
         hasAnyUserData: Bool = true,
-        recentEngagementCount: Int = 3
+        recentEngagementCount: Int = 3,
+        helpfulnessScores: [DailyRecommendationType: Double] = [:]
     ) -> DailyPlanRecommendationInput {
         DailyPlanRecommendationInput(
             today: Self.today,
@@ -183,7 +204,8 @@ final class DailyPlanRecommendationEngineTests: XCTestCase {
             ],
             preferences: preferences,
             hasAnyUserData: hasAnyUserData,
-            recentEngagementCount: recentEngagementCount
+            recentEngagementCount: recentEngagementCount,
+            helpfulnessScores: helpfulnessScores
         )
     }
 

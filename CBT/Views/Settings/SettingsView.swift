@@ -165,6 +165,8 @@ private struct SettingsDashboardContent: View {
 
             RemindersSettingsSection()
 
+            SessionBoundariesSettingsSection()
+
             NavigationLink(destination: WhatIsCBTPagerView()) {
                 WhatIsCBTSettingsCard()
             }
@@ -181,6 +183,52 @@ private struct SettingsDashboardContent: View {
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 32)
+    }
+}
+
+private struct SessionBoundariesSettingsSection: View {
+    @Environment(ThemeManager.self) private var themeManager
+
+    @AppStorage(SessionBoundaryPreferences.enabledKey) private var gentleStopEnabled = false
+    @AppStorage(SessionBoundaryPreferences.minutesKey) private var gentleStopMinutes = SessionBoundaryPreferences.defaultMinutes
+
+    var body: some View {
+        SettingsSection(title: String(localized: "Session Boundaries")) {
+            VStack(spacing: 16) {
+                ToggleRow(
+                    icon: "timer",
+                    iconColor: themeManager.selectedColor,
+                    title: String(localized: "Gentle Stop"),
+                    subtitle: gentleStopEnabled
+                        ? String(localized: "Pause longer CBT sessions before they turn into rumination")
+                        : String(localized: "Off until you choose a session boundary"),
+                    isOn: $gentleStopEnabled
+                )
+
+                if gentleStopEnabled {
+                    SettingsRow(
+                        icon: "hourglass",
+                        iconColor: themeManager.selectedColor,
+                        title: String(localized: "Maximum Session Length"),
+                        subtitle: String(localized: "When reached, offer save and close, breathing, or continue")
+                    ) {
+                        Picker(String(localized: "Maximum Session Length"), selection: $gentleStopMinutes) {
+                            ForEach(SessionBoundaryPreferences.minuteOptions, id: \.self) { minutes in
+                                Text("\(minutes) min").tag(minutes)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .onAppear {
+                            if !SessionBoundaryPreferences.minuteOptions.contains(gentleStopMinutes) {
+                                gentleStopMinutes = SessionBoundaryPreferences.defaultMinutes
+                            }
+                        }
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+        }
     }
 }
 

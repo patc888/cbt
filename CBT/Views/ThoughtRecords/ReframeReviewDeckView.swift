@@ -274,6 +274,15 @@ struct ReframeReviewDeckView: View {
         }
     }
 
+    private func recordBelief(_ belief: Int, for record: ThoughtRecord) {
+        do {
+            try modelContext.cbtStore.recordBalancedThoughtBelief(record, belief: belief)
+            HapticManager.shared.selection()
+        } catch {
+            AppLogger.make(category: "Data").error("Failed to record reframe belief: \(error.localizedDescription, privacy: .private)")
+        }
+    }
+
     private func toggleFavorite(_ record: ThoughtRecord) {
         do {
             try modelContext.cbtStore.updateFavoriteReframe(record, isFavorite: !record.isFavoriteReframe)

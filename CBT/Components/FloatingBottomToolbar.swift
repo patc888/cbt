@@ -1,11 +1,11 @@
 import SwiftUI
 
 enum FloatingTab: String, CaseIterable, Hashable {
-    case home = "Home"
+    case home = "Today"
     case insights = "Insights"
     case assessments = "Assess"
     case toolkit = "Toolkit"
-    case exercises = "Library"
+    case exercises = "Tools"
     case journal = "Journal"
     case settings = "Settings"
     case profile = "Profile"

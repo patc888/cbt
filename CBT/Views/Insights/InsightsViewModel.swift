@@ -17,6 +17,7 @@ private struct MoodSnapshot: Sendable {
     let intensity: Int?
     let anxietyStressScore: Int?
     let sleepQualityScore: Int?
+    let energyScore: Int?
 }
 
 private struct MoodCheckInSnapshot: Sendable {
@@ -166,7 +167,8 @@ final class InsightsViewModel {
                 notes: $0.notes,
                 intensity: $0.intensity,
                 anxietyStressScore: $0.anxietyStressScore,
-                sleepQualityScore: $0.sleepQualityScore
+                sleepQualityScore: $0.sleepQualityScore,
+                energyScore: $0.energyScore
             )
         }
         let checkIns = moodCheckIns.map {

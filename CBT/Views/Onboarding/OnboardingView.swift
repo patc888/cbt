@@ -16,6 +16,8 @@ enum DailyPlanPersonalizationKeys {
     static let twoWeekProgress = "cbt_onboardingTwoWeekProgress"
     static let baselineAssessmentInterests = "cbt_onboardingBaselineAssessmentInterests"
     static let openAssessmentsAfterOnboarding = "cbt_openAssessmentsAfterOnboarding"
+    static let structure = "cbt_dailyPlanStructurePreference"
+    static let avoidances = "cbt_dailyPlanAvoidanceIDs"
 }
 
 enum DailyPlanGoal: String, CaseIterable, Identifiable {
@@ -205,6 +207,42 @@ enum HardSituation: String, CaseIterable, Identifiable {
     }
 }
 
+enum DailyPlanStructurePreference: String, CaseIterable, Identifiable {
+    case light = "light"
+    case balanced = "balanced"
+    case structured = "structured"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .light: return "Light touch"
+        case .balanced: return "A simple plan"
+        case .structured: return "Clear steps"
+        }
+    }
+}
+
+enum DailyPlanAvoidancePreference: String, CaseIterable, Identifiable {
+    case tooManyReminders = "too_many_reminders"
+    case pressure = "pressure"
+    case longSessions = "long_sessions"
+    case crowdedPlans = "crowded_plans"
+    case clinicalLanguage = "clinical_language"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .tooManyReminders: return "Too many reminders"
+        case .pressure: return "Pressure or streak guilt"
+        case .longSessions: return "Long sessions"
+        case .crowdedPlans: return "Crowded plans"
+        case .clinicalLanguage: return "Clinical language"
+        }
+    }
+}
+
 struct OnboardingView: View {
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.modelContext) private var modelContext
@@ -222,6 +260,8 @@ struct OnboardingView: View {
     @AppStorage(DailyPlanPersonalizationKeys.twoWeekProgress) private var savedTwoWeekProgress = ""
     @AppStorage(DailyPlanPersonalizationKeys.baselineAssessmentInterests) private var savedBaselineAssessmentInterests = ""
     @AppStorage(DailyPlanPersonalizationKeys.openAssessmentsAfterOnboarding) private var openAssessmentsAfterOnboarding = false
+    @AppStorage(DailyPlanPersonalizationKeys.structure) private var savedStructure = ""
+    @AppStorage(DailyPlanPersonalizationKeys.avoidances) private var savedAvoidances = ""
 
     @State private var selectedGoals: Set<DailyPlanGoal> = []
     @State private var selectedInterests: Set<DailyPlanInterest> = []
@@ -229,6 +269,8 @@ struct OnboardingView: View {
     @State private var selectedDaypart: DailyPlanDaypart?
     @State private var selectedCommonTriggers: Set<DailyPlanCommonTrigger> = []
     @State private var selectedHelpfulInterventions: Set<DailyPlanHelpfulIntervention> = []
+    @State private var selectedStructure: DailyPlanStructurePreference?
+    @State private var selectedAvoidances: Set<DailyPlanAvoidancePreference> = []
     @State private var selectedValueIDs: Set<String> = []
     @State private var selectedReasons: Set<OnboardingReason> = []
     @State private var therapistStatus: TherapistSupportStatus = .preferNotToSay
@@ -376,6 +418,28 @@ struct OnboardingView: View {
                     }
                 }
 
+                optionGroup(title: "How much structure feels good?") {
+                    ForEach(DailyPlanStructurePreference.allCases) { preference in
+                        optionChip(
+                            title: preference.title,
+                            isSelected: selectedStructure == preference
+                        ) {
+                            toggleStructure(preference)
+                        }
+                    }
+                }
+
+                optionGroup(title: "What should the app avoid doing?") {
+                    ForEach(DailyPlanAvoidancePreference.allCases) { preference in
+                        optionChip(
+                            title: preference.title,
+                            isSelected: selectedAvoidances.contains(preference)
+                        ) {
+                            toggleAvoidance(preference)
+                        }
+                    }
+                }
+
                 optionGroup(title: "Values") {
                     ForEach(ValuesService.defaultValues) { value in
                         optionChip(
@@ -386,6 +450,59 @@ struct OnboardingView: View {
                         }
                     }
                 }
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 32)
+            .padding(.bottom, 12)
+        }
+    }
+
+    private var baselinePage: some View {
+        ScrollView {
+            VStack(spacing: 18) {
+                OnboardingHeader(
+                    systemImage: "person.text.rectangle.fill",
+                    title: "Set your starting point",
+                    message: "Answer what feels useful. This helps the app suggest gentler, more relevant first steps."
+                )
+
+                optionGroup(title: "What brings you here?") {
+                    ForEach(OnboardingReason.allCases) { reason in
+                        optionChip(
+                            title: reason.title,
+                            isSelected: selectedReasons.contains(reason)
+                        ) {
+                            toggleReason(reason)
+                        }
+                    }
+                }
+
+                optionGroup(title: "Are you working with a therapist?") {
+                    ForEach(TherapistSupportStatus.allCases) { status in
+                        optionChip(
+                            title: status.title,
+                            isSelected: therapistStatus == status
+                        ) {
+                            HapticManager.shared.selection()
+                            therapistStatus = status
+                        }
+                    }
+                }
+
+                optionGroup(title: "What situations are hardest?") {
+                    ForEach(HardSituation.allCases) { situation in
+                        optionChip(
+                            title: situation.title,
+                            isSelected: selectedHardSituations.contains(situation)
+                        ) {
+                            toggleHardSituation(situation)
+                        }
+                    }
+                }
+
+                progressReflectionEditor
+
+                baselineAssessmentPrompt
             }
             .padding(.horizontal, 24)
             .padding(.top, 32)
@@ -410,7 +527,7 @@ struct OnboardingView: View {
                 Button {
                     savePreferences()
                     withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
-                        phase = .guidance
+                        phase = .baseline
                     }
                 } label: {
                     Label("Continue", systemImage: "arrow.right.circle.fill")
@@ -423,6 +540,27 @@ struct OnboardingView: View {
                     showSuccess(nil)
                 } label: {
                     Text("Skip for Now")
+                }
+                .buttonStyle(DSSecondaryButtonStyle(size: .medium))
+
+            case .baseline:
+                Button {
+                    saveBaseline()
+                    withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                        phase = .guidance
+                    }
+                } label: {
+                    Label("Continue", systemImage: "arrow.right.circle.fill")
+                }
+                .buttonStyle(DSPrimaryButtonStyle())
+
+                Button {
+                    saveBaseline()
+                    withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                        phase = .guidance
+                    }
+                } label: {
+                    Text("Skip This Step")
                 }
                 .buttonStyle(DSSecondaryButtonStyle(size: .medium))
 
@@ -507,6 +645,104 @@ struct OnboardingView: View {
             .padding(.top, 32)
             .padding(.bottom, 12)
         }
+    }
+
+    private var progressReflectionEditor: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("What would progress look like in 2 weeks?")
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.primaryText)
+
+            ZStack(alignment: .topLeading) {
+                if twoWeekProgress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("Example: fewer spirals at night, asking for help sooner, or doing one tiny routine most days.")
+                        .font(.system(.body, design: .rounded))
+                        .foregroundStyle(Theme.tertiaryText)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .allowsHitTesting(false)
+                }
+
+                TextEditor(text: $twoWeekProgress)
+                    .font(.system(.body, design: .rounded))
+                    .foregroundStyle(Theme.primaryText)
+                    .frame(minHeight: 112)
+                    .padding(8)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.clear)
+            }
+            .background(DSTheme.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(DSTheme.separator.opacity(0.7), lineWidth: 1)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var baselineAssessmentPrompt: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Optional baseline", systemImage: "checklist")
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.primaryText)
+
+            Text("GAD-7 and PHQ-8 can give you a simple anxiety and mood starting point to compare against later. They are tracking tools, not diagnoses.")
+                .font(.system(.subheadline, design: .rounded))
+                .foregroundStyle(Theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .lineSpacing(2)
+
+            VStack(spacing: 10) {
+                baselineAssessmentOption(.gad7, subtitle: "Track anxiety-related symptoms over the past two weeks.")
+                baselineAssessmentOption(.phq8, subtitle: "Track mood-related symptoms over the past two weeks.")
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(DSTheme.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(DSTheme.separator.opacity(0.7), lineWidth: 1)
+        }
+    }
+
+    private func baselineAssessmentOption(_ kind: AssessmentKind, subtitle: String) -> some View {
+        Button {
+            HapticManager.shared.selection()
+            toggleBaselineAssessment(kind)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: kind.symbolName)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(themeManager.selectedColor)
+                    .frame(width: 28)
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(kind.title)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
+                        .foregroundStyle(Theme.primaryText)
+
+                    Text(subtitle)
+                        .font(.system(.subheadline, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .layoutPriority(1)
+
+                Spacer(minLength: 8)
+
+                Image(systemName: selectedBaselineAssessments.contains(kind) ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(selectedBaselineAssessments.contains(kind) ? themeManager.selectedColor : Theme.secondaryText)
+            }
+            .padding(12)
+            .background(
+                themeManager.selectedColor.opacity(selectedBaselineAssessments.contains(kind) ? 0.1 : 0),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selectedBaselineAssessments.contains(kind) ? .isSelected : [])
     }
 
     private var firstWinPage: some View {
@@ -773,12 +1009,52 @@ struct OnboardingView: View {
         }
     }
 
+    private func toggleStructure(_ preference: DailyPlanStructurePreference) {
+        HapticManager.shared.selection()
+        selectedStructure = selectedStructure == preference ? nil : preference
+    }
+
+    private func toggleAvoidance(_ preference: DailyPlanAvoidancePreference) {
+        HapticManager.shared.selection()
+        if selectedAvoidances.contains(preference) {
+            selectedAvoidances.remove(preference)
+        } else {
+            selectedAvoidances.insert(preference)
+        }
+    }
+
     private func toggleValue(_ value: ValueDefinition) {
         HapticManager.shared.selection()
         if selectedValueIDs.contains(value.id) {
             selectedValueIDs.remove(value.id)
         } else {
             selectedValueIDs.insert(value.id)
+        }
+    }
+
+    private func toggleReason(_ reason: OnboardingReason) {
+        HapticManager.shared.selection()
+        if selectedReasons.contains(reason) {
+            selectedReasons.remove(reason)
+        } else {
+            selectedReasons.insert(reason)
+        }
+    }
+
+    private func toggleHardSituation(_ situation: HardSituation) {
+        HapticManager.shared.selection()
+        if selectedHardSituations.contains(situation) {
+            selectedHardSituations.remove(situation)
+        } else {
+            selectedHardSituations.insert(situation)
+        }
+    }
+
+    private func toggleBaselineAssessment(_ kind: AssessmentKind) {
+        if selectedBaselineAssessments.contains(kind) {
+            selectedBaselineAssessments.remove(kind)
+        } else {
+            selectedBaselineAssessments.insert(kind)
         }
     }
 
@@ -801,6 +1077,11 @@ struct OnboardingView: View {
             .filter { selectedHelpfulInterventions.contains($0) }
             .map(\.rawValue)
             .joined(separator: ",")
+        savedStructure = selectedStructure?.rawValue ?? ""
+        savedAvoidances = DailyPlanAvoidancePreference.allCases
+            .filter { selectedAvoidances.contains($0) }
+            .map(\.rawValue)
+            .joined(separator: ",")
 
         do {
             for value in ValuesService.defaultValues where selectedValueIDs.contains(value.id) {
@@ -811,6 +1092,27 @@ struct OnboardingView: View {
             onboardingError = "Your values did not save yet. You can add them later from Profile."
             AppLogger.make(category: "Onboarding").error("Failed to save onboarding values: \(error.localizedDescription, privacy: .private)")
         }
+    }
+
+    private func saveBaseline() {
+        savedOnboardingReasons = StringArrayStorage.encode(
+            OnboardingReason.allCases
+                .filter { selectedReasons.contains($0) }
+                .map(\.rawValue)
+        )
+        savedTherapistStatus = therapistStatus.rawValue
+        savedHardSituations = StringArrayStorage.encode(
+            HardSituation.allCases
+                .filter { selectedHardSituations.contains($0) }
+                .map(\.rawValue)
+        )
+        savedTwoWeekProgress = twoWeekProgress.trimmingCharacters(in: .whitespacesAndNewlines)
+        savedBaselineAssessmentInterests = StringArrayStorage.encode(
+            [AssessmentKind.gad7, .phq8]
+                .filter { selectedBaselineAssessments.contains($0) }
+                .map(\.rawValue)
+        )
+        openAssessmentsAfterOnboarding = !selectedBaselineAssessments.isEmpty
     }
 
     private func completeFirstWin() {
@@ -845,7 +1147,9 @@ struct OnboardingView: View {
                 sourceScreen: "onboarding",
                 metadata: [
                     "goal_count": "\(selectedGoals.count)",
-                    "interest_count": "\(selectedInterests.count)"
+                    "interest_count": "\(selectedInterests.count)",
+                    "structure": selectedStructure?.rawValue ?? "none",
+                    "avoidance_count": "\(selectedAvoidances.count)"
                 ]
             )
         }
@@ -868,7 +1172,9 @@ struct OnboardingView: View {
             sourceScreen: "onboarding",
             metadata: [
                 "goal_count": "\(selectedGoals.count)",
-                "interest_count": "\(selectedInterests.count)"
+                "interest_count": "\(selectedInterests.count)",
+                "structure": selectedStructure?.rawValue ?? "none",
+                "avoidance_count": "\(selectedAvoidances.count)"
             ]
         )
         onboardingCompleted = true

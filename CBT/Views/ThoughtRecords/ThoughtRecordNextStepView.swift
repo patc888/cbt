@@ -284,6 +284,19 @@ struct ThoughtRecordNextStepView: View {
                 recommendationRow(recommendation)
             }
             .buttonStyle(.plain)
+
+        case .reviewLater:
+            Button {
+                scheduleReReview()
+            } label: {
+                recommendationRow(
+                    recommendation,
+                    titleOverride: scheduledReview ? "Review scheduled" : nil,
+                    iconOverride: scheduledReview ? "checkmark.circle.fill" : nil
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(scheduledReview)
         }
     }
 

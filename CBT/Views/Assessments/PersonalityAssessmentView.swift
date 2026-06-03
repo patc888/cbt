@@ -2,6 +2,7 @@ import SwiftData
 import SwiftUI
 
 struct PersonalityAssessmentView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -13,6 +14,7 @@ struct PersonalityAssessmentView: View {
     @State private var didSave = false
     @State private var saveErrorMessage: String?
     @State private var resultDate = Date()
+    @State private var showingReset = false
 
     private var completedCount: Int {
         answers.filter { $0 != nil }.count
@@ -66,6 +68,21 @@ struct PersonalityAssessmentView: View {
         }
         .onDisappear {
             NotificationCenter.default.post(name: .quizFlowDidExit, object: nil)
+        }
+        .sheet(isPresented: $showingReset) {
+            NavigationStack {
+                BreathingResetView(
+                    durationSeconds: 60,
+                    pattern: .box,
+                    autoStart: true,
+                    showsDismissControl: true,
+                    showControls: true,
+                    hideBackground: false,
+                    onComplete: nil,
+                    onDismiss: { showingReset = false }
+                )
+            }
+            .dsSheetPresentation()
         }
     }
 
@@ -143,6 +160,15 @@ struct PersonalityAssessmentView: View {
                 canAdvance: canAdvanceFromCurrentQuestion,
                 isComplete: isComplete
             )
+
+            if currentQuestion < PersonalityAssessmentEngine.questions.count {
+                PersonalityNotReadyActions(
+                    comeBackLater: { dismiss() },
+                    resetInstead: { showingReset = true }
+                )
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+            }
         }
     }
 
@@ -269,6 +295,41 @@ private struct PersonalityChoiceButton: View {
         .buttonStyle(DSSelectionButtonStyle(isSelected: isSelected, selectedColor: themeManager.selectedColor, size: .icon(52), expands: false))
         .accessibilityLabel("\(value)")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+private struct PersonalityNotReadyActions: View {
+    @Environment(ThemeManager.self) private var themeManager
+    let comeBackLater: () -> Void
+    let resetInstead: () -> Void
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                actions
+            }
+
+            VStack(spacing: 10) {
+                actions
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var actions: some View {
+        Button {
+            resetInstead()
+        } label: {
+            Label("Do a 60-second reset instead", systemImage: "wind")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: true, tint: themeManager.selectedColor))
+
+        Button {
+            comeBackLater()
+        } label: {
+            Label("Come back later", systemImage: "clock")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: true, tint: themeManager.selectedColor))
     }
 }
 

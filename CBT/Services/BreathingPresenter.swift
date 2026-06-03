@@ -16,6 +16,12 @@ final class BreathingPresenter: ObservableObject {
 
     private init() {}
 
+    nonisolated static func presentOneMinuteReset() {
+        Task { @MainActor in
+            shared.present(durationSeconds: 60, autoStart: true)
+        }
+    }
+
     func present(
         durationSeconds: Int = 60,
         autoStart: Bool = true,

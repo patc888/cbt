@@ -47,8 +47,12 @@ struct PrivacySafetySettingsView: View {
 
             SecuritySettingsView(
                 appLockEnabled: viewModel.appLockEnabled,
+                discreetModeEnabled: viewModel.discreetModeEnabled,
                 onUpdateAppLock: { enabled in
                     viewModel.updateAppLock(enabled)
+                },
+                onUpdateDiscreetMode: { enabled in
+                    viewModel.updateDiscreetMode(enabled)
                 }
             )
 

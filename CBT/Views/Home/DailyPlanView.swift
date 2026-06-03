@@ -12,6 +12,7 @@ struct DailyPlanView: View {
     let loopState: HomeDailyPlanLoopState
     let pickedResetYesterday: Bool
     let onRecommendationSelected: (DailyRecommendation) -> Void
+    let onRecommendationFeedback: (DailyRecommendation, DailyPlanFeedbackAction) -> Void
     let onContinueSelected: (HomeContinueItem) -> Void
     let onLogMood: () -> Void
     let onThoughtRecord: () -> Void

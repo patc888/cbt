@@ -296,6 +296,7 @@ nonisolated struct DailyPlanRecommendationInput: Hashable, Sendable {
     let hasAnyUserData: Bool
     let recentEngagementCount: Int
     let helpfulnessScores: [DailyRecommendationType: Double]
+    let comfortModeEnabled: Bool
 
     init(
         today: Date,
@@ -315,6 +316,7 @@ nonisolated struct DailyPlanRecommendationInput: Hashable, Sendable {
         hasAnyUserData: Bool,
         recentEngagementCount: Int,
         helpfulnessScores: [DailyRecommendationType: Double] = [:],
+        comfortModeEnabled: Bool = false,
         dailyPlanCompletions: [DailyPlanCompletion] = []
     ) {
         self.today = today
@@ -334,11 +336,16 @@ nonisolated struct DailyPlanRecommendationInput: Hashable, Sendable {
         self.hasAnyUserData = hasAnyUserData
         self.recentEngagementCount = recentEngagementCount
         self.helpfulnessScores = helpfulnessScores
+        self.comfortModeEnabled = comfortModeEnabled
     }
 }
 
 nonisolated struct DailyPlanRecommendationEngine: Sendable {
     func recommendations(from input: DailyPlanRecommendationInput) -> [DailyRecommendation] {
+        if input.comfortModeEnabled {
+            return comfortModePlan(input)
+        }
+
         if !input.hasAnyUserData {
             return onboardingStarterPlan(input).map { adaptedRecommendation($0, for: input) }
         }
@@ -501,7 +508,7 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
             )
         }
 
-        if input.currentStreak > 0, !input.hasMoodToday {
+        if input.currentStreak > 0, !input.hasMoodToday, !input.comfortModeEnabled {
             upsert(
                 recommendation(
                     type: .moodCheckIn,
@@ -536,6 +543,10 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
     }
 
     func selectedMode(from input: DailyPlanRecommendationInput) -> DailyPlanMode {
+        if input.comfortModeEnabled {
+            return .lowEnergy
+        }
+
         let latest = input.moodSamples.first
         return AdaptiveDifficultySelector.selectMode(
             latestMoodScore: latest?.moodScore,
@@ -643,6 +654,71 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
         case .safetySupport:
             return recommendation.with(mode: .lowEnergy)
         }
+    }
+
+    private func comfortModePlan(_ input: DailyPlanRecommendationInput) -> [DailyRecommendation] {
+        var plan = [DailyRecommendation]()
+
+        if !input.hasBreathingToday {
+            plan.append(recommendation(
+                type: .breathingReset,
+                title: "Take One Soft Breath",
+                subtitle: "A tiny reset. Stop whenever you need to.",
+                reason: "Comfort Mode keeps the plan small and body-first.",
+                destination: .breathingReset(durationSeconds: 45),
+                priority: 120,
+                duration: 1,
+                isCompletedToday: input.hasBreathingToday
+            ).with(mode: .lowEnergy))
+        }
+
+        if let grounding = firstExercise(matching: ["Grounding", "Distress Tolerance", "Self Compassion"], in: input) {
+            plan.append(recommendation(
+                type: .libraryExercise,
+                title: "Ground in the Room",
+                subtitle: "Notice one steady thing around you.",
+                reason: "Comfort Mode prioritizes grounding before bigger reflection.",
+                destination: .libraryExercise(exerciseID: grounding.id),
+                priority: 112,
+                duration: 1,
+                isCompletedToday: grounding.isCompletedToday
+            ).with(mode: .lowEnergy))
+        }
+
+        if lowMoodTrend(in: input) || highStressTrend(in: input) {
+            plan.append(recommendation(
+                type: .safetySupport,
+                title: "Open Your Safety Plan",
+                subtitle: "Keep support steps close if today feels unsafe or too much.",
+                reason: "Comfort Mode keeps safety support easy to reach.",
+                destination: .safetySupport,
+                priority: 108,
+                duration: 1,
+                isCompletedToday: false
+            ).with(mode: .lowEnergy))
+        }
+
+        if plan.isEmpty {
+            plan.append(recommendation(
+                type: .moodCheckIn,
+                title: "One Gentle Check-In",
+                subtitle: "Name only what feels useful right now.",
+                reason: "Comfort Mode makes today count with one tiny step.",
+                destination: .moodCheckIn,
+                priority: 100,
+                duration: 1,
+                isCompletedToday: input.hasMoodToday
+            ).with(mode: .lowEnergy))
+        }
+
+        return Array(plan
+            .sorted { lhs, rhs in
+                if lhs.isCompletedToday != rhs.isCompletedToday {
+                    return !lhs.isCompletedToday
+                }
+                return lhs.priority > rhs.priority
+            }
+            .prefix(2))
     }
 
     private func onboardingStarterPlan(_ input: DailyPlanRecommendationInput) -> [DailyRecommendation] {
@@ -1044,6 +1120,45 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
         return firstExercise(matching: ["Grounding", "Thought Reframing", "Behavioral Activation"], in: input)
     }
 
+    private func exerciseFor(preferredTrigger trigger: DailyPlanCommonTrigger, in input: DailyPlanRecommendationInput) -> DailyPlanExerciseSummary? {
+        switch trigger {
+        case .work:
+            return firstExercise(matching: ["Thought Reframing", "Cognitive Distortions"], in: input)
+        case .relationships:
+            return firstExercise(matching: ["Emotion Regulation", "Self Compassion"], in: input)
+        case .sleep:
+            return firstExercise(matching: ["Wellness Basics", "Mindfulness"], in: input)
+        case .uncertainty:
+            return firstExercise(matching: ["Grounding", "Anxiety Reset", "Distress Tolerance"], in: input)
+        }
+    }
+
+    private func interventionID(for type: DailyRecommendationType) -> String {
+        switch type {
+        case .breathingReset, .sleepWindDown:
+            return DailyPlanHelpfulIntervention.breathing.rawValue
+        case .thoughtRecord:
+            return DailyPlanHelpfulIntervention.thoughtRecord.rawValue
+        case .guidedJournal:
+            return DailyPlanHelpfulIntervention.journaling.rawValue
+        case .behavioralActivation:
+            return DailyPlanHelpfulIntervention.activity.rawValue
+        case .moodCheckIn, .libraryExercise, .courseLesson, .safetySupport:
+            return ""
+        }
+    }
+
+    private func isPreferredDaypart(_ daypart: DailyPlanDaypart, hour: Int) -> Bool {
+        switch daypart {
+        case .morning:
+            return hour < 12
+        case .afternoon:
+            return hour >= 12 && hour < 17
+        case .evening:
+            return hour >= 17
+        }
+    }
+
     private func firstExercise(matching categories: [String], in input: DailyPlanRecommendationInput) -> DailyPlanExerciseSummary? {
         let matches = categories.flatMap { category in
             input.exercises.filter { $0.category.caseInsensitiveCompare(category) == .orderedSame }
@@ -1245,7 +1360,11 @@ struct DailyPlanFeedbackStore {
             goals: decodedIDs(for: DailyPlanPersonalizationKeys.goals),
             interests: decodedIDs(for: DailyPlanPersonalizationKeys.interests),
             feedbackScores: profile.typeScores,
-            lighterPlanUntil: profile.lighterPlanUntil
+            lighterPlanUntil: profile.lighterPlanUntil,
+            preferredSessionLength: decodedValue(for: DailyPlanPersonalizationKeys.sessionLength),
+            preferredDaypart: decodedValue(for: DailyPlanPersonalizationKeys.daypart),
+            commonTriggers: decodedIDs(for: DailyPlanPersonalizationKeys.commonTriggers),
+            helpfulInterventions: decodedIDs(for: DailyPlanPersonalizationKeys.helpfulInterventions)
         )
     }
 
@@ -1272,6 +1391,13 @@ struct DailyPlanFeedbackStore {
             return []
         }
         return Set(rawValue.split(separator: ",").map(String.init))
+    }
+
+    private func decodedValue(for key: String) -> String? {
+        guard let rawValue = defaults.string(forKey: key), !rawValue.isEmpty else {
+            return nil
+        }
+        return rawValue
     }
 
     private func adjustScore(for type: DailyRecommendationType, by delta: Int, in profile: inout DailyPlanFeedbackProfile) {
