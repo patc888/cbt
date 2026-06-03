@@ -1059,10 +1059,10 @@ private struct ValueActionHomeCard: View {
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous))
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                         .strokeBorder(accent.opacity(0.16), lineWidth: 1)
                 }
         }
@@ -1783,7 +1783,7 @@ private struct TinyWinHomeCard: View {
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                 .fill(DSTheme.cardBackground)
                 .overlay {
                     LinearGradient(
@@ -1795,10 +1795,10 @@ private struct TinyWinHomeCard: View {
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous))
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                         .strokeBorder(accent.opacity(0.16), lineWidth: 1)
                 }
         }
@@ -1875,7 +1875,7 @@ private struct CopingPlanHomeCard: View {
                     .foregroundStyle(Theme.secondaryText)
             }
             .padding(16)
-            .background(DSTheme.cardBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .background(DSTheme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(String(localized: "Open Rough Patch Plan"))
@@ -1938,10 +1938,10 @@ private struct BadDayModeShortcutCard: View {
             }
             .padding(16)
             .background {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                     .fill(DSTheme.cardBackground)
                     .overlay {
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                             .strokeBorder(themeManager.selectedColor.opacity(0.14), lineWidth: 1)
                     }
             }
@@ -2060,6 +2060,8 @@ private struct MakeTodayEasierCard: View {
                 }
         }
         .accessibilityElement(children: .contain)
+        .accessibilityLabel(String(localized: "Make today easier"))
+        .accessibilityHint(subtitle)
     }
 
     private func easierDayButton(
@@ -2592,10 +2594,10 @@ private struct HomeRecentAchievementsCard: View {
             }
             .padding(18)
             .background {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                     .fill(DSTheme.cardBackground)
                     .overlay {
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                             .strokeBorder(themeManager.selectedColor.opacity(0.12), lineWidth: 1)
                     }
             }
@@ -2715,7 +2717,7 @@ private struct TomorrowAnchorCard: View {
         }
         .padding(18)
         .background {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                 .fill(DSTheme.cardBackground)
                 .overlay {
                     LinearGradient(
@@ -3240,10 +3242,10 @@ private struct HomeDateRailCard: View {
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous))
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                         .strokeBorder(themeManager.selectedColor.opacity(0.14), lineWidth: 1)
                 }
         }

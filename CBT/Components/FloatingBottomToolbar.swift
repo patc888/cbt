@@ -2,6 +2,7 @@ import SwiftUI
 
 enum FloatingTab: String, CaseIterable, Hashable {
     case home = "Today"
+    case plan = "Plan"
     case insights = "Insights"
     case assessments = "Assess"
     case toolkit = "Toolkit"
@@ -13,6 +14,7 @@ enum FloatingTab: String, CaseIterable, Hashable {
     var displayTitle: String {
         switch self {
         case .home: return "Today"
+        case .plan: return "Plan"
         case .insights: return "Insights"
         case .assessments: return "Assessments"
         case .toolkit: return "Toolkit"
@@ -26,6 +28,7 @@ enum FloatingTab: String, CaseIterable, Hashable {
     var icon: String {
         switch self {
         case .home: return "house"
+        case .plan: return "point.topleft.down.curvedto.point.bottomright.up"
         case .insights: return "chart.line.uptrend.xyaxis"
         case .assessments: return "checklist"
         case .toolkit: return "lifepreserver"
@@ -50,7 +53,7 @@ struct FloatingBottomToolbar: View {
     @State private var selectedMood: MoodColor? = nil
 
     private var visibleTabs: [FloatingTab] {
-        [.home, .exercises, .journal, .insights, .settings]
+        [.home, .plan, .exercises, .journal, .insights, .settings]
     }
 
     var body: some View {

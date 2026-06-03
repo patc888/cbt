@@ -29,7 +29,13 @@ nonisolated struct ThoughtRecordExport: Codable, Sendable {
     let isSavedReframe: Bool?
     let isFavoriteReframe: Bool?
     let savedReframeAt: Date?
+    let reviewDueAt: Date?
     let lastReviewedAt: Date?
+    let balancedThoughtBeliefLater: Int?
+    let balancedThoughtBeliefReviewedAt: Date?
+    let linkedExperimentIDs: [String]?
+    let relapsePatterns: [String]?
+    let situationLabel: String?
     let updatedAt: Date?
     let completedAt: Date?
     let isDraft: Bool?
@@ -332,7 +338,13 @@ struct DataExportService {
                 isSavedReframe: $0.isSavedReframe,
                 isFavoriteReframe: $0.isFavoriteReframe,
                 savedReframeAt: $0.savedReframeAt,
+                reviewDueAt: $0.reviewDueAt,
                 lastReviewedAt: $0.lastReviewedAt,
+                balancedThoughtBeliefLater: $0.balancedThoughtBeliefLater,
+                balancedThoughtBeliefReviewedAt: $0.balancedThoughtBeliefReviewedAt,
+                linkedExperimentIDs: $0.linkedExperimentIDs,
+                relapsePatterns: $0.relapsePatterns,
+                situationLabel: $0.situationLabel,
                 updatedAt: $0.updatedAt,
                 completedAt: $0.completedAt,
                 isDraft: $0.isDraft,

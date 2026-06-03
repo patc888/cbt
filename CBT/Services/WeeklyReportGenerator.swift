@@ -884,18 +884,23 @@ private struct WeeklyReportPDFPage {
     private mutating func drawTherapySessionPrep() {
         let prep = report.therapyPrep
         drawSectionTitle("Therapy Session Prep")
-        drawSubsection(title: "Top patterns", emptyText: "No clear patterns available yet.") {
+
+        drawTextBlock("Top patterns", font: .systemFont(ofSize: 10, weight: .semibold), color: .label, spacingAfter: 4)
+        if prep.topPatterns.isEmpty {
+            drawEmptyState("No clear patterns available yet.")
+        } else {
             drawBullets(prep.topPatterns)
-        } isEmpty: {
-            prep.topPatterns.isEmpty
         }
+
         drawSessionPrepItems("Most useful reframes", prep.usefulReframes, emptyText: "No intensity-reducing reframes recorded this week.")
         drawSessionPrepItems("Unresolved thoughts", prep.unresolvedThoughts, emptyText: "No unresolved thought records surfaced this week.")
         drawAssessmentChanges(prep.assessmentChanges)
-        drawSubsection(title: "3 things to discuss", emptyText: "Discussion prompts appear once more weekly data is available.") {
+
+        drawTextBlock("3 things to discuss", font: .systemFont(ofSize: 10, weight: .semibold), color: .label, spacingAfter: 4)
+        if prep.discussionPrompts.isEmpty {
+            drawEmptyState("Discussion prompts appear once more weekly data is available.")
+        } else {
             drawBullets(prep.discussionPrompts)
-        } isEmpty: {
-            prep.discussionPrompts.isEmpty
         }
     }
 
@@ -1100,20 +1105,6 @@ private struct WeeklyReportPDFPage {
             y += 16
         }
         y += 6
-    }
-
-    private mutating func drawSubsection(
-        title: String,
-        emptyText: String,
-        drawContent: () -> Void,
-        isEmpty: () -> Bool
-    ) {
-        drawTextBlock(title, font: .systemFont(ofSize: 10, weight: .semibold), color: .label, spacingAfter: 4)
-        if isEmpty() {
-            drawEmptyState(emptyText)
-        } else {
-            drawContent()
-        }
     }
 
     private mutating func drawSessionPrepItems(

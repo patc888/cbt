@@ -567,41 +567,9 @@ private struct DeletedEntryRecoveryView: View {
                     VStack(spacing: 16) {
                         if hasRecoverableEntries {
                             recoveryOverview
-                            recoverySection(title: "Mood Check-ins", entries: recoverableMoodEntries) { entry in
-                                DeletedEntryRecoveryRow(
-                                    icon: "face.smiling",
-                                    iconColor: themeManager.selectedColor,
-                                    title: "Mood \(entry.moodScore)/10",
-                                    subtitle: entry.notes?.isEmpty == false ? entry.notes : entry.emotions.joined(separator: ", "),
-                                    createdAt: entry.createdAt,
-                                    deletedAt: DeletedEntryRecoveryStore.deletedAt(for: entry),
-                                    restore: { restore(entry, label: "Mood check-in") }
-                                )
-                            }
-
-                            recoverySection(title: "Thought Records", entries: recoverableThoughtRecords) { record in
-                                DeletedEntryRecoveryRow(
-                                    icon: "brain",
-                                    iconColor: themeManager.secondaryColor,
-                                    title: "Thought Record",
-                                    subtitle: record.situation.isEmpty ? record.automaticThought : record.situation,
-                                    createdAt: record.createdAt,
-                                    deletedAt: DeletedEntryRecoveryStore.deletedAt(for: record),
-                                    restore: { restore(record, label: "Thought record") }
-                                )
-                            }
-
-                            recoverySection(title: "Journal Entries", entries: recoverableJournalEntries) { entry in
-                                DeletedEntryRecoveryRow(
-                                    icon: "book.pages",
-                                    iconColor: .orange,
-                                    title: entry.title.isEmpty ? "Journal Entry" : entry.title,
-                                    subtitle: entry.body,
-                                    createdAt: entry.createdAt,
-                                    deletedAt: DeletedEntryRecoveryStore.deletedAt(for: entry),
-                                    restore: { restore(entry, label: "Journal entry") }
-                                )
-                            }
+                            moodRecoverySection
+                            thoughtRecoverySection
+                            journalRecoverySection
                         } else {
                             SupportiveEmptyStateView(
                                 systemImage: "checkmark.circle",
@@ -637,16 +605,62 @@ private struct DeletedEntryRecoveryView: View {
     }
 
     @ViewBuilder
-    private func recoverySection<Entry: SoftDeletableRecord, Row: View>(
-        title: String,
-        entries: [Entry],
-        @ViewBuilder row: (Entry) -> Row
-    ) -> some View {
-        if !entries.isEmpty {
-            SettingsSection(title: title) {
+    private var moodRecoverySection: some View {
+        if !recoverableMoodEntries.isEmpty {
+            SettingsSection(title: "Mood Check-ins") {
                 VStack(spacing: 12) {
-                    ForEach(entries, id: \.id) { entry in
-                        row(entry)
+                    ForEach(recoverableMoodEntries, id: \.id) { entry in
+                        DeletedEntryRecoveryRow(
+                            icon: "face.smiling",
+                            iconColor: themeManager.selectedColor,
+                            title: "Mood \(entry.moodScore)/10",
+                            subtitle: entry.notes?.isEmpty == false ? entry.notes : entry.emotions.joined(separator: ", "),
+                            createdAt: entry.createdAt,
+                            deletedAt: DeletedEntryRecoveryStore.deletedAt(for: entry),
+                            restore: { restore(entry, label: "Mood check-in") }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var thoughtRecoverySection: some View {
+        if !recoverableThoughtRecords.isEmpty {
+            SettingsSection(title: "Thought Records") {
+                VStack(spacing: 12) {
+                    ForEach(recoverableThoughtRecords, id: \.id) { record in
+                        DeletedEntryRecoveryRow(
+                            icon: "brain",
+                            iconColor: themeManager.secondaryColor,
+                            title: "Thought Record",
+                            subtitle: record.situation.isEmpty ? record.automaticThought : record.situation,
+                            createdAt: record.createdAt,
+                            deletedAt: DeletedEntryRecoveryStore.deletedAt(for: record),
+                            restore: { restore(record, label: "Thought record") }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var journalRecoverySection: some View {
+        if !recoverableJournalEntries.isEmpty {
+            SettingsSection(title: "Journal Entries") {
+                VStack(spacing: 12) {
+                    ForEach(recoverableJournalEntries, id: \.id) { entry in
+                        DeletedEntryRecoveryRow(
+                            icon: "book.pages",
+                            iconColor: .orange,
+                            title: entry.title.isEmpty ? "Journal Entry" : entry.title,
+                            subtitle: entry.body,
+                            createdAt: entry.createdAt,
+                            deletedAt: DeletedEntryRecoveryStore.deletedAt(for: entry),
+                            restore: { restore(entry, label: "Journal entry") }
+                        )
                     }
                 }
             }

@@ -8,6 +8,10 @@ enum DailyCheckInKind: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     var title: String {
+        if AppConfiguration.discreetModeEnabled() {
+            return String(localized: "Reminder")
+        }
+
         switch self {
         case .morningIntentions:
             return String(localized: "Morning Intentions")
@@ -17,6 +21,10 @@ enum DailyCheckInKind: String, CaseIterable, Identifiable {
     }
 
     var notificationBody: String {
+        if AppConfiguration.discreetModeEnabled() {
+            return String(localized: "Open when you have a quiet minute.")
+        }
+
         switch self {
         case .morningIntentions:
             return String(localized: "Choose one grounded intention for the day before everything gets moving.")
@@ -63,10 +71,18 @@ nonisolated struct QuoteOfTheDayNotification {
     let date: Date
 
     var title: String {
+        if AppConfiguration.discreetModeEnabled() {
+            return String(localized: "Reminder")
+        }
+
         String(localized: "Quote of the Day")
     }
 
     var body: String {
+        if AppConfiguration.discreetModeEnabled() {
+            return String(localized: "A note is ready when you have a moment.")
+        }
+
         affirmation.text
     }
 

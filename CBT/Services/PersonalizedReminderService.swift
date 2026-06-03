@@ -129,6 +129,10 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
     }
 
     var notificationTitle: String {
+        if AppConfiguration.discreetModeEnabled() {
+            return String(localized: "Reminder")
+        }
+
         switch self {
         case .dailyMoodCheckIn:
             return String(localized: "Check in with yourself")
@@ -150,6 +154,10 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
     }
 
     var notificationBody: String {
+        if AppConfiguration.discreetModeEnabled() {
+            return String(localized: "Open when you have a quiet minute.")
+        }
+
         switch self {
         case .dailyMoodCheckIn:
             return Self.dailyMoodCheckInNotificationBody()
@@ -431,9 +439,12 @@ final class PersonalizedReminderService {
         let activities = try modelContext.fetch(descriptor)
         for activity in activities {
             let displayTitle = displayTitle(for: activity)
+            let body = AppConfiguration.discreetModeEnabled()
+                ? String(localized: "Something on your plan is coming up.")
+                : String(localized: "\(displayTitle) is on your plan. If it still fits your day, begin with the first small step and adjust as needed.")
             let content = notificationContent(
                 for: .plannedActivity,
-                body: String(localized: "\(displayTitle) is on your plan. If it still fits your day, begin with the first small step and adjust as needed."),
+                body: body,
                 extraUserInfo: [
                     Self.plannedActivityIDUserInfoKey: activity.id.uuidString
                 ]
@@ -463,7 +474,9 @@ final class PersonalizedReminderService {
 
         try await scheduleRepeatingReminder(
             .courseContinuation,
-            body: String(localized: "Continue \(course.title) when you have a comfortable pocket of time for the next lesson or exercise."),
+            body: AppConfiguration.discreetModeEnabled()
+                ? String(localized: "A next step is ready when you have a comfortable pocket of time.")
+                : String(localized: "Continue \(course.title) when you have a comfortable pocket of time for the next lesson or exercise."),
             hour: hour,
             minute: minute,
             weekday: PersonalizedReminderType.courseContinuation.defaultWeekday,

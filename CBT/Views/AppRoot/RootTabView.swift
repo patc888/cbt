@@ -36,6 +36,16 @@ struct RootTabView: View {
                 .toolbar(.hidden, for: .tabBar)
                 #endif
 
+                tabContent(for: .plan) {
+                    MyCBTPlanView()
+                }
+                .tag(FloatingTab.plan)
+                #if os(iOS) && !targetEnvironment(macCatalyst)
+                .toolbar(.hidden, for: .tabBar)
+                #elseif os(iOS)
+                .toolbar(.hidden, for: .tabBar)
+                #endif
+
                 tabContent(for: .insights) {
                     InsightsView()
                 }

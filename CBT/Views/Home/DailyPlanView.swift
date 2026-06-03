@@ -231,7 +231,8 @@ struct DailyPlanView: View {
             style: .primary,
             leadingLabel: loopState.isPlanComplete
                 ? String(localized: "Plan complete")
-                : String(localized: "Next best action")
+                : String(localized: "Next best action"),
+            onFeedback: onRecommendationFeedback
         ) {
             onRecommendationSelected(primaryActionRecommendation)
         }
@@ -447,7 +448,8 @@ struct DailyPlanView: View {
                             completionState: completionState(for: recommendation),
                             isTracked: recommendation.completionItem != nil || recommendation.isCompletedToday,
                             style: .compact,
-                            leadingLabel: nil
+                            leadingLabel: nil,
+                            onFeedback: onRecommendationFeedback
                         ) {
                             onRecommendationSelected(recommendation)
                         }
@@ -672,6 +674,7 @@ private struct DailyRecommendationRow: View {
     let isTracked: Bool
     let style: Style
     let leadingLabel: String?
+    let onFeedback: (DailyRecommendation, DailyPlanFeedbackAction) -> Void
     let action: () -> Void
 
     private var isCompleted: Bool {
@@ -709,11 +712,12 @@ private struct DailyRecommendationRow: View {
     }
 
     var body: some View {
-        Button {
-            HapticManager.shared.selection()
-            action()
-        } label: {
-            VStack(alignment: .leading, spacing: style == .primary ? 12 : 10) {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                HapticManager.shared.selection()
+                action()
+            } label: {
+                VStack(alignment: .leading, spacing: style == .primary ? 12 : 10) {
                 if let leadingLabel {
                     Text(leadingLabel)
                         .font(.system(size: 12, weight: .black, design: .rounded))
@@ -796,11 +800,45 @@ private struct DailyRecommendationRow: View {
                 RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall, style: .continuous)
                     .stroke(rowBorder, lineWidth: 0.8)
             )
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(accessibilityLabel)
+            .accessibilityHint(String(localized: "Tap to open"))
+
+            feedbackControls
+                .padding(.leading, iconSize + 8)
+                .padding(.horizontal, style == .primary ? 14 : 12)
+                .padding(.bottom, 4)
         }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint(String(localized: "Tap to open"))
+    }
+
+    private var feedbackControls: some View {
+        HStack(spacing: 8) {
+            DailyPlanFeedbackButton(
+                systemImage: "hand.thumbsup.fill",
+                label: String(localized: "This helped"),
+                tint: Theme.successGreen
+            ) {
+                onFeedback(recommendation, .helped)
+            }
+
+            DailyPlanFeedbackButton(
+                systemImage: "hand.thumbsdown.fill",
+                label: String(localized: "Not for me"),
+                tint: Theme.secondaryText
+            ) {
+                onFeedback(recommendation, .notHelpful)
+            }
+
+            DailyPlanFeedbackButton(
+                systemImage: "minus.circle.fill",
+                label: String(localized: "Too much today"),
+                tint: themeManager.selectedColor
+            ) {
+                onFeedback(recommendation, .tooMuchToday)
+            }
+        }
     }
 
     private var accessibilityLabel: String {

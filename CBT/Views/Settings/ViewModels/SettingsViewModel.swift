@@ -13,6 +13,7 @@ final class SettingsViewModel {
     var discreetModeEnabled: Bool = false
     var comfortModeEnabled: Bool = false
     var currentIcon: String?
+    var tonePreference: AppTonePreference = .gentle
     var journeyOptInMessage: String?
     
     var isInitialized = false
@@ -41,6 +42,7 @@ final class SettingsViewModel {
         self.comfortModeEnabled = settings?.comfortModeEnabled ?? false
         UserDefaults.standard.set(self.comfortModeEnabled, forKey: "cbtComfortModeEnabled")
         self.currentIcon = settings?.currentIcon
+        self.tonePreference = settings?.appTonePreference ?? .gentle
         self.isInitialized = true
     }
 
@@ -85,6 +87,12 @@ final class SettingsViewModel {
     func updateIcon(_ iconName: String?) {
         currentIcon = iconName
         update { $0.currentIcon = iconName }
+    }
+
+    @MainActor
+    func updateTonePreference(_ preference: AppTonePreference) {
+        tonePreference = preference
+        update { $0.appTonePreference = preference }
     }
 
     @MainActor

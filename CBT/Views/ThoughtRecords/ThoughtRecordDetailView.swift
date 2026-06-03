@@ -100,6 +100,8 @@ struct ThoughtRecordDetailView: View {
                 if isFollowUpDue {
                     reframeFollowUpCard
                 }
+
+                followUpSection
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -163,25 +165,120 @@ struct ThoughtRecordDetailView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 10) {
-                Button {
-                    markReframeFollowUpReviewed()
-                } label: {
-                    Label("Still believable", systemImage: "checkmark.circle.fill")
-                }
-                .buttonStyle(DSPrimaryButtonStyle(size: .medium))
-
-                Button {
-                    markReframeFollowUpReviewed()
-                } label: {
-                    Label("Not quite", systemImage: "arrow.triangle.2.circlepath")
-                }
-                .buttonStyle(DSSecondaryButtonStyle(size: .medium))
+                beliefButton("Not yet", value: 25)
+                beliefButton("Somewhat", value: 60)
+                beliefButton("Yes", value: 90)
             }
         }
         .padding(Theme.paddingMedium)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(themeManager.selectedColor.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    @ViewBuilder
+    private var followUpSection: some View {
+        let hasFollowUp = record.reviewDueAt != nil ||
+            record.lastReviewedAt != nil ||
+            record.balancedThoughtBeliefLater != nil ||
+            !record.linkedExperimentIDs.isEmpty ||
+            !record.relapsePatterns.isEmpty ||
+            record.isFavoriteReframe
+
+        if hasFollowUp {
+            DetailSection(title: "Follow-up") {
+                VStack(alignment: .leading, spacing: 10) {
+                    if let reviewDueAt = record.reviewDueAt {
+                        followUpRow(
+                            icon: "calendar.badge.clock",
+                            title: "Re-review",
+                            value: reviewDueAt.formatted(date: .abbreviated, time: .omitted)
+                        )
+                    }
+
+                    if let lastReviewedAt = record.lastReviewedAt {
+                        followUpRow(
+                            icon: "checkmark.circle",
+                            title: "Reviewed",
+                            value: lastReviewedAt.formatted(date: .abbreviated, time: .omitted)
+                        )
+                    }
+
+                    if let belief = record.balancedThoughtBeliefLater {
+                        followUpRow(
+                            icon: "checklist.checked",
+                            title: "Believable later",
+                            value: "\(belief)%"
+                        )
+                    }
+
+                    if !record.linkedExperimentIDs.isEmpty {
+                        followUpRow(
+                            icon: "figure.step.training",
+                            title: "Experiment",
+                            value: "Exposure ladder linked"
+                        )
+                    }
+
+                    if !record.relapsePatterns.isEmpty {
+                        followUpRow(
+                            icon: "arrow.triangle.2.circlepath",
+                            title: "Pattern",
+                            value: record.relapsePatterns.joined(separator: ", ")
+                        )
+                    }
+
+                    if record.isFavoriteReframe {
+                        followUpRow(
+                            icon: "star.fill",
+                            title: "Favorite situation",
+                            value: record.followUpSituationLabel
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private func followUpRow(icon: String, title: String, value: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.primaryColor)
+                .frame(width: 20)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.secondaryText)
+                Text(value)
+                    .font(.body)
+                    .foregroundStyle(Theme.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func beliefButton(_ title: String, value: Int) -> some View {
+        let isSelected = record.balancedThoughtBeliefLater == value
+
+        return Button {
+            markReframeFollowUpReviewed(belief: value)
+        } label: {
+            Text(title)
+                .font(DSTypography.caption.weight(.bold))
+                .foregroundStyle(isSelected ? .white : themeManager.selectedColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(
+                    RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous)
+                        .fill(isSelected ? themeManager.selectedColor : themeManager.selectedColor.opacity(0.10))
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title), \(value) percent believable")
     }
     
     private func deleteRecord() {
@@ -206,9 +303,9 @@ struct ThoughtRecordDetailView: View {
         }
     }
 
-    private func markReframeFollowUpReviewed() {
+    private func markReframeFollowUpReviewed(belief: Int) {
         do {
-            try modelContext.cbtStore.updateSavedReframe(record, isSaved: true, reviewedAt: Date())
+            try modelContext.cbtStore.recordBalancedThoughtBelief(record, belief: belief)
             isFollowUpDue = false
             HapticManager.shared.success()
         } catch {

@@ -286,50 +286,50 @@ private struct AssessmentQuizView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 VStack(spacing: 0) {
-                ProgressView(value: Double(completedCount), total: Double(kind.questions.count))
-                    .tint(themeManager.selectedColor)
-                    .padding(.horizontal, 18)
-                    .padding(.top, 10)
+                    ProgressView(value: Double(completedCount), total: Double(kind.questions.count))
+                        .tint(themeManager.selectedColor)
+                        .padding(.horizontal, 18)
+                        .padding(.top, 10)
 
-                TabView(selection: $currentQuestion) {
-                    ForEach(kind.questions.indices, id: \.self) { index in
-                        AssessmentQuestionPage(
+                    TabView(selection: $currentQuestion) {
+                        ForEach(kind.questions.indices, id: \.self) { index in
+                            AssessmentQuestionPage(
+                                kind: kind,
+                                questionIndex: index,
+                                selectedAnswer: binding(for: index)
+                            )
+                            .tag(index)
+                        }
+
+                        AssessmentResultPage(
                             kind: kind,
-                            questionIndex: index,
-                            selectedAnswer: binding(for: index)
+                            answers: answers,
+                            scoreValue: totalScoreValue,
+                            completedAt: resultDate,
+                            didSave: didSave,
+                            saveErrorMessage: saveErrorMessage,
+                            saveAction: saveAssessment
                         )
-                        .tag(index)
+                        .tag(kind.questions.count)
                     }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .animation(reduceMotion ? .easeOut(duration: 0.15) : .spring(response: 0.32, dampingFraction: 0.86), value: currentQuestion)
 
-                    AssessmentResultPage(
-                        kind: kind,
-                        answers: answers,
-                        scoreValue: totalScoreValue,
-                        completedAt: resultDate,
-                        didSave: didSave,
-                        saveErrorMessage: saveErrorMessage,
-                        saveAction: saveAssessment
+                    AssessmentQuizControls(
+                        currentQuestion: $currentQuestion,
+                        questionCount: kind.questions.count,
+                        canAdvance: canAdvanceFromCurrentQuestion,
+                        isComplete: isComplete
                     )
-                    .tag(kind.questions.count)
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .animation(reduceMotion ? .easeOut(duration: 0.15) : .spring(response: 0.32, dampingFraction: 0.86), value: currentQuestion)
 
-                AssessmentQuizControls(
-                    currentQuestion: $currentQuestion,
-                    questionCount: kind.questions.count,
-                    canAdvance: canAdvanceFromCurrentQuestion,
-                    isComplete: isComplete
-                )
-
-                if currentQuestion < kind.questions.count {
-                    AssessmentNotReadyActions(
-                        comeBackLater: { dismiss() },
-                        resetInstead: { showingReset = true }
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
-                }
+                    if currentQuestion < kind.questions.count {
+                        AssessmentNotReadyActions(
+                            comeBackLater: { dismiss() },
+                            resetInstead: { showingReset = true }
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
+                    }
                 }
             }
         }

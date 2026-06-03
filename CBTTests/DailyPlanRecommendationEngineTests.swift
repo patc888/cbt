@@ -103,6 +103,51 @@ final class DailyPlanRecommendationEngineTests: XCTestCase {
         XCTAssertTrue(thoughtRecord?.reason.contains("Daily Plan goals") == true)
     }
 
+    func testHelpfulInterventionPreferenceCanLiftBreathing() {
+        let recommendations = engine.recommendations(from: input(
+            hasBreathingToday: false,
+            preferences: DailyPlanUserPreferences(
+                goals: [],
+                interests: [],
+                helpfulInterventions: [DailyPlanHelpfulIntervention.breathing.rawValue]
+            )
+        ))
+
+        XCTAssertEqual(recommendations.first?.type, .breathingReset)
+        XCTAssertTrue(recommendations.first?.reason.contains("supports that helps you") == true)
+    }
+
+    func testQuickSessionPreferenceLimitsPlanDepth() {
+        let recommendations = engine.recommendations(from: input(
+            hasMoodToday: false,
+            hasBreathingToday: false,
+            preferences: DailyPlanUserPreferences(
+                goals: [],
+                interests: [],
+                preferredSessionLength: DailyPlanSessionLength.quick.rawValue
+            )
+        ))
+
+        XCTAssertLessThanOrEqual(recommendations.count, 2)
+        XCTAssertTrue(recommendations.allSatisfy { $0.estimatedDurationMinutes <= 3 })
+    }
+
+    func testCommonTriggerPreferenceSuggestsRelatedExercise() {
+        let recommendations = engine.recommendations(from: input(
+            preferences: DailyPlanUserPreferences(
+                goals: [],
+                interests: [],
+                commonTriggers: [DailyPlanCommonTrigger.work.rawValue]
+            )
+        ))
+
+        let triggerRecommendation = recommendations.first {
+            $0.reason.contains("work or school is a common trigger")
+        }
+        XCTAssertNotNil(triggerRecommendation)
+        XCTAssertEqual(triggerRecommendation?.destination, DailyRecommendationDestination.libraryExercise(exerciseID: "thought"))
+    }
+
     func testRecentDistortionSuggestsThoughtRecord() {
         let recommendations = engine.recommendations(from: input(
             thoughtRecordDistortions: ["Catastrophizing", "Catastrophizing"]

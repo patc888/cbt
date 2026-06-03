@@ -293,6 +293,8 @@ nonisolated struct DailyPlanRecommendationInput: Hashable, Sendable {
     let completedExerciseIDs: Set<String>
     let exercises: [DailyPlanExerciseSummary]
     let preferences: DailyPlanUserPreferences
+    let activeOutcomeGoals: [OutcomeGoalSnapshot]
+    let recentCompletionTypes: [DailyPlanCompletionItemType]
     let hasAnyUserData: Bool
     let recentEngagementCount: Int
     let helpfulnessScores: [DailyRecommendationType: Double]
@@ -313,6 +315,7 @@ nonisolated struct DailyPlanRecommendationInput: Hashable, Sendable {
         completedExerciseIDs: Set<String>,
         exercises: [DailyPlanExerciseSummary],
         preferences: DailyPlanUserPreferences,
+        activeOutcomeGoals: [OutcomeGoalSnapshot] = [],
         hasAnyUserData: Bool,
         recentEngagementCount: Int,
         helpfulnessScores: [DailyRecommendationType: Double] = [:],
@@ -333,6 +336,8 @@ nonisolated struct DailyPlanRecommendationInput: Hashable, Sendable {
         self.completedExerciseIDs = completedExerciseIDs
         self.exercises = exercises
         self.preferences = preferences
+        self.activeOutcomeGoals = activeOutcomeGoals
+        self.recentCompletionTypes = dailyPlanCompletions.map(\.type)
         self.hasAnyUserData = hasAnyUserData
         self.recentEngagementCount = recentEngagementCount
         self.helpfulnessScores = helpfulnessScores
@@ -1709,6 +1714,9 @@ struct DailyRecommendationService {
         let currentStreak = currentStreak(from: activeDates, today: todayStart, calendar: calendar)
         let missedCheckInDays = daysSinceLatestMood(latestMood, dayStart: dayStart, calendar: calendar)
         let completedExerciseIDs = Set(exerciseCompletions.map(\.exerciseID))
+        let comfortModeEnabled = UserSettings.canonicalSettings(
+            from: LaunchSafeFetch.userSettings(from: context, logger: Self.logger)
+        )?.comfortModeEnabled == true
 
         let hasNoUserData = hasNoUserData(
             moodSignals: moodSignals,
@@ -1761,7 +1769,8 @@ struct DailyRecommendationService {
             helpfulnessScores: HelpfulnessFeedbackService.shared.recommendationScores(
                 from: helpfulnessFeedback,
                 since: fourteenDaysAgo
-            )
+            ),
+            comfortModeEnabled: comfortModeEnabled
         )
 
         return DailyPlanRecommendationEngine().recommendations(from: engineInput)
@@ -1773,11 +1782,17 @@ struct DailyRecommendationService {
         now: Date = Date()
     ) -> [DailyRecommendation] {
         FirstSevenDaysJourneyService.shared.ensureStartedForNewUserIfNeeded(in: context, now: now)
+        let comfortModeEnabled = UserSettings.canonicalSettings(
+            from: LaunchSafeFetch.userSettings(from: context, logger: Self.logger)
+        )?.comfortModeEnabled == true
         let journeyStatus = FirstSevenDaysJourneyService.shared.status(from: context, now: now)
         let journeyRecommendation = FirstSevenDaysJourneyService.shared.recommendation(for: journeyStatus)
         let baseRecommendations = recommendations(for: now, in: context, now: now, lastOpenedAt: lastOpenedAt)
+        let combinedRecommendations = comfortModeEnabled
+            ? baseRecommendations
+            : ([journeyRecommendation].compactMap { $0 } + baseRecommendations)
 
-        return ([journeyRecommendation].compactMap { $0 } + baseRecommendations)
+        return combinedRecommendations
             .reduce(into: [String: DailyRecommendation]()) { result, recommendation in
                 result[recommendation.id] = recommendation
             }
@@ -1788,7 +1803,7 @@ struct DailyRecommendationService {
                 }
                 return $0.priority > $1.priority
             }
-            .prefix(4)
+            .prefix(comfortModeEnabled ? 2 : 4)
             .map { $0 }
     }
 

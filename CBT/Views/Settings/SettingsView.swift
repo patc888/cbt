@@ -110,6 +110,7 @@ private struct SettingsDashboardContent: View {
             AppearanceSettingsView(
                 hapticsEnabled: viewModel.hapticsEnabled,
                 currentIcon: viewModel.currentIcon,
+                tonePreference: viewModel.tonePreference,
                 userTheme: Bindable(themeManager).appTheme,
                 selectedTheme: Bindable(themeManager).selectedTheme,
                 isImmersive: Bindable(themeManager).isImmersive,
@@ -118,6 +119,9 @@ private struct SettingsDashboardContent: View {
                 },
                 onUpdateIcon: { iconName in
                     viewModel.updateIcon(iconName)
+                },
+                onUpdateTonePreference: { preference in
+                    viewModel.updateTonePreference(preference)
                 }
             )
 
@@ -135,6 +139,18 @@ private struct SettingsDashboardContent: View {
             }
 
             SettingsSection(title: String(localized: "Tools")) {
+                NavigationLink(destination: SafetyPlanView()) {
+                    SettingsRow(
+                        icon: "cross.case.fill",
+                        iconColor: themeManager.selectedColor,
+                        title: String(localized: "Rough Patch Plan & Crisis Support"),
+                        subtitle: String(localized: "Not medical care; open support steps and crisis options")
+                    ) {
+                        SettingsDisclosureIndicator()
+                    }
+                }
+                .buttonStyle(.plain)
+
                 Button {
                     viewModel.optInToFirstSevenDays()
                 } label: {
