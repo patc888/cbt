@@ -849,6 +849,28 @@ private struct DailyRecommendationRow: View {
     }
 }
 
+private struct DailyPlanFeedbackButton: View {
+    let systemImage: String
+    let label: String
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            HapticManager.shared.selection()
+            action()
+        } label: {
+            Image(systemName: systemImage)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+                .background(tint.opacity(0.1), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+}
+
 private struct DailyPlanQuickActionButton: View {
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.colorScheme) private var colorScheme

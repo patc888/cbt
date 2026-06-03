@@ -578,7 +578,10 @@ enum LaunchSafeFetch {
             } ?? (checkIn.moodScore, checkIn.createdAt)
         } ?? latestMood.map { ($0.moodScore, $0.createdAt) }
         let latestRichMood = latestMood
-        let shouldShowLowEnergyMode = latestRichMood.map { mood in
+        let comfortModeEnabled = UserSettings.canonicalSettings(
+            from: userSettings(from: context, logger: logger)
+        )?.comfortModeEnabled == true
+        let shouldShowLowEnergyMode = comfortModeEnabled || latestRichMood.map { mood in
             mood.energyScore.map { $0 <= 3 } == true ||
                 mood.anxietyStressScore.map { $0 >= 8 } == true ||
                 mood.moodScore <= 3

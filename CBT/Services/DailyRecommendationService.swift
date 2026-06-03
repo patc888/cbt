@@ -529,6 +529,7 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
             )
         }
 
+        addOutcomeRecommendation(from: input, into: &recommendations)
         addPreferenceRecommendation(from: input, into: &recommendations)
         addFallbacks(from: input, into: &recommendations)
 
@@ -900,6 +901,12 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
             score += 12
         }
 
+        if input.activeOutcomeGoals.contains(where: { $0.kind.preferredRecommendationTypes.contains(recommendation.type) }) {
+            score += input.recentCompletionTypes.contains(where: { completionType in
+                input.activeOutcomeGoals.contains { $0.kind.supports(completionType) }
+            }) ? 10 : 18
+        }
+
         switch DailyPlanSessionLength(rawValue: input.preferences.preferredSessionLength ?? "") {
         case .quick:
             score -= max(0, recommendation.estimatedDurationMinutes - 3) * 5
@@ -923,6 +930,78 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
             return exerciseID
         }
         return nil
+    }
+
+    private func addOutcomeRecommendation(
+        from input: DailyPlanRecommendationInput,
+        into recommendations: inout [DailyRecommendationType: DailyRecommendation]
+    ) {
+        guard let focus = input.activeOutcomeGoals.first else { return }
+
+        switch focus.kind {
+        case .meetingAvoidance:
+            guard !input.hasActivityCompletedToday else { return }
+            upsert(
+                recommendation(
+                    type: .behavioralActivation,
+                    title: "One Approach Step",
+                    subtitle: "Pick a tiny action toward \(focus.dailyPlanFocus).",
+                    reason: "Because this supports your current focus: \(focus.title).",
+                    destination: .behavioralActivation,
+                    priority: 89,
+                    duration: 3,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        case .sleepRoutine:
+            guard !input.hasBreathingToday else { return }
+            upsert(
+                recommendation(
+                    type: .sleepWindDown,
+                    title: "Sleep Routine Reset",
+                    subtitle: "Do one small wind-down step tonight.",
+                    reason: "Because this supports your current focus: \(focus.title).",
+                    destination: .breathingReset(durationSeconds: 90),
+                    priority: 88,
+                    duration: 2,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        case .panicCoping:
+            guard !input.hasBreathingToday else { return }
+            upsert(
+                recommendation(
+                    type: .breathingReset,
+                    title: "Panic Coping Practice",
+                    subtitle: "Rehearse one steadying skill before you need it.",
+                    reason: "Because this supports your current focus: \(focus.title).",
+                    destination: .breathingReset(durationSeconds: 90),
+                    priority: 91,
+                    duration: 2,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        case .selfCriticism:
+            guard !input.hasThoughtRecordToday else { return }
+            upsert(
+                recommendation(
+                    type: .thoughtRecord,
+                    title: "Answer Self-Criticism",
+                    subtitle: "Write one fairer response to a harsh thought.",
+                    reason: "Because this supports your current focus: \(focus.title).",
+                    destination: .thoughtRecord,
+                    priority: 88,
+                    duration: 5,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        case .custom:
+            break
+        }
     }
 
     private func addPreferenceRecommendation(
@@ -1323,6 +1402,23 @@ private extension MoodCheckInRecommendationInput {
     private func containsAny(_ terms: [String]) -> Bool {
         let text = searchableText
         return terms.contains { text.contains($0) }
+    }
+}
+
+private extension OutcomeGoalKind {
+    func supports(_ completionType: DailyPlanCompletionItemType) -> Bool {
+        switch self {
+        case .meetingAvoidance:
+            return [.activityPlanner, .quickAction, .thoughtRecord].contains(completionType)
+        case .sleepRoutine:
+            return [.breathingReset, .journalPrompt, .quickAction].contains(completionType)
+        case .panicCoping:
+            return [.breathingReset, .thoughtRecord, .exercise].contains(completionType)
+        case .selfCriticism:
+            return [.thoughtRecord, .journalPrompt, .exercise].contains(completionType)
+        case .custom:
+            return [.moodCheckIn, .thoughtRecord, .breathingReset, .exercise, .quickAction].contains(completionType)
+        }
     }
 }
 

@@ -75,7 +75,7 @@ nonisolated struct QuoteOfTheDayNotification {
             return String(localized: "Reminder")
         }
 
-        String(localized: "Quote of the Day")
+        return String(localized: "Quote of the Day")
     }
 
     var body: String {
@@ -83,7 +83,7 @@ nonisolated struct QuoteOfTheDayNotification {
             return String(localized: "A note is ready when you have a moment.")
         }
 
-        affirmation.text
+        return affirmation.text
     }
 
     static func notification(for date: Date, affirmations: [Affirmation]) -> QuoteOfTheDayNotification? {

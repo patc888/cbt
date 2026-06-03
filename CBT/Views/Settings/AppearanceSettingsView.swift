@@ -7,12 +7,14 @@ struct AppearanceSettingsView: View {
     
     let hapticsEnabled: Bool
     let currentIcon: String?
+    let tonePreference: AppTonePreference
     @Binding var userTheme: AppTheme
     @Binding var selectedTheme: AppColorTheme
     @Binding var isImmersive: Bool
     
     let onUpdateHaptics: (Bool) -> Void
     let onUpdateIcon: (String?) -> Void
+    let onUpdateTonePreference: (AppTonePreference) -> Void
     
     @Namespace private var appearanceNamespace
     @Namespace private var fullColorNamespace
@@ -55,6 +57,8 @@ struct AppearanceSettingsView: View {
             SettingsRow(title: "Sound Effects") {
                 soundToggle
             }
+
+            tonePickerRow
 
             ToggleRow(
                 icon: "flame.fill",
@@ -152,6 +156,34 @@ struct AppearanceSettingsView: View {
             ),
             namespace: soundNamespace
         )
+    }
+
+    private var tonePickerRow: some View {
+        SettingsRow(
+            icon: "text.bubble.fill",
+            iconColor: themeManager.selectedColor,
+            title: "Tone",
+            subtitle: tonePreference.settingsDescription
+        ) {
+            Picker(
+                "Tone",
+                selection: Binding(
+                    get: { tonePreference },
+                    set: { preference in
+                        HapticManager.shared.selection()
+                        onUpdateTonePreference(preference)
+                    }
+                )
+            ) {
+                ForEach(AppTonePreference.allCases) { preference in
+                    Text("\(preference.displayName) - \(preference.previewText)")
+                        .tag(preference)
+                }
+            }
+            .pickerStyle(.menu)
+            .tint(themeManager.selectedColor)
+            .accessibilityLabel("Tone")
+        }
     }
 
     private var appIconDisclosure: some View {

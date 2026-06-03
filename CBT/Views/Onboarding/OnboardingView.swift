@@ -1149,7 +1149,8 @@ struct OnboardingView: View {
                     "goal_count": "\(selectedGoals.count)",
                     "interest_count": "\(selectedInterests.count)",
                     "structure": selectedStructure?.rawValue ?? "none",
-                    "avoidance_count": "\(selectedAvoidances.count)"
+                    "avoidance_count": "\(selectedAvoidances.count)",
+                    "baseline_assessment_count": "\(selectedBaselineAssessments.count)"
                 ]
             )
         }
@@ -1174,10 +1175,19 @@ struct OnboardingView: View {
                 "goal_count": "\(selectedGoals.count)",
                 "interest_count": "\(selectedInterests.count)",
                 "structure": selectedStructure?.rawValue ?? "none",
-                "avoidance_count": "\(selectedAvoidances.count)"
+                "avoidance_count": "\(selectedAvoidances.count)",
+                "reason_count": "\(selectedReasons.count)",
+                "hard_situation_count": "\(selectedHardSituations.count)",
+                "therapist_status": therapistStatus.rawValue,
+                "baseline_assessment_count": "\(selectedBaselineAssessments.count)"
             ]
         )
         onboardingCompleted = true
+        if openAssessmentsAfterOnboarding {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                NotificationCenter.default.post(name: .appTabSelectionRequested, object: FloatingTab.assessments)
+            }
+        }
     }
 
     private func handleReminderPromptAccepted(_ moment: ReminderOptInMoment) {

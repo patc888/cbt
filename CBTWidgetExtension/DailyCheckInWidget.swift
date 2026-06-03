@@ -4,6 +4,7 @@ import WidgetKit
 private struct WidgetRetentionSnapshot: Codable, Equatable {
     static let appGroupIdentifier = "group.com.melichan.CBT"
     static let defaultsKey = "cbt.widget.retentionSnapshot.v1"
+    static let discreetModeEnabledKey = "cbt_discreetModeEnabled"
 
     var generatedAt: Date
     var hasActivity: Bool
@@ -33,6 +34,13 @@ private struct WidgetRetentionSnapshot: Codable, Equatable {
             return .empty
         }
         return snapshot
+    }
+}
+
+private enum WidgetPrivacySettings {
+    static var discreetModeEnabled: Bool {
+        UserDefaults(suiteName: WidgetRetentionSnapshot.appGroupIdentifier)?
+            .bool(forKey: WidgetRetentionSnapshot.discreetModeEnabledKey) ?? false
     }
 }
 
@@ -66,8 +74,8 @@ private enum CBTWidgetKind: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .tinyWin: return "Today's Tiny Win"
-        case .dailyCheckIn: return "Daily Check-In"
+        case .tinyWin: return "Today's Step"
+        case .dailyCheckIn: return "Daily Moment"
         case .momentum: return "Momentum"
         case .continueFlow: return "Continue"
         case .weeklyProgress: return "Weekly Progress"
@@ -127,6 +135,7 @@ private struct RetentionWidgetView: View {
     let kind: CBTWidgetKind
 
     @Environment(\.widgetFamily) private var family
+    private var isDiscreetModeEnabled: Bool { WidgetPrivacySettings.discreetModeEnabled }
 
     var body: some View {
         Group {
@@ -243,7 +252,7 @@ private struct RetentionWidgetView: View {
                 .foregroundStyle(Color.cbtAccent)
                 .accessibilityHidden(true)
 
-            Text("CBT")
+            Text(isDiscreetModeEnabled ? "Today" : "CBT")
                 .font(.system(.caption, design: .rounded).weight(.heavy))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
@@ -275,7 +284,7 @@ private struct RetentionWidgetView: View {
         case .tinyWin:
             return entry.snapshot.hasActivityToday ? "You showed up today." : "One tiny win is enough."
         case .dailyCheckIn:
-            return "How are you feeling today?"
+            return isDiscreetModeEnabled ? "Take a quiet moment." : "How are you feeling today?"
         case .momentum:
             return entry.snapshot.currentStreak > 0 ? "\(entry.snapshot.currentStreak) day momentum" : "Start today's momentum"
         case .continueFlow:
@@ -290,20 +299,22 @@ private struct RetentionWidgetView: View {
         case .tinyWin:
             return "Small counts. Start private."
         case .dailyCheckIn:
-            return "A private check-in is one tap away."
+            return isDiscreetModeEnabled ? "A private shortcut is one tap away." : "A private check-in is one tap away."
         case .momentum:
-            return entry.snapshot.currentStreak > 0 ? "Keep it light. Keep it going." : "A short check-in starts it."
+            return entry.snapshot.currentStreak > 0 ? "Keep it light. Keep it going." : (isDiscreetModeEnabled ? "A short pause starts it." : "A short check-in starts it.")
         case .continueFlow:
             return "No details shown here."
         case .weeklyProgress:
-            return "\(entry.snapshot.weeklyCheckInCount) check-ins, \(entry.snapshot.weeklyPracticeCount) practices."
+            return isDiscreetModeEnabled
+                ? "\(entry.snapshot.weeklyActivityCount) private moments."
+                : "\(entry.snapshot.weeklyCheckInCount) check-ins, \(entry.snapshot.weeklyPracticeCount) practices."
         }
     }
 
     private var callToAction: String {
         switch kind {
         case .dailyCheckIn, .tinyWin, .momentum:
-            return "Check in"
+            return isDiscreetModeEnabled ? "Open" : "Check in"
         case .continueFlow:
             return "Continue"
         case .weeklyProgress:
@@ -331,9 +342,9 @@ private struct RetentionWidgetView: View {
         case .tinyWin:
             return entry.snapshot.hasActivityToday ? "Tiny win done" : "Tiny win"
         case .dailyCheckIn:
-            return "Daily check-in"
+            return isDiscreetModeEnabled ? "Daily moment" : "Daily check-in"
         case .momentum:
-            return entry.snapshot.currentStreak > 0 ? "\(entry.snapshot.currentStreak) day streak" : "Start gently"
+            return entry.snapshot.currentStreak > 0 ? "\(entry.snapshot.currentStreak) day \(isDiscreetModeEnabled ? "run" : "streak")" : "Start gently"
         case .continueFlow:
             return "Continue"
         case .weeklyProgress:
@@ -361,9 +372,9 @@ private struct RetentionWidgetView: View {
         case .tinyWin:
             return entry.snapshot.hasActivityToday ? "Tiny win done" : "Tiny win"
         case .dailyCheckIn:
-            return "Daily check-in"
+            return isDiscreetModeEnabled ? "Daily moment" : "Daily check-in"
         case .momentum:
-            return entry.snapshot.currentStreak > 0 ? "\(entry.snapshot.currentStreak) day streak" : "Start gently"
+            return entry.snapshot.currentStreak > 0 ? "\(entry.snapshot.currentStreak) day \(isDiscreetModeEnabled ? "run" : "streak")" : "Start gently"
         case .continueFlow:
             return "Continue privately"
         case .weeklyProgress:

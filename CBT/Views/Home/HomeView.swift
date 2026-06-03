@@ -346,6 +346,7 @@ private struct HomeDashboardContent: View {
                             loopState: viewModel.dailyPlanLoopState,
                             pickedResetYesterday: pickedResetYesterday,
                             onRecommendationSelected: performRecommendation,
+                            onRecommendationFeedback: recordRecommendationFeedback,
                             onContinueSelected: { performPersonalizedAction($0.action) },
                             onLogMood: { attemptingNewMoodEntry = true },
                             onThoughtRecord: { attemptingNewThoughtRecord = true },
@@ -2184,7 +2185,7 @@ private struct BadDayModeView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(18)
-        .background(DSTheme.cardBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(DSTheme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous))
     }
 
     private var quickOptions: some View {
@@ -3230,7 +3231,7 @@ private struct HomeDateRailCard: View {
         .padding(.top, 16)
         .padding(.bottom, 10)
         .background {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: Theme.cornerRadiusLarge, style: .continuous)
                 .fill(DSTheme.cardBackground)
                 .overlay {
                     LinearGradient(

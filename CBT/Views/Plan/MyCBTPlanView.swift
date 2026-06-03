@@ -119,7 +119,7 @@ struct MyCBTPlanView: View {
                                 .padding(.vertical, 9)
                                 .background(
                                     Capsule()
-                                        .fill(focusArea == area ? themeManager.selectedColor : Theme.cardBackground)
+                                        .fill(focusArea == area ? themeManager.selectedColor : Theme.tertiaryBackground)
                                 )
                         }
                         .buttonStyle(.plain)

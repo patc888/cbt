@@ -95,7 +95,13 @@ struct DataImportService {
                     isSavedReframe: record.isSavedReframe ?? false,
                     isFavoriteReframe: record.isFavoriteReframe ?? false,
                     savedReframeAt: record.savedReframeAt,
+                    reviewDueAt: record.reviewDueAt,
                     lastReviewedAt: record.lastReviewedAt,
+                    balancedThoughtBeliefLater: record.balancedThoughtBeliefLater,
+                    balancedThoughtBeliefReviewedAt: record.balancedThoughtBeliefReviewedAt,
+                    linkedExperimentIDs: record.linkedExperimentIDs ?? [],
+                    relapsePatterns: record.relapsePatterns ?? [],
+                    situationLabel: record.situationLabel ?? "",
                     updatedAt: record.updatedAt,
                     completedAt: record.isDraft == true ? nil : (record.completedAt ?? record.createdAt),
                     isDraft: record.isDraft ?? false,
@@ -523,7 +529,13 @@ struct DataImportService {
         thought.isSavedReframe = record.isSavedReframe ?? false
         thought.isFavoriteReframe = record.isFavoriteReframe ?? false
         thought.savedReframeAt = record.savedReframeAt ?? (thought.isSavedReframe ? record.completedAt ?? record.createdAt : nil)
+        thought.reviewDueAt = record.reviewDueAt
         thought.lastReviewedAt = record.lastReviewedAt
+        thought.balancedThoughtBeliefLater = record.balancedThoughtBeliefLater.map(ThoughtRecord.clampIntensity)
+        thought.balancedThoughtBeliefReviewedAt = record.balancedThoughtBeliefReviewedAt
+        thought.linkedExperimentIDs = record.linkedExperimentIDs ?? []
+        thought.relapsePatterns = record.relapsePatterns ?? []
+        thought.situationLabel = record.situationLabel ?? ""
         thought.updatedAt = record.updatedAt ?? record.createdAt
         thought.completedAt = record.isDraft == true ? nil : (record.completedAt ?? record.createdAt)
         thought.isDraft = record.isDraft ?? false
@@ -631,6 +643,7 @@ struct DataImportService {
         settings.uuid = export.uuid ?? settings.uuid
         settings.hapticsEnabled = export.hapticsEnabled
         settings.currentIcon = export.currentIcon
+        settings.tonePreference = AppTonePreference(rawValue: export.tonePreference ?? "")?.rawValue ?? AppTonePreference.gentle.rawValue
         settings.appLockEnabled = export.appLockEnabled
         settings.isPremium = export.isPremium
     }

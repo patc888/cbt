@@ -49,11 +49,10 @@ struct MoodCheckinNextStepView: View {
                 savedSummaryCard
 
                 if shouldSurfaceNeedHelpNow {
-                    NeedHelpNowCard(
-                        message: String(localized: "Open your rough patch plan and support resources before things build further. If you might be in immediate danger, contact local emergency services now. In the U.S. you can call or text 988 for crisis support.")
-                    ) {
-                        openSafetySupport()
-                    }
+                    CrisisSupportNoticeView(
+                        style: .compact,
+                        onOpenPlan: openSafetySupport
+                    )
                 }
 
                 if let reminderPromptMoment {

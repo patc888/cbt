@@ -19,12 +19,14 @@ struct CloudSettingsSnapshot: Equatable {
     let appLockEnabled: Bool
     let discreetModeEnabled: Bool
     let currentIcon: String
+    let tonePreference: String
 
     init(settings: UserSettings) {
         self.hapticsEnabled = settings.hapticsEnabled ?? true
         self.appLockEnabled = settings.appLockEnabled ?? false
         self.discreetModeEnabled = settings.discreetModeEnabled ?? false
         self.currentIcon = settings.currentIcon ?? ""
+        self.tonePreference = settings.appTonePreference.rawValue
     }
 }
 
@@ -68,6 +70,7 @@ final class CloudSettingsManager: ObservableObject {
         pushCloudValue(settings.appLockEnabled ?? false, for: .appLockEnabled, readCloudValue: cloudBool, didChange: &didChange)
         pushCloudValue(settings.discreetModeEnabled ?? false, for: .discreetModeEnabled, readCloudValue: cloudBool, didChange: &didChange)
         pushCloudValue(settings.currentIcon ?? "", for: .currentIcon, readCloudValue: cloudString, didChange: &didChange)
+        pushCloudValue(settings.appTonePreference.rawValue, for: .tonePreference, readCloudValue: cloudString, didChange: &didChange)
 
         if didChange {
             synchronizeStore(reason: "Synchronized settings to NSUbiquitousKeyValueStore.")
@@ -131,6 +134,7 @@ final class CloudSettingsManager: ObservableObject {
                 AppConfiguration.setDiscreetModeEnabled(cloudValue)
             }, didChange: &didChange)
             applyCloudValueIfChanged(for: .currentIcon, keys: keys, readCloudValue: cloudString, currentValue: { settings.currentIcon ?? "" }, assign: { settings.currentIcon = $0.isEmpty ? nil : $0 }, didChange: &didChange)
+            applyCloudValueIfChanged(for: .tonePreference, keys: keys, readCloudValue: cloudString, currentValue: { settings.appTonePreference.rawValue }, assign: { settings.tonePreference = AppTonePreference(rawValue: $0)?.rawValue ?? AppTonePreference.gentle.rawValue }, didChange: &didChange)
 
             if didChange {
                 try context.save()
@@ -159,6 +163,7 @@ final class CloudSettingsManager: ObservableObject {
             AppConfiguration.setDiscreetModeEnabled(cloudValue)
         }, didUpdateLocalSettings: &didUpdateLocalSettings, shouldPushToCloud: &shouldPushToCloud)
         mergeInitialCloudValue(settings.currentIcon ?? "", for: .currentIcon, readCloudValue: cloudString, assign: { settings.currentIcon = $0.isEmpty ? nil : $0 }, didUpdateLocalSettings: &didUpdateLocalSettings, shouldPushToCloud: &shouldPushToCloud)
+        mergeInitialCloudValue(settings.appTonePreference.rawValue, for: .tonePreference, readCloudValue: cloudString, assign: { settings.tonePreference = AppTonePreference(rawValue: $0)?.rawValue ?? AppTonePreference.gentle.rawValue }, didUpdateLocalSettings: &didUpdateLocalSettings, shouldPushToCloud: &shouldPushToCloud)
 
         if didUpdateLocalSettings, let context = settings.modelContext {
             do {
@@ -259,6 +264,7 @@ enum CloudSettingsKey: String, CaseIterable {
     case appLockEnabled
     case discreetModeEnabled
     case currentIcon
+    case tonePreference
 
     nonisolated static let allNames = allCases.map(\.rawValue)
 

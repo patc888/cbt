@@ -854,6 +854,10 @@ final class StreakReengagementNotificationService {
     }
 
     static func notificationBody(streakCount: Int) -> String {
+        if AppConfiguration.discreetModeEnabled() {
+            return "Open when you have a quiet minute."
+        }
+
         if streakCount > 0 {
             return "Your \(streakCount)-day streak is waiting for you! Take 30 seconds to log your mood."
         }
@@ -910,7 +914,9 @@ final class StreakReengagementNotificationService {
         cancel()
 
         let content = UNMutableNotificationContent()
-        content.title = String(localized: "Check in with yourself")
+        content.title = AppConfiguration.discreetModeEnabled()
+            ? String(localized: "Reminder")
+            : String(localized: "Check in with yourself")
         content.body = Self.notificationBody(streakCount: streakCount)
         content.sound = .default
         content.userInfo = [

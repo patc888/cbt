@@ -146,6 +146,7 @@ nonisolated struct UserSettingsExport: Codable, Sendable {
     let uuid: UUID?
     let hapticsEnabled: Bool?
     let currentIcon: String?
+    let tonePreference: String?
     let appLockEnabled: Bool?
     let isPremium: Bool?
 }
@@ -479,6 +480,7 @@ struct DataExportService {
                 uuid: $0.uuid,
                 hapticsEnabled: $0.hapticsEnabled,
                 currentIcon: $0.currentIcon,
+                tonePreference: $0.appTonePreference.rawValue,
                 appLockEnabled: $0.appLockEnabled,
                 isPremium: $0.isPremium
             )
