@@ -10,6 +10,7 @@ final class JournalEntry: SoftDeletableRecord {
     var sourceKind: String?
     var sourceID: String?
     var durationSeconds: Int?
+    var valueIDsStorage: String = "[]"
     var isDeleted: Bool = false
 
     init(
@@ -20,6 +21,7 @@ final class JournalEntry: SoftDeletableRecord {
         sourceKind: String? = nil,
         sourceID: String? = nil,
         durationSeconds: Int? = nil,
+        valueIDs: [String] = [],
         isDeleted: Bool = false
     ) {
         self.id = id
@@ -29,11 +31,17 @@ final class JournalEntry: SoftDeletableRecord {
         self.sourceKind = sourceKind
         self.sourceID = sourceID
         self.durationSeconds = durationSeconds
+        self.valueIDsStorage = StringArrayStorage.encode(valueIDs.map(PersonalValue.normalizedID))
         self.isDeleted = isDeleted
     }
 }
 
 extension JournalEntry {
+    var valueIDs: [String] {
+        get { StringArrayStorage.decode(valueIDsStorage) }
+        set { valueIDsStorage = StringArrayStorage.encode(newValue.map(PersonalValue.normalizedID)) }
+    }
+
     var sessionSourceKind: SessionSourceKind? {
         guard let sourceKind else { return nil }
         return SessionSourceKind(rawValue: sourceKind)

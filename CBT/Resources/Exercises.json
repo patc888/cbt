@@ -86,6 +86,14 @@
     "duration": 8,
     "difficulty": "Intermediate",
     "description": "Calm your nervous system with measured breaths.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Breathing tool",
+    "copingCategories": [
+      "anxiety",
+      "panic",
+      "stress",
+      "quick reset"
+    ],
     "steps": [
       "Breathe in for 4 seconds.",
       "Hold for 4 seconds.",
@@ -372,6 +380,12 @@
     "duration": 10,
     "difficulty": "Intermediate",
     "description": "Confine worry to a specific block of time.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Worry postponement",
+    "copingCategories": [
+      "anxiety",
+      "stress"
+    ],
     "steps": [
       "Schedule 15 minutes of 'worry time'.",
       "During the day, jot down worries and postpone them.",
@@ -622,6 +636,13 @@
     "duration": 11,
     "difficulty": "Intermediate",
     "description": "Use temperature to ground your body.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Grounding tool",
+    "copingCategories": [
+      "panic",
+      "anger",
+      "stress"
+    ],
     "steps": [
       "Hold an ice cube or something cold.",
       "Focus entirely on the cold sensation.",
@@ -646,6 +667,14 @@
     "duration": 12,
     "difficulty": "Intermediate",
     "description": "A relaxing breath pattern.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Breathing tool",
+    "copingCategories": [
+      "anxiety",
+      "panic",
+      "sleep",
+      "stress"
+    ],
     "steps": [
       "Inhale quietly through your nose for 4 seconds.",
       "Hold the breath for 7 seconds.",
@@ -925,6 +954,13 @@
     "duration": 7,
     "difficulty": "Moderate",
     "description": "A DBT-inspired exercise for riding out an urge without judging it or acting on it right away.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Urge surfing",
+    "copingCategories": [
+      "anger",
+      "stress",
+      "quick reset"
+    ],
     "steps": [
       "Name the urge in simple words: I am noticing the urge to...",
       "Rate the urge from 1 to 10.",
@@ -957,6 +993,14 @@
     "duration": 10,
     "difficulty": "Easy",
     "description": "A DBT-inspired grounding practice that uses everyday sensory comfort to settle the moment.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Grounding tool",
+    "copingCategories": [
+      "anxiety",
+      "panic",
+      "sleep",
+      "stress"
+    ],
     "steps": [
       "Sight: choose something calming or pleasant to look at for 30 seconds.",
       "Sound: listen for one steady sound, quiet song, or gentle background noise.",
@@ -1085,6 +1129,12 @@
     "duration": 10,
     "difficulty": "Easy",
     "description": "Name what matters to you so your next choice can point in that direction.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Values reminder",
+    "copingCategories": [
+      "low mood",
+      "stress"
+    ],
     "steps": [
       "Pick one life area: relationships, health, learning, work, community, or rest.",
       "Ask: What kind of person do I want to be here?",
@@ -1149,6 +1199,15 @@
     "duration": 6,
     "difficulty": "Easy",
     "description": "Practice seeing thoughts as words in your mind, not facts you must obey.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Thought defusion",
+    "copingCategories": [
+      "anxiety",
+      "panic",
+      "low mood",
+      "stress",
+      "quick reset"
+    ],
     "steps": [
       "Write one sticky thought in a short sentence.",
       "Add these words before it: I'm having the thought that...",
@@ -1406,6 +1465,14 @@
     "duration": 3,
     "difficulty": "Beginner",
     "description": "A compact practice for pausing, breathing, and returning to the next moment with steadier attention.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Breathing tool",
+    "copingCategories": [
+      "anxiety",
+      "panic",
+      "stress",
+      "quick reset"
+    ],
     "steps": [
       "Minute 1: Notice what is here right now, including thoughts, emotions, and body sensations.",
       "Minute 2: Gather your attention around the natural rhythm of breathing.",
@@ -1437,6 +1504,13 @@
     "duration": 12,
     "difficulty": "Beginner",
     "description": "Move attention through the body to notice sensation, tension, warmth, or numbness without needing to fix it.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Body scan",
+    "copingCategories": [
+      "anxiety",
+      "sleep",
+      "stress"
+    ],
     "steps": [
       "Settle into a comfortable position and let your breathing be natural.",
       "Bring attention to your feet and notice any sensations there.",
@@ -1470,6 +1544,15 @@
     "duration": 5,
     "difficulty": "Beginner",
     "description": "Use sight, touch, sound, smell, and taste to anchor yourself in the here and now.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Grounding tool",
+    "copingCategories": [
+      "anxiety",
+      "panic",
+      "anger",
+      "stress",
+      "quick reset"
+    ],
     "steps": [
       "Name five things you can see, noticing color, shape, or light.",
       "Name four things you can feel through touch or body contact.",
@@ -1635,6 +1718,14 @@
     "duration": 4,
     "difficulty": "Beginner",
     "description": "Choose one reliable anchor and return to it whenever attention gets pulled away.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Grounding tool",
+    "copingCategories": [
+      "anxiety",
+      "panic",
+      "stress",
+      "quick reset"
+    ],
     "steps": [
       "Pick an anchor: breath, feet on the floor, hands touching, or a steady sound.",
       "Rest attention on the anchor for three natural breaths.",
@@ -1667,6 +1758,12 @@
     "duration": 10,
     "difficulty": "Beginner",
     "description": "A gentle evening scan for releasing the day and preparing the body for rest.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Body scan",
+    "copingCategories": [
+      "sleep",
+      "stress"
+    ],
     "steps": [
       "Lie down or sit comfortably and let your eyes close or soften.",
       "Notice the points where your body is supported.",
@@ -1700,6 +1797,14 @@
     "duration": 7,
     "difficulty": "Beginner",
     "description": "Pause during a hard moment to acknowledge pain, shared humanity, and one kind response.",
+    "isQuickCopingTool": true,
+    "copingToolKind": "Self-compassion reset",
+    "copingCategories": [
+      "low mood",
+      "anger",
+      "stress",
+      "quick reset"
+    ],
     "steps": [
       "Name the difficult moment in plain language: 'This is hard right now.'",
       "Place a hand somewhere comforting, such as your chest, arm, or cheek.",
@@ -2043,6 +2148,42 @@
       "gratitude",
       "savoring",
       "wellbeing"
+    ]
+  },
+  {
+    "id": "exercise_exposure_ladder",
+    "title": "Exposure Ladder",
+    "approach": "CBT",
+    "approaches": [
+      "CBT"
+    ],
+    "category": "Exposure Practice",
+    "topics": [
+      "Anxiety Tools",
+      "Productivity / Procrastination",
+      "Relationships"
+    ],
+    "format": "Exercise",
+    "duration": 12,
+    "difficulty": "Intermediate",
+    "description": "Plan one manageable approach step, test a clear prediction, and capture what the experiment teaches.",
+    "steps": [
+      "Choose one situation you have been avoiding and write the feared prediction in a testable sentence.",
+      "Create a ladder of three approach steps: easiest, medium, and harder. Pick the easiest step for today.",
+      "Make the experiment tiny and specific: what you will do, when you will do it, how long you will stay, and what safety behavior you will reduce by one notch.",
+      "Before the experiment, rate your belief in the prediction from 0 to 100 and your expected anxiety from 0 to 10.",
+      "After the experiment, write what actually happened, your peak anxiety, and what you did even while anxious.",
+      "Name the learning: what did this show about the prediction, your coping ability, or the next ladder step?"
+    ],
+    "completionSummary": "You turned avoidance into a small behavioral experiment and reviewed evidence from real experience.",
+    "journalReflection": "What did the experiment teach you that avoidance could not?",
+    "tags": [
+      "exposure",
+      "behavioral experiment",
+      "anxiety",
+      "avoidance",
+      "prediction",
+      "learning"
     ]
   }
 ]

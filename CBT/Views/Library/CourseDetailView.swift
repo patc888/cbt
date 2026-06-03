@@ -41,7 +41,9 @@ struct CourseDetailView: View {
     }
 
     private var itemsByID: [String: LibraryItem] {
-        Dictionary(uniqueKeysWithValues: libraryItems.map { ($0.id, $0) })
+        libraryItems.reduce(into: [:]) { result, item in
+            result[item.id] = result[item.id] ?? item
+        }
     }
 
     private var currentLesson: CourseLesson? {

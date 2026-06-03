@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum PlanCardCompletionState {
+enum PlanCardCompletionState: Equatable {
     case notTracked
     case incomplete
     case completed

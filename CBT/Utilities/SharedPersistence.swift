@@ -5,27 +5,36 @@ enum SharedPersistence {
     static let cloudKitContainerID = AppConfiguration.cloudKitContainerIdentifier
     static let storeFileName = "default.store"
 
-    static let currentModelTypes: [any PersistentModel.Type] = [
-        UserSettings.self,
-        MoodEntry.self,
-        ThoughtRecord.self,
-        ExerciseCompletion.self,
-        JournalEntry.self,
-        PlannedActivity.self,
-        AssessmentLog.self,
-        PersonalityAssessmentLog.self,
-        ProgramProgress.self,
-        ChallengeSession.self,
-        FlexibleJournalEntry.self,
-        MoodCheckIn.self,
-        BreathingSession.self,
-        SafetyPlan.self,
-        LibraryItem.self,
-        Course.self,
-        Achievement.self,
-        AudioContent.self
+    private static let modelRegistry: [PersistentModelRegistration] = [
+        PersistentModelRegistration(UserSettings.self),
+        PersistentModelRegistration(MoodEntry.self),
+        PersistentModelRegistration(ThoughtRecord.self),
+        PersistentModelRegistration(ExerciseCompletion.self),
+        PersistentModelRegistration(JournalEntry.self),
+        PersistentModelRegistration(PlannedActivity.self),
+        PersistentModelRegistration(AssessmentLog.self),
+        PersistentModelRegistration(PersonalityAssessmentLog.self),
+        PersistentModelRegistration(ProgramProgress.self),
+        PersistentModelRegistration(ChallengeSession.self),
+        PersistentModelRegistration(FlexibleJournalEntry.self),
+        PersistentModelRegistration(MoodCheckIn.self),
+        PersistentModelRegistration(BreathingSession.self),
+        PersistentModelRegistration(SafetyPlan.self),
+        PersistentModelRegistration(LibraryItem.self),
+        PersistentModelRegistration(Course.self),
+        PersistentModelRegistration(Achievement.self),
+        PersistentModelRegistration(AudioContent.self),
+        PersistentModelRegistration(TinyWinCompletion.self),
+        PersistentModelRegistration(WeeklyRitualEntry.self),
+        PersistentModelRegistration(FirstSevenDaysJourney.self),
+        PersistentModelRegistration(PersonalValue.self),
+        PersistentModelRegistration(ValueActionCompletion.self),
+        PersistentModelRegistration(OutcomeGoal.self),
+        PersistentModelRegistration(DailyPlanCompletion.self),
+        PersistentModelRegistration(HelpfulnessFeedback.self)
     ]
 
+    static let currentModelTypes = modelRegistry.map(\.modelType)
     static let schema = Schema(currentModelTypes)
 
     // MARK: - Factory
@@ -43,27 +52,10 @@ enum SharedPersistence {
             ModelContainerRecovery.clearLaunchBlockingExtendedAttributes(for: storeURL)
         }
 
-        let configuration: ModelConfiguration
-
-        if let storeURL {
-            configuration = ModelConfiguration(
-                "Default",
-                schema: schema,
-                url: storeURL,
-                cloudKitDatabase: cloudKitEnabled ? .private(cloudKitContainerID) : .none
-            )
-        } else {
-            configuration = ModelConfiguration(
-                "Default",
-                schema: schema,
-                cloudKitDatabase: cloudKitEnabled ? .private(cloudKitContainerID) : .none
-            )
-        }
-
         return try ModelContainer(
             for: schema,
             migrationPlan: CBTModelMigrationPlan.self,
-            configurations: [configuration]
+            configurations: [makeModelConfiguration(storeURL: storeURL, cloudKitEnabled: cloudKitEnabled)]
         )
     }
 
@@ -81,6 +73,30 @@ enum SharedPersistence {
         )
     }
 
+    private static func makeModelConfiguration(
+        storeURL: URL?,
+        cloudKitEnabled: Bool
+    ) -> ModelConfiguration {
+        let cloudKitDatabase: ModelConfiguration.CloudKitDatabase = cloudKitEnabled
+            ? .private(cloudKitContainerID)
+            : .none
+
+        if let storeURL {
+            return ModelConfiguration(
+                "Default",
+                schema: schema,
+                url: storeURL,
+                cloudKitDatabase: cloudKitDatabase
+            )
+        }
+
+        return ModelConfiguration(
+            "Default",
+            schema: schema,
+            cloudKitDatabase: cloudKitDatabase
+        )
+    }
+
     /// Creates a purely in-memory container (for tests or as a last-resort recovery).
     static func makeInMemoryModelContainer() throws -> ModelContainer {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
@@ -89,5 +105,27 @@ enum SharedPersistence {
             migrationPlan: CBTModelMigrationPlan.self,
             configurations: [configuration]
         )
+    }
+
+    static func deleteAllModelRecords(in modelContext: ModelContext) throws {
+        for registration in modelRegistry {
+            try registration.deleteAllRecords(modelContext)
+        }
+
+        try modelContext.save()
+    }
+
+    private struct PersistentModelRegistration {
+        let modelType: any PersistentModel.Type
+        let deleteAllRecords: (ModelContext) throws -> Void
+
+        init<Model: PersistentModel>(_ modelType: Model.Type) {
+            self.modelType = modelType
+            self.deleteAllRecords = { modelContext in
+                for record in try modelContext.fetch(FetchDescriptor<Model>()) {
+                    modelContext.delete(record)
+                }
+            }
+        }
     }
 }

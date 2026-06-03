@@ -245,6 +245,14 @@ final class Course {
         return Double(completedLessonCount) / Double(progressTotal)
     }
 
+    var progressPercentage: Int {
+        Int((progressFraction * 100).rounded())
+    }
+
+    var isSkillPath: Bool {
+        approach.caseInsensitiveCompare("Skill Path") == .orderedSame
+    }
+
     func applyContent(from seed: Course) {
         title = seed.title
         subtitle = seed.subtitle

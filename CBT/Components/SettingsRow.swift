@@ -102,3 +102,12 @@ extension SettingsRow where Content == EmptyView {
         self.content = { EmptyView() }
     }
 }
+
+struct SettingsDisclosureIndicator: View {
+    var body: some View {
+        Image(systemName: "chevron.right")
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(Theme.secondaryText)
+            .accessibilityHidden(true)
+    }
+}

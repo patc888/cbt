@@ -31,6 +31,11 @@ final class SafetyPlan {
     var emergencyContactsStorage: String = "[]"
     var personalWarningSignsStorage: String = "[]"
     var copingStrategiesStorage: String = "[]"
+    var groundingStepsStorage: String = "[]"
+    var safePlacesStorage: String = "[]"
+    var remindersStorage: String = "[]"
+    var makesItWorseStorage: String = "[]"
+    var privacySafeDisplayEnabled: Bool = true
 
     var emergencyContacts: [EmergencyContact] {
         get { Self.decodeContacts(emergencyContactsStorage) }
@@ -56,13 +61,55 @@ final class SafetyPlan {
         }
     }
 
+    var groundingSteps: [String] {
+        get { StringArrayStorage.decode(groundingStepsStorage) }
+        set {
+            groundingStepsStorage = StringArrayStorage.encode(newValue)
+            updatedAt = Date()
+        }
+    }
+
+    var safePlaces: [String] {
+        get { StringArrayStorage.decode(safePlacesStorage) }
+        set {
+            safePlacesStorage = StringArrayStorage.encode(newValue)
+            updatedAt = Date()
+        }
+    }
+
+    var reminders: [String] {
+        get { StringArrayStorage.decode(remindersStorage) }
+        set {
+            remindersStorage = StringArrayStorage.encode(newValue)
+            updatedAt = Date()
+        }
+    }
+
+    var makesItWorse: [String] {
+        get { StringArrayStorage.decode(makesItWorseStorage) }
+        set {
+            makesItWorseStorage = StringArrayStorage.encode(newValue)
+            updatedAt = Date()
+        }
+    }
+
+    var supportivePeople: [EmergencyContact] {
+        get { emergencyContacts }
+        set { emergencyContacts = newValue }
+    }
+
     init(
         id: UUID = UUID(),
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         emergencyContacts: [EmergencyContact] = [],
         personalWarningSigns: [String] = [],
-        copingStrategies: [String] = []
+        copingStrategies: [String] = [],
+        groundingSteps: [String] = [],
+        safePlaces: [String] = [],
+        reminders: [String] = [],
+        makesItWorse: [String] = [],
+        privacySafeDisplayEnabled: Bool = true
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -70,6 +117,11 @@ final class SafetyPlan {
         self.emergencyContactsStorage = Self.encodeContacts(emergencyContacts)
         self.personalWarningSignsStorage = StringArrayStorage.encode(personalWarningSigns)
         self.copingStrategiesStorage = StringArrayStorage.encode(copingStrategies)
+        self.groundingStepsStorage = StringArrayStorage.encode(groundingSteps)
+        self.safePlacesStorage = StringArrayStorage.encode(safePlaces)
+        self.remindersStorage = StringArrayStorage.encode(reminders)
+        self.makesItWorseStorage = StringArrayStorage.encode(makesItWorse)
+        self.privacySafeDisplayEnabled = privacySafeDisplayEnabled
     }
 
     private static func encodeContacts(_ contacts: [EmergencyContact]) -> String {

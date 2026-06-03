@@ -81,9 +81,9 @@ struct MindfulnessAudioPlayerView: View {
                 )
             } else if !assetAvailable {
                 noticeRow(
-                    title: "Audio file not bundled yet",
-                    message: "\(content.assetFilename) is a development placeholder. Add it to the app target to enable playback.",
-                    systemImage: "waveform.badge.exclamationmark"
+                    title: "Audio unavailable",
+                    message: "This session is not available in this version of the app.",
+                    systemImage: "headphones.circle"
                 )
             } else if attemptedPlayback, let errorMessage = audioPlayer.errorMessage {
                 noticeRow(
@@ -262,7 +262,7 @@ struct MindfulnessAudioPlayerView: View {
 
     private var primaryPlaybackTitle: String {
         if !isUnlocked { return "Unlock" }
-        if !assetAvailable { return "Missing" }
+        if !assetAvailable { return "Unavailable" }
         if isPlayingAudio { return "Pause" }
         if isLoadedAudio { return "Resume" }
         if completion != nil { return "Replay" }
@@ -271,14 +271,14 @@ struct MindfulnessAudioPlayerView: View {
 
     private var primaryPlaybackIcon: String {
         if !isUnlocked { return "lock.fill" }
-        if !assetAvailable { return "exclamationmark.triangle.fill" }
+        if !assetAvailable { return "headphones.circle" }
         if isPlayingAudio { return "pause.fill" }
         return "play.fill"
     }
 
     private var primaryPlaybackAccessibilityLabel: String {
         if !isUnlocked { return "Unlock premium audio" }
-        if !assetAvailable { return "Audio file missing" }
+        if !assetAvailable { return "Audio unavailable" }
         if isPlayingAudio { return "Pause audio" }
         if isLoadedAudio { return "Resume audio" }
         if completion != nil { return "Replay audio" }

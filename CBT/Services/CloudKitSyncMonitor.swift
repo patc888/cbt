@@ -2,6 +2,66 @@ import CoreData
 import Foundation
 import Observation
 
+struct CloudKitSyncEventSnapshot: Sendable {
+    let identifier: UUID
+    let kind: CloudKitSyncEventKind
+    let startDate: Date
+    let endDate: Date?
+    let succeeded: Bool
+    let errorDescription: String?
+
+    nonisolated init(_ event: NSPersistentCloudKitContainer.Event) {
+        self.identifier = event.identifier
+        self.kind = CloudKitSyncEventKind(event.type)
+        self.startDate = event.startDate
+        self.endDate = event.endDate
+        self.succeeded = event.succeeded
+        self.errorDescription = event.error?.localizedDescription
+    }
+}
+
+enum CloudKitSyncEventKind: String, Sendable {
+    case setup
+    case `import`
+    case export
+    case unknown
+
+    nonisolated var displayName: String {
+        switch self {
+        case .setup:
+            return "setup"
+        case .import:
+            return "import"
+        case .export:
+            return "export"
+        case .unknown:
+            return "sync"
+        }
+    }
+
+    nonisolated var userVisibleDisplayName: String {
+        switch self {
+        case .setup:
+            return "CloudKit setup"
+        case .import:
+            return "iCloud import"
+        case .export:
+            return "iCloud export"
+        case .unknown:
+            return "iCloud sync"
+        }
+    }
+
+    nonisolated var shouldUpdateLastSyncDate: Bool {
+        switch self {
+        case .setup:
+            return false
+        case .import, .export, .unknown:
+            return true
+        }
+    }
+}
+
 @MainActor
 @Observable
 final class CloudKitSyncMonitor {
@@ -11,57 +71,31 @@ final class CloudKitSyncMonitor {
         case error(String)
     }
 
-    enum EventKind: String, Sendable {
-        case setup
-        case `import`
-        case export
-        case unknown
-
-        var displayName: String {
-            switch self {
-            case .setup:
-                return "setup"
-            case .import:
-                return "import"
-            case .export:
-                return "export"
-            case .unknown:
-                return "sync"
-            }
-        }
-    }
-
     static let shared = CloudKitSyncMonitor()
+    private static let lastSyncDateKey = "com.melichan.CBT.cloudSyncStatusMonitor.lastSyncDate"
 
     private(set) var status: Status = .upToDate
-    private(set) var currentEventKind: EventKind?
-    private(set) var lastCompletedEventKind: EventKind?
+    private(set) var currentEventKind: CloudKitSyncEventKind?
+    private(set) var lastCompletedEventKind: CloudKitSyncEventKind?
     private(set) var lastEventDate: Date?
-    private(set) var lastError: String?
-
-    @ObservationIgnored private let notificationCenter: NotificationCenter
-    @ObservationIgnored private var eventObserver: NSObjectProtocol?
-    @ObservationIgnored private var activeEvents: [UUID: EventKind] = [:]
-
-    private struct EventSnapshot: Sendable {
-        let identifier: UUID
-        let kind: EventKind
-        let startDate: Date
-        let endDate: Date?
-        let succeeded: Bool
-        let errorDescription: String?
-
-        init(_ event: NSPersistentCloudKitContainer.Event) {
-            self.identifier = event.identifier
-            self.kind = EventKind(event.type)
-            self.startDate = event.startDate
-            self.endDate = event.endDate
-            self.succeeded = event.succeeded
-            self.errorDescription = event.error?.localizedDescription
+    private(set) var lastSyncDate: Date? {
+        didSet {
+            persistLastSyncDate()
         }
     }
+    private(set) var lastError: String?
 
-    init(notificationCenter: NotificationCenter? = nil) {
+    @ObservationIgnored private let defaults: UserDefaults
+    @ObservationIgnored private let notificationCenter: NotificationCenter
+    @ObservationIgnored private var eventObserver: NSObjectProtocol?
+    @ObservationIgnored private var activeEvents: [UUID: CloudKitSyncEventKind] = [:]
+
+    init(defaults: UserDefaults = .standard, notificationCenter: NotificationCenter? = nil) {
+        self.defaults = defaults
+        if let storedDate = defaults.object(forKey: Self.lastSyncDateKey) as? Date {
+            self.lastSyncDate = storedDate
+        }
+
         let notificationCenter = notificationCenter ?? .default
         self.notificationCenter = notificationCenter
         eventObserver = notificationCenter.addObserver(
@@ -73,7 +107,7 @@ final class CloudKitSyncMonitor {
                 return
             }
 
-            let snapshot = EventSnapshot(event)
+            let snapshot = CloudKitSyncEventSnapshot(event)
             Task { @MainActor [weak self, snapshot] in
                 self?.handle(snapshot)
             }
@@ -101,6 +135,27 @@ final class CloudKitSyncMonitor {
         status == .syncing
     }
 
+    var lastSyncDescription: String {
+        guard let lastSyncDate else {
+            return "Not synced yet"
+        }
+
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return "Last synced \(formatter.localizedString(for: lastSyncDate, relativeTo: Date()))"
+    }
+
+    var accessibilityLabel: String {
+        switch status {
+        case .upToDate:
+            return lastSyncDescription
+        case .syncing:
+            return "Syncing with iCloud"
+        case .error(let message):
+            return "iCloud sync error: \(message)"
+        }
+    }
+
     var lastEventSummary: String {
         if let lastError {
             return "CloudKit \(currentEventKind?.displayName ?? "sync") failed: \(lastError)"
@@ -117,7 +172,7 @@ final class CloudKitSyncMonitor {
         return "No SwiftData CloudKit events observed this launch."
     }
 
-    private func handle(_ event: EventSnapshot) {
+    private func handle(_ event: CloudKitSyncEventSnapshot) {
         let kind = event.kind
         lastEventDate = event.endDate ?? event.startDate
 
@@ -148,6 +203,9 @@ final class CloudKitSyncMonitor {
 
         lastCompletedEventKind = kind
         lastError = nil
+        if kind.shouldUpdateLastSyncDate {
+            lastSyncDate = event.endDate ?? Date()
+        }
 
         if let nextActiveEvent = activeEvents.first {
             currentEventKind = nextActiveEvent.value
@@ -157,10 +215,19 @@ final class CloudKitSyncMonitor {
             status = .upToDate
         }
     }
+
+    private func persistLastSyncDate() {
+        guard let lastSyncDate else {
+            defaults.removeObject(forKey: Self.lastSyncDateKey)
+            return
+        }
+
+        defaults.set(lastSyncDate, forKey: Self.lastSyncDateKey)
+    }
 }
 
-private extension CloudKitSyncMonitor.EventKind {
-    init(_ type: NSPersistentCloudKitContainer.EventType) {
+private extension CloudKitSyncEventKind {
+    nonisolated init(_ type: NSPersistentCloudKitContainer.EventType) {
         switch type {
         case .setup:
             self = .setup

@@ -594,6 +594,26 @@
     "isRecommended": false
   },
   {
+    "id": "evening_closure",
+    "title": "Gentle Evening Closeout",
+    "description": "A 2-minute nightly flow: one win, one hard thing, and one anchor for tomorrow.",
+    "category": "Sleep",
+    "approach": "Mindfulness",
+    "estimatedDurationMinutes": 2,
+    "promptSteps": [
+      {"id": "win", "title": "One Win", "prompt": "What is one win from today?", "helperText": "Look for effort, follow-through, a tiny choice, or something you survived.", "placeholder": "One win was..."},
+      {"id": "hard_thing", "title": "One Hard Thing", "prompt": "What is one hard thing you carried today?", "helperText": "Name it plainly without needing to solve it tonight.", "placeholder": "One hard thing was..."},
+      {"id": "tomorrow_anchor", "title": "Tomorrow Anchor", "prompt": "What is one anchor for tomorrow?", "helperText": "Choose one small cue, task, value, or support your future self can use.", "placeholder": "Tomorrow I can anchor around..."}
+    ],
+    "helperText": "Keep this quick and repeatable. The value is closure, not perfect answers.",
+    "moodEmotionTags": ["Reflective", "Settled", "Prepared"],
+    "completionReflection": "Your evening closeout has been saved.",
+    "icon": "moon.stars.fill",
+    "colorHexes": ["#4F46E5", "#14B8A6"],
+    "isRecommended": true,
+    "legacyTemplateTypes": ["Evening Closure", "Evening Reflection", "evening_reflection"]
+  },
+  {
     "id": "burnout_check_in",
     "title": "Burnout Check-In",
     "description": "Assess depletion, pressure, and one boundary that protects recovery.",

@@ -16,7 +16,11 @@ struct TimelineRouteDestinationView: View {
             }
         case .thought(let id):
             if let record = modelContext.model(for: id) as? ThoughtRecord {
-                ThoughtRecordDetailView(record: record)
+                if record.isDraft || !record.isComplete {
+                    NewThoughtRecordFlowView(recordID: id)
+                } else {
+                    ThoughtRecordDetailView(record: record)
+                }
             } else {
                 missingContent(title: "Thought Record Not Found", systemImage: "brain")
             }

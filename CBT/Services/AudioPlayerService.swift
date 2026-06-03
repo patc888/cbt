@@ -40,13 +40,13 @@ final class AudioPlayerService: NSObject, ObservableObject, AVAudioPlayerDelegat
 
         guard !resource.name.isEmpty else {
             stop(clearError: false)
-            errorMessage = "Audio file not found."
+            errorMessage = "Audio is unavailable in this version of the app."
             return false
         }
 
         guard let url = Bundle.main.url(forResource: resource.name, withExtension: resource.extension) else {
             stop(clearError: false)
-            errorMessage = "Audio file not bundled yet. Add \(fileName) to the app target to enable playback."
+            errorMessage = "Audio is unavailable in this version of the app."
             return false
         }
 

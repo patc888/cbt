@@ -172,7 +172,7 @@ struct InsightsWeeklyReportCard: View {
         SupportiveEmptyStateView(
             systemImage: "doc.text.magnifyingglass",
             title: String(localized: "Weekly Report"),
-            message: String(localized: "Weekly reports summarize check-ins, thought records, exercises, and reflections once this week has something to include."),
+            message: String(localized: "Add one check-in for this week to begin the report, then layer in a thought record or reflection if you have one."),
             actionTitle: String(localized: "Add Check-In"),
             actionSystemImage: "face.smiling"
         ) {

@@ -18,6 +18,11 @@ enum AchievementUnlockCondition: String, CaseIterable, Codable, Hashable, Sendab
     case copingToolsTried = "CopingToolsTried"
     case reflectionCount = "ReflectionCount"
     case badDayModeUsed = "BadDayModeUsed"
+    case dailyPlanCompleted = "DailyPlanCompleted"
+    case weeklyReviewCompleted = "WeeklyReviewCompleted"
+    case streakRecoveredAfterBreak = "StreakRecoveredAfterBreak"
+    case returnStreakCount = "ReturnStreakCount"
+    case returnedDaysAfterGap = "ReturnedDaysAfterGap"
 
     var label: String {
         switch self {
@@ -37,6 +42,11 @@ enum AchievementUnlockCondition: String, CaseIterable, Codable, Hashable, Sendab
         case .copingToolsTried: return "Coping Tools"
         case .reflectionCount: return "Reflections"
         case .badDayModeUsed: return "Support"
+        case .dailyPlanCompleted: return "Daily Plan"
+        case .weeklyReviewCompleted: return "Weekly Review"
+        case .streakRecoveredAfterBreak: return "Restart"
+        case .returnStreakCount: return "Return Streak"
+        case .returnedDaysAfterGap: return "Came Back"
         }
     }
 
@@ -58,6 +68,11 @@ enum AchievementUnlockCondition: String, CaseIterable, Codable, Hashable, Sendab
         case .copingToolsTried: return "tools"
         case .reflectionCount: return "reflections"
         case .badDayModeUsed: return "used"
+        case .dailyPlanCompleted: return "plans"
+        case .weeklyReviewCompleted: return "reviews"
+        case .streakRecoveredAfterBreak: return "restarts"
+        case .returnStreakCount: return "days"
+        case .returnedDaysAfterGap: return "days"
         }
     }
 }

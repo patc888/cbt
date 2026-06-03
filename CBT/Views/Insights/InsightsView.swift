@@ -88,16 +88,40 @@ private struct InsightsHeadline: View {
                 StreakToolbarButton()
             },
             trailing: {
-                NavigationLink {
-                    WeeklyReportView()
-                } label: {
-                    Image(systemName: "doc.text.magnifyingglass")
-                        .font(.system(.body, weight: .bold))
-                        .foregroundStyle(themeManager.selectedColor)
-                        .frame(width: 44, height: 44)
+                HStack(spacing: 8) {
+                    NavigationLink {
+                        AssessmentsView()
+                    } label: {
+                        Image(systemName: "checklist")
+                            .font(.system(.body, weight: .bold))
+                            .foregroundStyle(themeManager.selectedColor)
+                            .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(String(localized: "Open assessments"))
+
+                    NavigationLink {
+                        WeeklyReviewView()
+                    } label: {
+                        Image(systemName: "sparkle.magnifyingglass")
+                            .font(.system(.body, weight: .bold))
+                            .foregroundStyle(themeManager.selectedColor)
+                            .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(String(localized: "Open weekly review"))
+
+                    NavigationLink {
+                        WeeklyReportView()
+                    } label: {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .font(.system(.body, weight: .bold))
+                            .foregroundStyle(themeManager.selectedColor)
+                            .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(String(localized: "Open weekly report"))
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "Open weekly report"))
             }
         )
     }
@@ -118,12 +142,17 @@ private struct InsightsDashboardContent: View {
     @State private var exerciseCompletions: [ExerciseCompletion] = []
     @State private var journalEntries: [JournalEntry] = []
     @State private var flexibleJournalEntries: [FlexibleJournalEntry] = []
+    @State private var breathingSessions: [BreathingSession] = []
+    @State private var valueActionCompletions: [ValueActionCompletion] = []
     @State private var viewModel = InsightsViewModel()
     @State private var hasAppeared = false
     @State private var selectedWeeklyReportDate = Date()
     @State private var weeklyReport: WeeklyReport?
     @State private var weeklyReportIsLoading = true
     @State private var weeklyReportErrorMessage: String?
+    @State private var selectedActionInsight: PlainLanguagePatternInsight?
+    @State private var reminderPromptMoment: ReminderOptInMoment?
+    @State private var isHandlingReminderPrompt = false
 
     init(
         timeRange: Binding<InsightsTimeRange>,
@@ -145,7 +174,7 @@ private struct InsightsDashboardContent: View {
                     InsightsLoadingStateView()
                     Spacer()
                 }
-            } else if moodEntries.isEmpty && moodCheckIns.isEmpty && thoughtRecords.isEmpty && exerciseCompletions.isEmpty && journalEntries.isEmpty && flexibleJournalEntries.isEmpty {
+            } else if moodEntries.isEmpty && moodCheckIns.isEmpty && thoughtRecords.isEmpty && exerciseCompletions.isEmpty && journalEntries.isEmpty && flexibleJournalEntries.isEmpty && breathingSessions.isEmpty && valueActionCompletions.isEmpty {
                 VStack(spacing: 0) {
                     InsightsHeadline()
                         .padding(.horizontal, 16)
@@ -180,10 +209,38 @@ private struct InsightsDashboardContent: View {
                         )
                         .insightsEntrance(index: 2, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
-                        InsightsPatternSpotlightSection(
-                            summary: viewModel.patternSummary
+                        InsightsRetentionProgressSection(
+                            snapshot: viewModel.retentionInsights
                         )
                         .insightsEntrance(index: 3, isVisible: hasAppeared, reduceMotion: reduceMotion)
+
+                        InsightsValuesPracticeCard(
+                            weeklySummary: ValuesService.weeklySummary(completions: valueActionCompletions)
+                        )
+                        .insightsEntrance(index: 4, isVisible: hasAppeared, reduceMotion: reduceMotion)
+
+                        InsightsPatternSpotlightSection(
+                            summary: viewModel.patternSummary,
+                            onMakePlan: { insight in
+                                selectedActionInsight = insight
+                            }
+                        )
+                        .insightsEntrance(index: 5, isVisible: hasAppeared, reduceMotion: reduceMotion)
+
+                        InsightsCalendarPatternsCard(
+                            summary: viewModel.patternSummary.calendarPatterns
+                        )
+                        .insightsEntrance(index: 5, isVisible: hasAppeared, reduceMotion: reduceMotion)
+
+                        InsightsPersonalCopingPlanSection(
+                            planItems: viewModel.patternSummary.personalCopingPlan
+                        )
+                        .insightsEntrance(index: 6, isVisible: hasAppeared, reduceMotion: reduceMotion)
+
+                        CommonTriggersSection(
+                            snapshot: viewModel.triggerLibrary
+                        )
+                        .insightsEntrance(index: 7, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
                         InsightsTrendsCard(
                             timeRange: timeRange,
@@ -193,7 +250,7 @@ private struct InsightsDashboardContent: View {
                             moodVolatilityLast30Days: viewModel.moodVolatilityLast30Days,
                             moodGoalValue: moodGoalValue
                         )
-                        .insightsEntrance(index: 4, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        .insightsEntrance(index: 8, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
                         InsightsWeeklyOverviewCard(
                             weeklyMoodAverages: viewModel.weeklyMoodAverages,
@@ -202,7 +259,7 @@ private struct InsightsDashboardContent: View {
                         .onAppear {
                             AchievementService.shared.recordWeeklyReportViewed(in: modelContext)
                         }
-                        .insightsEntrance(index: 5, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        .insightsEntrance(index: 9, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
                         InsightsWeeklyReportCard(
                             report: weeklyReport,
@@ -216,19 +273,34 @@ private struct InsightsDashboardContent: View {
                         )
                         .onAppear {
                             AchievementService.shared.recordWeeklyReportViewed(in: modelContext)
+                            Task { await prepareWeeklyInsightReminderPromptIfNeeded() }
                         }
-                        .insightsEntrance(index: 6, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        .insightsEntrance(index: 10, isVisible: hasAppeared, reduceMotion: reduceMotion)
+
+                        if let reminderPromptMoment {
+                            ReminderOptInPromptView(
+                                moment: reminderPromptMoment,
+                                isWorking: isHandlingReminderPrompt,
+                                onAccept: {
+                                    handleReminderPromptAccepted(reminderPromptMoment)
+                                },
+                                onDismiss: {
+                                    handleReminderPromptDismissed(reminderPromptMoment)
+                                }
+                            )
+                            .insightsEntrance(index: 11, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        }
 
                         InsightsGoalProgressSection(
                             snapshot: viewModel.dashboardSnapshot,
                             moodGoalValue: moodGoalValue
                         )
-                        .insightsEntrance(index: 7, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        .insightsEntrance(index: 12, isVisible: hasAppeared, reduceMotion: reduceMotion)
 
                         InsightsTopMetricsSection(
                             snapshot: viewModel.dashboardSnapshot
                         )
-                        .insightsEntrance(index: 8, isVisible: hasAppeared, reduceMotion: reduceMotion)
+                        .insightsEntrance(index: 13, isVisible: hasAppeared, reduceMotion: reduceMotion)
                     }
                     .padding(.horizontal, 16)
                     .padding(.bottom, LayoutMetrics.floatingToolbarBottomInset + 12)
@@ -249,20 +321,30 @@ private struct InsightsDashboardContent: View {
         }
         // Keep the task identity lightweight; avoid hashing live SwiftData
         // records during body evaluation.
-        .task(id: "\(timeRange.rawValue)|\(moodGoalValue)|\(moodEntries.count)|\(moodCheckIns.count)|\(thoughtRecords.count)|\(exerciseCompletions.count)|\(journalEntries.count)|\(flexibleJournalEntries.count)") {
+        .task(id: "\(timeRange.rawValue)|\(moodGoalValue)|\(moodEntries.count)|\(moodCheckIns.count)|\(thoughtRecords.count)|\(exerciseCompletions.count)|\(journalEntries.count)|\(flexibleJournalEntries.count)|\(breathingSessions.count)|\(valueActionCompletions.count)") {
             await recalculateData()
         }
         .task(id: selectedWeeklyReportDate.timeIntervalSinceReferenceDate) {
             await refreshWeeklyReport()
+            await prepareWeeklyInsightReminderPromptIfNeeded()
         }
         .task {
             await refreshFetchedModels()
+        }
+        .sheet(item: $selectedActionInsight) { insight in
+            AddActivityView(
+                initialTitle: insight.actionTitle ?? "",
+                initialDescription: insight.actionDescription ?? "",
+                initialCategory: insight.actionCategory
+            )
+            .dsSheetPresentation()
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
             Task {
                 await refreshFetchedModels()
                 await refreshWeeklyReport()
+                await prepareWeeklyInsightReminderPromptIfNeeded()
             }
         }
     }
@@ -275,6 +357,8 @@ private struct InsightsDashboardContent: View {
         exerciseCompletions = LaunchSafeFetch.exerciseCompletions(from: modelContext).reversed()
         journalEntries = LaunchSafeFetch.journalEntries(from: modelContext).reversed()
         flexibleJournalEntries = LaunchSafeFetch.flexibleJournalEntries(from: modelContext).reversed()
+        breathingSessions = LaunchSafeFetch.breathingSessions(from: modelContext).reversed()
+        valueActionCompletions = LaunchSafeFetch.valueActionCompletions(from: modelContext).reversed()
     }
 
     private func recalculateData() async {
@@ -286,6 +370,7 @@ private struct InsightsDashboardContent: View {
             exerciseCompletions: exerciseCompletions,
             journalEntries: journalEntries,
             flexibleJournalEntries: flexibleJournalEntries,
+            breathingSessions: breathingSessions,
             moodGoalValue: moodGoalValue
         )
     }
@@ -308,6 +393,32 @@ private struct InsightsDashboardContent: View {
         weeklyReportIsLoading = false
     }
 
+    @MainActor
+    private func prepareWeeklyInsightReminderPromptIfNeeded() async {
+        guard !weeklyReportIsLoading, weeklyReport != nil else { return }
+        reminderPromptMoment = await ReminderOptInService.shared.promptIfEligible(
+            for: .firstWeeklyInsightViewed,
+            hasReachedMoment: true
+        )
+    }
+
+    private func handleReminderPromptAccepted(_ moment: ReminderOptInMoment) {
+        guard !isHandlingReminderPrompt else { return }
+        isHandlingReminderPrompt = true
+        Task {
+            _ = await ReminderOptInService.shared.accept(moment, modelContext: modelContext)
+            await MainActor.run {
+                reminderPromptMoment = nil
+                isHandlingReminderPrompt = false
+            }
+        }
+    }
+
+    private func handleReminderPromptDismissed(_ moment: ReminderOptInMoment) {
+        ReminderOptInService.shared.dismiss(moment)
+        reminderPromptMoment = nil
+    }
+
     private func moveWeeklyReport(by weeks: Int) {
         guard let newDate = Calendar.current.date(byAdding: .weekOfYear, value: weeks, to: selectedWeeklyReportDate) else {
             return
@@ -323,6 +434,67 @@ private struct InsightsDashboardContent: View {
         let currentStart = calendar.dateInterval(of: .weekOfYear, for: Date())?.start
             ?? calendar.startOfDay(for: Date())
         return selectedStart < currentStart
+    }
+}
+
+private struct InsightsValuesPracticeCard: View {
+    @Environment(ThemeManager.self) private var themeManager
+
+    let weeklySummary: [ValuePracticeSummary]
+
+    private var totalCount: Int {
+        weeklySummary.map(\.count).reduce(0, +)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Values Practiced")
+                    .font(DSTypography.sectionTitle)
+                    .foregroundStyle(Theme.primaryText)
+                Spacer()
+                Text("THIS WEEK")
+                    .font(.system(.caption, design: .rounded).weight(.black))
+                    .foregroundStyle(Theme.secondaryText.opacity(0.65))
+                    .tracking(1.5)
+            }
+
+            if weeklySummary.isEmpty {
+                Text("When you complete value-based tiny actions, they will show up here as gentle progress.")
+                    .font(.system(size: 14, design: .rounded))
+                    .foregroundStyle(Theme.secondaryText)
+                    .padding(.vertical, 10)
+            } else {
+                Text("\(totalCount) small \(totalCount == 1 ? "action" : "actions") connected to what matters.")
+                    .font(DSTypography.body)
+                    .foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                VStack(spacing: 10) {
+                    ForEach(weeklySummary.prefix(5)) { summary in
+                        HStack(spacing: 10) {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(themeManager.selectedColor)
+                                .accessibilityHidden(true)
+
+                            Text(summary.valueName)
+                                .font(DSTypography.body.weight(.semibold))
+                                .foregroundStyle(Theme.primaryText)
+
+                            Spacer()
+
+                            Text("\(summary.count)")
+                                .font(DSTypography.body.weight(.bold))
+                                .foregroundStyle(themeManager.selectedColor)
+                                .monospacedDigit()
+                        }
+                    }
+                }
+            }
+        }
+        .padding(Theme.paddingMedium)
+        .cardStyle()
     }
 }
 

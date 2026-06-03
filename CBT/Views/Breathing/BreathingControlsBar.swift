@@ -91,8 +91,6 @@ struct BreathingControlsBar: View {
                 .frame(maxWidth: 132)
         }
         .buttonStyle(DSSecondaryButtonStyle())
-        .disabled(isRunning)
-        .opacity(isRunning ? 0.5 : 1)
         .accessibilityLabel("Ambient sound: \(ambientSound)")
     }
 

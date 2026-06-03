@@ -85,11 +85,9 @@ struct DSFeatureModal: View {
                         Button {
                             closeAction?()
                         } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(.title3, weight: .semibold))
-                                .foregroundStyle(DSTheme.tertiaryText.opacity(0.7))
+                            Image(systemName: "xmark")
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(DSButtonStyle(variant: .neutral, size: .icon(34), expands: false, hapticType: .light))
                         .accessibilityLabel("Close")
                     }
                 }

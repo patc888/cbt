@@ -47,6 +47,7 @@ struct DataImportService {
         var existingFlexibleJournalEntriesByID = try fetchExistingFlexibleJournalEntries(in: modelContext)
         var existingMoodCheckInsByID = try fetchExistingMoodCheckIns(in: modelContext)
         var existingBreathingSessionsByID = try fetchExistingBreathingSessions(in: modelContext)
+        var existingTinyWinCompletionsByID = try fetchExistingTinyWinCompletions(in: modelContext)
         var existingSafetyPlansByID = try fetchExistingSafetyPlans(in: modelContext)
         var existingCoursesByID = try fetchExistingCourses(in: modelContext)
         var existingAudioContentsByID = try fetchExistingAudioContents(in: modelContext)
@@ -90,7 +91,15 @@ struct DataImportService {
                     evidenceAgainst: record.evidenceAgainst,
                     balancedThought: record.balancedThought,
                     intensityBefore: record.intensityBefore,
-                    intensityAfter: record.intensityAfter
+                    intensityAfter: record.intensityAfter,
+                    isSavedReframe: record.isSavedReframe ?? false,
+                    isFavoriteReframe: record.isFavoriteReframe ?? false,
+                    savedReframeAt: record.savedReframeAt,
+                    lastReviewedAt: record.lastReviewedAt,
+                    updatedAt: record.updatedAt,
+                    completedAt: record.isDraft == true ? nil : (record.completedAt ?? record.createdAt),
+                    isDraft: record.isDraft ?? false,
+                    mode: ThoughtRecordMode(rawValue: record.modeRawValue ?? "") ?? .guided
                 )
                 modelContext.insert(thought)
                 existingThoughtsByID[record.id] = thought
@@ -106,7 +115,8 @@ struct DataImportService {
                     id: completion.id,
                     createdAt: completion.createdAt,
                     exerciseID: completion.exerciseID,
-                    notes: completion.notes
+                    notes: completion.notes,
+                    adaptiveMode: completion.adaptiveMode ?? DailyPlanMode.full.rawValue
                 )
                 modelContext.insert(exercise)
                 existingCompletionsByID[completion.id] = exercise
@@ -146,10 +156,12 @@ struct DataImportService {
                         activityDescription: activity.activityDescription,
                         category: PlannedActivity.normalizedCategory(activity.category),
                         scheduledDate: activity.scheduledDate,
+                        supportedValue: activity.supportedValue,
                         predictedEnjoyment: PlannedActivity.clampRating(activity.predictedEnjoyment),
                         actualEnjoyment: activity.actualEnjoyment.map(PlannedActivity.clampRating),
                         isCompleted: activity.isCompleted,
                         completedAt: activity.completedAt,
+                        adaptiveMode: activity.adaptiveMode ?? DailyPlanMode.full.rawValue,
                         notes: activity.notes
                     )
                     modelContext.insert(plannedActivity)
@@ -263,6 +275,22 @@ struct DataImportService {
             }
         }
 
+        if let tinyWinCompletions = payload.tinyWinCompletions {
+            for completion in tinyWinCompletions {
+                if let existingCompletion = existingTinyWinCompletionsByID[completion.id] {
+                    update(existingCompletion, from: completion)
+                } else {
+                    let tinyWinCompletion = TinyWinCompletion(
+                        id: completion.id,
+                        createdAt: completion.createdAt,
+                        winID: completion.winID
+                    )
+                    modelContext.insert(tinyWinCompletion)
+                    existingTinyWinCompletionsByID[completion.id] = tinyWinCompletion
+                }
+            }
+        }
+
         if let safetyPlans = payload.safetyPlans {
             for plan in safetyPlans {
                 if let existingPlan = existingSafetyPlansByID[plan.id] {
@@ -274,7 +302,12 @@ struct DataImportService {
                         updatedAt: plan.updatedAt,
                         emergencyContacts: plan.emergencyContacts,
                         personalWarningSigns: plan.personalWarningSigns,
-                        copingStrategies: plan.copingStrategies
+                        copingStrategies: plan.copingStrategies,
+                        groundingSteps: plan.groundingSteps ?? [],
+                        safePlaces: plan.safePlaces ?? [],
+                        reminders: plan.reminders ?? [],
+                        makesItWorse: plan.makesItWorse ?? [],
+                        privacySafeDisplayEnabled: plan.privacySafeDisplayEnabled ?? true
                     )
                     modelContext.insert(safetyPlan)
                     existingSafetyPlansByID[plan.id] = safetyPlan
@@ -427,6 +460,10 @@ struct DataImportService {
         try existingRecordsByID(from: modelContext.fetch(FetchDescriptor<BreathingSession>()))
     }
 
+    private func fetchExistingTinyWinCompletions(in modelContext: ModelContext) throws -> [UUID: TinyWinCompletion] {
+        try existingRecordsByID(from: modelContext.fetch(FetchDescriptor<TinyWinCompletion>()))
+    }
+
     private func fetchExistingSafetyPlans(in modelContext: ModelContext) throws -> [UUID: SafetyPlan] {
         Dictionary(
             try modelContext.fetch(FetchDescriptor<SafetyPlan>()).map { ($0.id, $0) },
@@ -483,6 +520,14 @@ struct DataImportService {
         thought.balancedThought = record.balancedThought
         thought.intensityBefore = ThoughtRecord.clampIntensity(record.intensityBefore)
         thought.intensityAfter = ThoughtRecord.clampIntensity(record.intensityAfter)
+        thought.isSavedReframe = record.isSavedReframe ?? false
+        thought.isFavoriteReframe = record.isFavoriteReframe ?? false
+        thought.savedReframeAt = record.savedReframeAt ?? (thought.isSavedReframe ? record.completedAt ?? record.createdAt : nil)
+        thought.lastReviewedAt = record.lastReviewedAt
+        thought.updatedAt = record.updatedAt ?? record.createdAt
+        thought.completedAt = record.isDraft == true ? nil : (record.completedAt ?? record.createdAt)
+        thought.isDraft = record.isDraft ?? false
+        thought.modeRawValue = ThoughtRecordMode(rawValue: record.modeRawValue ?? "")?.rawValue ?? ThoughtRecordMode.guided.rawValue
         thought.isDeleted = false
     }
 
@@ -490,6 +535,7 @@ struct DataImportService {
         completion.createdAt = export.createdAt
         completion.exerciseID = export.exerciseID
         completion.notes = export.notes
+        completion.adaptiveMode = ExerciseCompletion.normalizedAdaptiveMode(export.adaptiveMode)
         completion.isDeleted = false
     }
 
@@ -509,10 +555,12 @@ struct DataImportService {
         activity.activityDescription = export.activityDescription
         activity.category = PlannedActivity.normalizedCategory(export.category)
         activity.scheduledDate = export.scheduledDate
+        activity.supportedValue = PlannedActivity.normalizedSupportedValue(export.supportedValue)
         activity.predictedEnjoyment = PlannedActivity.clampRating(export.predictedEnjoyment)
         activity.actualEnjoyment = export.actualEnjoyment.map(PlannedActivity.clampRating)
         activity.isCompleted = export.isCompleted
         activity.completedAt = export.completedAt
+        activity.adaptiveMode = ExerciseCompletion.normalizedAdaptiveMode(export.adaptiveMode)
         activity.notes = export.notes
         activity.isDeleted = false
     }
@@ -559,11 +607,22 @@ struct DataImportService {
         session.isDeleted = false
     }
 
+    private func update(_ completion: TinyWinCompletion, from export: TinyWinCompletionExport) {
+        completion.createdAt = export.createdAt
+        completion.winID = export.winID
+        completion.isDeleted = false
+    }
+
     private func update(_ plan: SafetyPlan, from export: SafetyPlanExport) {
         plan.createdAt = export.createdAt
         plan.emergencyContacts = export.emergencyContacts
         plan.personalWarningSigns = export.personalWarningSigns
         plan.copingStrategies = export.copingStrategies
+        plan.groundingSteps = export.groundingSteps ?? []
+        plan.safePlaces = export.safePlaces ?? []
+        plan.reminders = export.reminders ?? []
+        plan.makesItWorse = export.makesItWorse ?? []
+        plan.privacySafeDisplayEnabled = export.privacySafeDisplayEnabled ?? true
         plan.updatedAt = export.updatedAt
     }
 

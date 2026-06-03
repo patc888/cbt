@@ -188,6 +188,10 @@ struct AdvancedRemindersView: View {
             weeklyReportDayRow
         }
 
+        if reminderType == .dailyMoodCheckIn, let suggestion = smartMoodReminderSuggestion {
+            smartMoodReminderSuggestionRow(suggestion)
+        }
+
         if reminderType.showsTimePicker {
             Button {
                 HapticManager.shared.lightImpact()
@@ -218,6 +222,33 @@ struct AdvancedRemindersView: View {
                 .padding(.horizontal, 16)
             }
         }
+    }
+
+    private var smartMoodReminderSuggestion: SmartReminderTiming.Suggestion? {
+        personalizedReminderService.moodCheckInTimingSuggestion(
+            currentHour: dailyMoodCheckInHour,
+            currentMinute: dailyMoodCheckInMinute
+        )
+    }
+
+    private func smartMoodReminderSuggestionRow(_ suggestion: SmartReminderTiming.Suggestion) -> some View {
+        Button {
+            HapticManager.shared.lightImpact()
+            setReminderTime(.dailyMoodCheckIn, hour: suggestion.hour, minute: suggestion.minute)
+            if dailyMoodCheckInEnabled {
+                Task {
+                    await schedulePersonalizedReminderIfAuthorized(.dailyMoodCheckIn)
+                }
+            }
+        } label: {
+            SettingsRow(title: String(localized: "Suggested Time")) {
+                Text(String(localized: "Use \(timeLabel(hour: suggestion.hour, minute: suggestion.minute))"))
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(themeManager.primaryColor)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(String(localized: "Updates the daily mood reminder to match your usual check-in time."))
     }
 
     private var weeklyReportDayRow: some View {
@@ -387,7 +418,11 @@ struct AdvancedRemindersView: View {
     }
 
     private func reminderTimeLabel(for reminderType: PersonalizedReminderType) -> String {
-        date(hour: reminderHour(for: reminderType), minute: reminderMinute(for: reminderType)).timeOnly
+        timeLabel(hour: reminderHour(for: reminderType), minute: reminderMinute(for: reminderType))
+    }
+
+    private func timeLabel(hour: Int, minute: Int) -> String {
+        date(hour: hour, minute: minute).timeOnly
     }
 
     private func reminderTimeBinding(for reminderType: PersonalizedReminderType) -> Binding<Date> {
@@ -579,14 +614,14 @@ struct AdvancedRemindersView: View {
         if isEnabled {
             let canSchedule = await ensureAuthorizationForScheduling()
             guard canSchedule else {
-                await setReminderEnabled(reminderType, isEnabled: false)
+                setReminderEnabled(reminderType, isEnabled: false)
                 return
             }
 
-            await setReminderEnabled(reminderType, isEnabled: true)
+            setReminderEnabled(reminderType, isEnabled: true)
             await schedulePersonalizedReminderIfAuthorized(reminderType)
         } else {
-            await setReminderEnabled(reminderType, isEnabled: false)
+            setReminderEnabled(reminderType, isEnabled: false)
             personalizedReminderService.cancel(reminderType)
         }
     }
@@ -616,14 +651,14 @@ struct AdvancedRemindersView: View {
         if isEnabled {
             let canSchedule = await ensureAuthorizationForScheduling()
             guard canSchedule, let template = contextualNotificationService.template(for: lifeEvent) else {
-                await setContextualReminder(lifeEvent, isEnabled: false)
+                setContextualReminder(lifeEvent, isEnabled: false)
                 return
             }
 
-            await setContextualReminder(lifeEvent, isEnabled: true)
+            setContextualReminder(lifeEvent, isEnabled: true)
             try? await contextualNotificationService.schedule(template)
         } else {
-            await setContextualReminder(lifeEvent, isEnabled: false)
+            setContextualReminder(lifeEvent, isEnabled: false)
             contextualNotificationService.cancel(lifeEvent: lifeEvent)
         }
     }

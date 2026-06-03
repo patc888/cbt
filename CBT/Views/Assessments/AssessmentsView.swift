@@ -2,10 +2,13 @@ import SwiftData
 import SwiftUI
 
 struct AssessmentsView: View {
+    @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
     @Query(sort: \AssessmentLog.date, order: .reverse) private var logs: [AssessmentLog]
     @Query(sort: \PersonalityAssessmentLog.date, order: .reverse) private var personalityLogs: [PersonalityAssessmentLog]
     @State private var infoKind: AssessmentKind?
+    @State private var continueItem: ContinueItem?
+    @State private var selectedContinueAssessment: AssessmentKind?
 
     var body: some View {
         NavigationStack {
@@ -17,6 +20,12 @@ struct AssessmentsView: View {
                         AppScreenHeadline(title: "Assessments")
 
                         AssessmentDisclaimer()
+
+                        if let continueItem {
+                            ContinueItemCard(item: continueItem) {
+                                perform(continueItem: continueItem)
+                            }
+                        }
 
                         AssessmentStartSection(
                             title: "Validated Trackers",
@@ -65,6 +74,38 @@ struct AssessmentsView: View {
         }
         .sheet(item: $infoKind) { kind in
             AssessmentInfoSheet(kind: kind)
+        }
+        .sheet(item: $selectedContinueAssessment) { kind in
+            NavigationStack {
+                AssessmentQuizView(kind: kind)
+            }
+            .dsSheetPresentation()
+        }
+        .task {
+            refreshContinueItem()
+        }
+        .onChange(of: logs.count) { _, _ in
+            refreshContinueItem()
+        }
+    }
+
+    @MainActor
+    private func refreshContinueItem() {
+        let item = ContinueItemService.shared.bestItem(
+            from: modelContext,
+            recommendations: []
+        )
+
+        if case .assessment = item?.destination {
+            continueItem = item
+        } else {
+            continueItem = nil
+        }
+    }
+
+    private func perform(continueItem: ContinueItem) {
+        if case .assessment(let kind) = continueItem.destination {
+            selectedContinueAssessment = kind
         }
     }
 }
@@ -195,6 +236,7 @@ private struct AssessmentQuizView: View {
     @State private var didSave = false
     @State private var saveErrorMessage: String?
     @State private var resultDate = Date()
+    @State private var hasCompletedGroundingPreparation = false
 
     private var totalScore: Int {
         kind.score(from: answers)
@@ -227,7 +269,21 @@ private struct AssessmentQuizView: View {
         ZStack {
             ThemedBackground().ignoresSafeArea()
 
-            VStack(spacing: 0) {
+            if !hasCompletedGroundingPreparation {
+                VStack {
+                    GroundingPreparationView(
+                        title: String(localized: "Ground Before the Assessment"),
+                        message: String(localized: "Assessments can ask direct questions about difficult symptoms and patterns. You can take a 30-second breathing reset first, or begin when you feel ready."),
+                        continueTitle: String(localized: "Start Assessment")
+                    ) {
+                        hasCompletedGroundingPreparation = true
+                    }
+                    .padding(.horizontal, DSSpacing.large)
+                    .responsiveMaxWidth()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                VStack(spacing: 0) {
                 ProgressView(value: Double(completedCount), total: Double(kind.questions.count))
                     .tint(themeManager.selectedColor)
                     .padding(.horizontal, 18)
@@ -263,6 +319,7 @@ private struct AssessmentQuizView: View {
                     canAdvance: canAdvanceFromCurrentQuestion,
                     isComplete: isComplete
                 )
+                }
             }
         }
         .navigationTitle(kind.title)
@@ -288,8 +345,12 @@ private struct AssessmentQuizView: View {
 
     private func binding(for index: Int) -> Binding<Int?> {
         Binding(
-            get: { answers[index] },
+            get: {
+                guard answers.indices.contains(index) else { return nil }
+                return answers[index]
+            },
             set: { newValue in
+                guard answers.indices.contains(index) else { return }
                 answers[index] = newValue
             }
         )
@@ -609,11 +670,13 @@ private struct AssessmentAnswerBreakdownCard: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(kind.questions.indices, id: \.self) { index in
+                    let answer = answers.indices.contains(index) ? answers[index] : nil
+
                     AssessmentAnswerBreakdownRow(
                         questionNumber: index + 1,
                         question: kind.questions[index],
-                        answerText: kind.answerText(for: answers[index]),
-                        scoreText: kind.answerScoreText(question: kind.questions[index], answer: answers[index])
+                        answerText: kind.answerText(for: answer),
+                        scoreText: kind.answerScoreText(question: kind.questions[index], answer: answer)
                     )
 
                     if index != kind.questions.indices.last {
@@ -773,7 +836,7 @@ private struct AssessmentTrendsSection: View {
                     SupportiveEmptyStateView(
                         systemImage: "checklist",
                         title: "Assessment Trends",
-                        message: "Assessments are brief self-checks for tracking anxiety, mood, stress, or mindful attention over time."
+                        message: "Start with the GAD-7 self-check. Your first score will anchor the trend chart here."
                     )
                     .padding(.horizontal, Theme.paddingMedium)
 
@@ -828,8 +891,20 @@ private struct AssessmentTrendSummary: Identifiable {
         sortedDescending.dropFirst().first
     }
 
+    var oldest: AssessmentLog {
+        sortedAscending[0]
+    }
+
+    var repeatCount: Int {
+        logs.count
+    }
+
     var sortedDescending: [AssessmentLog] {
         logs.sorted { $0.date > $1.date }
+    }
+
+    var sortedAscending: [AssessmentLog] {
+        logs.sorted { $0.date < $1.date }
     }
 
     var chronologicalValues: [Double] {
@@ -849,6 +924,13 @@ private struct AssessmentTrendSummary: Identifiable {
 private struct AssessmentTrendSummaryRow: View {
     let summary: AssessmentTrendSummary
 
+    private enum Direction {
+        case firstResult
+        case improving
+        case steady
+        case increasingLoad
+    }
+
     private var latestValue: Double {
         summary.latest.displayValue
     }
@@ -867,6 +949,76 @@ private struct AssessmentTrendSummaryRow: View {
 
     private var interpretationText: String {
         summary.kind?.interpretation(for: latestValue) ?? "Saved Result"
+    }
+
+    private var overallChange: Double? {
+        guard summary.repeatCount > 1 else { return nil }
+        return latestValue - summary.oldest.displayValue
+    }
+
+    private var direction: Direction {
+        guard let overallChange, abs(overallChange) >= 0.05 else {
+            return summary.repeatCount > 1 ? .steady : .firstResult
+        }
+
+        if summary.kind?.isSupportiveScore == true {
+            return overallChange > 0 ? .improving : .increasingLoad
+        }
+
+        return overallChange < 0 ? .improving : .increasingLoad
+    }
+
+    private var directionTitle: String {
+        switch direction {
+        case .firstResult:
+            return "First result saved"
+        case .improving:
+            return summary.kind?.isSupportiveScore == true ? "Support building" : "Trending lower"
+        case .steady:
+            return "Holding steady"
+        case .increasingLoad:
+            return summary.kind?.isSupportiveScore == true ? "Support dipping" : "Trending higher"
+        }
+    }
+
+    private var directionSymbolName: String {
+        switch direction {
+        case .firstResult:
+            return "circle.fill"
+        case .steady:
+            return "arrow.right"
+        case .improving:
+            return summary.kind?.isSupportiveScore == true ? "arrow.up.right" : "arrow.down.right"
+        case .increasingLoad:
+            return summary.kind?.isSupportiveScore == true ? "arrow.down.right" : "arrow.up.right"
+        }
+    }
+
+    private var directionDetailText: String {
+        guard let overallChange else { return "Repeat this assessment to see direction over time." }
+
+        let amount = summary.kind?.scoreText(for: abs(overallChange)) ?? "\(Int(abs(overallChange).rounded()))"
+        let directionWord: String
+        if abs(overallChange) < 0.05 {
+            directionWord = "about the same"
+        } else if overallChange > 0 {
+            directionWord = "up \(amount)"
+        } else {
+            directionWord = "down \(amount)"
+        }
+
+        return "\(summary.repeatCount) results, \(directionWord) since \(summary.oldest.date.formatted(date: .abbreviated, time: .omitted))"
+    }
+
+    private var directionColor: Color {
+        switch direction {
+        case .firstResult, .steady:
+            return Theme.secondaryText
+        case .improving:
+            return Theme.successGreen
+        case .increasingLoad:
+            return DSTheme.warning
+        }
     }
 
     private var change: Double? {
@@ -922,11 +1074,27 @@ private struct AssessmentTrendSummaryRow: View {
             HStack(spacing: 12) {
                 AssessmentMiniTrendBars(values: summary.chronologicalValues, kind: summary.kind)
 
-                Text(changeText)
+                VStack(alignment: .trailing, spacing: 4) {
+                    Label {
+                        Text(directionTitle)
+                    } icon: {
+                        Image(systemName: directionSymbolName)
+                    }
                     .font(.system(.caption, design: .rounded).weight(.bold))
-                    .foregroundStyle(changeColor)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .multilineTextAlignment(.trailing)
+                    .foregroundStyle(directionColor)
+                    .labelStyle(.titleAndIcon)
+
+                    Text(directionDetailText)
+                        .font(.system(.caption2, design: .rounded).weight(.semibold))
+                        .foregroundStyle(Theme.secondaryText)
+                        .multilineTextAlignment(.trailing)
+
+                    Text(changeText)
+                        .font(.system(.caption2, design: .rounded).weight(.semibold))
+                        .foregroundStyle(changeColor)
+                        .multilineTextAlignment(.trailing)
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .padding(Theme.paddingMedium)

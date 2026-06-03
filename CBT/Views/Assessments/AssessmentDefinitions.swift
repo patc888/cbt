@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-enum AssessmentKind: String, CaseIterable, Identifiable {
+nonisolated enum AssessmentKind: String, CaseIterable, Identifiable {
     case gad7 = "GAD-7"
     case phq8 = "PHQ-8"
     case pss4 = "PSS-4"
@@ -19,8 +19,8 @@ enum AssessmentKind: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    static var validatedTrackers: [AssessmentKind] { AssessmentDefinitionCatalog.validatedTrackers }
-    static var selfReflectionCheckIns: [AssessmentKind] { AssessmentDefinitionCatalog.selfReflectionCheckIns }
+    nonisolated static var validatedTrackers: [AssessmentKind] { AssessmentDefinitionCatalog.validatedTrackers }
+    nonisolated static var selfReflectionCheckIns: [AssessmentKind] { AssessmentDefinitionCatalog.selfReflectionCheckIns }
 }
 
 struct AssessmentQuestion {
@@ -143,8 +143,8 @@ struct AssessmentDefinition {
 }
 
 enum AssessmentDefinitionCatalog {
-    static let validatedTrackers: [AssessmentKind] = [.gad7, .phq8, .pss4, .maas5]
-    static let selfReflectionCheckIns: [AssessmentKind] = [
+    nonisolated static let validatedTrackers: [AssessmentKind] = [.gad7, .phq8, .pss4, .maas5]
+    nonisolated static let selfReflectionCheckIns: [AssessmentKind] = [
         .adhdAttention,
         .sleepQuality,
         .burnout,
@@ -590,7 +590,9 @@ enum AssessmentDefinitionCatalog {
         ])
     ]
 
-    private static let definitionsByKind = Dictionary(uniqueKeysWithValues: allDefinitions.map { ($0.kind, $0) })
+    private static let definitionsByKind = allDefinitions.reduce(into: [AssessmentKind: AssessmentDefinition]()) { result, definition in
+        result[definition.kind] = result[definition.kind] ?? definition
+    }
 
     private static func loadCheckIn(
         kind: AssessmentKind,

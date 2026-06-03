@@ -5,14 +5,190 @@ import SwiftUI
 @testable import CBT
 
 final class CBTTests: XCTestCase {
+    private func isolatedDefaults(named name: String = #function) throws -> UserDefaults {
+        let suiteName = "com.melichan.CBTTests.\(name).\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        return defaults
+    }
+
+    @MainActor
+    func testNewUserSeesFirstSessionWinFlow() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let defaults = try isolatedDefaults()
+
+        let shouldPresent = FirstSessionWinService.shouldPresentAfterExistingUserCheck(
+            modelContext: context,
+            defaults: defaults,
+            now: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+
+        XCTAssertTrue(shouldPresent)
+        XCTAssertFalse(defaults.bool(forKey: FirstSessionWinService.completedKey))
+    }
+
+    @MainActor
+    func testExistingUserDoesNotSeeFirstSessionWinFlow() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let defaults = try isolatedDefaults()
+        context.insert(MoodCheckIn(createdAt: Date(timeIntervalSince1970: 1_800_000_000), moodScore: 7))
+        try context.save()
+
+        let shouldPresent = FirstSessionWinService.shouldPresentAfterExistingUserCheck(
+            modelContext: context,
+            defaults: defaults,
+            now: Date(timeIntervalSince1970: 1_800_000_100)
+        )
+
+        XCTAssertFalse(shouldPresent)
+        XCTAssertTrue(defaults.bool(forKey: FirstSessionWinService.completedKey))
+        XCTAssertEqual(FirstSessionWinService.completedKind(defaults: defaults), .existingActivity)
+    }
+
+    @MainActor
+    func testCompletedFirstSessionWinPersists() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let defaults = try isolatedDefaults()
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+        try FirstSessionWinService.complete(
+            kind: .breathing,
+            modelContext: context,
+            defaults: defaults,
+            now: now
+        )
+
+        XCTAssertTrue(defaults.bool(forKey: FirstSessionWinService.completedKey))
+        XCTAssertEqual(FirstSessionWinService.completedKind(defaults: defaults), .breathing)
+        XCTAssertEqual(defaults.double(forKey: FirstSessionWinService.completedAtKey), now.timeIntervalSince1970)
+        XCTAssertEqual(LocalEventLog.read(defaults: defaults).last?.name, "first_session_win_completed")
+
+        let count = try context.fetchCount(FetchDescriptor<BreathingSession>())
+        XCTAssertEqual(count, 1)
+    }
+
+    @MainActor
+    func testCompletedFirstSessionWinAppearsOnHome() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let defaults = try isolatedDefaults()
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+        try FirstSessionWinService.complete(
+            kind: .todaysPlan,
+            modelContext: context,
+            planTitle: "Take a short walk",
+            defaults: defaults,
+            now: now
+        )
+
+        let snapshot = LaunchSafeFetch.homeDashboardSnapshot(
+            selectedDate: now,
+            visibleDates: [now],
+            from: context
+        )
+
+        XCTAssertEqual(snapshot.completionSnapshot.state(for: .activityPlanner), .completed)
+        XCTAssertTrue(snapshot.activeDates.contains(Calendar.current.startOfDay(for: now)))
+    }
+
+    func testContinueResolverPrefersRecentUnfinishedItemsOverStaleHigherPriorityItems() {
+        let resolver = ContinueItemResolver()
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let stale = ContinueItem(
+            title: "Old Course",
+            subtitle: "A high-priority older item.",
+            destination: .course(courseID: "old"),
+            updatedAt: now.addingTimeInterval(-(10 * 24 * 60 * 60)),
+            priority: 100
+        )
+        let recent = ContinueItem(
+            title: "Recent Activity",
+            subtitle: "A lower-priority recent item.",
+            destination: .activityPlanner,
+            updatedAt: now.addingTimeInterval(-(2 * 24 * 60 * 60)),
+            priority: 60
+        )
+
+        let item = resolver.bestItem(from: [stale, recent], fallbackRecommendations: [], now: now)
+
+        XCTAssertEqual(item, recent)
+    }
+
+    func testContinueResolverDeduplicatesDestinationsUsingBestCandidate() {
+        let resolver = ContinueItemResolver()
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let lowerPriority = ContinueItem(
+            title: "Activity",
+            subtitle: "Older copy.",
+            destination: .activityPlanner,
+            updatedAt: now,
+            priority: 50
+        )
+        let higherPriority = ContinueItem(
+            title: "Activity",
+            subtitle: "Better copy.",
+            destination: .activityPlanner,
+            updatedAt: now.addingTimeInterval(-60),
+            priority: 80
+        )
+
+        let deduped = resolver.dedupe([lowerPriority, higherPriority])
+
+        XCTAssertEqual(deduped.count, 1)
+        XCTAssertEqual(deduped.first, higherPriority)
+    }
+
+    func testContinueResolverFallsBackToHighestPriorityIncompleteDailyPlanItem() {
+        let resolver = ContinueItemResolver()
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let completed = DailyRecommendation(
+            id: "completed",
+            type: .moodCheckIn,
+            title: "Mood Check-In",
+            subtitle: "Already done.",
+            reason: "Done today.",
+            destination: .moodCheckIn,
+            priority: 100,
+            estimatedDurationMinutes: 1,
+            isCompletedToday: true,
+            mode: .full
+        )
+        let incomplete = DailyRecommendation(
+            id: "incomplete",
+            type: .breathingReset,
+            title: "Breathing Reset",
+            subtitle: "Take one steady minute.",
+            reason: "A helpful next step.",
+            destination: .breathingReset(durationSeconds: 60),
+            priority: 70,
+            estimatedDurationMinutes: 1,
+            isCompletedToday: false,
+            mode: .quick
+        )
+
+        let item = resolver.bestItem(
+            from: [],
+            fallbackRecommendations: [completed, incomplete],
+            now: now
+        )
+
+        XCTAssertEqual(item?.title, incomplete.title)
+        XCTAssertEqual(item?.destination, .dailyPlan(incomplete.destination))
+        XCTAssertEqual(item?.updatedAt, now)
+    }
+
     func testAppConfigurationUsesExpectedCloudContainer() {
         XCTAssertEqual(AppConfiguration.cloudKitContainerIdentifier, "iCloud.com.melichan.CBT")
         XCTAssertEqual(AppConfiguration.appGroupIdentifier, "group.com.melichan.CBT")
     }
 
     func testCurrentMigrationSchemaCoversAllPersistedModels() {
-        let currentModels = Set(CBTVersionedSchemaV6.models.map { String(reflecting: $0) })
-        let latestModels = Set(CBTVersionedSchemaV7.models.map { String(reflecting: $0) })
+        let currentModels = Set(CBTVersionedSchemaV11.models.map { String(reflecting: $0) })
+        let latestModels = Set(CBTVersionedSchemaV12.models.map { String(reflecting: $0) })
         let expectedModels = Set([
             UserSettings.self,
             MoodEntry.self,
@@ -31,14 +207,143 @@ final class CBTTests: XCTestCase {
             LibraryItem.self,
             Course.self,
             Achievement.self,
-            AudioContent.self
+            AudioContent.self,
+            TinyWinCompletion.self,
+            WeeklyRitualEntry.self,
+            PersonalValue.self,
+            ValueActionCompletion.self,
+            DailyPlanCompletion.self,
+            FirstSevenDaysJourney.self
         ].map { String(reflecting: $0) })
-        let v6Models = expectedModels.subtracting([String(reflecting: ChallengeSession.self)])
+        let v11Models = expectedModels.subtracting([String(reflecting: FirstSevenDaysJourney.self)])
 
-        XCTAssertEqual(currentModels, v6Models)
+        XCTAssertEqual(currentModels, v11Models)
         XCTAssertEqual(latestModels, expectedModels)
-        XCTAssertEqual(CBTModelMigrationPlan.schemas.count, 7)
-        XCTAssertEqual(CBTModelMigrationPlan.stages.count, 6)
+        XCTAssertEqual(CBTModelMigrationPlan.schemas.count, 12)
+        XCTAssertEqual(CBTModelMigrationPlan.stages.count, 11)
+    }
+
+    @MainActor
+    func testValueSelectionAddsDefaultAndCustomValues() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let courage = try XCTUnwrap(ValuesService.defaultValues.first { $0.id == "courage" })
+
+        let selected = try ValuesService.selectDefaultValue(courage, in: context)
+        let custom = try XCTUnwrap(ValuesService.addCustomValue(named: "  Playfulness  ", in: context))
+        let duplicate = try ValuesService.selectDefaultValue(courage, in: context)
+        let values = try context.fetch(FetchDescriptor<PersonalValue>())
+
+        XCTAssertEqual(selected.id, duplicate.id)
+        XCTAssertEqual(custom.name, "Playfulness")
+        XCTAssertEqual(custom.valueID, "playfulness")
+        XCTAssertEqual(values.filter { !$0.isDeleted }.count, 2)
+    }
+
+    @MainActor
+    func testValueActionCompletionTracksOneCompletionPerValuePerDayAndCountsAsActivity() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let day = Self.date(calendar, 2026, 6, 1, 9)
+        let sameDayLater = Self.date(calendar, 2026, 6, 1, 21)
+        let connection = try XCTUnwrap(ValuesService.defaultValues.first { $0.id == "connection" })
+        let selected = try ValuesService.selectDefaultValue(connection, in: context, createdAt: day)
+        let action = try XCTUnwrap(ValuesService.action(for: day, selectedValues: [selected], calendar: calendar))
+
+        let firstCompletion = try ValuesService.complete(action: action, on: day, in: context, calendar: calendar)
+        let secondCompletion = try ValuesService.complete(action: action, on: sameDayLater, in: context, calendar: calendar)
+        let completions = try context.fetch(FetchDescriptor<ValueActionCompletion>())
+
+        XCTAssertEqual(firstCompletion.id, secondCompletion.id)
+        XCTAssertEqual(completions.count, 1)
+        XCTAssertTrue(ValuesService.isCompleted(action: action, on: sameDayLater, completions: completions, calendar: calendar))
+        XCTAssertEqual(ValuesService.weeklySummary(completions: completions, now: day, calendar: calendar).first?.valueName, "Connection")
+
+        let snapshot = LaunchSafeFetch.homeDashboardSnapshot(
+            selectedDate: day,
+            visibleDates: [day],
+            from: context
+        )
+        XCTAssertEqual(snapshot.completionSnapshot.state(for: .valueAction), .completed)
+        XCTAssertTrue(snapshot.activeDates.contains(calendar.startOfDay(for: day)))
+    }
+
+    func testTinyWinDailySelectionIsStableAndRotatesByDate() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let wins = [
+            TinyWin(id: "one", title: "One", prompt: "One", actionTitle: "Done", durationSeconds: 30, systemImage: "1.circle"),
+            TinyWin(id: "two", title: "Two", prompt: "Two", actionTitle: "Done", durationSeconds: 30, systemImage: "2.circle"),
+            TinyWin(id: "three", title: "Three", prompt: "Three", actionTitle: "Done", durationSeconds: 30, systemImage: "3.circle")
+        ]
+        let day = Self.date(calendar, 2026, 6, 1, 9)
+        let sameDayLater = Self.date(calendar, 2026, 6, 1, 21)
+        let nextDay = Self.date(calendar, 2026, 6, 2, 9)
+
+        let selected = TinyWinService.win(for: day, calendar: calendar, wins: wins)
+
+        XCTAssertEqual(TinyWinService.win(for: sameDayLater, calendar: calendar, wins: wins), selected)
+        XCTAssertNotEqual(TinyWinService.win(for: nextDay, calendar: calendar, wins: wins), selected)
+        XCTAssertNil(TinyWinService.win(for: day, calendar: calendar, wins: []))
+    }
+
+    func testPlannedActivityNormalizesSupportedValues() {
+        XCTAssertEqual(ValuesService.defaultValues.map(\.id), [
+            "connection",
+            "health",
+            "creativity",
+            "rest",
+            "courage"
+        ])
+        XCTAssertEqual(PlannedActivity.normalizedSupportedValue(" courage "), "Courage")
+        XCTAssertNil(PlannedActivity.normalizedSupportedValue("novelty"))
+        XCTAssertNil(PlannedActivity.normalizedSupportedValue(" "))
+
+        let activity = PlannedActivity(title: "Ask for help", supportedValue: " connection ")
+
+        XCTAssertEqual(activity.supportedValue, "Connection")
+    }
+
+    @MainActor
+    func testTinyWinCompletionTracksOneCompletionPerDayAndCountsAsActivity() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let day = Self.date(calendar, 2026, 6, 1, 9)
+        let sameDayLater = Self.date(calendar, 2026, 6, 1, 21)
+        let win = try XCTUnwrap(TinyWinService.win(for: day, calendar: calendar))
+
+        let firstCompletion = try TinyWinService.complete(win: win, on: day, in: context, calendar: calendar)
+        let secondCompletion = try TinyWinService.complete(win: win, on: sameDayLater, in: context, calendar: calendar)
+        let completions = try context.fetch(FetchDescriptor<TinyWinCompletion>())
+
+        XCTAssertEqual(firstCompletion.id, secondCompletion.id)
+        XCTAssertEqual(completions.count, 1)
+        XCTAssertTrue(TinyWinService.isCompleted(on: sameDayLater, completions: completions, calendar: calendar))
+        XCTAssertEqual(TinyWinService.state(for: day, completions: completions, now: sameDayLater, calendar: calendar), .completed(win))
+
+        let snapshot = LaunchSafeFetch.homeDashboardSnapshot(
+            selectedDate: day,
+            visibleDates: [day],
+            from: context
+        )
+        XCTAssertEqual(snapshot.completionSnapshot.state(for: .tinyWin), .completed)
+        XCTAssertTrue(snapshot.activeDates.contains(calendar.startOfDay(for: day)))
+    }
+
+    func testTinyWinStateReportsEmptyAvailableAndMissed() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let today = Self.date(calendar, 2026, 6, 2, 9)
+        let yesterday = Self.date(calendar, 2026, 6, 1, 9)
+        let win = TinyWin(id: "one", title: "One", prompt: "One", actionTitle: "Done", durationSeconds: 30, systemImage: "1.circle")
+
+        XCTAssertEqual(TinyWinService.state(for: today, completions: [], now: today, calendar: calendar, wins: []), .empty)
+        XCTAssertEqual(TinyWinService.state(for: today, completions: [], now: today, calendar: calendar, wins: [win]), .available(win))
+        XCTAssertEqual(TinyWinService.state(for: yesterday, completions: [], now: today, calendar: calendar, wins: [win]), .missed(win))
     }
 
     func testRegisteredDefaultsShowStreakInToolbarOnForFirstLaunch() throws {
@@ -93,12 +398,167 @@ final class CBTTests: XCTestCase {
         )
         XCTAssertEqual(
             StreakReengagementNotificationService.notificationBody(streakCount: 4),
-            "Your 4-day streak can keep going with one 30-second mood check-in."
+            "Your 4-day streak is waiting for you! Take 30 seconds to log your mood."
         )
         XCTAssertEqual(
             StreakReengagementNotificationService.notificationBody(streakCount: 0),
-            "A 30-second mood check-in can make it easier to notice your pattern today."
+            "Checking in takes only 30 seconds. How are you doing today?"
         )
+    }
+
+    func testDailyMoodCheckInNotificationBodyUsesTomorrowAnchorWhenSaved() {
+        let defaults = UserDefaults(suiteName: "testDailyMoodCheckInNotificationBodyUsesTomorrowAnchorWhenSaved")!
+        defaults.removePersistentDomain(forName: "testDailyMoodCheckInNotificationBodyUsesTomorrowAnchorWhenSaved")
+
+        XCTAssertEqual(
+            PersonalizedReminderType.dailyMoodCheckInNotificationBody(defaults: defaults),
+            "Take a moment to name your mood, intensity, and context. A quick check-in can make patterns easier to see over time."
+        )
+
+        defaults.set(TomorrowAnchor.breathing.rawValue, forKey: TomorrowAnchor.defaultsKey)
+
+        XCTAssertEqual(
+            PersonalizedReminderType.dailyMoodCheckInNotificationBody(defaults: defaults),
+            "Your anchor today is reset: Start with one minute of breathing."
+        )
+    }
+
+    func testSmartReminderTimingSuggestsUsualMoodCheckInTime() {
+        let samples = [
+            (21 * 60) + 35,
+            (21 * 60) + 40,
+            (21 * 60) + 42,
+            (21 * 60) + 45,
+            (21 * 60) + 39
+        ]
+
+        let suggestion = SmartReminderTiming.suggestion(
+            samples: samples,
+            currentMinuteOfDay: 9 * 60
+        )
+
+        XCTAssertEqual(suggestion?.hour, 21)
+        XCTAssertEqual(suggestion?.minute, 40)
+        XCTAssertEqual(suggestion?.sampleCount, 5)
+    }
+
+    func testSmartReminderTimingWaitsForEnoughConsistentHistory() {
+        XCTAssertNil(SmartReminderTiming.suggestion(
+            samples: [(21 * 60) + 40, (21 * 60) + 45, (21 * 60) + 42],
+            currentMinuteOfDay: 9 * 60
+        ))
+        XCTAssertNil(SmartReminderTiming.suggestion(
+            samples: [7 * 60, 12 * 60, 18 * 60, 23 * 60],
+            currentMinuteOfDay: 9 * 60
+        ))
+    }
+
+    @MainActor
+    func testReminderOptInPromptEligibilityRequiresValueMomentAndAvailablePermission() {
+        let defaults = makeReminderOptInDefaults(named: #function)
+        let service = ReminderOptInService(defaults: defaults)
+
+        XCTAssertFalse(service.isEligible(
+            for: .firstMoodCheckIn,
+            hasReachedMoment: false,
+            notificationStatus: .notDetermined
+        ))
+        XCTAssertTrue(service.isEligible(
+            for: .firstMoodCheckIn,
+            hasReachedMoment: true,
+            notificationStatus: .notDetermined
+        ))
+        XCTAssertFalse(service.isEligible(
+            for: .firstMoodCheckIn,
+            hasReachedMoment: true,
+            notificationStatus: .denied
+        ))
+
+        defaults.set(true, forKey: PersonalizedReminderType.dailyMoodCheckIn.enabledDefaultsKey)
+        XCTAssertFalse(service.isEligible(
+            for: .firstMoodCheckIn,
+            hasReachedMoment: true,
+            notificationStatus: .authorized
+        ))
+    }
+
+    @MainActor
+    func testReminderOptInPromptDismissedStopsFuturePrompts() {
+        let defaults = makeReminderOptInDefaults(named: #function)
+        let service = ReminderOptInService(defaults: defaults)
+
+        service.dismiss(.firstPlannedActivityCompletion)
+
+        XCTAssertEqual(service.state(for: .firstPlannedActivityCompletion), .dismissed)
+        XCTAssertFalse(service.isEligible(
+            for: .firstPlannedActivityCompletion,
+            hasReachedMoment: true,
+            notificationStatus: .authorized
+        ))
+    }
+
+    @MainActor
+    func testReminderOptInPromptAcceptedStoresStateAndEnablesReminder() async {
+        let defaults = makeReminderOptInDefaults(named: #function)
+        var scheduledTypes: [PersonalizedReminderType] = []
+        let service = ReminderOptInService(
+            defaults: defaults,
+            notificationStatusProvider: { .authorized },
+            notificationPermissionRequester: { .authorized },
+            reminderScheduler: { type in
+                scheduledTypes.append(type)
+                return true
+            }
+        )
+
+        let didAccept = await service.accept(.firstMoodCheckIn)
+
+        XCTAssertTrue(didAccept)
+        XCTAssertEqual(service.state(for: .firstMoodCheckIn), .accepted)
+        XCTAssertTrue(defaults.bool(forKey: PersonalizedReminderType.dailyMoodCheckIn.enabledDefaultsKey))
+        XCTAssertEqual(scheduledTypes, [.dailyMoodCheckIn])
+    }
+
+    @MainActor
+    func testReminderOptInPermissionDeniedStoresDeniedStateWithoutScheduling() async {
+        let defaults = makeReminderOptInDefaults(named: #function)
+        var didSchedule = false
+        let service = ReminderOptInService(
+            defaults: defaults,
+            notificationStatusProvider: { .notDetermined },
+            notificationPermissionRequester: { .denied },
+            reminderScheduler: { _ in
+                didSchedule = true
+                return true
+            }
+        )
+
+        let didAccept = await service.accept(.firstWeeklyInsightViewed)
+
+        XCTAssertFalse(didAccept)
+        XCTAssertEqual(service.state(for: .firstWeeklyInsightViewed), .permissionDenied)
+        XCTAssertFalse(defaults.bool(forKey: PersonalizedReminderType.weeklyReport.enabledDefaultsKey))
+        XCTAssertFalse(didSchedule)
+    }
+
+    @MainActor
+    func testReminderOptInSchedulesTargetReminderAfterOptIn() async {
+        let defaults = makeReminderOptInDefaults(named: #function)
+        var scheduledTypes: [PersonalizedReminderType] = []
+        let service = ReminderOptInService(
+            defaults: defaults,
+            notificationStatusProvider: { .authorized },
+            notificationPermissionRequester: { .authorized },
+            reminderScheduler: { type in
+                scheduledTypes.append(type)
+                return true
+            }
+        )
+
+        _ = await service.accept(.firstPlannedActivityCompletion)
+
+        XCTAssertEqual(scheduledTypes, [.plannedActivity])
+        XCTAssertTrue(defaults.bool(forKey: PersonalizedReminderType.plannedActivity.enabledDefaultsKey))
     }
 
     func testStreakReengagementCurrentStreakMatchesMoodCheckInDays() {
@@ -125,6 +585,80 @@ final class CBTTests: XCTestCase {
             ),
             0
         )
+    }
+
+    func testBadDayModeTriggersAfterTwoMissedDays() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let today = calendar.startOfDay(for: Self.date(calendar, 2026, 6, 1, 12))
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let threeDaysAgo = calendar.date(byAdding: .day, value: -3, to: today)!
+
+        XCTAssertFalse(BadDayModeService.context(
+            activeDays: [yesterday],
+            latestMoodScore: nil,
+            today: today,
+            calendar: calendar
+        ).shouldShow)
+
+        let context = BadDayModeService.context(
+            activeDays: [threeDaysAgo],
+            latestMoodScore: nil,
+            today: today,
+            calendar: calendar
+        )
+
+        XCTAssertTrue(context.shouldShow)
+        XCTAssertEqual(context.trigger, .missedDays(2))
+        XCTAssertEqual(context.missedDays, 2)
+    }
+
+    func testBadDayModeTriggersForVeryLowMoodLoggedTodayOnly() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let today = calendar.startOfDay(for: Self.date(calendar, 2026, 6, 1, 12))
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+
+        let todayContext = BadDayModeService.context(
+            activeDays: [today],
+            latestMoodScore: 2,
+            latestMoodDate: today.addingTimeInterval(60 * 60),
+            today: today,
+            calendar: calendar
+        )
+
+        XCTAssertTrue(todayContext.shouldShow)
+        XCTAssertEqual(todayContext.trigger, .veryLowMood(2))
+
+        let staleContext = BadDayModeService.context(
+            activeDays: [today],
+            latestMoodScore: 2,
+            latestMoodDate: yesterday,
+            today: today,
+            calendar: calendar
+        )
+
+        XCTAssertFalse(staleContext.shouldShow)
+    }
+
+    func testBadDayModeManualTriggerAndRestartRuleDoNotBackfillStreakDays() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let today = calendar.startOfDay(for: Self.date(calendar, 2026, 6, 1, 12))
+
+        let context = BadDayModeService.context(
+            activeDays: [],
+            latestMoodScore: nil,
+            today: today,
+            calendar: calendar,
+            manual: true
+        )
+
+        XCTAssertTrue(context.shouldShow)
+        XCTAssertEqual(context.trigger, .manual)
+        XCTAssertTrue(BadDayModeService.allowsRestartToday(hasActivityToday: false))
+        XCTAssertFalse(BadDayModeService.allowsRestartToday(hasActivityToday: true))
+        XCTAssertEqual(BadDayModeService.restartTodayMoodScore, 5)
     }
 
     func testThemeModeMapsToExpectedColorScheme() {
@@ -165,6 +699,151 @@ final class CBTTests: XCTestCase {
         XCTAssertEqual(UserMilestoneSchema.badgeID(forExactEntryCount: 50), "growth.entries.50")
         XCTAssertEqual(snapshot.topEmotionTags.map(\.name), ["Calm", "Anxious", "Tired"])
         XCTAssertEqual(snapshot.topEmotionTags.map(\.count), [8, 5, 4])
+    }
+
+    func testRetentionInsightsCalculateProgressCardsFromLocalEvents() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.firstWeekday = 2
+        let referenceDate = Self.date(calendar, 2026, 6, 3, 12)
+
+        let snapshot = RetentionInsightsService.snapshot(
+            moods: [
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 6, 1, 9), moodScore: 5, triggers: ["Work"]),
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 6, 2, 9), moodScore: 6, triggers: ["Work", "Sleep"]),
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 5, 28, 9), moodScore: 4, triggers: ["Sleep"])
+            ],
+            checkIns: [
+                RetentionDatedEvent(createdAt: Self.date(calendar, 2026, 6, 3, 8))
+            ],
+            thoughts: [
+                RetentionThoughtEvent(createdAt: Self.date(calendar, 2026, 6, 1, 18), intensityBefore: 70, intensityAfter: 40),
+                RetentionThoughtEvent(createdAt: Self.date(calendar, 2026, 6, 2, 18), intensityBefore: 60, intensityAfter: 30)
+            ],
+            exerciseCompletions: [
+                RetentionDatedEvent(createdAt: Self.date(calendar, 2026, 6, 1, 13)),
+                RetentionDatedEvent(createdAt: Self.date(calendar, 2026, 6, 3, 13))
+            ],
+            journalEntries: [
+                RetentionDatedEvent(createdAt: Self.date(calendar, 2026, 5, 28, 20))
+            ],
+            flexibleJournalEntries: [],
+            breathingSessions: [
+                RetentionDatedEvent(createdAt: Self.date(calendar, 2026, 6, 2, 10)),
+                RetentionDatedEvent(createdAt: Self.date(calendar, 2026, 6, 3, 10))
+            ],
+            referenceDate: referenceDate,
+            calendar: calendar
+        )
+
+        XCTAssertNil(snapshot.emptyStateMessage)
+        XCTAssertEqual(snapshot.cards.map(\.id), [
+            "weekly-check-ins",
+            "common-trigger",
+            "breathing-days",
+            "thought-record-intensity",
+            "monthly-exercises",
+            "returned-after-missed-day"
+        ])
+        XCTAssertEqual(snapshot.cards.first { $0.id == "weekly-check-ins" }?.message, "You checked in 3 days this week.")
+        XCTAssertEqual(snapshot.cards.first { $0.id == "common-trigger" }?.message, "Your most common trigger was Work.")
+        XCTAssertEqual(snapshot.cards.first { $0.id == "breathing-days" }?.message, "Breathing was part of 2 days this week.")
+        XCTAssertEqual(snapshot.cards.first { $0.id == "thought-record-intensity" }?.detail, "Average before 65, average after 35.")
+        XCTAssertEqual(snapshot.cards.first { $0.id == "monthly-exercises" }?.message, "You completed 2 exercises this month.")
+        XCTAssertEqual(snapshot.cards.first { $0.id == "returned-after-missed-day" }?.message, "You returned after a missed day.")
+        XCTAssertEqual(snapshot.patternUnlocks.map(\.id), ["trigger-repetition", "next-pattern-5"])
+        XCTAssertEqual(snapshot.patternUnlocks.first?.message, "Work has shown up in 2 check-ins.")
+        XCTAssertFalse(snapshot.patternUnlocks.last?.isUnlocked ?? true)
+    }
+
+    func testRetentionInsightsUnlockPersonalPatternsProgressively() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.firstWeekday = 2
+        let referenceDate = Self.date(calendar, 2026, 6, 7, 12)
+
+        let snapshot = RetentionInsightsService.snapshot(
+            moods: [
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 5, 31, 9), moodScore: 5, triggers: ["Work"], energyScore: 3),
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 6, 1, 9), moodScore: 4, triggers: ["Work"], energyScore: 3),
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 6, 1, 18), moodScore: 6, triggers: ["Work"], energyScore: 5),
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 6, 2, 9), moodScore: 5, triggers: ["Sleep"], energyScore: 6),
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 6, 3, 9), moodScore: 5, triggers: ["Errands"], energyScore: 6),
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 6, 4, 9), moodScore: 3, triggers: ["Work"], energyScore: 2),
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 6, 4, 18), moodScore: 5, triggers: ["Work"], energyScore: 4),
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 6, 5, 9), moodScore: 6, triggers: ["Family"], energyScore: 5),
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 6, 6, 9), moodScore: 7, triggers: ["Rest"], energyScore: 6),
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 6, 7, 9), moodScore: 6, triggers: ["Planning"], energyScore: 5)
+            ],
+            checkIns: [],
+            thoughts: [],
+            exerciseCompletions: [],
+            journalEntries: [
+                RetentionDatedEvent(createdAt: Self.date(calendar, 2026, 6, 1, 13)),
+                RetentionDatedEvent(createdAt: Self.date(calendar, 2026, 6, 4, 13))
+            ],
+            flexibleJournalEntries: [],
+            breathingSessions: [
+                RetentionDatedEvent(createdAt: Self.date(calendar, 2026, 6, 2, 10)),
+                RetentionDatedEvent(createdAt: Self.date(calendar, 2026, 6, 3, 10))
+            ],
+            referenceDate: referenceDate,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(snapshot.patternUnlocks.map(\.id), [
+            "trigger-repetition",
+            "low-energy-trigger",
+            "breathing-return",
+            "journal-mood-lift"
+        ])
+        XCTAssertEqual(snapshot.patternUnlocks.map(\.isUnlocked), [true, true, true, true])
+        XCTAssertEqual(snapshot.patternUnlocks.first { $0.id == "low-energy-trigger" }?.message, "Work shows up often on low-energy days.")
+        XCTAssertEqual(snapshot.patternUnlocks.first { $0.id == "breathing-return" }?.message, "Breathing helped you return twice this week.")
+        XCTAssertEqual(snapshot.patternUnlocks.first { $0.id == "journal-mood-lift" }?.message, "Your mood tends to lift after journaling.")
+    }
+
+    func testRetentionInsightsShowsLowDataStateWithoutOverstatingPatterns() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.firstWeekday = 2
+
+        let snapshot = RetentionInsightsService.snapshot(
+            moods: [
+                RetentionMoodEvent(createdAt: Self.date(calendar, 2026, 6, 1, 9), moodScore: 6, triggers: [])
+            ],
+            checkIns: [],
+            thoughts: [
+                RetentionThoughtEvent(createdAt: Self.date(calendar, 2026, 6, 1, 18), intensityBefore: 40, intensityAfter: 35)
+            ],
+            exerciseCompletions: [],
+            journalEntries: [],
+            flexibleJournalEntries: [],
+            breathingSessions: [],
+            referenceDate: Self.date(calendar, 2026, 6, 3, 12),
+            calendar: calendar
+        )
+
+        XCTAssertEqual(snapshot.cards.map(\.id), ["weekly-check-ins"])
+        XCTAssertEqual(snapshot.cards.first?.message, "You checked in 1 day this week.")
+        XCTAssertEqual(snapshot.patternUnlocks.map(\.id), ["first-pattern"])
+        XCTAssertFalse(snapshot.patternUnlocks.first?.isUnlocked ?? true)
+
+        let emptySnapshot = RetentionInsightsService.snapshot(
+            moods: [],
+            checkIns: [],
+            thoughts: [],
+            exerciseCompletions: [],
+            journalEntries: [],
+            flexibleJournalEntries: [],
+            breathingSessions: [],
+            referenceDate: Self.date(calendar, 2026, 6, 3, 12),
+            calendar: calendar
+        )
+
+        XCTAssertTrue(emptySnapshot.cards.isEmpty)
+        XCTAssertEqual(emptySnapshot.patternUnlocks.map(\.id), ["first-pattern"])
+        XCTAssertEqual(emptySnapshot.emptyStateMessage, RetentionInsightsSnapshot.empty.emptyStateMessage)
     }
 
     @MainActor
@@ -212,6 +891,116 @@ final class CBTTests: XCTestCase {
         XCTAssertTrue(unlockedTitles.contains("Thought Catcher"))
     }
 
+    @MainActor
+    func testThoughtRecordDraftAutoSaveUpdatesExistingDraft() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let viewModel = NewThoughtRecordViewModel()
+
+        viewModel.mode = .quick
+        viewModel.situation = "Before a presentation"
+        viewModel.automaticThought = "I will blank"
+        viewModel.saveDraft(context: context)
+
+        viewModel.automaticThought = "I might blank for a second"
+        viewModel.balancedThought = "I can pause and use my notes"
+        viewModel.saveDraft(context: context)
+
+        let records = try context.fetch(FetchDescriptor<ThoughtRecord>())
+        XCTAssertEqual(records.count, 1)
+        let draft = try XCTUnwrap(records.first)
+        XCTAssertTrue(draft.isDraft)
+        XCTAssertFalse(draft.isComplete)
+        XCTAssertEqual(draft.automaticThought, "I might blank for a second")
+        XCTAssertEqual(draft.mode, .quick)
+    }
+
+    @MainActor
+    func testThoughtRecordCompletionReusesDraftAndSavesReframe() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let viewModel = NewThoughtRecordViewModel()
+
+        viewModel.situation = "A difficult message"
+        viewModel.automaticThought = "They are upset with me"
+        viewModel.distortions = ["Mind Reading"]
+        viewModel.balancedThought = "I can ask before assuming"
+        viewModel.intensityBefore = 80
+        viewModel.intensityAfter = 45
+        viewModel.saveDraft(context: context)
+        let draftID = try XCTUnwrap(viewModel.draftRecord?.id)
+
+        viewModel.saveReframe = true
+        viewModel.favoriteReframe = true
+        let completed = try XCTUnwrap(viewModel.saveRecord(context: context))
+
+        let records = try context.fetch(FetchDescriptor<ThoughtRecord>())
+        XCTAssertEqual(records.count, 1)
+        XCTAssertEqual(completed.id, draftID)
+        XCTAssertFalse(completed.isDraft)
+        XCTAssertTrue(completed.isComplete)
+        XCTAssertTrue(completed.isSavedReframe)
+        XCTAssertTrue(completed.isFavoriteReframe)
+        XCTAssertNotNil(completed.completedAt)
+    }
+
+    @MainActor
+    func testThoughtRecordInsightAggregationCountsCompletionAndRecurringDistortions() async throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let now = Date()
+
+        context.insert(ThoughtRecord(
+            createdAt: now.addingTimeInterval(-3_600),
+            distortions: ["Catastrophizing"],
+            balancedThought: "One step is enough",
+            intensityBefore: 80,
+            intensityAfter: 50,
+            isSavedReframe: true,
+            isFavoriteReframe: true,
+            completedAt: now.addingTimeInterval(-3_500)
+        ))
+        context.insert(ThoughtRecord(
+            createdAt: now.addingTimeInterval(-1_800),
+            distortions: ["Catastrophizing"],
+            balancedThought: "I can check the facts",
+            intensityBefore: 60,
+            intensityAfter: 40,
+            completedAt: now.addingTimeInterval(-1_700)
+        ))
+        context.insert(ThoughtRecord(
+            createdAt: now.addingTimeInterval(-900),
+            situation: "Started and paused",
+            intensityBefore: 50,
+            intensityAfter: 50,
+            isDraft: true,
+            mode: .quick
+        ))
+        try context.save()
+
+        let viewModel = InsightsViewModel()
+        await viewModel.recalculate(
+            timeRangeDays: 7,
+            moodEntries: [],
+            moodCheckIns: [],
+            thoughtRecords: try context.fetch(FetchDescriptor<ThoughtRecord>()),
+            exerciseCompletions: [],
+            journalEntries: [],
+            flexibleJournalEntries: [],
+            breathingSessions: [],
+            moodGoalValue: 7
+        )
+
+        let stats = viewModel.dashboardSnapshot.thoughtRecordStats
+        XCTAssertEqual(stats.completedCount, 2)
+        XCTAssertEqual(stats.draftCount, 1)
+        XCTAssertEqual(stats.savedReframeCount, 1)
+        XCTAssertEqual(stats.favoriteReframeCount, 1)
+        XCTAssertEqual(stats.averageIntensityChange, 25)
+        XCTAssertEqual(stats.recurringDistortions.first?.name, "Catastrophizing")
+        XCTAssertEqual(stats.recurringDistortions.first?.count, 2)
+    }
+
     func testBundledGuidedJournalTemplatesAreValid() {
         let templates = JournalTemplate.allTemplates
         let expectedTitles: Set<String> = [
@@ -243,6 +1032,7 @@ final class CBTTests: XCTestCase {
             "Values Check-In",
             "Control vs Influence",
             "Sleep Wind-Down Reflection",
+            "Evening Closure",
             "Burnout Check-In",
             "Three Good Things"
         ]
@@ -250,7 +1040,7 @@ final class CBTTests: XCTestCase {
         let bundledTitles = Set(templates.map(\.title))
         let addedTemplates = templates.filter { expectedTitles.contains($0.title) }
 
-        XCTAssertEqual(addedTemplates.count, 30)
+        XCTAssertEqual(addedTemplates.count, 31)
         XCTAssertTrue(bundledTitles.isSuperset(of: expectedTitles))
         XCTAssertEqual(Set(templates.map(\.id)).count, templates.count)
 
@@ -277,7 +1067,7 @@ final class CBTTests: XCTestCase {
             XCTAssertFalse(template.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, template.title)
             XCTAssertFalse(template.approach.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, template.title)
             XCTAssertGreaterThan(template.estimatedDurationMinutes, 0, template.title)
-            XCTAssertTrue((4...7).contains(template.prompts.count), template.title)
+            XCTAssertTrue((3...7).contains(template.prompts.count), template.title)
             XCTAssertFalse(template.completionMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, template.title)
             XCTAssertFalse(template.tags.isEmpty, template.title)
 
@@ -343,6 +1133,107 @@ final class CBTTests: XCTestCase {
         }
     }
 
+    func testCourseProgressPercentageUsesOrderedLessonCompletions() {
+        let lessons = [
+            CourseLesson(
+                id: "step_1",
+                title: "Step 1",
+                shortEducationalText: "Start.",
+                keyTakeaway: "Start small.",
+                linkedExerciseID: "exercise_001",
+                estimatedDuration: 4
+            ),
+            CourseLesson(
+                id: "step_2",
+                title: "Step 2",
+                shortEducationalText: "Continue.",
+                keyTakeaway: "Keep going.",
+                linkedExerciseID: "exercise_002",
+                estimatedDuration: 4
+            ),
+            CourseLesson(
+                id: "step_3",
+                title: "Step 3",
+                shortEducationalText: "Finish.",
+                keyTakeaway: "Close the loop.",
+                linkedExerciseID: "exercise_003",
+                estimatedDuration: 4
+            )
+        ]
+        let course = Course(
+            id: "skill_path_test",
+            title: "Progress Test Path",
+            approach: "Skill Path",
+            lessons: lessons,
+            itemIDs: lessons.compactMap(\.linkedExerciseID)
+        )
+
+        XCTAssertTrue(course.isSkillPath)
+        XCTAssertEqual(course.progressTotal, 3)
+        XCTAssertEqual(course.completedLessonCount, 0)
+        XCTAssertEqual(course.progressPercentage, 0)
+        XCTAssertFalse(course.isCompleted)
+
+        course.markCompleted(lesson: lessons[0])
+
+        XCTAssertEqual(course.completedLessonCount, 1)
+        XCTAssertEqual(course.progressPercentage, 33)
+        XCTAssertFalse(course.isCompleted)
+
+        course.markCompleted(lesson: lessons[1])
+        course.markCompleted(lesson: lessons[2])
+
+        XCTAssertEqual(course.completedLessonCount, 3)
+        XCTAssertEqual(course.progressPercentage, 100)
+        XCTAssertTrue(course.isCompleted)
+    }
+
+    @MainActor
+    func testBundledSkillPathsAreSeededAndPreserveProgress() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        context.insert(Course(
+            id: "skill_path_anxiety_reset",
+            title: "Old Anxiety Reset",
+            approach: "Skill Path",
+            itemIDs: ["exercise_003", "exercise_004"],
+            completedItemIDs: ["exercise_003"]
+        ))
+
+        try LibraryService.shared.seedLibraryIfNeeded(in: context)
+
+        let paths = try context.fetch(FetchDescriptor<Course>()).filter(\.isSkillPath)
+        let expectedTitles: Set<String> = [
+            "Anxiety Reset",
+            "Overthinking",
+            "Low Mood Support",
+            "Self-Esteem",
+            "Stress at Work",
+            "Sleep & Worry",
+            "Social Anxiety",
+            "Panic Support"
+        ]
+
+        XCTAssertEqual(paths.count, 8)
+        XCTAssertEqual(Set(paths.map(\.title)), expectedTitles)
+
+        for path in paths {
+            XCTAssertEqual(path.approach, "Skill Path")
+            XCTAssertEqual(path.lessons.count, 5, path.title)
+            XCTAssertEqual(path.lessonCount, 5, path.title)
+            XCTAssertGreaterThan(path.progressTotal, 0, path.title)
+            XCTAssertFalse(path.linkedExerciseIDs.isEmpty, path.title)
+            XCTAssertFalse(path.linkedGuidedJournalIDs.isEmpty, path.title)
+            XCTAssertFalse(path.courseDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, path.title)
+        }
+
+        let anxietyReset = try XCTUnwrap(paths.first { $0.id == "skill_path_anxiety_reset" })
+        XCTAssertEqual(anxietyReset.completedItemIDs, ["exercise_003"])
+        XCTAssertEqual(anxietyReset.completedLessonCount, 1)
+        XCTAssertEqual(anxietyReset.progressPercentage, 20)
+        XCTAssertFalse(anxietyReset.isCompleted)
+    }
+
     @MainActor
     func testDataExportIncludesDailyPlanAndGuidedJournalModels() throws {
         let container = try SharedPersistence.makeInMemoryModelContainer()
@@ -358,7 +1249,23 @@ final class CBTTests: XCTestCase {
             activityTags: ["Sleep", "Exercise"]
         ))
         context.insert(BreathingSession(durationSeconds: 180))
-        context.insert(SafetyPlan(personalWarningSigns: ["Withdrawing"]))
+        context.insert(PlannedActivity(
+            title: "Text Maya",
+            category: "Social",
+            scheduledDate: Date(timeIntervalSince1970: 1_800_000_050),
+            supportedValue: "Connection",
+            predictedEnjoyment: 6
+        ))
+        context.insert(SafetyPlan(
+            emergencyContacts: [EmergencyContact(name: "Alex", relationship: "Friend")],
+            personalWarningSigns: ["Withdrawing"],
+            copingStrategies: ["Step outside"],
+            groundingSteps: ["Name five things I can see"],
+            safePlaces: ["Kitchen table"],
+            reminders: ["This feeling can pass"],
+            makesItWorse: ["Doomscrolling"],
+            privacySafeDisplayEnabled: true
+        ))
         let settings = UserSettings(hapticsEnabled: false, appLockEnabled: true, isPremium: true)
         settings.currentIcon = "calm"
         context.insert(settings)
@@ -401,11 +1308,81 @@ final class CBTTests: XCTestCase {
         XCTAssertEqual(payload.flexibleJournalEntries?.count, 1)
         XCTAssertEqual(payload.moodCheckIns?.count, 1)
         XCTAssertEqual(payload.breathingSessions?.count, 1)
+        XCTAssertEqual(payload.plannedActivities?.first?.supportedValue, "Connection")
         XCTAssertEqual(payload.safetyPlans?.count, 1)
+        XCTAssertEqual(payload.safetyPlans?.first?.groundingSteps, ["Name five things I can see"])
+        XCTAssertEqual(payload.safetyPlans?.first?.safePlaces, ["Kitchen table"])
+        XCTAssertEqual(payload.safetyPlans?.first?.reminders, ["This feeling can pass"])
+        XCTAssertEqual(payload.safetyPlans?.first?.makesItWorse, ["Doomscrolling"])
+        XCTAssertEqual(payload.safetyPlans?.first?.privacySafeDisplayEnabled, true)
         XCTAssertEqual(payload.userSettings?.first?.appLockEnabled, true)
         XCTAssertEqual(payload.courses?.first?.completedItemIDs, ["lesson_1"])
         XCTAssertEqual(payload.audioContents?.first?.isFavorite, true)
         XCTAssertEqual(payload.achievements?.first?.isUnlocked, true)
+    }
+
+    @MainActor
+    func testCopingPlanSavesAllSectionsLocally() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let plan = SafetyPlan(
+            emergencyContacts: [EmergencyContact(name: "Sam", relationship: "Sibling", phoneNumber: "555-0100")],
+            personalWarningSigns: ["  racing thoughts  ", ""],
+            copingStrategies: ["Cold water"],
+            groundingSteps: ["Feet on floor"],
+            safePlaces: ["Library"],
+            reminders: ["I can take this one minute at a time"],
+            makesItWorse: ["Skipping meals"],
+            privacySafeDisplayEnabled: true
+        )
+
+        context.insert(plan)
+        try context.save()
+
+        let savedPlan = try XCTUnwrap(try context.fetch(FetchDescriptor<SafetyPlan>()).first)
+        XCTAssertEqual(savedPlan.supportivePeople.first?.name, "Sam")
+        XCTAssertEqual(savedPlan.personalWarningSigns, ["racing thoughts"])
+        XCTAssertEqual(savedPlan.copingStrategies, ["Cold water"])
+        XCTAssertEqual(savedPlan.groundingSteps, ["Feet on floor"])
+        XCTAssertEqual(savedPlan.safePlaces, ["Library"])
+        XCTAssertEqual(savedPlan.reminders, ["I can take this one minute at a time"])
+        XCTAssertEqual(savedPlan.makesItWorse, ["Skipping meals"])
+        XCTAssertTrue(savedPlan.privacySafeDisplayEnabled)
+    }
+
+    @MainActor
+    func testCopingPlanUpdatesPersistLocally() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let originalDate = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = SafetyPlan(
+            createdAt: originalDate,
+            updatedAt: originalDate,
+            personalWarningSigns: ["Withdrawing"],
+            copingStrategies: ["Walk"]
+        )
+        context.insert(plan)
+        try context.save()
+
+        let savedPlan = try XCTUnwrap(try context.fetch(FetchDescriptor<SafetyPlan>()).first)
+        savedPlan.personalWarningSigns = ["Snapping at people"]
+        savedPlan.copingStrategies = ["Text a friend"]
+        savedPlan.groundingSteps = ["Notice breath"]
+        savedPlan.safePlaces = ["Porch"]
+        savedPlan.reminders = ["Use the plan before deciding the whole day is ruined"]
+        savedPlan.makesItWorse = ["Arguing online"]
+        savedPlan.privacySafeDisplayEnabled = false
+        try context.save()
+
+        let updatedPlan = try XCTUnwrap(try context.fetch(FetchDescriptor<SafetyPlan>()).first)
+        XCTAssertEqual(updatedPlan.personalWarningSigns, ["Snapping at people"])
+        XCTAssertEqual(updatedPlan.copingStrategies, ["Text a friend"])
+        XCTAssertEqual(updatedPlan.groundingSteps, ["Notice breath"])
+        XCTAssertEqual(updatedPlan.safePlaces, ["Porch"])
+        XCTAssertEqual(updatedPlan.reminders, ["Use the plan before deciding the whole day is ruined"])
+        XCTAssertEqual(updatedPlan.makesItWorse, ["Arguing online"])
+        XCTAssertFalse(updatedPlan.privacySafeDisplayEnabled)
+        XCTAssertGreaterThan(updatedPlan.updatedAt, originalDate)
     }
 
     @MainActor
@@ -436,6 +1413,13 @@ final class CBTTests: XCTestCase {
             isCompleted: true,
             completedAt: completedAt,
             isFavorite: true
+        ))
+        sourceContext.insert(PlannedActivity(
+            title: "Rest with tea",
+            category: "Nourishing",
+            scheduledDate: completedAt,
+            supportedValue: "Rest",
+            predictedEnjoyment: 4
         ))
         sourceContext.insert(Achievement(
             id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
@@ -468,6 +1452,10 @@ final class CBTTests: XCTestCase {
         XCTAssertEqual(importedAudio.id, "audio_roundtrip")
         XCTAssertTrue(importedAudio.isFavorite)
         XCTAssertTrue(importedAudio.isCompleted)
+
+        let importedActivity = try XCTUnwrap(try targetContext.fetch(FetchDescriptor<PlannedActivity>()).first)
+        XCTAssertEqual(importedActivity.title, "Rest with tea")
+        XCTAssertEqual(importedActivity.supportedValue, "Rest")
 
         let importedAchievement = try XCTUnwrap(try targetContext.fetch(FetchDescriptor<Achievement>()).first)
         XCTAssertEqual(importedAchievement.title, "Roundtrip Badge")
@@ -543,6 +1531,117 @@ final class CBTTests: XCTestCase {
         XCTAssertTrue(recommendations.contains { $0.type == .safetySupport })
         XCTAssertTrue((3...5).contains(recommendations.count))
         XCTAssertTrue(recommendations.allSatisfy { !$0.reason.isEmpty && !$0.destination.deepLink.isEmpty })
+    }
+
+    @MainActor
+    func testInsightsGeneratePersonalCopingPlanFromRepeatedMoodPatterns() async {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let firstDay = Self.date(calendar, 2026, 5, 25, 21)
+        let moods = [
+            MoodEntry(
+                createdAt: firstDay,
+                moodScore: 3,
+                emotions: ["Sad"],
+                triggers: ["Isolation"],
+                notes: "Stayed alone after work"
+            ),
+            MoodEntry(
+                createdAt: Self.date(calendar, 2026, 5, 26, 20),
+                moodScore: 4,
+                emotions: ["Low"],
+                contextTags: ["Withdrawing"],
+                notes: "Avoided texting anyone"
+            ),
+            MoodEntry(
+                createdAt: Self.date(calendar, 2026, 5, 27, 14),
+                moodScore: 5,
+                emotions: ["Anxious"],
+                sensations: ["Tight chest"]
+            ),
+            MoodEntry(
+                createdAt: Self.date(calendar, 2026, 5, 28, 15),
+                moodScore: 5,
+                emotions: ["Worried"],
+                sensations: ["Racing heart"]
+            ),
+            MoodEntry(
+                createdAt: Self.date(calendar, 2026, 5, 29, 22),
+                moodScore: 5,
+                emotions: ["Worried"],
+                triggers: ["Sleep"],
+                notes: "Rumination at bedtime",
+                sleepQualityScore: 3
+            ),
+            MoodEntry(
+                createdAt: Self.date(calendar, 2026, 5, 30, 23),
+                moodScore: 5,
+                notes: "Overthinking in bed",
+                sleepQualityScore: 4
+            )
+        ]
+        let viewModel = InsightsViewModel()
+
+        await viewModel.recalculate(
+            timeRangeDays: 30,
+            moodEntries: moods,
+            moodCheckIns: [],
+            thoughtRecords: [],
+            exerciseCompletions: [],
+            journalEntries: [],
+            flexibleJournalEntries: [],
+            breathingSessions: [],
+            moodGoalValue: 7
+        )
+
+        let planTitles = viewModel.patternSummary.personalCopingPlan.map(\.title)
+        XCTAssertTrue(planTitles.contains("Low Mood + Isolation"))
+        XCTAssertTrue(planTitles.contains("Anxiety + Body Cues"))
+        XCTAssertTrue(planTitles.contains("Bedtime Rumination"))
+        XCTAssertEqual(viewModel.patternSummary.personalCopingPlan.count, 3)
+    }
+
+    @MainActor
+    func testInsightsGenerateTriggerPatternCardsForRepeatedMonthlyTriggers() async {
+        let now = Date()
+        let moods = (0..<4).map { index in
+            MoodEntry(
+                createdAt: now.addingTimeInterval(Double(-index) * 3_600),
+                moodScore: 4,
+                emotions: ["Stressed"],
+                triggers: index == 0 ? ["Work", "work"] : ["Work"]
+            )
+        } + [
+            MoodEntry(
+                createdAt: now.addingTimeInterval(-5 * 3_600),
+                moodScore: 6,
+                triggers: ["Family"]
+            )
+        ]
+        let viewModel = InsightsViewModel()
+
+        await viewModel.recalculate(
+            timeRangeDays: 30,
+            moodEntries: moods,
+            moodCheckIns: [],
+            thoughtRecords: [],
+            exerciseCompletions: [],
+            journalEntries: [],
+            flexibleJournalEntries: [],
+            breathingSessions: [],
+            moodGoalValue: 7
+        )
+
+        guard let card = viewModel.patternSummary.insightCards.first(where: { $0.title == "Work Pattern" }) else {
+            XCTFail("Expected a repeated work trigger card.")
+            return
+        }
+
+        XCTAssertEqual(card.message, "Work stress has appeared 4 times this month.")
+        XCTAssertEqual(card.occurrenceCount, 4)
+        XCTAssertEqual(card.actionTitle, "Two-minute work reset")
+        XCTAssertTrue(card.canCreatePlan)
+        XCTAssertFalse(viewModel.patternSummary.insightCards.contains { $0.title == "Family Pattern" })
     }
 
     @MainActor
@@ -866,35 +1965,16 @@ final class CBTTests: XCTestCase {
     }
 
     @MainActor
-    func testBundledPlaceholderAudioCatalogIncludesRequestedItems() throws {
-        let expectedAudio: [String: (asset: String, type: AudioContentType, duration: Int)] = [
-            "1-Minute Reset": ("1-minute-reset.mp3", .meditation, 1),
-            "3-Minute Breathing Space": ("3-minute-breathing-space.mp3", .breathwork, 3),
-            "5-Minute Grounding": ("5-minute-grounding.mp3", .grounding, 5),
-            "Body Scan": ("body-scan.mp3", .meditation, 10),
-            "Sleep Wind-Down": ("sleep-wind-down.mp3", .sleep, 12),
-            "Self-Compassion Pause": ("self-compassion-pause.mp3", .meditation, 4),
-            "Anxiety Calming Practice": ("anxiety-calming-practice.mp3", .meditation, 8),
-            "Rain Soundscape": ("rain-soundscape.mp3", .soundscape, 20),
-            "Ocean Soundscape": ("ocean-soundscape.mp3", .soundscape, 20),
-            "Brown Noise": ("brown-noise.mp3", .soundscape, 30),
-            "Forest Soundscape": ("forest-soundscape.mp3", .soundscape, 20),
-            "Focus Ambient Loop": ("focus-ambient-loop.mp3", .soundscape, 25)
-        ]
-
-        let catalogByTitle = Dictionary(
-            uniqueKeysWithValues: LibraryService.shared.bundledAudioContent.map { ($0.title, $0) }
-        )
-
-        for (title, expected) in expectedAudio {
-            let audio = try XCTUnwrap(catalogByTitle[title], "Missing audio seed: \(title)")
-            XCTAssertEqual(audio.localAssetFilename, expected.asset, title)
-            XCTAssertEqual(audio.type, expected.type, title)
-            XCTAssertEqual(audio.duration, expected.duration, title)
-            XCTAssertFalse(audio.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, title)
-            XCTAssertFalse(audio.category.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, title)
-            XCTAssertFalse(audio.transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, title)
-            XCTAssertFalse(audio.displayTags.isEmpty, title)
+    func testBundledAudioCatalogOnlyIncludesPlayableAssets() throws {
+        for audio in LibraryService.shared.bundledAudioContent {
+            XCTAssertTrue(
+                LibraryService.shared.audioAssetIsBundled(named: audio.localAssetFilename),
+                "Bundled audio catalog exposed unavailable asset: \(audio.localAssetFilename)"
+            )
+            XCTAssertFalse(audio.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, audio.title)
+            XCTAssertFalse(audio.category.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, audio.title)
+            XCTAssertFalse(audio.transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, audio.title)
+            XCTAssertFalse(audio.displayTags.isEmpty, audio.title)
         }
 
         let container = try SharedPersistence.makeInMemoryModelContainer()
@@ -903,9 +1983,7 @@ final class CBTTests: XCTestCase {
 
         let audioItems = try context.fetch(FetchDescriptor<CBT.LibraryItem>())
             .filter { $0.type == .audio }
-        let seededTitles = Set(audioItems.map(\.title))
-
-        XCTAssertTrue(seededTitles.isSuperset(of: Set(expectedAudio.keys)))
+        XCTAssertEqual(audioItems.count, LibraryService.shared.bundledAudioContent.count)
     }
 
     @MainActor
@@ -968,6 +2046,7 @@ final class CBTTests: XCTestCase {
             "cbt_moodReminderHour",
             "cbt_home_lastOpenedAt",
             "cbt.achievements.weeklyReportViewed",
+            "cbt.achievements.badDayModeUsed",
             "affirmation_favorites_v1",
             AppConfiguration.showStreakInToolbarKey
         ]
@@ -995,25 +2074,39 @@ final class CBTTests: XCTestCase {
         let requiredTitles: Set<String> = [
             "First Step",
             "Practice Builder",
+            "First Check-In",
+            "Returned After a Missed Day",
+            "Gentle Restart",
+            "You Came Back",
+            "Return Streak",
+            "Recovery Week",
+            "Daily Plan Complete",
             "Thought Catcher",
+            "Completed 3 Thought Records",
             "Pattern Spotter",
             "Three-Day Flame",
             "Steady Week",
             "Mood Noted",
+            "Completed 3 Check-Ins",
             "Mood Mapper",
             "Mood Explorer",
             "First Reflection",
+            "Logged 7 Reflections",
             "Reflection Rhythm",
             "First Reset",
             "Breath Companion",
             "Course Opener",
+            "Finished a CBT Path",
             "Learning Path",
             "Week in View",
+            "Completed a Weekly Review",
+            "Tried 3 Coping Tools",
             "Intentional Action",
             "Activity Explorer",
             "Self-Check",
             "Four-Week Anchor",
-            "Skill Sampler"
+            "Skill Sampler",
+            "Used Bad Day Mode"
         ]
 
         XCTAssertTrue(titles.isSuperset(of: requiredTitles))
@@ -1022,6 +2115,11 @@ final class CBTTests: XCTestCase {
     @MainActor
     func testAchievementServiceUnlocksRequiredRewardsFromProgress() throws {
         UserDefaults.standard.removeObject(forKey: "cbt.achievements.weeklyReportViewed")
+        UserDefaults.standard.removeObject(forKey: "cbt.achievements.badDayModeUsed")
+        defer {
+            UserDefaults.standard.removeObject(forKey: "cbt.achievements.weeklyReportViewed")
+            UserDefaults.standard.removeObject(forKey: "cbt.achievements.badDayModeUsed")
+        }
         let container = try SharedPersistence.makeInMemoryModelContainer()
         let context = ModelContext(container)
         let calendar = Self.weeklyReportCalendar
@@ -1056,6 +2154,13 @@ final class CBTTests: XCTestCase {
         }
 
         context.insert(AssessmentLog(date: baseDate, assessmentType: "PHQ-9", score: 8))
+        context.insert(WeeklyRitualEntry(
+            weekStart: baseDate,
+            createdAt: baseDate,
+            updatedAt: baseDate,
+            intention: "Keep one small practice nearby.",
+            learning: ""
+        ))
 
         for exerciseID in ["exercise_001", "exercise_dbt_001", "exercise_act_001", "exercise_mindfulness_001"] {
             context.insert(ExerciseCompletion(createdAt: baseDate, exerciseID: exerciseID))
@@ -1063,26 +2168,35 @@ final class CBTTests: XCTestCase {
 
         try context.save()
         AchievementService.shared.recordWeeklyReportViewed(in: context)
+        AchievementService.shared.recordBadDayModeUsed(in: context)
         AchievementService.shared.evaluateAchievements(in: context)
 
         let achievements = try context.fetch(FetchDescriptor<Achievement>())
         let unlockedTitles = Set(achievements.filter(\.isUnlocked).map(\.title))
         let expectedUnlocked: Set<String> = [
+            "First Check-In",
             "Mood Noted",
+            "Completed 3 Check-Ins",
             "Mood Mapper",
             "Mood Explorer",
+            "Daily Plan Complete",
             "First Reflection",
+            "Logged 7 Reflections",
             "Reflection Rhythm",
             "First Reset",
             "Breath Companion",
             "Course Opener",
+            "Finished a CBT Path",
             "Learning Path",
             "Week in View",
+            "Completed a Weekly Review",
+            "Gentle Restart",
             "Intentional Action",
             "Activity Explorer",
             "Self-Check",
             "Four-Week Anchor",
-            "Skill Sampler"
+            "Skill Sampler",
+            "Used Bad Day Mode"
         ]
 
         XCTAssertTrue(unlockedTitles.isSuperset(of: expectedUnlocked))
@@ -1090,6 +2204,156 @@ final class CBTTests: XCTestCase {
         let progress = AchievementService.shared.progressSnapshots(in: context)
         XCTAssertEqual(progress["Mood Explorer"]?.completedValue, 30)
         XCTAssertEqual(progress["Skill Sampler"]?.completedValue, 4)
+        XCTAssertEqual(progress["Logged 7 Reflections"]?.completedValue, 7)
+    }
+
+    @MainActor
+    func testAchievementServiceAwardsGentleMilestonesAndPreventsDuplicates() throws {
+        UserDefaults.standard.removeObject(forKey: "cbt.achievements.weeklyReportViewed")
+        UserDefaults.standard.removeObject(forKey: "cbt.achievements.badDayModeUsed")
+        defer {
+            UserDefaults.standard.removeObject(forKey: "cbt.achievements.weeklyReportViewed")
+            UserDefaults.standard.removeObject(forKey: "cbt.achievements.badDayModeUsed")
+        }
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let calendar = Self.weeklyReportCalendar
+        let firstDate = Self.date(calendar, 2026, 5, 1, 9)
+        let returnDate = Self.date(calendar, 2026, 5, 3, 9)
+
+        context.insert(MoodCheckIn(createdAt: firstDate, moodScore: 5))
+        for offset in 0..<3 {
+            let date = try XCTUnwrap(calendar.date(byAdding: .day, value: offset, to: returnDate))
+            context.insert(MoodCheckIn(createdAt: date, moodScore: 6))
+        }
+
+        for index in 0..<3 {
+            let date = try XCTUnwrap(calendar.date(byAdding: .hour, value: index, to: returnDate))
+            context.insert(ThoughtRecord(createdAt: date, situation: "Moment \(index)", intensityBefore: 70, intensityAfter: 45))
+        }
+
+        for exerciseID in ["exercise_dbt_002", "exercise_dbt_007", "exercise_mindfulness_003"] {
+            context.insert(ExerciseCompletion(createdAt: returnDate, exerciseID: exerciseID))
+        }
+
+        for index in 0..<7 {
+            let date = try XCTUnwrap(calendar.date(byAdding: .hour, value: index, to: firstDate))
+            context.insert(FlexibleJournalEntry(date: date, templateType: "reflection", responses: ["A note"]))
+        }
+
+        context.insert(Course(title: "CBT Path", itemIDs: ["lesson"], completedItemIDs: ["lesson"], completedAt: returnDate))
+        context.insert(WeeklyRitualEntry(
+            weekStart: returnDate,
+            createdAt: returnDate,
+            updatedAt: returnDate,
+            intention: "",
+            learning: "A small return helped."
+        ))
+        try context.save()
+
+        AchievementService.shared.recordWeeklyReportViewed(in: context)
+        AchievementService.shared.recordBadDayModeUsed(in: context)
+        AchievementService.shared.evaluateAchievements(in: context)
+        AchievementService.shared.evaluateAchievements(in: context)
+
+        let achievements = try context.fetch(FetchDescriptor<Achievement>())
+        let unlockedTitles = Set(achievements.filter(\.isUnlocked).map(\.title))
+        let expectedUnlocked: Set<String> = [
+            "First Check-In",
+            "Returned After a Missed Day",
+            "Gentle Restart",
+            "You Came Back",
+            "Return Streak",
+            "Completed 3 Thought Records",
+            "Tried 3 Coping Tools",
+            "Completed a Weekly Review",
+            "Finished a CBT Path",
+            "Logged 7 Reflections",
+            "Used Bad Day Mode"
+        ]
+
+        XCTAssertTrue(unlockedTitles.isSuperset(of: expectedUnlocked))
+        for title in expectedUnlocked {
+            XCTAssertEqual(achievements.filter { $0.title == title }.count, 1, "Expected one seeded achievement for \(title)")
+        }
+    }
+
+    @MainActor
+    func testAchievementMilestoneDetectionForDailyPlanAndCheckIns() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let calendar = Self.weeklyReportCalendar
+        let day = Self.date(calendar, 2026, 5, 12, 9)
+
+        context.insert(MoodCheckIn(createdAt: day, moodScore: 6))
+        context.insert(MoodCheckIn(createdAt: day.addingTimeInterval(60), moodScore: 6))
+        context.insert(MoodCheckIn(createdAt: day.addingTimeInterval(120), moodScore: 7))
+        context.insert(ThoughtRecord(createdAt: day.addingTimeInterval(180), situation: "Work", intensityBefore: 60, intensityAfter: 40))
+        context.insert(BreathingSession(createdAt: day.addingTimeInterval(240), durationSeconds: 60))
+        try context.save()
+
+        let unlocked = AchievementService.shared.evaluateAchievements(in: context).map(\.title)
+
+        XCTAssertTrue(unlocked.contains("Daily Plan Complete"))
+        XCTAssertTrue(unlocked.contains("Completed 3 Check-Ins"))
+    }
+
+    @MainActor
+    func testAchievementDuplicatePreventionReturnsOnlyNewAwards() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+
+        context.insert(MoodCheckIn(createdAt: Date(), moodScore: 6))
+        try context.save()
+
+        let firstUnlock = AchievementService.shared.evaluateAchievements(in: context)
+        let secondUnlock = AchievementService.shared.evaluateAchievements(in: context)
+        let achievements = try context.fetch(FetchDescriptor<Achievement>())
+
+        XCTAssertTrue(firstUnlock.contains { $0.title == "First Check-In" })
+        XCTAssertTrue(secondUnlock.isEmpty)
+        XCTAssertEqual(achievements.filter { $0.title == "First Check-In" }.count, 1)
+    }
+
+    @MainActor
+    func testReturnedAfterBreakAchievementUnlocksFromMissedDays() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let calendar = Self.weeklyReportCalendar
+        let firstDate = Self.date(calendar, 2026, 5, 1, 9)
+        let returnDate = Self.date(calendar, 2026, 5, 5, 9)
+
+        context.insert(MoodCheckIn(createdAt: firstDate, moodScore: 5))
+        context.insert(MoodCheckIn(createdAt: returnDate, moodScore: 6))
+        try context.save()
+
+        AchievementService.shared.evaluateAchievements(in: context)
+
+        let achievements = try context.fetch(FetchDescriptor<Achievement>())
+        let returned = try XCTUnwrap(achievements.first { $0.title == "Returned After a Missed Day" })
+        let restart = try XCTUnwrap(achievements.first { $0.title == "Gentle Restart" })
+        let cameBack = try XCTUnwrap(achievements.first { $0.title == "You Came Back" })
+
+        XCTAssertTrue(returned.isUnlocked)
+        XCTAssertTrue(restart.isUnlocked)
+        XCTAssertTrue(cameBack.isUnlocked)
+    }
+
+    @MainActor
+    func testAchievementPersistenceAcrossContexts() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+
+        context.insert(BreathingSession(createdAt: Date(), durationSeconds: 60))
+        try context.save()
+        AchievementService.shared.evaluateAchievements(in: context)
+
+        let reloadedContext = ModelContext(container)
+        let achievements = try reloadedContext.fetch(FetchDescriptor<Achievement>())
+        let firstReset = try XCTUnwrap(achievements.first { $0.title == "First Reset" })
+
+        XCTAssertTrue(firstReset.isUnlocked)
+        XCTAssertNotNil(firstReset.unlockedAt)
     }
 
     @MainActor
@@ -1131,6 +2395,206 @@ final class CBTTests: XCTestCase {
 
         let progress = AchievementService.shared.progressSnapshots(in: context)
         XCTAssertEqual(progress["Steady Week"]?.completedValue, 3)
+    }
+
+    @MainActor
+    func testOnboardingCompletedWithFirstWinSavesMoodCheckIn() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "onboarding-first-win-complete"))
+        defaults.removePersistentDomain(forName: "onboarding-first-win-complete")
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = Self.date(calendar, 2026, 6, 2, 9)
+
+        try FirstSessionWinService.complete(
+            kind: .moodCheckIn,
+            modelContext: context,
+            moodScore: 7,
+            defaults: defaults,
+            now: now
+        )
+
+        XCTAssertTrue(defaults.bool(forKey: FirstSessionWinService.completedKey))
+        XCTAssertEqual(defaults.string(forKey: FirstSessionWinService.completedKindKey), FirstSessionWinKind.moodCheckIn.rawValue)
+        let checkIns = try context.fetch(FetchDescriptor<MoodCheckIn>())
+        XCTAssertEqual(checkIns.count, 1)
+        XCTAssertEqual(checkIns.first?.moodScore, 7)
+        XCTAssertEqual(checkIns.first?.createdAt, now)
+    }
+
+    @MainActor
+    func testOnboardingSkippedWithoutFirstWinDoesNotPersistActionRecords() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "onboarding-first-win-skip"))
+        defaults.removePersistentDomain(forName: "onboarding-first-win-skip")
+
+        FirstSessionWinService.skip(defaults: defaults)
+
+        XCTAssertTrue(defaults.bool(forKey: FirstSessionWinService.completedKey))
+        XCTAssertNil(defaults.string(forKey: FirstSessionWinService.completedKindKey))
+        XCTAssertEqual(try context.fetch(FetchDescriptor<MoodCheckIn>()).count, 0)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<BreathingSession>()).count, 0)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<PlannedActivity>()).count, 0)
+    }
+
+    @MainActor
+    func testOnboardingFirstWinPersistenceCoversBreathingAndDailyPlan() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "onboarding-first-win-persistence"))
+        defaults.removePersistentDomain(forName: "onboarding-first-win-persistence")
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = Self.date(calendar, 2026, 6, 2, 10)
+
+        try FirstSessionWinService.complete(
+            kind: .breathing,
+            modelContext: context,
+            defaults: defaults,
+            now: now
+        )
+        try FirstSessionWinService.complete(
+            kind: .todaysPlan,
+            modelContext: context,
+            planTitle: "Step outside for a minute",
+            defaults: defaults,
+            now: now.addingTimeInterval(60)
+        )
+
+        let breathingSessions = try context.fetch(FetchDescriptor<BreathingSession>())
+        XCTAssertEqual(breathingSessions.count, 1)
+        XCTAssertEqual(breathingSessions.first?.durationSeconds, 60)
+        XCTAssertEqual(breathingSessions.first?.createdAt, now)
+
+        let activities = try context.fetch(FetchDescriptor<PlannedActivity>())
+        XCTAssertEqual(activities.count, 1)
+        XCTAssertEqual(activities.first?.title, "Step outside for a minute")
+        XCTAssertTrue((activities.first?.notes ?? "").contains(FirstSessionWinService.dailyPlanMarker))
+    }
+
+    @MainActor
+    func testOnboardingMoodCheckInDoesNotDuplicateTodayCheckIn() throws {
+        let container = try SharedPersistence.makeInMemoryModelContainer()
+        let context = ModelContext(container)
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "onboarding-first-win-no-duplicate"))
+        defaults.removePersistentDomain(forName: "onboarding-first-win-no-duplicate")
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let existingDate = Self.date(calendar, 2026, 6, 2, 8)
+        let refreshedDate = Self.date(calendar, 2026, 6, 2, 18)
+        context.insert(MoodCheckIn(createdAt: existingDate, moodScore: 4, notes: "Morning"))
+        try context.save()
+
+        try FirstSessionWinService.complete(
+            kind: .moodCheckIn,
+            modelContext: context,
+            moodScore: 8,
+            defaults: defaults,
+            now: refreshedDate
+        )
+
+        let checkIns = try context.fetch(FetchDescriptor<MoodCheckIn>())
+        XCTAssertEqual(checkIns.count, 1)
+        XCTAssertEqual(checkIns.first?.moodScore, 8)
+        XCTAssertEqual(checkIns.first?.createdAt, refreshedDate)
+        XCTAssertEqual(checkIns.first?.notes, "Morning")
+    }
+
+    func testWelcomeBackRecoveryDoesNotShowUnderThreeMissedDays() throws {
+        let calendar = Self.weeklyReportCalendar
+        let today = Self.date(calendar, 2026, 6, 10, 9)
+        let state = WelcomeBackRecoveryState.make(
+            missedDays: 2,
+            selectedDate: today,
+            activeDates: [],
+            completedDayKey: "",
+            calendar: calendar
+        )
+
+        XCTAssertNil(state)
+    }
+
+    func testWelcomeBackRecoveryShowsAfterThreeOrMoreMissedDays() throws {
+        let calendar = Self.weeklyReportCalendar
+        let today = Self.date(calendar, 2026, 6, 10, 9)
+        let lastActiveDay = try XCTUnwrap(calendar.date(byAdding: .day, value: -4, to: today))
+        let state = WelcomeBackRecoveryState.make(
+            missedDays: 3,
+            selectedDate: today,
+            activeDates: [lastActiveDay],
+            completedDayKey: "",
+            calendar: calendar
+        )
+
+        XCTAssertEqual(state?.missedDays, 3)
+        XCTAssertEqual(state?.tinyActionSuggestion, "Take one minute to check in with today.")
+    }
+
+    func testWelcomeBackRecoveryCompletionHidesStateForToday() throws {
+        let calendar = Self.weeklyReportCalendar
+        let today = Self.date(calendar, 2026, 6, 10, 9)
+        let completedKey = WelcomeBackRecoveryState.completedDayKey(
+            after: .resumePreviousPlan,
+            on: today,
+            calendar: calendar
+        )
+
+        let state = WelcomeBackRecoveryState.make(
+            missedDays: 4,
+            selectedDate: today,
+            activeDates: [],
+            completedDayKey: completedKey,
+            calendar: calendar
+        )
+
+        XCTAssertNil(state)
+    }
+
+    func testWelcomeBackRecoveryDoesNotMutateStreakInputs() throws {
+        let calendar = Self.weeklyReportCalendar
+        let today = Self.date(calendar, 2026, 6, 10, 9)
+        let oldDay = try XCTUnwrap(calendar.date(byAdding: .day, value: -5, to: today))
+        let activeDates: Set<Date> = [oldDay]
+
+        let state = WelcomeBackRecoveryState.make(
+            missedDays: 4,
+            selectedDate: today,
+            activeDates: activeDates,
+            completedDayKey: "",
+            calendar: calendar
+        )
+
+        XCTAssertEqual(activeDates, [oldDay])
+        XCTAssertTrue(state?.streakWasBroken == true)
+        XCTAssertEqual(state?.gentleStreakMessage, "The earlier run can rest. Today can simply be a fresh start.")
+    }
+
+    func testWelcomeBackRecoveryStartFreshCompletesTodayOnly() throws {
+        let calendar = Self.weeklyReportCalendar
+        let today = Self.date(calendar, 2026, 6, 10, 9)
+        let completedKey = WelcomeBackRecoveryState.completedDayKey(
+            after: .startFreshToday,
+            on: today,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(completedKey, WelcomeBackRecoveryState.dayKey(for: today, calendar: calendar))
+        XCTAssertNil(WelcomeBackRecoveryState.make(
+            missedDays: 5,
+            selectedDate: today,
+            activeDates: [],
+            completedDayKey: completedKey,
+            calendar: calendar
+        ))
+    }
+
+    private func makeReminderOptInDefaults(named name: String) -> UserDefaults {
+        let suiteName = "ReminderOptIn-\(name)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        return defaults
     }
 
     private static var weeklyReportCalendar: Calendar {

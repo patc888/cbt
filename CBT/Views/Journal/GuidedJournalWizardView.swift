@@ -8,11 +8,13 @@ struct GuidedJournalWizardView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
     @Environment(\.colorScheme) private var colorScheme
+    @Query(sort: \PersonalValue.createdAt) private var personalValues: [PersonalValue]
     @FocusState private var isEditorFocused: Bool
 
     @State private var currentStepIndex: Int = 0
     @State private var responses: [String]
     @State private var isCompleted: Bool = false
+    @State private var showingReset = false
 
     private var accent: Color {
         themeManager?.selectedColor ?? .accentColor
@@ -70,6 +72,21 @@ struct GuidedJournalWizardView: View {
             }
             .animation(.spring(response: 0.45, dampingFraction: 0.85), value: currentStepIndex)
             .animation(.spring(response: 0.45, dampingFraction: 0.85), value: isCompleted)
+            .sheet(isPresented: $showingReset) {
+                NavigationStack {
+                    BreathingResetView(
+                        durationSeconds: 60,
+                        pattern: .box,
+                        autoStart: true,
+                        showsDismissControl: true,
+                        showControls: true,
+                        hideBackground: false,
+                        onComplete: nil,
+                        onDismiss: { showingReset = false }
+                    )
+                }
+                .dsSheetPresentation()
+            }
         }
     }
 
@@ -106,6 +123,9 @@ struct GuidedJournalWizardView: View {
 
                     wizardNavigationButtons
                         .padding(.top, 12)
+
+                    notReadyActions
+                        .padding(.top, 2)
                 }
                 .frame(minHeight: proxy.size.height, alignment: .top)
             }
@@ -232,6 +252,46 @@ struct GuidedJournalWizardView: View {
         .padding(.bottom, 24)
     }
 
+    private var notReadyActions: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                notReadyButtons
+            }
+
+            VStack(spacing: 10) {
+                notReadyButtons
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 24)
+    }
+
+    @ViewBuilder
+    private var notReadyButtons: some View {
+        Button {
+            skipDetails()
+        } label: {
+            Label("Skip details", systemImage: "text.line.first.and.arrowtriangle.forward")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: true, tint: accent, hapticType: nil))
+
+        Button {
+            HapticManager.shared.lightImpact()
+            showingReset = true
+        } label: {
+            Label("Do a 60-second reset instead", systemImage: "wind")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: true, tint: accent, hapticType: nil))
+
+        Button {
+            HapticManager.shared.lightImpact()
+            dismiss()
+        } label: {
+            Label("Come back later", systemImage: "clock")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: true, tint: accent, hapticType: nil))
+    }
+
     // MARK: - Completion
 
     private var completionView: some View {
@@ -265,17 +325,20 @@ struct GuidedJournalWizardView: View {
                     .foregroundStyle(.white)
             }
 
-            VStack(spacing: 8) {
-                Text("All Done!")
-                    .font(DSTypography.pageTitle)
-                    .foregroundStyle(Theme.primaryText)
+            DSCardContainer {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Saved.")
+                        .font(DSTypography.cardTitle)
+                        .foregroundStyle(Theme.primaryText)
 
-                Text(template.completionMessage)
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                    .foregroundStyle(Theme.secondaryText)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                    Text("You don’t have to solve this right now.")
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(.horizontal, 24)
 
             Spacer()
 
@@ -283,7 +346,7 @@ struct GuidedJournalWizardView: View {
                 HapticManager.shared.lightImpact()
                 dismiss()
             }) {
-                Text("Done")
+                Label("Done for now", systemImage: "checkmark")
             }
             .buttonStyle(DSButtonStyle(variant: .primary, tint: accent, hapticType: nil))
             .padding(.horizontal, 24)
@@ -295,7 +358,7 @@ struct GuidedJournalWizardView: View {
         SupportiveEmptyStateView(
             systemImage: "pencil.and.list.clipboard",
             title: "Template Unavailable",
-            message: "This guided journal template does not have any prompts to show right now.",
+            message: "Close this template and choose another guided prompt to keep the reflection moving.",
             actionTitle: "Close",
             actionSystemImage: "xmark"
         ) {
@@ -311,14 +374,15 @@ struct GuidedJournalWizardView: View {
 
     private var currentResponseTrimmed: String {
         guard responses.indices.contains(currentStepIndex) else { return "" }
-        responses[currentStepIndex].trimmingCharacters(in: .whitespacesAndNewlines)
+        return responses[currentStepIndex].trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func saveEntry() {
         isEditorFocused = false
         let newEntry = FlexibleJournalEntry(
             templateType: template.storageKey,
-            responses: responses
+            responses: responses,
+            valueIDs: currentValueIDs
         )
         modelContext.insert(newEntry)
         try? modelContext.save()
@@ -328,6 +392,25 @@ struct GuidedJournalWizardView: View {
             isCompleted = true
         }
         onSave?()
+    }
+
+    private func skipDetails() {
+        isEditorFocused = false
+        guard responses.contains(where: { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            HapticManager.shared.lightImpact()
+            dismiss()
+            return
+        }
+
+        HapticManager.shared.success()
+        saveEntry()
+    }
+
+    private var currentValueIDs: [String] {
+        guard let action = ValuesService.action(selectedValues: personalValues) else {
+            return []
+        }
+        return [action.valueID]
     }
 }
 

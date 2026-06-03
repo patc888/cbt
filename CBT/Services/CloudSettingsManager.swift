@@ -17,11 +17,13 @@ extension NSUbiquitousKeyValueStore: CloudKeyValueStoring {}
 struct CloudSettingsSnapshot: Equatable {
     let hapticsEnabled: Bool
     let appLockEnabled: Bool
+    let discreetModeEnabled: Bool
     let currentIcon: String
 
     init(settings: UserSettings) {
         self.hapticsEnabled = settings.hapticsEnabled ?? true
         self.appLockEnabled = settings.appLockEnabled ?? false
+        self.discreetModeEnabled = settings.discreetModeEnabled ?? false
         self.currentIcon = settings.currentIcon ?? ""
     }
 }
@@ -64,6 +66,7 @@ final class CloudSettingsManager: ObservableObject {
 
         pushCloudValue(settings.hapticsEnabled ?? true, for: .hapticsEnabled, readCloudValue: cloudBool, didChange: &didChange)
         pushCloudValue(settings.appLockEnabled ?? false, for: .appLockEnabled, readCloudValue: cloudBool, didChange: &didChange)
+        pushCloudValue(settings.discreetModeEnabled ?? false, for: .discreetModeEnabled, readCloudValue: cloudBool, didChange: &didChange)
         pushCloudValue(settings.currentIcon ?? "", for: .currentIcon, readCloudValue: cloudString, didChange: &didChange)
 
         if didChange {
@@ -93,7 +96,7 @@ final class CloudSettingsManager: ObservableObject {
 
         if reasonForChange == NSUbiquitousKeyValueStoreServerChange || reasonForChange == NSUbiquitousKeyValueStoreInitialSyncChange {
             if let keys = userInfo[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String] {
-                let relevantKeys = keys.filter { CloudSettingsKey.knownNames.contains($0) }
+                let relevantKeys = keys.filter(CloudSettingsKey.isKnownName)
                 guard !relevantKeys.isEmpty else { return }
 
                 Task { @MainActor in
@@ -123,6 +126,10 @@ final class CloudSettingsManager: ObservableObject {
                 settings.appLockEnabled = cloudValue
                 UserDefaults.standard.set(cloudValue, forKey: "appLockEnabled")
             }, didChange: &didChange)
+            applyCloudValueIfChanged(for: .discreetModeEnabled, keys: keys, readCloudValue: cloudBool, currentValue: { settings.discreetModeEnabled ?? false }, assign: { cloudValue in
+                settings.discreetModeEnabled = cloudValue
+                AppConfiguration.setDiscreetModeEnabled(cloudValue)
+            }, didChange: &didChange)
             applyCloudValueIfChanged(for: .currentIcon, keys: keys, readCloudValue: cloudString, currentValue: { settings.currentIcon ?? "" }, assign: { settings.currentIcon = $0.isEmpty ? nil : $0 }, didChange: &didChange)
 
             if didChange {
@@ -146,6 +153,10 @@ final class CloudSettingsManager: ObservableObject {
         mergeInitialCloudValue(settings.appLockEnabled ?? false, for: .appLockEnabled, readCloudValue: cloudBool, assign: { cloudValue in
             settings.appLockEnabled = cloudValue
             UserDefaults.standard.set(cloudValue, forKey: "appLockEnabled")
+        }, didUpdateLocalSettings: &didUpdateLocalSettings, shouldPushToCloud: &shouldPushToCloud)
+        mergeInitialCloudValue(settings.discreetModeEnabled ?? false, for: .discreetModeEnabled, readCloudValue: cloudBool, assign: { cloudValue in
+            settings.discreetModeEnabled = cloudValue
+            AppConfiguration.setDiscreetModeEnabled(cloudValue)
         }, didUpdateLocalSettings: &didUpdateLocalSettings, shouldPushToCloud: &shouldPushToCloud)
         mergeInitialCloudValue(settings.currentIcon ?? "", for: .currentIcon, readCloudValue: cloudString, assign: { settings.currentIcon = $0.isEmpty ? nil : $0 }, didUpdateLocalSettings: &didUpdateLocalSettings, shouldPushToCloud: &shouldPushToCloud)
 
@@ -243,10 +254,17 @@ final class CloudSettingsManager: ObservableObject {
     }
 }
 
-private enum CloudSettingsKey: String, CaseIterable {
+enum CloudSettingsKey: String, CaseIterable {
     case hapticsEnabled
     case appLockEnabled
+    case discreetModeEnabled
     case currentIcon
 
-    static let knownNames = Set(allCases.map(\.rawValue))
+    nonisolated static let allNames = allCases.map(\.rawValue)
+
+    nonisolated private static let knownNames = Set(allNames)
+
+    nonisolated static func isKnownName(_ name: String) -> Bool {
+        knownNames.contains(name)
+    }
 }

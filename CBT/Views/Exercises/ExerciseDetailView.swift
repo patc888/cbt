@@ -9,6 +9,7 @@ struct ExerciseDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let exercise: Exercise
+    @Query(sort: \PersonalValue.createdAt) private var personalValues: [PersonalValue]
 
     @State private var completions: [ExerciseCompletion] = []
 
@@ -123,6 +124,9 @@ struct ExerciseDetailView: View {
         #endif
         .onAppear {
             NotificationCenter.default.post(name: .exerciseFlowDidEnter, object: nil)
+            if exercise.isToolkitTool {
+                CopingToolkitStore().recordUsage(exercise.id)
+            }
             refreshCompletions()
             timerManager.onComplete = { summary in
                 var finalSummary = summary
@@ -232,7 +236,9 @@ struct ExerciseDetailView: View {
 
     private func markComplete() {
         let newCompletion = ExerciseCompletion(
-            exerciseID: exercise.id
+            exerciseID: exercise.id,
+            valueIDs: currentValueIDs,
+            adaptiveMode: inferredCurrentMode().rawValue
         )
         modelContext.insert(newCompletion)
 
@@ -260,6 +266,28 @@ struct ExerciseDetailView: View {
         } catch {
             AppLogger.make(category: "Data").error("Failed to save exercise completion: \(error.localizedDescription, privacy: .private)")
         }
+    }
+
+    private var currentValueIDs: [String] {
+        guard let action = ValuesService.action(selectedValues: personalValues) else {
+            return []
+        }
+        return [action.valueID]
+    }
+
+    private func inferredCurrentMode() -> DailyPlanMode {
+        let descriptor = FetchDescriptor<MoodEntry>(
+            predicate: #Predicate<MoodEntry> { $0.isDeleted == false },
+            sortBy: [SortDescriptor(\MoodEntry.createdAt, order: .reverse)]
+        )
+        let latestMood = try? modelContext.fetch(descriptor).first
+        return AdaptiveDifficultySelector.selectMode(
+            latestMoodScore: latestMood?.moodScore,
+            latestEnergyScore: latestMood?.energyScore,
+            latestStressScore: latestMood?.anxietyStressScore ?? latestMood?.intensity,
+            missedDays: nil,
+            recentEngagementCount: 2
+        )
     }
 
     @MainActor

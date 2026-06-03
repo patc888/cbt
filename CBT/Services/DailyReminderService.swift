@@ -12,7 +12,7 @@ enum DailyCheckInKind: String, CaseIterable, Identifiable {
         case .morningIntentions:
             return String(localized: "Morning Intentions")
         case .eveningReflection:
-            return String(localized: "Evening Reflection")
+            return String(localized: "Gentle Evening Closeout")
         }
     }
 
@@ -21,7 +21,7 @@ enum DailyCheckInKind: String, CaseIterable, Identifiable {
         case .morningIntentions:
             return String(localized: "Choose one grounded intention for the day before everything gets moving.")
         case .eveningReflection:
-            return String(localized: "Close the day with a short guided reflection on what happened, what mattered, and what can rest.")
+            return String(localized: "Close the day with three quick prompts: one win, one hard thing, and one anchor for tomorrow.")
         }
     }
 

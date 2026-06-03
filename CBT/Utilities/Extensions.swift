@@ -116,7 +116,7 @@ struct PremiumButtonStyle: ButtonStyle {
 struct LayoutMetrics {
     var contentMaxWidth: CGFloat = 800
     var horizontalPadding: CGFloat = 16
-    static let floatingToolbarBottomInset: CGFloat = 90
+    static let floatingToolbarBottomInset: CGFloat = 112
 
     static func metrics(for sizeClass: UserInterfaceSizeClass?) -> LayoutMetrics {
         var metrics = LayoutMetrics()

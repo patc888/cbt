@@ -21,7 +21,7 @@ struct JournalSessionsListView: View {
                 SupportiveEmptyStateView(
                     systemImage: "book.pages",
                     title: String(localized: "Saved Sessions"),
-                    message: String(localized: "Saved sessions keep notes from timed practices, exercises, and calming tools in one private place."),
+                    message: String(localized: "Start with a 1-minute breathing reset and jot down what changed. Saved notes from timed practices will appear here."),
                     actionTitle: String(localized: "Start Breathing Reset"),
                     actionSystemImage: "wind"
                 ) {

@@ -59,6 +59,7 @@ struct WeeklyReportView: View {
                     } else if let report, reportHasEnoughData(report) {
                         reportHeader(report)
                         exportOptions
+                        therapySessionPrepSection(report.therapyPrep)
                         reportSections(report)
                     } else if let report {
                         weeklyReportEmptyState(recordCount: reportDataPointCount(report))
@@ -68,7 +69,7 @@ struct WeeklyReportView: View {
                         SupportiveEmptyStateView(
                             systemImage: "doc.badge.exclamationmark",
                             title: "Weekly Report",
-                            message: "Weekly reports summarize check-ins, thought records, exercises, and reflections for the selected week.",
+                            message: "Add one check-in or thought record for the selected week, then come back to build the PDF summary.",
                             actionTitle: "Add Check-In",
                             actionSystemImage: "face.smiling"
                         ) {
@@ -89,6 +90,13 @@ struct WeeklyReportView: View {
         .toolbar(.hidden, for: .navigationBar)
         #endif
         .hideNavigationBar()
+        .onAppear {
+            LocalRetentionEventStore.shared.record(
+                .weeklyReportViewed,
+                sourceScreen: "weekly_report",
+                metadata: ["view": "report"]
+            )
+        }
         .sheet(isPresented: $showingMoodCheckIn) {
             MoodCheckinView()
                 .dsSheetPresentation()
@@ -286,6 +294,38 @@ struct WeeklyReportView: View {
         .cardStyle()
     }
 
+    private func therapySessionPrepSection(_ prep: WeeklyReportGenerator.TherapySessionPrep) -> some View {
+        WeeklyReportSection(title: "Therapy Session Prep", systemImage: "person.2.wave.2") {
+            WeeklyPrepBulletList(
+                title: "Top patterns",
+                items: prep.topPatterns,
+                emptyText: "Top patterns appear once this week has enough repeated data."
+            )
+
+            WeeklyPrepItemList(
+                title: "Most useful reframes",
+                items: prep.usefulReframes,
+                emptyText: detailLevel == .summaryOnly
+                    ? "Intensity-reducing reframes appear here when private excerpts are enabled."
+                    : "No intensity-reducing reframes recorded this week."
+            )
+
+            WeeklyPrepItemList(
+                title: "Unresolved thoughts",
+                items: prep.unresolvedThoughts,
+                emptyText: "No unresolved thought records surfaced this week."
+            )
+
+            WeeklyAssessmentChangeList(changes: prep.assessmentChanges)
+
+            WeeklyPrepBulletList(
+                title: "3 things to discuss",
+                items: prep.discussionPrompts,
+                emptyText: "Discussion prompts appear once weekly patterns are available."
+            )
+        }
+    }
+
     @ViewBuilder
     private func reportSections(_ report: WeeklyReportGenerator.Report) -> some View {
         WeeklyReportSection(title: "Mood Summary", systemImage: "face.smiling") {
@@ -423,11 +463,11 @@ struct WeeklyReportView: View {
 
     private func weeklyReportEmptyMessage(recordCount: Int?) -> String {
         guard let recordCount, recordCount > 0 else {
-            return "Weekly reports summarize your self-tracking once this week has a few check-ins or practice records."
+            return "Start this week's report with one check-in, thought record, exercise, breathing reset, or journal entry."
         }
 
         let recordWord = recordCount == 1 ? "record" : "records"
-        return "This week has \(recordCount) \(recordWord), which is still a little light for a useful weekly summary. Add another check-in, thought record, exercise, breathing session, or journal entry to build the report."
+        return "This week has \(recordCount) \(recordWord). Add one more check-in, thought record, exercise, breathing reset, or journal entry to make the report useful."
     }
 
     @MainActor

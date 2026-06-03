@@ -8,6 +8,7 @@ struct SaveSessionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
+    @Query(sort: \PersonalValue.createdAt) private var personalValues: [PersonalValue]
 
     let summary: SessionSummary
     var onSaveComplete: (() -> Void)?
@@ -33,28 +34,31 @@ struct SaveSessionView: View {
     var body: some View {
         NavigationStack {
             DSSheetContainer(maxContentWidth: 680) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: DSSpacing.large) {
+                if saved {
+                    completionContent
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: DSSpacing.large) {
 
-                    // Duration Badge
-                    HStack(spacing: DSSpacing.small) {
-                        Image(systemName: summary.sourceKind.iconName)
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(accent)
-                        Text(summary.sourceKind.displayName)
-                            .font(DSTypography.caption)
-                            .foregroundStyle(DSTheme.secondaryText)
-                        Spacer()
-                        if summary.durationSeconds > 0 {
-                            Label(formattedDuration, systemImage: "timer")
+                        // Duration Badge
+                        HStack(spacing: DSSpacing.small) {
+                            Image(systemName: summary.sourceKind.iconName)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(accent)
+                            Text(summary.sourceKind.displayName)
                                 .font(DSTypography.caption)
                                 .foregroundStyle(DSTheme.secondaryText)
-                                .padding(.horizontal, DSSpacing.medium)
-                                .padding(.vertical, DSSpacing.xSmall)
-                                .background(DSTheme.elevatedFill)
-                                .clipShape(Capsule())
+                            Spacer()
+                            if summary.durationSeconds > 0 {
+                                Label(formattedDuration, systemImage: "timer")
+                                    .font(DSTypography.caption)
+                                    .foregroundStyle(DSTheme.secondaryText)
+                                    .padding(.horizontal, DSSpacing.medium)
+                                    .padding(.vertical, DSSpacing.xSmall)
+                                    .background(DSTheme.elevatedFill)
+                                    .clipShape(Capsule())
+                            }
                         }
-                    }
 
                     // Title
                     DSCardContainer {
@@ -149,22 +153,23 @@ struct SaveSessionView: View {
                         }
                     }
 
-                    Spacer().frame(height: DSSpacing.small)
+                        Spacer().frame(height: DSSpacing.small)
+                        }
                     }
-                }
 
-                HStack(spacing: DSSpacing.medium) {
-                    Spacer()
-                    Button {
-                        saveEntry()
-                    } label: {
-                        Text("Save Session")
+                    HStack(spacing: DSSpacing.medium) {
+                        Spacer()
+                        Button {
+                            saveEntry()
+                        } label: {
+                            Text("Save Session")
+                        }
+                        .buttonStyle(DSPrimaryButtonStyle())
+                        .disabled(editableTitle.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .accessibilityLabel("Save session")
                     }
-                    .buttonStyle(DSPrimaryButtonStyle())
-                    .disabled(editableTitle.trimmingCharacters(in: .whitespaces).isEmpty)
-                    .accessibilityLabel("Save session")
+                    .padding(.top, DSSpacing.small)
                 }
-                .padding(.top, DSSpacing.small)
             }
             .safeAreaInset(edge: .bottom) {
                 Color.clear.frame(height: LayoutMetrics.floatingToolbarBottomInset)
@@ -200,6 +205,41 @@ struct SaveSessionView: View {
         DurationFormatting.sessionLabel(seconds: summary.durationSeconds)
     }
 
+    private var completionContent: some View {
+        VStack(spacing: DSSpacing.large) {
+            Spacer()
+
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 70, weight: .bold))
+                .foregroundStyle(accent)
+
+            DSCardContainer {
+                VStack(alignment: .leading, spacing: DSSpacing.small) {
+                    Text("Saved.")
+                        .font(DSTypography.cardTitle)
+                        .foregroundStyle(DSTheme.primaryText)
+
+                    Text("You don’t have to solve this right now.")
+                        .font(DSTypography.body)
+                        .foregroundStyle(DSTheme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Spacer()
+
+            Button {
+                HapticManager.shared.lightImpact()
+                dismiss()
+            } label: {
+                Label("Done for now", systemImage: "checkmark")
+            }
+            .buttonStyle(DSPrimaryButtonStyle())
+        }
+        .frame(maxWidth: .infinity, minHeight: 360)
+    }
+
     private func saveEntry() {
         HapticManager.shared.lightImpact()
 
@@ -209,15 +249,22 @@ struct SaveSessionView: View {
                 title: editableTitle,
                 bodyText: summary.bodyText,
                 notes: notes,
-                tags: selectedTags
+                tags: selectedTags,
+                valueIDs: currentValueIDs
             )
             HapticManager.shared.success()
             ReviewManager.shared.logSignificantAction()
             saved = true
-            dismiss()
             onSaveComplete?()
         } catch {
             Self.logger.error("Failed to save journal entry: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    private var currentValueIDs: [String] {
+        guard let action = ValuesService.action(selectedValues: personalValues) else {
+            return []
+        }
+        return [action.valueID]
     }
 }

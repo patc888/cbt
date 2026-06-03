@@ -76,7 +76,7 @@ struct ActivityPlannerView: View {
                 .foregroundStyle(themeManager.selectedColor)
                 .textCase(.uppercase)
             
-            Text("Action precedes motivation. Schedule small tasks to prove your brain's predictions wrong.")
+            Text("Action precedes motivation. Schedule small steps that support who you want to be.")
                 .font(.system(.body, design: .rounded))
                 .foregroundStyle(Theme.secondaryText)
         }
@@ -87,7 +87,7 @@ struct ActivityPlannerView: View {
         SupportiveEmptyStateView(
             systemImage: "calendar.badge.plus",
             title: "Activity Planner",
-            message: "Activity planning helps you schedule one small nourishing or mastery task and reflect on how it felt afterward.",
+            message: "Schedule one small step for today, connect it to a value, then come back to mark how it actually felt.",
             actionTitle: "Schedule Activity",
             actionSystemImage: "plus.circle.fill"
         ) {
@@ -157,6 +157,10 @@ struct ActivityRow: View {
                     
                     CategoryBadge(category: activity.category)
                 }
+
+                if let supportedValue = activity.supportedValue {
+                    ValueBadge(value: supportedValue)
+                }
                 
                 if activity.isCompleted, let actual = activity.actualEnjoyment {
                     ComparisonView(predicted: activity.predictedEnjoyment, actual: actual)
@@ -203,6 +207,22 @@ struct CategoryBadge: View {
             .padding(.vertical, 4)
             .background(Color.accentColor.opacity(0.1))
             .foregroundStyle(Color.accentColor)
+            .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous))
+    }
+}
+
+struct ValueBadge: View {
+    let value: String
+
+    var body: some View {
+        Label(value, systemImage: "heart.text.square.fill")
+            .font(.system(.caption2, design: .rounded).weight(.bold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(Theme.secondaryText.opacity(0.1))
+            .foregroundStyle(Theme.secondaryText)
             .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous))
     }
 }

@@ -5,6 +5,9 @@ struct TimedSessionSheet: View {
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
 
     var onEndEarly: () -> Void = {}
+    var onSwitchToBreathing: () -> Void = {
+        BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
+    }
 
     private var accent: Color {
         themeManager?.selectedColor ?? .accentColor
@@ -74,5 +77,62 @@ struct TimedSessionSheet: View {
         }
         .frame(maxWidth: .infinity)
         .padding(DSSpacing.large)
+        .sessionBoundaryDialog(
+            manager: manager,
+            onSaveAndClose: onEndEarly,
+            onSwitchToBreathing: onSwitchToBreathing
+        )
+    }
+}
+
+struct SessionBoundaryDialogModifier: ViewModifier {
+    @ObservedObject var manager: TimedSessionManager
+    var onSaveAndClose: () -> Void
+    var onSwitchToBreathing: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog(
+                String(localized: "Gentle stop"),
+                isPresented: $manager.isBoundaryPromptPresented,
+                titleVisibility: .visible
+            ) {
+                Button(String(localized: "Save and close")) {
+                    HapticManager.shared.mediumImpact()
+                    manager.endEarly()
+                    onSaveAndClose()
+                }
+
+                Button(String(localized: "Switch to breathing")) {
+                    HapticManager.shared.lightImpact()
+                    manager.stop()
+                    onSwitchToBreathing()
+                }
+
+                Button(String(localized: "Continue")) {
+                    HapticManager.shared.lightImpact()
+                    manager.continueAfterBoundaryPrompt()
+                }
+            } message: {
+                Text(String(localized: "You reached the session boundary you set. Would it help to close this, reset with breathing, or keep going?"))
+            }
+    }
+}
+
+extension View {
+    func sessionBoundaryDialog(
+        manager: TimedSessionManager,
+        onSaveAndClose: @escaping () -> Void = {},
+        onSwitchToBreathing: @escaping () -> Void = {
+            BreathingPresenter.shared.present(durationSeconds: 60, autoStart: true)
+        }
+    ) -> some View {
+        modifier(
+            SessionBoundaryDialogModifier(
+                manager: manager,
+                onSaveAndClose: onSaveAndClose,
+                onSwitchToBreathing: onSwitchToBreathing
+            )
+        )
     }
 }

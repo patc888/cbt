@@ -212,6 +212,7 @@ struct AffirmationPlayerView: View {
         .background(DSTheme.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous))
         .padding(.horizontal, DSSpacing.large)
+        .sessionBoundaryDialog(manager: timerManager)
     }
     
     private var headerContent: some View {
@@ -260,10 +261,16 @@ struct AffirmationPlayerView: View {
                 triggerFavoriteHaptic()
             } label: {
                 Image(systemName: store.isFavorite(id: affirmation.id) ? "heart.fill" : "heart")
-                    .font(.system(size: 22))
-                    .foregroundStyle(store.isFavorite(id: affirmation.id) ? DSTheme.destructive : DSTheme.secondaryText)
                     .contentTransition(.symbolEffect(.replace))
             }
+            .buttonStyle(
+                DSButtonStyle(
+                    variant: store.isFavorite(id: affirmation.id) ? .destructive : .neutral,
+                    size: .icon(40),
+                    expands: false,
+                    hapticType: nil
+                )
+            )
             .accessibilityLabel(store.isFavorite(id: affirmation.id) ? "Remove from favorites" : "Add to favorites")
             
             // Copy Button
@@ -274,16 +281,14 @@ struct AffirmationPlayerView: View {
                 #endif
             } label: {
                 Image(systemName: "doc.on.doc")
-                    .font(.system(size: 20))
-                    .foregroundStyle(DSTheme.secondaryText)
             }
+            .buttonStyle(DSButtonStyle(variant: .neutral, size: .icon(40), expands: false, hapticType: nil))
             
             // Share Button
             ShareLink(item: affirmation.text) {
                 Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 20))
-                    .foregroundStyle(DSTheme.secondaryText)
             }
+            .buttonStyle(DSButtonStyle(variant: .neutral, size: .icon(40), expands: false, hapticType: .light))
         }
         .padding(.vertical, DSSpacing.medium)
     }
@@ -295,10 +300,9 @@ struct AffirmationPlayerView: View {
                     advancePrev()
                 }
             } label: {
-                Image(systemName: "chevron.left.circle.fill")
-                    .font(.system(size: 44))
-                    .foregroundStyle(DSTheme.elevatedFill, accent)
+                Image(systemName: "chevron.left")
             }
+            .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(52), expands: false, tint: accent, hapticType: .light))
             .accessibilityLabel("Previous affirmation")
             
             Button {
@@ -313,10 +317,9 @@ struct AffirmationPlayerView: View {
                     triggerSelectionHaptic()
                 }
             } label: {
-                Image(systemName: "shuffle.circle.fill")
-                    .font(.system(size: 44))
-                    .foregroundStyle(DSTheme.elevatedFill, accent)
+                Image(systemName: "shuffle")
             }
+            .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(52), expands: false, tint: accent, hapticType: .light))
             .accessibilityLabel("Shuffle affirmations")
             
             Button {
@@ -331,10 +334,9 @@ struct AffirmationPlayerView: View {
                     }
                 }
             } label: {
-                Image(systemName: "chevron.right.circle.fill")
-                    .font(.system(size: 44))
-                    .foregroundStyle(DSTheme.elevatedFill, accent)
+                Image(systemName: "chevron.right")
             }
+            .buttonStyle(DSButtonStyle(variant: .secondary, size: .icon(52), expands: false, tint: accent, hapticType: .light))
             .accessibilityLabel("Next affirmation")
         }
     }

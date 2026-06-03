@@ -20,7 +20,7 @@ struct MoodListView: View {
                 SupportiveEmptyStateView(
                     systemImage: "face.smiling",
                     title: "Mood Check-Ins",
-                    message: "Mood check-ins are quick snapshots of how you feel, so patterns can become easier to notice later.",
+                    message: "Start with a 1-minute check-in: name how you feel, choose the intensity, and add one note if it helps.",
                     actionTitle: "Add Check-In",
                     actionSystemImage: "plus.circle.fill"
                 ) {

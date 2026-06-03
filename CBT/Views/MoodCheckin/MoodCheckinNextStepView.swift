@@ -15,9 +15,11 @@ struct MoodCheckinSavedSummary {
 struct MoodCheckinNextStepState {
     let summary: MoodCheckinSavedSummary
     let plan: MoodCheckInNextStepPlan
+    let isFirstMoodCheckIn: Bool
 }
 
 struct MoodCheckinNextStepView: View {
+    @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
 
     let state: MoodCheckinNextStepState
@@ -29,6 +31,8 @@ struct MoodCheckinNextStepView: View {
     @State private var breathingDurationSeconds = 60
     @State private var showingThoughtRecord = false
     @State private var showingSafetySupport = false
+    @State private var reminderPromptMoment: ReminderOptInMoment?
+    @State private var isHandlingReminderPrompt = false
 
     private var accent: Color {
         state.summary.color?.color(with: themeManager.selectedColor) ?? themeManager.selectedColor
@@ -40,7 +44,30 @@ struct MoodCheckinNextStepView: View {
                 header
                     .padding(.top, 18)
 
+                reassuranceCard
+
                 savedSummaryCard
+
+                if shouldSurfaceNeedHelpNow {
+                    NeedHelpNowCard(
+                        message: String(localized: "Open your rough patch plan and support resources before things build further. If you might be in immediate danger, contact local emergency services now. In the U.S. you can call or text 988 for crisis support.")
+                    ) {
+                        openSafetySupport()
+                    }
+                }
+
+                if let reminderPromptMoment {
+                    ReminderOptInPromptView(
+                        moment: reminderPromptMoment,
+                        isWorking: isHandlingReminderPrompt,
+                        onAccept: {
+                            handleReminderPromptAccepted(reminderPromptMoment)
+                        },
+                        onDismiss: {
+                            handleReminderPromptDismissed(reminderPromptMoment)
+                        }
+                    )
+                }
 
                 nextStepsSection
 
@@ -72,6 +99,12 @@ struct MoodCheckinNextStepView: View {
                 .dsSheetPresentation()
         }
         #endif
+        .task(id: state.summary.createdAt) {
+            reminderPromptMoment = await ReminderOptInService.shared.promptIfEligible(
+                for: .firstMoodCheckIn,
+                hasReachedMoment: state.isFirstMoodCheckIn
+            )
+        }
     }
 
     private var header: some View {
@@ -91,13 +124,23 @@ struct MoodCheckinNextStepView: View {
                     .font(DSTypography.pageTitle)
                     .foregroundStyle(DSTheme.primaryText)
                     .multilineTextAlignment(.center)
+            }
+        }
+    }
 
-                Text(state.plan.supportiveMessage)
+    private var reassuranceCard: some View {
+        MoodGlassPanel(accent: accent) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Saved.")
+                    .font(DSTypography.cardTitle)
+                    .foregroundStyle(DSTheme.primaryText)
+
+                Text("You don’t have to solve this right now.")
                     .font(DSTypography.body)
                     .foregroundStyle(DSTheme.secondaryText)
-                    .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -163,42 +206,51 @@ struct MoodCheckinNextStepView: View {
 
     private var nextStepsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Next steps")
+            Text("One next step")
                 .font(DSTypography.sectionTitle)
                 .foregroundStyle(DSTheme.primaryText)
                 .padding(.horizontal, 2)
 
             VStack(spacing: 10) {
-                ForEach(state.plan.recommendations.prefix(3)) { recommendation in
+                ForEach(state.plan.recommendations.prefix(1)) { recommendation in
                     recommendationControl(for: recommendation)
                 }
             }
         }
     }
 
-    private var footerActions: some View {
-        VStack(spacing: 10) {
-            Button {
-                onGoHome()
-            } label: {
-                Label("Go Home", systemImage: "house")
-            }
-            .buttonStyle(DSPrimaryButtonStyle())
+    private var shouldSurfaceNeedHelpNow: Bool {
+        state.plan.recommendations.contains { $0.destination == .safetySupport } ||
+            (state.summary.color?.rawValue ?? 5) <= 2 ||
+            state.summary.intensity >= 8 ||
+            hasDistressSignal
+    }
 
-            Button {
-                onJournalMore()
-            } label: {
-                Label("Journal More", systemImage: "square.and.pencil")
-            }
-            .buttonStyle(DSSecondaryButtonStyle())
+    private var hasDistressSignal: Bool {
+        let distressKeywords = [
+            "stress", "stressed", "overwhelmed", "panic", "anxious", "anxiety",
+            "unsafe", "danger", "crisis", "hopeless", "trapped"
+        ]
+        let values = state.summary.emotions +
+            state.summary.triggers +
+            state.summary.activityTags +
+            state.summary.sensations +
+            state.summary.contextTags +
+            [state.summary.notes]
 
-            Button {
-                onSkip()
-            } label: {
-                Text("Skip for now")
-            }
-            .buttonStyle(DSSecondaryButtonStyle(size: .medium))
+        return values.contains { value in
+            let lowercased = value.lowercased()
+            return distressKeywords.contains { lowercased.contains($0) }
         }
+    }
+
+    private var footerActions: some View {
+        Button {
+            onGoHome()
+        } label: {
+            Label("Done for now", systemImage: "checkmark")
+        }
+        .buttonStyle(DSSecondaryButtonStyle())
     }
 
     @ViewBuilder
@@ -258,13 +310,13 @@ struct MoodCheckinNextStepView: View {
 
         case .safetySupport:
             Button {
-                showingSafetySupport = true
+                openSafetySupport()
             } label: {
                 RecommendationRow(recommendation: recommendation, accent: accent)
             }
             .buttonStyle(.plain)
 
-        case .moodCheckIn, .course, .program, .assessments:
+        case .moodCheckIn, .weeklyReview, .course, .program, .assessments:
             Button {
                 onSkip()
             } label: {
@@ -272,6 +324,11 @@ struct MoodCheckinNextStepView: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    private func openSafetySupport() {
+        AchievementService.shared.recordBadDayModeUsed(in: modelContext)
+        showingSafetySupport = true
     }
 
     private func nextStepChipSection(title: String, items: [String]) -> some View {
@@ -297,6 +354,23 @@ struct MoodCheckinNextStepView: View {
                 onDismiss: { showingBreathing = false }
             )
         }
+    }
+
+    private func handleReminderPromptAccepted(_ moment: ReminderOptInMoment) {
+        guard !isHandlingReminderPrompt else { return }
+        isHandlingReminderPrompt = true
+        Task {
+            _ = await ReminderOptInService.shared.accept(moment, modelContext: modelContext)
+            await MainActor.run {
+                reminderPromptMoment = nil
+                isHandlingReminderPrompt = false
+            }
+        }
+    }
+
+    private func handleReminderPromptDismissed(_ moment: ReminderOptInMoment) {
+        ReminderOptInService.shared.dismiss(moment)
+        reminderPromptMoment = nil
     }
 }
 

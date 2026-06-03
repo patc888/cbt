@@ -39,6 +39,23 @@ struct BalancedStepView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
                 .padding(.vertical, 4)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Toggle("Save this reframe for later", isOn: $viewModel.saveReframe)
+                        .font(.system(.body, design: .rounded).weight(.medium))
+                        .foregroundStyle(Theme.primaryText)
+
+                    Toggle("Favorite this reframe", isOn: $viewModel.favoriteReframe)
+                        .font(.system(.body, design: .rounded).weight(.medium))
+                        .foregroundStyle(Theme.primaryText)
+                        .disabled(viewModel.balancedThought.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .onChange(of: viewModel.favoriteReframe) { _, isFavorite in
+                            if isFavorite {
+                                viewModel.saveReframe = true
+                            }
+                        }
+                }
+                .padding(.vertical, 4)
             }
             .padding(.bottom, 60)
         }

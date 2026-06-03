@@ -52,6 +52,10 @@ final class LibraryService {
         return audioContent(withID: item.id)
     }
 
+    func audioAssetIsBundled(named fileName: String) -> Bool {
+        Self.audioAssetIsBundled(named: fileName)
+    }
+
     func categories(for items: [LibraryItem]) -> [String] {
         items.reduce(into: [String]()) { result, item in
             if !result.contains(item.category) {
@@ -181,11 +185,31 @@ final class LibraryService {
 
         do {
             let data = try Data(contentsOf: url)
-            return try JSONDecoder().decode([AudioContentSeed].self, from: data)
+            let audioContent = try JSONDecoder().decode([AudioContentSeed].self, from: data)
+            return audioContent.filter { seed in
+                let isAvailable = audioAssetIsBundled(named: seed.localAssetFilename)
+                if !isAvailable {
+                    logger.info("Hiding unavailable bundled audio content: \(seed.id, privacy: .public)")
+                }
+                return isAvailable
+            }
         } catch {
             logger.error("Failed to load or decode AudioContent.json: \(error.localizedDescription, privacy: .public)")
             return []
         }
+    }
+
+    private static func audioAssetIsBundled(named fileName: String) -> Bool {
+        let resource = audioResourceComponents(from: fileName)
+        guard !resource.name.isEmpty else { return false }
+        return Bundle.main.url(forResource: resource.name, withExtension: resource.extension) != nil
+    }
+
+    private static func audioResourceComponents(from fileName: String) -> (name: String, extension: String) {
+        let url = URL(fileURLWithPath: fileName)
+        let fileExtension = url.pathExtension.isEmpty ? "mp3" : url.pathExtension
+        let name = url.deletingPathExtension().lastPathComponent
+        return (name, fileExtension)
     }
 
     private static func makeLibraryItem(from exercise: Exercise) -> LibraryItem? {
@@ -228,7 +252,7 @@ final class LibraryService {
 
     private static func defaultCourses(from items: [LibraryItem]) -> [Course] {
         let itemsByID = dictionaryByID(items)
-        return crashCourseSeeds.compactMap { seed in
+        return (crashCourseSeeds + skillPathSeeds).compactMap { seed in
             let lessons = makeLessons(from: seed.lessons, itemsByID: itemsByID)
             guard lessons.count == seed.lessons.count else { return nil }
 
@@ -237,7 +261,7 @@ final class LibraryService {
                 title: seed.title,
                 subtitle: seed.subtitle,
                 description: seed.description,
-                approach: "Crash Course",
+                approach: seed.courseKind,
                 approaches: [seed.primaryApproach],
                 category: seed.category,
                 topics: seed.topics,
@@ -1244,6 +1268,169 @@ final class LibraryService {
         )
     ]
 
+    private static let skillPathSeeds: [CourseSeed] = [
+        CourseSeed(
+            id: "skill_path_anxiety_reset",
+            title: "Anxiety Reset",
+            subtitle: "A longer guided path for worry, body alarm, and steady next steps.",
+            description: "Work through grounding, breathing, worry mapping, thought checking, and controllable action without duplicating the underlying Library exercises.",
+            primaryApproach: "CBT",
+            category: "Anxiety Tools",
+            topics: ["Anxiety Tools", "Stress & Burnout"],
+            linkedGuidedJournalIDs: ["worry_unpacker", "what_am_i_predicting", "uncertainty_practice"],
+            finalReflectionPrompt: "Which anxiety reset step is most useful to return to first?",
+            completionMessage: "You built a reusable anxiety reset sequence for slowing the loop and choosing one grounded action.",
+            courseKind: "Skill Path",
+            lessons: [
+                CourseLessonSeed(exerciseID: "exercise_003", title: "Ground in the Room", shortEducationalText: "Start with a concrete anchor so your attention has somewhere steady to land. Example: name what you see, hear, and feel before problem-solving.", keyTakeaway: "Ground first, solve second.", reflectionPrompt: "Which sensory anchor works fastest for you?"),
+                CourseLessonSeed(exerciseID: "exercise_004", title: "Slow the Alarm", shortEducationalText: "Breathing practice helps lower the body alarm enough to choose your next step. Example: use one round before checking the worry again.", keyTakeaway: "A calmer body can make thoughts easier to evaluate.", reflectionPrompt: "What body cue tells you it is time to breathe?"),
+                CourseLessonSeed(exerciseID: "exercise_016", title: "Contain the Worry", shortEducationalText: "Give worry a boundary instead of letting it run all day. Example: write the worry, schedule a worry window, and return to now.", keyTakeaway: "Boundaries make worry less endless.", reflectionPrompt: "What worry needs a time boundary?"),
+                CourseLessonSeed(exerciseID: "exercise_024", title: "Size the Fear", shortEducationalText: "Anxiety often jumps to the worst outcome. Example: compare what is possible, likely, and cope-able.", keyTakeaway: "A sized fear is easier to meet.", reflectionPrompt: "What feared outcome could you size more fairly?"),
+                CourseLessonSeed(exerciseID: "exercise_act_005", title: "Choose One Controllable Step", shortEducationalText: "Finish by moving attention to what you can influence. Example: send one message, prepare one note, or take one brief pause.", keyTakeaway: "Control works best when it becomes a small action.", reflectionPrompt: "What is one action within your control today?")
+            ]
+        ),
+        CourseSeed(
+            id: "skill_path_overthinking",
+            title: "Overthinking",
+            subtitle: "Practice getting unstuck from loops of replaying, predicting, and checking.",
+            description: "Move from mental looping into written thoughts, balanced evidence, defusion, and a next behavior that matters.",
+            primaryApproach: "CBT",
+            category: "Thought Patterns",
+            topics: ["Anxiety Tools", "Productivity / Procrastination"],
+            linkedGuidedJournalIDs: ["what_am_i_predicting", "uncertainty_practice", "control_vs_influence"],
+            finalReflectionPrompt: "Which overthinking loop do you recognize earlier now?",
+            completionMessage: "You practiced turning overthinking into clearer questions, lighter thoughts, and small action.",
+            courseKind: "Skill Path",
+            lessons: [
+                CourseLessonSeed(exerciseID: "exercise_001", title: "Name the Trigger", shortEducationalText: "Overthinking gets clearer when you name the specific moment that started it. Example: one unread message, one meeting, one decision.", keyTakeaway: "A named trigger is less blurry than a whole mood.", reflectionPrompt: "What moment started the loop?"),
+                CourseLessonSeed(exerciseID: "exercise_009", title: "Write the Main Thought", shortEducationalText: "Put the loop into one sentence so you can work with it. Example: they are disappointed in me is easier to check than everything feels off.", keyTakeaway: "One sentence gives the mind a handle.", reflectionPrompt: "What is the core thought?"),
+                CourseLessonSeed(exerciseID: "exercise_017", title: "Check the Whole Picture", shortEducationalText: "Look for evidence that supports and complicates the story. Example: a brief reply and a friendly earlier exchange can both count.", keyTakeaway: "Balanced evidence loosens certainty.", reflectionPrompt: "What evidence has the loop been ignoring?"),
+                CourseLessonSeed(exerciseID: "exercise_act_003", title: "Add Distance", shortEducationalText: "Defusion helps you relate to the thought differently. Example: I am having the thought that I ruined it creates a little room.", keyTakeaway: "Distance is not denial; it is perspective.", reflectionPrompt: "What thought could use more distance?"),
+                CourseLessonSeed(exerciseID: "exercise_act_007", title: "Pick the Next Useful Move", shortEducationalText: "End with behavior instead of more analysis. Example: ask one clarifying question, take a break, or do the first tiny task.", keyTakeaway: "Action can close the loop better than more thinking.", reflectionPrompt: "What useful move would count as enough for now?")
+            ]
+        ),
+        CourseSeed(
+            id: "skill_path_low_mood_support",
+            title: "Low Mood Support",
+            subtitle: "Gentle steps for low-energy days, activation, and kinder self-talk.",
+            description: "Use existing behavioral activation, mastery, routine, and self-compassion exercises as a longer support sequence.",
+            primaryApproach: "Behavioral Activation",
+            category: "Low Mood",
+            topics: ["Depression Support", "Stress & Burnout"],
+            linkedGuidedJournalIDs: ["low_mood_reflection", "one_small_step", "hope_inventory"],
+            finalReflectionPrompt: "Which small support is realistic enough to repeat on a low-mood day?",
+            completionMessage: "You created a low-mood support path built from tiny action, routine, and kinder inner language.",
+            courseKind: "Skill Path",
+            lessons: [
+                CourseLessonSeed(exerciseID: "exercise_007", title: "Lower the Bar", shortEducationalText: "When mood is low, the first step should be almost too small to argue with. Example: open the curtain or put one cup away.", keyTakeaway: "Tiny starts still count.", reflectionPrompt: "What step is small enough today?"),
+                CourseLessonSeed(exerciseID: "exercise_015", title: "Schedule One Pleasant Moment", shortEducationalText: "Pleasure can be brief and ordinary. Example: a song, warm drink, or two minutes outside can be a planned support.", keyTakeaway: "Small pleasant contact matters.", reflectionPrompt: "What pleasant moment can you schedule?"),
+                CourseLessonSeed(exerciseID: "exercise_023", title: "Attach Support to Routine", shortEducationalText: "A routine anchor reduces decision load. Example: after brushing teeth, stretch for one minute.", keyTakeaway: "Existing routines can carry new care.", reflectionPrompt: "What routine can hold one support?"),
+                CourseLessonSeed(exerciseID: "exercise_031", title: "Add a Mastery Step", shortEducationalText: "Mastery means a small done, not a huge win. Example: reply to one message or clear one surface.", keyTakeaway: "Capability grows through completed steps.", reflectionPrompt: "What tiny task would feel meaningfully done?"),
+                CourseLessonSeed(exerciseID: "exercise_006", title: "Use Ally Language", shortEducationalText: "Low mood often brings harsh narration. Example: today is hard and one step is enough may support action better than pressure.", keyTakeaway: "Kind language can make action less punishing.", reflectionPrompt: "What would an ally say to you right now?")
+            ]
+        ),
+        CourseSeed(
+            id: "skill_path_self_esteem",
+            title: "Self-Esteem",
+            subtitle: "Build evidence, reduce labels, and practice self-respect in small moments.",
+            description: "Follow a guided sequence for self-critical thoughts using existing reframing, compassion, and values exercises.",
+            primaryApproach: "Self-Compassion",
+            category: "Self-Esteem",
+            topics: ["Depression Support", "Relationships"],
+            linkedGuidedJournalIDs: ["self_criticism_reframe", "inner_critic_dialogue", "comparison_detox"],
+            finalReflectionPrompt: "What evidence about yourself do you want to keep available?",
+            completionMessage: "You practiced meeting self-criticism with evidence, specificity, compassion, and values.",
+            courseKind: "Skill Path",
+            lessons: [
+                CourseLessonSeed(exerciseID: "exercise_018", title: "Replace Labels With Facts", shortEducationalText: "A label turns a moment into an identity. Example: I made a mistake is lighter and more accurate than I am a failure.", keyTakeaway: "Specific facts are kinder and more useful than labels.", reflectionPrompt: "What label could become a description?"),
+                CourseLessonSeed(exerciseID: "exercise_017", title: "Gather Balanced Evidence", shortEducationalText: "Self-esteem needs access to the full record. Example: include effort, repair, care, and learning alongside setbacks.", keyTakeaway: "The whole picture is more truthful than the harsh picture.", reflectionPrompt: "What evidence supports a fairer view of you?"),
+                CourseLessonSeed(exerciseID: "exercise_006", title: "Speak Like an Inner Friend", shortEducationalText: "Compassion is not letting yourself off the hook; it is helping yourself stay engaged. Example: that was hard, and I can repair one part.", keyTakeaway: "Supportive language keeps you in the room.", reflectionPrompt: "What would an inner friend say?"),
+                CourseLessonSeed(exerciseID: "exercise_030", title: "Remember Shared Humanity", shortEducationalText: "Struggle is part of being human, not proof that you are uniquely wrong. Example: many people feel awkward, uncertain, or behind.", keyTakeaway: "You can belong even while struggling.", reflectionPrompt: "What struggle could you normalize a little?"),
+                CourseLessonSeed(exerciseID: "exercise_act_001", title: "Act From a Value", shortEducationalText: "Self-respect grows when behavior lines up with what matters. Example: honesty can guide one small repair or boundary.", keyTakeaway: "Values make esteem behavioral and repeatable.", reflectionPrompt: "What value would support self-respect today?")
+            ]
+        ),
+        CourseSeed(
+            id: "skill_path_stress_at_work",
+            title: "Stress at Work",
+            subtitle: "A practical path for pressure, boundaries, tasks, and recovery.",
+            description: "Organize existing CBT, ACT, and burnout tools into a workplace stress journey with reflection prompts attached.",
+            primaryApproach: "CBT",
+            category: "Stress & Burnout",
+            topics: ["Stress & Burnout", "Productivity / Procrastination"],
+            linkedGuidedJournalIDs: ["burnout_check_in", "task_breakdown", "control_vs_influence"],
+            finalReflectionPrompt: "What workplace stress cue deserves earlier attention?",
+            completionMessage: "You built a work-stress sequence for sorting pressure, reducing task load, and choosing a boundary or recovery step.",
+            courseKind: "Skill Path",
+            lessons: [
+                CourseLessonSeed(exerciseID: "exercise_001", title: "Separate Pressure From Story", shortEducationalText: "Start by naming the actual demand. Example: two deadlines today is different from I am failing at everything.", keyTakeaway: "Facts and interpretations need different responses.", reflectionPrompt: "What is the concrete work stressor?"),
+                CourseLessonSeed(exerciseID: "exercise_026", title: "Soften the Should", shortEducationalText: "Should statements add pressure on top of pressure. Example: I should handle this alone can become I need help prioritizing.", keyTakeaway: "Needs are easier to act on than shame.", reflectionPrompt: "What should could become a need or request?"),
+                CourseLessonSeed(exerciseID: "exercise_act_007", title: "Shrink the Task", shortEducationalText: "Overloaded work needs smaller units. Example: write the subject line before drafting the whole email.", keyTakeaway: "A small next action lowers friction.", reflectionPrompt: "What is the smallest visible task step?"),
+                CourseLessonSeed(exerciseID: "exercise_act_005", title: "Sort Control and Influence", shortEducationalText: "Work stress often mixes controllable tasks with uncontrollable outcomes. Example: you can prepare, ask, schedule, or clarify.", keyTakeaway: "Control becomes useful when it turns into behavior.", reflectionPrompt: "What is inside your influence today?"),
+                CourseLessonSeed(exerciseID: "exercise_dbt_008", title: "Check Recovery Basics", shortEducationalText: "Stress recovery needs body basics too. Example: food, hydration, movement, sleep, and medication routines can change capacity.", keyTakeaway: "Capacity is not only mindset.", reflectionPrompt: "Which basic need deserves care after work?")
+            ]
+        ),
+        CourseSeed(
+            id: "skill_path_sleep_worry",
+            title: "Sleep & Worry",
+            subtitle: "Wind down worry loops and give your body clearer bedtime cues.",
+            description: "Use worry scheduling, breathing, relaxation, mindfulness, and wellness checks as a longer sleep-support path.",
+            primaryApproach: "CBT",
+            category: "Sleep & Wind Down",
+            topics: ["Sleep & Wind Down", "Anxiety Tools"],
+            linkedGuidedJournalIDs: ["sleep_wind_down_reflection", "worry_unpacker", "uncertainty_practice"],
+            finalReflectionPrompt: "What is one wind-down cue you want to repeat this week?",
+            completionMessage: "You created a sleep and worry sequence for parking concerns, settling the body, and ending the day more gently.",
+            courseKind: "Skill Path",
+            lessons: [
+                CourseLessonSeed(exerciseID: "exercise_016", title: "Park the Worry", shortEducationalText: "Night worry often asks to be solved immediately. Example: write it down, name the next possible time to address it, and return to bed cues.", keyTakeaway: "A parked worry is not ignored; it is scheduled.", reflectionPrompt: "What worry can wait until a planned time?"),
+                CourseLessonSeed(exerciseID: "exercise_028", title: "Lengthen the Exhale", shortEducationalText: "A breath rhythm can signal winding down. Example: use 4-7-8 breathing as a quiet transition rather than a performance test.", keyTakeaway: "A repeatable cue matters more than perfect calm.", reflectionPrompt: "When could this breathing cue fit?"),
+                CourseLessonSeed(exerciseID: "exercise_012", title: "Release Body Tension", shortEducationalText: "Progressive relaxation gives the body a concrete task. Example: gently tense and release one muscle group at a time.", keyTakeaway: "Body release can be practiced in pieces.", reflectionPrompt: "Where does bedtime tension show up first?"),
+                CourseLessonSeed(exerciseID: "exercise_mindfulness_002", title: "Scan Without Fixing", shortEducationalText: "A body scan can help you notice sensations without chasing every thought. Example: feel contact with the bed and return when the mind wanders.", keyTakeaway: "Returning is the practice.", reflectionPrompt: "What anchor helps you return at night?"),
+                CourseLessonSeed(exerciseID: "exercise_dbt_008", title: "Review Sleep Supports", shortEducationalText: "Sleep is affected by basics across the day. Example: caffeine, meals, movement, and routine can all shape wind-down.", keyTakeaway: "Gentle daytime supports can help nighttime worry.", reflectionPrompt: "Which sleep-supporting basic needs attention?")
+            ]
+        ),
+        CourseSeed(
+            id: "skill_path_social_anxiety",
+            title: "Social Anxiety",
+            subtitle: "Loosen mind-reading, self-focus, and safety behaviors through small experiments.",
+            description: "A guided path using existing social-anxiety, exposure, and defusion tools with related journal prompts.",
+            primaryApproach: "CBT",
+            category: "Social Anxiety",
+            topics: ["Anxiety Tools", "Relationships"],
+            linkedGuidedJournalIDs: ["relationship_trigger_reflection", "safety_behavior_audit", "what_am_i_predicting"],
+            finalReflectionPrompt: "What small social experiment feels worth trying again?",
+            completionMessage: "You practiced a social anxiety path for checking assumptions, reducing safety behaviors, and moving toward connection.",
+            courseKind: "Skill Path",
+            lessons: [
+                CourseLessonSeed(exerciseID: "exercise_010", title: "Question Mind Reading", shortEducationalText: "Social anxiety guesses what others think. Example: they looked away may have many explanations besides judgment.", keyTakeaway: "A social guess is not a social fact.", reflectionPrompt: "What other explanation could fit?"),
+                CourseLessonSeed(exerciseID: "exercise_024", title: "Reality-Check the Feared Outcome", shortEducationalText: "Name the feared social outcome and include coping. Example: I might pause, and I can ask a follow-up question.", keyTakeaway: "Coping belongs in the prediction.", reflectionPrompt: "How could you cope with an awkward moment?"),
+                CourseLessonSeed(exerciseID: "exercise_032", title: "Drop One Safety Behavior Slightly", shortEducationalText: "Safety behaviors can keep attention on performance. Example: rehearse one less time or make a little more eye contact.", keyTakeaway: "Small reductions can teach new safety.", reflectionPrompt: "What safety behavior could loosen by 10 percent?"),
+                CourseLessonSeed(exerciseID: "exercise_008", title: "Try a Small Exposure", shortEducationalText: "Exposure can be gentle and planned. Example: ask one low-stakes question or send one friendly message.", keyTakeaway: "Approach steps should be challenging but manageable.", reflectionPrompt: "What mild approach step could you try?"),
+                CourseLessonSeed(exerciseID: "exercise_act_003", title: "Let the Thought Come Along", shortEducationalText: "Connection can happen while a thought is present. Example: I am having the thought I sound awkward, and I can still listen.", keyTakeaway: "You do not need a quiet mind to connect.", reflectionPrompt: "What social value matters even with anxiety?")
+            ]
+        ),
+        CourseSeed(
+            id: "skill_path_panic_support",
+            title: "Panic Support",
+            subtitle: "Prepare tools for alarm waves, grounding, body cues, and aftercare.",
+            description: "Use existing grounding, breathing, distress tolerance, and reflection content as a reusable panic-support path.",
+            primaryApproach: "CBT",
+            category: "Anxiety Tools",
+            topics: ["Anxiety Tools", "Stress & Burnout"],
+            linkedGuidedJournalIDs: ["panic_reflection", "safety_behavior_audit", "control_vs_influence"],
+            finalReflectionPrompt: "Which panic support tool would be easiest to remember during a wave?",
+            completionMessage: "You built a panic support path for naming alarm, grounding, pacing the body, and planning aftercare.",
+            courseKind: "Skill Path",
+            lessons: [
+                CourseLessonSeed(exerciseID: "exercise_dbt_001", title: "Pause Before Reacting", shortEducationalText: "A panic wave can make everything feel urgent. Example: STOP creates a tiny pause before checking, fleeing, or escalating.", keyTakeaway: "A pause gives you one more option.", reflectionPrompt: "What phrase could cue a pause?"),
+                CourseLessonSeed(exerciseID: "exercise_003", title: "Orient to the Present", shortEducationalText: "Grounding gives attention a task in the room. Example: name five things you see and press both feet into the floor.", keyTakeaway: "The room can become an anchor.", reflectionPrompt: "Which grounding detail is easiest to find?"),
+                CourseLessonSeed(exerciseID: "exercise_004", title: "Use a Breath Pattern", shortEducationalText: "A familiar rhythm can help pace the body. Example: box breathing gives you a simple count to follow.", keyTakeaway: "Rhythm supports the body during alarm.", reflectionPrompt: "What count feels safest for your breath?"),
+                CourseLessonSeed(exerciseID: "exercise_027", title: "Choose a Safe Sensory Cue", shortEducationalText: "Temperature can pull attention into the present. Example: notice a cool cup, fresh air, or water on your hands.", keyTakeaway: "Safe sensory cues can interrupt escalation.", reflectionPrompt: "What sensory cue is practical for you?"),
+                CourseLessonSeed(exerciseID: "exercise_mindfulness_001", title: "Plan Aftercare", shortEducationalText: "After alarm, your body may need a gentle transition. Example: drink water, write one note, or take a quiet walk.", keyTakeaway: "Aftercare is part of panic support.", reflectionPrompt: "What aftercare would feel kind and realistic?")
+            ]
+        )
+    ]
+
     private static func makeLessons(from seeds: [CourseLessonSeed], itemsByID: [String: LibraryItem]) -> [CourseLesson] {
         seeds.compactMap { seed in
             guard itemsByID[seed.exerciseID] != nil else { return nil }
@@ -1272,7 +1459,36 @@ private struct CourseSeed {
     let linkedGuidedJournalIDs: [String]
     let finalReflectionPrompt: String
     let completionMessage: String
+    let courseKind: String
     let lessons: [CourseLessonSeed]
+
+    init(
+        id: String,
+        title: String,
+        subtitle: String,
+        description: String,
+        primaryApproach: String,
+        category: String,
+        topics: [String],
+        linkedGuidedJournalIDs: [String],
+        finalReflectionPrompt: String,
+        completionMessage: String,
+        courseKind: String = "Crash Course",
+        lessons: [CourseLessonSeed]
+    ) {
+        self.id = id
+        self.title = title
+        self.subtitle = subtitle
+        self.description = description
+        self.primaryApproach = primaryApproach
+        self.category = category
+        self.topics = topics
+        self.linkedGuidedJournalIDs = linkedGuidedJournalIDs
+        self.finalReflectionPrompt = finalReflectionPrompt
+        self.completionMessage = completionMessage
+        self.courseKind = courseKind
+        self.lessons = lessons
+    }
 }
 
 private struct CourseLessonSeed {

@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E2E55C892F58C0010055850B /* CBTWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = E2E55C832F58C0010055850B /* CBTWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		E2E55C5B2F58B8560055850B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,13 +25,45 @@
 			remoteGlobalIDString = E2E55C482F58B8550055850B;
 			remoteInfo = CBT;
 		};
+		E2E55C8A2F58C0010055850B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2E55C412F58B8550055850B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E2E55C822F58C0010055850B;
+			remoteInfo = CBTWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E2E55C882F58C0010055850B /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E2E55C892F58C0010055850B /* CBTWidgetExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		E2E55C492F58B8550055850B /* CBT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CBT.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E55C5A2F58B8560055850B /* CBTTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CBTTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E55C642F58B8560055850B /* CBTUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CBTUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E55C832F58C0010055850B /* CBTWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CBTWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E2E55C8C2F58C0020055850B /* Exceptions for "CBTWidgetExtension" folder in "CBTWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				WidgetInfo.plist,
+			);
+			target = E2E55C822F58C0010055850B /* CBTWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E2E55C4B2F58B8550055850B /* CBT */ = {
@@ -43,6 +79,14 @@
 		E2E55C672F58B8560055850B /* CBTUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = CBTUITests;
+			sourceTree = "<group>";
+		};
+		E2E55C872F58C0010055850B /* CBTWidgetExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E2E55C8C2F58C0020055850B /* Exceptions for "CBTWidgetExtension" folder in "CBTWidgetExtension" target */,
+			);
+			path = CBTWidgetExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -69,6 +113,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E2E55C802F58C0010055850B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -76,6 +127,7 @@
 			isa = PBXGroup;
 			children = (
 				E2E55C4B2F58B8550055850B /* CBT */,
+				E2E55C872F58C0010055850B /* CBTWidgetExtension */,
 				E2E55C5D2F58B8560055850B /* CBTTests */,
 				E2E55C672F58B8560055850B /* CBTUITests */,
 				E2E55C4A2F58B8550055850B /* Products */,
@@ -86,6 +138,7 @@
 			isa = PBXGroup;
 			children = (
 				E2E55C492F58B8550055850B /* CBT.app */,
+				E2E55C832F58C0010055850B /* CBTWidgetExtension.appex */,
 				E2E55C5A2F58B8560055850B /* CBTTests.xctest */,
 				E2E55C642F58B8560055850B /* CBTUITests.xctest */,
 			);
@@ -102,10 +155,12 @@
 				E2E55C452F58B8550055850B /* Sources */,
 				E2E55C462F58B8550055850B /* Frameworks */,
 				E2E55C472F58B8550055850B /* Resources */,
+				E2E55C882F58C0010055850B /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E2E55C8B2F58C0010055850B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				E2E55C4B2F58B8550055850B /* CBT */,
@@ -157,6 +212,26 @@
 			productReference = E2E55C642F58B8560055850B /* CBTUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		E2E55C822F58C0010055850B /* CBTWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E2E55C842F58C0010055850B /* Build configuration list for PBXNativeTarget "CBTWidgetExtension" */;
+			buildPhases = (
+				E2E55C7F2F58C0010055850B /* Sources */,
+				E2E55C802F58C0010055850B /* Frameworks */,
+				E2E55C812F58C0010055850B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E2E55C872F58C0010055850B /* CBTWidgetExtension */,
+			);
+			name = CBTWidgetExtension;
+			productName = CBTWidgetExtension;
+			productReference = E2E55C832F58C0010055850B /* CBTWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -178,6 +253,9 @@
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = E2E55C482F58B8550055850B;
 					};
+					E2E55C822F58C0010055850B = {
+						CreatedOnToolsVersion = 26.2;
+					};
 				};
 			};
 			buildConfigurationList = E2E55C442F58B8550055850B /* Build configuration list for PBXProject "CBT" */;
@@ -195,6 +273,7 @@
 			projectRoot = "";
 			targets = (
 				E2E55C482F58B8550055850B /* CBT */,
+				E2E55C822F58C0010055850B /* CBTWidgetExtension */,
 				E2E55C592F58B8560055850B /* CBTTests */,
 				E2E55C632F58B8560055850B /* CBTUITests */,
 			);
@@ -217,6 +296,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E2E55C622F58B8560055850B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2E55C812F58C0010055850B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -247,6 +333,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E2E55C7F2F58C0010055850B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -259,6 +352,11 @@
 			isa = PBXTargetDependency;
 			target = E2E55C482F58B8550055850B /* CBT */;
 			targetProxy = E2E55C652F58B8560055850B /* PBXContainerItemProxy */;
+		};
+		E2E55C8B2F58C0010055850B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E2E55C822F58C0010055850B /* CBTWidgetExtension */;
+			targetProxy = E2E55C8A2F58C0010055850B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -571,6 +669,74 @@
 			};
 			name = Release;
 		};
+		E2E55C852F58C0010055850B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CBTWidgetExtension/CBTWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = 6W3R5F6T8X;
+				EXCLUDED_SOURCE_FILE_NAMES = Info.plist;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = CBTWidgetExtension/WidgetInfo.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.melichan.CBT.CBTWidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E2E55C862F58C0010055850B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CBTWidgetExtension/CBTWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = 6W3R5F6T8X;
+				EXCLUDED_SOURCE_FILE_NAMES = Info.plist;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = CBTWidgetExtension/WidgetInfo.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.melichan.CBT.CBTWidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -606,6 +772,15 @@
 			buildConfigurations = (
 				E2E55C762F58B8560055850B /* Debug */,
 				E2E55C772F58B8560055850B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E2E55C842F58C0010055850B /* Build configuration list for PBXNativeTarget "CBTWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E2E55C852F58C0010055850B /* Debug */,
+				E2E55C862F58C0010055850B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

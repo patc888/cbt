@@ -62,6 +62,7 @@ struct SubscriptionView: View {
             }
         )
         .onAppear {
+            LocalRetentionEventStore.shared.record(.paywallShown, sourceScreen: "subscription")
             if subscriptionManager.availableProducts.isEmpty {
                 Task {
                     await subscriptionManager.loadProducts()
@@ -92,6 +93,11 @@ struct SubscriptionView: View {
             await MainActor.run {
                 isPurchasing = false
                 if success {
+                    LocalRetentionEventStore.shared.record(
+                        .purchaseCompleted,
+                        sourceScreen: "subscription",
+                        metadata: ["product": productToPurchase.id]
+                    )
                     updateUserSettings()
                     HapticManager.shared.success()
                     dismiss()
@@ -109,6 +115,7 @@ struct SubscriptionView: View {
             await MainActor.run {
                 isPurchasing = false
                 if subscriptionManager.isPremium {
+                    LocalRetentionEventStore.shared.record(.purchaseRestored, sourceScreen: "subscription")
                     updateUserSettings()
                 }
             }

@@ -1,3 +1,4 @@
+import Foundation
 import OSLog
 import SwiftData
 
@@ -6,12 +7,16 @@ struct HomeDashboardSnapshot: Sendable {
     let completionSnapshot: DailyPlanCompletionSnapshot
     let recommendations: [DailyRecommendation]
     let latestMoodScore: Int?
+    let latestMoodDate: Date?
+    let personalization: HomePersonalizedSnapshot
 
     static let empty = HomeDashboardSnapshot(
         activeDates: [],
         completionSnapshot: .empty,
         recommendations: [],
-        latestMoodScore: nil
+        latestMoodScore: nil,
+        latestMoodDate: nil,
+        personalization: .empty
     )
 }
 
@@ -26,6 +31,11 @@ extension ExerciseCompletion: CreatedAtRecord {}
 extension JournalEntry: CreatedAtRecord {}
 extension PlannedActivity: CreatedAtRecord {}
 extension BreathingSession: CreatedAtRecord {}
+extension TinyWinCompletion: CreatedAtRecord {}
+extension ValueActionCompletion: CreatedAtRecord {}
+extension DailyPlanCompletion: CreatedAtRecord {
+    var createdAt: Date { completedAt }
+}
 
 enum LaunchSafeFetch {
     private static let disableHomeDashboardFetches = false
@@ -130,6 +140,38 @@ enum LaunchSafeFetch {
     }
 
     @MainActor
+    static func personalValues(
+        from context: ModelContext,
+        logger: Logger = AppLogger.make(category: "LaunchSafeFetch")
+    ) -> [PersonalValue] {
+        fetch(
+            FetchDescriptor<PersonalValue>(
+                predicate: #Predicate<PersonalValue> { $0.isDeleted == false },
+                sortBy: [SortDescriptor(\PersonalValue.createdAt)]
+            ),
+            from: context,
+            logger: logger,
+            label: "personalValues"
+        )
+    }
+
+    @MainActor
+    static func valueActionCompletions(
+        from context: ModelContext,
+        logger: Logger = AppLogger.make(category: "LaunchSafeFetch")
+    ) -> [ValueActionCompletion] {
+        fetch(
+            FetchDescriptor<ValueActionCompletion>(
+                predicate: #Predicate<ValueActionCompletion> { $0.isDeleted == false },
+                sortBy: [SortDescriptor(\ValueActionCompletion.createdAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "valueActionCompletions"
+        )
+    }
+
+    @MainActor
     static func flexibleJournalEntries(
         from context: ModelContext,
         logger: Logger = AppLogger.make(category: "LaunchSafeFetch")
@@ -141,6 +183,22 @@ enum LaunchSafeFetch {
             from: context,
             logger: logger,
             label: "flexibleJournalEntries"
+        )
+    }
+
+    @MainActor
+    static func breathingSessions(
+        from context: ModelContext,
+        logger: Logger = AppLogger.make(category: "LaunchSafeFetch")
+    ) -> [BreathingSession] {
+        fetch(
+            FetchDescriptor<BreathingSession>(
+                predicate: #Predicate<BreathingSession> { $0.isDeleted == false },
+                sortBy: [SortDescriptor(\BreathingSession.createdAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "breathingSessions"
         )
     }
 
@@ -202,7 +260,7 @@ enum LaunchSafeFetch {
             label: "homeDashboardSnapshot.moodDates"
         )
 
-        let latestMoodScore = fetch(
+        let latestMood = fetch(
             FetchDescriptor<MoodEntry>(
                 predicate: #Predicate<MoodEntry> {
                     $0.isDeleted == false
@@ -212,7 +270,19 @@ enum LaunchSafeFetch {
             from: context,
             logger: logger,
             label: "homeDashboardSnapshot.latestMood"
-        ).first?.moodScore
+        ).first
+
+        let latestMoodCheckIn = fetch(
+            FetchDescriptor<MoodCheckIn>(
+                predicate: #Predicate<MoodCheckIn> {
+                    $0.isDeleted == false
+                },
+                sortBy: [SortDescriptor(\MoodCheckIn.createdAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.latestMoodCheckIn"
+        ).first
 
         let thoughtDates = createdDates(
             FetchDescriptor<ThoughtRecord>(
@@ -271,12 +341,72 @@ enum LaunchSafeFetch {
             label: "homeDashboardSnapshot.breathingSessionDates"
         )
 
+        let tinyWinDates = createdDates(
+            FetchDescriptor<TinyWinCompletion>(
+                predicate: #Predicate<TinyWinCompletion> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= windowStart &&
+                    $0.createdAt < windowEnd
+                },
+                sortBy: [SortDescriptor(\TinyWinCompletion.createdAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.tinyWinDates"
+        )
+
+        let valueActionDates = createdDates(
+            FetchDescriptor<ValueActionCompletion>(
+                predicate: #Predicate<ValueActionCompletion> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= windowStart &&
+                    $0.createdAt < windowEnd
+                },
+                sortBy: [SortDescriptor(\ValueActionCompletion.createdAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.valueActionDates"
+        )
+
+        let dailyPlanCompletionDates = createdDates(
+            FetchDescriptor<DailyPlanCompletion>(
+                predicate: #Predicate<DailyPlanCompletion> {
+                    $0.isDeleted == false &&
+                    $0.date >= windowStart &&
+                    $0.date < windowEnd
+                },
+                sortBy: [SortDescriptor(\DailyPlanCompletion.completedAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.dailyPlanCompletionDates"
+        )
+
+        let moodCheckInDates = createdDates(
+            FetchDescriptor<MoodCheckIn>(
+                predicate: #Predicate<MoodCheckIn> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= windowStart &&
+                    $0.createdAt < windowEnd
+                },
+                sortBy: [SortDescriptor(\MoodCheckIn.createdAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.moodCheckInDates"
+        )
+
         var activeDates = Set<Date>()
         for date in moodDates { activeDates.insert(calendar.startOfDay(for: date)) }
+        for date in moodCheckInDates { activeDates.insert(calendar.startOfDay(for: date)) }
         for date in thoughtDates { activeDates.insert(calendar.startOfDay(for: date)) }
         for date in exerciseDates { activeDates.insert(calendar.startOfDay(for: date)) }
         for date in breathingDates { activeDates.insert(calendar.startOfDay(for: date)) }
         for date in breathingSessionDates { activeDates.insert(calendar.startOfDay(for: date)) }
+        for date in tinyWinDates { activeDates.insert(calendar.startOfDay(for: date)) }
+        for date in valueActionDates { activeDates.insert(calendar.startOfDay(for: date)) }
+        for date in dailyPlanCompletionDates { activeDates.insert(calendar.startOfDay(for: date)) }
         
         let activityDates = createdDates(
             FetchDescriptor<PlannedActivity>(
@@ -319,65 +449,308 @@ enum LaunchSafeFetch {
             label: "homeDashboardSnapshot.breathingSessionCount"
         )
 
+        let moodCount = fetchCount(
+            FetchDescriptor<MoodEntry>(
+                predicate: #Predicate<MoodEntry> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= selectedDayStart &&
+                    $0.createdAt < selectedDayEnd
+                }
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.moodCount"
+        )
+        let moodCheckInCount = fetchCount(
+            FetchDescriptor<MoodCheckIn>(
+                predicate: #Predicate<MoodCheckIn> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= selectedDayStart &&
+                    $0.createdAt < selectedDayEnd
+                }
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.moodCheckInCount"
+        )
+        let thoughtCount = fetchCount(
+            FetchDescriptor<ThoughtRecord>(
+                predicate: #Predicate<ThoughtRecord> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= selectedDayStart &&
+                    $0.createdAt < selectedDayEnd
+                }
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.thoughtCount"
+        )
+        let exerciseCount = fetchCount(
+            FetchDescriptor<ExerciseCompletion>(
+                predicate: #Predicate<ExerciseCompletion> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= selectedDayStart &&
+                    $0.createdAt < selectedDayEnd
+                }
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.exerciseCount"
+        )
+        let activityPlannerCount = fetchCount(
+            FetchDescriptor<PlannedActivity>(
+                predicate: #Predicate<PlannedActivity> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= selectedDayStart &&
+                    $0.createdAt < selectedDayEnd
+                }
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.activityPlannerCount"
+        )
+        let tinyWinCount = fetchCount(
+            FetchDescriptor<TinyWinCompletion>(
+                predicate: #Predicate<TinyWinCompletion> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= selectedDayStart &&
+                    $0.createdAt < selectedDayEnd
+                }
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.tinyWinCount"
+        )
+        let valueActionCount = fetchCount(
+            FetchDescriptor<ValueActionCompletion>(
+                predicate: #Predicate<ValueActionCompletion> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= selectedDayStart &&
+                    $0.createdAt < selectedDayEnd
+                }
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.valueActionCount"
+        )
+
+        let moodCheckInType = DailyPlanCompletionItemType.moodCheckIn.rawValue
+        let thoughtRecordType = DailyPlanCompletionItemType.thoughtRecord.rawValue
+        let exerciseType = DailyPlanCompletionItemType.exercise.rawValue
+        let breathingResetType = DailyPlanCompletionItemType.breathingReset.rawValue
+        let tipOfTheDayType = DailyPlanCompletionItemType.tipOfTheDay.rawValue
+        let activityPlannerType = DailyPlanCompletionItemType.activityPlanner.rawValue
+        let quickActionType = DailyPlanCompletionItemType.quickAction.rawValue
+        let tinyWinType = DailyPlanCompletionItemType.tinyWin.rawValue
+        let dailyPlanCompletionsToday = fetch(
+            FetchDescriptor<DailyPlanCompletion>(
+                predicate: #Predicate<DailyPlanCompletion> {
+                    $0.isDeleted == false &&
+                    $0.date >= selectedDayStart &&
+                    $0.date < selectedDayEnd
+                },
+                sortBy: [SortDescriptor(\DailyPlanCompletion.completedAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homeDashboardSnapshot.dailyPlanCompletionsToday"
+        )
+        let dailyPlanTypesToday = Set(dailyPlanCompletionsToday.map(\.itemType))
+
+        let hasCheckInToday = (moodCount + moodCheckInCount) > 0 || dailyPlanTypesToday.contains(moodCheckInType)
         let completionSnapshot = DailyPlanCompletionSnapshot(entries: [
-            .moodCheckIn: fetchCount(
-                FetchDescriptor<MoodEntry>(
-                    predicate: #Predicate<MoodEntry> {
-                        $0.isDeleted == false &&
-                        $0.createdAt >= selectedDayStart &&
-                        $0.createdAt < selectedDayEnd
-                    }
-                ),
-                from: context,
-                logger: logger,
-                label: "homeDashboardSnapshot.moodCount"
-            ) > 0 ? .completed : .incomplete,
-            .thoughtRecord: fetchCount(
-                FetchDescriptor<ThoughtRecord>(
-                    predicate: #Predicate<ThoughtRecord> {
-                        $0.isDeleted == false &&
-                        $0.createdAt >= selectedDayStart &&
-                        $0.createdAt < selectedDayEnd
-                    }
-                ),
-                from: context,
-                logger: logger,
-                label: "homeDashboardSnapshot.thoughtCount"
-            ) > 0 ? .completed : .incomplete,
-            .exercises: fetchCount(
-                FetchDescriptor<ExerciseCompletion>(
-                    predicate: #Predicate<ExerciseCompletion> {
-                        $0.isDeleted == false &&
-                        $0.createdAt >= selectedDayStart &&
-                        $0.createdAt < selectedDayEnd
-                    }
-                ),
-                from: context,
-                logger: logger,
-                label: "homeDashboardSnapshot.exerciseCount"
-            ) > 0 ? .completed : .incomplete,
-            .breathingReset: (breathingJournalCount + breathingSessionCount) > 0 ? .completed : .incomplete,
-            .tipOfTheDay: .notTracked,
-            .activityPlanner: fetchCount(
-                FetchDescriptor<PlannedActivity>(
-                    predicate: #Predicate<PlannedActivity> {
-                        $0.isDeleted == false &&
-                        $0.createdAt >= selectedDayStart &&
-                        $0.createdAt < selectedDayEnd
-                    }
-                ),
-                from: context,
-                logger: logger,
-                label: "homeDashboardSnapshot.activityPlannerCount"
-            ) > 0 ? .completed : .incomplete
+            .moodCheckIn: hasCheckInToday ? .completed : .incomplete,
+            .thoughtRecord: thoughtCount > 0 || dailyPlanTypesToday.contains(thoughtRecordType) ? .completed : .incomplete,
+            .exercises: exerciseCount > 0 || dailyPlanTypesToday.contains(exerciseType) ? .completed : .incomplete,
+            .breathingReset: (breathingJournalCount + breathingSessionCount) > 0 || dailyPlanTypesToday.contains(breathingResetType) ? .completed : .incomplete,
+            .tipOfTheDay: dailyPlanTypesToday.contains(tipOfTheDayType) ? .completed : .notTracked,
+            .activityPlanner: activityPlannerCount > 0 || dailyPlanTypesToday.contains(activityPlannerType) ? .completed : .incomplete,
+            .tinyWin: tinyWinCount > 0 || dailyPlanTypesToday.contains(tinyWinType) ? .completed : .incomplete,
+            .valueAction: valueActionCount > 0 || dailyPlanTypesToday.contains(quickActionType) ? .completed : .incomplete
         ])
+
+        let completedTodayCount = completionSnapshot.entries.values.filter(\.isCompleted).count
+        let weekStart = calendar.date(byAdding: .day, value: -6, to: selectedDayStart) ?? selectedDayStart
+        let weeklyActivityCount = activeDates.filter { $0 >= weekStart && $0 <= selectedDayStart }.count
+        let latestMoodSignal = latestMoodCheckIn.map { checkIn in
+            latestMood.map { mood in
+                mood.createdAt > checkIn.createdAt ? (mood.moodScore, mood.createdAt) : (checkIn.moodScore, checkIn.createdAt)
+            } ?? (checkIn.moodScore, checkIn.createdAt)
+        } ?? latestMood.map { ($0.moodScore, $0.createdAt) }
+        let latestRichMood = latestMood
+        let shouldShowLowEnergyMode = latestRichMood.map { mood in
+            mood.energyScore.map { $0 <= 3 } == true ||
+                mood.anxietyStressScore.map { $0 >= 8 } == true ||
+                mood.moodScore <= 3
+        } ?? (latestMoodSignal?.0 ?? 10 <= 3)
+        let personalization = HomePersonalizedSnapshot(
+            hasCheckInToday: hasCheckInToday,
+            missedDayCount: BadDayModeService.context(
+                activeDays: activeDates,
+                latestMoodScore: latestMoodSignal?.0,
+                latestMoodDate: latestMoodSignal?.1,
+                today: selectedDayStart,
+                calendar: calendar
+            ).missedDays,
+            completedTodayCount: completedTodayCount,
+            weeklyActivityCount: weeklyActivityCount,
+            shouldShowLowEnergyMode: shouldShowLowEnergyMode,
+            continueItem: homeContinueItem(context: context, logger: logger),
+            insight: homeInsightPreview(context: context, logger: logger, calendar: calendar, today: selectedDayStart)
+        )
 
         return HomeDashboardSnapshot(
             activeDates: activeDates,
             completionSnapshot: completionSnapshot,
             recommendations: [],
-            latestMoodScore: latestMoodScore
+            latestMoodScore: latestMoodSignal?.0,
+            latestMoodDate: latestMoodSignal?.1,
+            personalization: personalization
         )
+    }
+
+    private static func homeContinueItem(
+        context: ModelContext,
+        logger: Logger
+    ) -> HomeContinueItem? {
+        let partialThought = fetch(
+            FetchDescriptor<ThoughtRecord>(
+                predicate: #Predicate<ThoughtRecord> { $0.isDeleted == false },
+                sortBy: [SortDescriptor(\ThoughtRecord.createdAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homePersonalization.partialThoughts"
+        )
+        .first { record in
+            !record.automaticThought.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            record.balancedThought.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+
+        if partialThought != nil {
+            return HomeContinueItem(
+                title: String(localized: "Finish a thought record"),
+                subtitle: String(localized: "A balanced thought is still waiting."),
+                systemImage: "brain.head.profile",
+                action: .thoughtRecord
+            )
+        }
+
+        let partialJournal = fetch(
+            FetchDescriptor<FlexibleJournalEntry>(
+                sortBy: [SortDescriptor(\FlexibleJournalEntry.date, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homePersonalization.partialJournals"
+        )
+        .first { entry in
+            entry.responses.contains { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        }
+
+        if let partialJournal {
+            let template = JournalTemplate.template(matching: partialJournal.templateType)
+            return HomeContinueItem(
+                title: template?.title ?? String(localized: "Finish a guided journal"),
+                subtitle: String(localized: "Pick up the reflection you started."),
+                systemImage: "book.pages",
+                action: .journal
+            )
+        }
+
+        let course = fetch(
+            FetchDescriptor<Course>(
+                sortBy: [SortDescriptor(\Course.title)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homePersonalization.courses"
+        )
+        .first { course in
+            !course.completedItemIDs.isEmpty && !course.isCompleted
+        }
+
+        if let course {
+            let completed = max(course.completedLessonCount, course.completedItemIDs.count)
+            let total = max(course.progressTotal, course.itemIDs.count)
+            return HomeContinueItem(
+                title: course.title,
+                subtitle: total > 0
+                    ? String(localized: "\(completed) of \(total) lessons complete")
+                    : String(localized: "Keep going with this course."),
+                systemImage: "graduationcap.fill",
+                action: .recommendation(.course(courseID: course.id))
+            )
+        }
+
+        return nil
+    }
+
+    private static func homeInsightPreview(
+        context: ModelContext,
+        logger: Logger,
+        calendar: Calendar,
+        today: Date
+    ) -> HomeInsightPreview? {
+        let cutoff = calendar.date(byAdding: .day, value: -14, to: today) ?? today
+        let moodScores = fetch(
+            FetchDescriptor<MoodEntry>(
+                predicate: #Predicate<MoodEntry> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= cutoff
+                },
+                sortBy: [SortDescriptor(\MoodEntry.createdAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homeInsight.moodEntries"
+        ).map(\.moodScore) + fetch(
+            FetchDescriptor<MoodCheckIn>(
+                predicate: #Predicate<MoodCheckIn> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= cutoff
+                },
+                sortBy: [SortDescriptor(\MoodCheckIn.createdAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homeInsight.moodCheckIns"
+        ).map(\.moodScore)
+
+        if moodScores.count >= 3 {
+            let average = Double(moodScores.reduce(0, +)) / Double(moodScores.count)
+            return HomeInsightPreview(
+                title: String(localized: "Recent mood average"),
+                subtitle: String(localized: "\(moodScores.count) check-ins in the last 2 weeks"),
+                value: String(format: "%.1f/10", average)
+            )
+        }
+
+        let thoughtImprovements = fetch(
+            FetchDescriptor<ThoughtRecord>(
+                predicate: #Predicate<ThoughtRecord> {
+                    $0.isDeleted == false &&
+                    $0.createdAt >= cutoff
+                },
+                sortBy: [SortDescriptor(\ThoughtRecord.createdAt, order: .reverse)]
+            ),
+            from: context,
+            logger: logger,
+            label: "homeInsight.thoughtRecords"
+        )
+        .map { $0.intensityBefore - $0.intensityAfter }
+        .filter { $0 > 0 }
+
+        if thoughtImprovements.count >= 2 {
+            let average = thoughtImprovements.reduce(0, +) / thoughtImprovements.count
+            return HomeInsightPreview(
+                title: String(localized: "Reframes are helping"),
+                subtitle: String(localized: "\(thoughtImprovements.count) thought records reviewed"),
+                value: String(localized: "\(average) pts")
+            )
+        }
+
+        return nil
     }
 
     private static func fetch<T: PersistentModel>(
@@ -397,7 +770,6 @@ enum LaunchSafeFetch {
             return []
         }
     }
-
     private static func fetchCount<T: PersistentModel>(
         _ descriptor: FetchDescriptor<T>,
         from context: ModelContext,

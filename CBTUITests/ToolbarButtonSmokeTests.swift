@@ -12,11 +12,11 @@ final class ToolbarButtonSmokeTests: XCTestCase {
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
 
         let toolbarButtons = [
-            "Home",
-            "Insights",
-            "Exercises",
+            "Today",
+            "Tools",
             "Journal",
-            "Settings",
+            "Insights",
+            "Profile",
             "Quick Add Mood",
             "Close mood options"
         ]
@@ -63,7 +63,7 @@ final class ToolbarButtonSmokeTests: XCTestCase {
 
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
 
-        let exercises = app.buttons["Exercises"]
+        let exercises = app.buttons["Tools"]
         XCTAssertTrue(exercises.waitForExistence(timeout: 8))
         exercises.tap()
 

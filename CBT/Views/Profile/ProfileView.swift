@@ -6,8 +6,11 @@ struct ProfileView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
     @Query(sort: \Achievement.createdAt) private var achievements: [Achievement]
+    @Query(sort: \PersonalValue.createdAt) private var personalValues: [PersonalValue]
+    @Query(sort: \ValueActionCompletion.createdAt, order: .reverse) private var valueActionCompletions: [ValueActionCompletion]
     @State private var achievementProgress: [String: AchievementProgress] = [:]
     @State private var monthlyBadgeProgress: MonthlyBadgeProgress?
+    @State private var showingValues = false
 
     private let columns = [
         GridItem(.adaptive(minimum: 150), spacing: DSSpacing.medium)
@@ -21,6 +24,17 @@ struct ProfileView: View {
         achievements.filter(\.isUnlocked).count
     }
 
+    private var recentAchievements: [Achievement] {
+        Array(
+            achievements
+                .filter(\.isUnlocked)
+                .sorted {
+                    ($0.unlockedAt ?? $0.createdAt) > ($1.unlockedAt ?? $1.createdAt)
+                }
+                .prefix(3)
+        )
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -29,7 +43,36 @@ struct ProfileView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: DSSpacing.large) {
+                        TopHeadlineView(
+                            title: String(localized: "Profile"),
+                            leading: {
+                                StreakToolbarButton()
+                            },
+                            trailing: {
+                                NavigationLink {
+                                    SettingsView(showsDismissControl: false)
+                                } label: {
+                                    Image(systemName: "gearshape")
+                                        .font(.system(.body, weight: .semibold))
+                                        .foregroundStyle(themeManager.selectedColor)
+                                        .frame(width: 44, height: 44)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Open Settings")
+                            }
+                        )
+
                         profileSummary
+                        copingPlanLink
+                        ProfileValuesSection(
+                            values: personalValues.filter { !$0.isDeleted },
+                            weeklySummary: ValuesService.weeklySummary(completions: valueActionCompletions),
+                            onManage: { showingValues = true }
+                        )
+
+                        if !recentAchievements.isEmpty {
+                            ProfileRecentAchievementsSection(achievements: recentAchievements)
+                        }
 
                         if let monthlyBadgeProgress {
                             monthlyBadgesSection(monthlyBadgeProgress)
@@ -39,7 +82,7 @@ struct ProfileView: View {
                             SupportiveEmptyStateView(
                                 systemImage: "rosette",
                                 title: "Achievements",
-                                message: "Achievements quietly mark practice milestones as you use check-ins, journals, and exercises.",
+                                message: "Save your first check-in, journal entry, or exercise completion to unlock the first practice milestone.",
                                 actionTitle: "Refresh Achievements",
                                 actionSystemImage: "arrow.clockwise"
                             ) {
@@ -58,14 +101,24 @@ struct ProfileView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, DSSpacing.large)
-                    .padding(.top, DSSpacing.large)
+                    .dsContentLayout()
                     .padding(.bottom, LayoutMetrics.floatingToolbarBottomInset + DSSpacing.large)
                 }
             }
-            .navigationTitle("Profile")
+            .navigationTitle("")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
+            #endif
+            .hideNavigationBar()
             .task {
                 refreshAchievements()
+            }
+            .sheet(isPresented: $showingValues) {
+                NavigationStack {
+                    ValuesSelectionView()
+                }
+                .dsSheetPresentation()
             }
         }
     }
@@ -89,6 +142,39 @@ struct ProfileView: View {
                 summaryContent(axis: .vertical)
             }
         }
+    }
+
+    private var copingPlanLink: some View {
+        NavigationLink(destination: SafetyPlanView()) {
+            DSCardContainer {
+                HStack(alignment: .center, spacing: DSSpacing.medium) {
+                    Image(systemName: "lifepreserver.fill")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(themeManager.selectedColor)
+                        .frame(width: 48, height: 48)
+                        .background(themeManager.selectedColor.opacity(0.12), in: Circle())
+                        .accessibilityHidden(true)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Rough Patch Plan")
+                            .font(DSTypography.cardTitle)
+                            .foregroundStyle(Theme.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text("Edit your warning signs, helpful actions, trusted contacts, grounding steps, and reminders.")
+                            .font(DSTypography.caption)
+                            .foregroundStyle(Theme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    SettingsDisclosureIndicator()
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Rough Patch Plan")
     }
 
     private func summaryContent(axis: Axis) -> some View {
@@ -145,6 +231,136 @@ struct ProfileView: View {
                 }
             }
         }
+    }
+}
+
+private struct ProfileValuesSection: View {
+    @Environment(ThemeManager.self) private var themeManager
+
+    let values: [PersonalValue]
+    let weeklySummary: [ValuePracticeSummary]
+    let onManage: () -> Void
+
+    private let valueColumns = [
+        GridItem(.adaptive(minimum: 118), spacing: 8)
+    ]
+
+    private var weeklyCount: Int {
+        weeklySummary.map(\.count).reduce(0, +)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DSSpacing.medium) {
+            DSSectionHeader(
+                title: "Values",
+                subtitle: weeklyCount == 0 ? "Small actions tied to what matters." : "\(weeklyCount) value-based actions this week."
+            )
+
+            DSCardContainer {
+                VStack(alignment: .leading, spacing: DSSpacing.medium) {
+                    if values.isEmpty {
+                        Text("Choose a few values to receive tiny daily actions.")
+                            .font(DSTypography.body)
+                            .foregroundStyle(Theme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        LazyVGrid(columns: valueColumns, alignment: .leading, spacing: 8) {
+                            ForEach(values) { value in
+                                Label(value.name, systemImage: value.isCustom ? "sparkle" : "star.fill")
+                                    .font(DSTypography.caption.weight(.bold))
+                                    .foregroundStyle(themeManager.selectedColor)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.78)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 7)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(themeManager.selectedColor.opacity(0.1), in: Capsule())
+                            }
+                        }
+
+                        if !weeklySummary.isEmpty {
+                            Divider()
+
+                            ForEach(weeklySummary.prefix(3)) { summary in
+                                HStack {
+                                    Text(summary.valueName)
+                                        .font(DSTypography.body.weight(.semibold))
+                                        .foregroundStyle(Theme.primaryText)
+                                    Spacer()
+                                    Text("\(summary.count)")
+                                        .font(DSTypography.body.weight(.bold))
+                                        .foregroundStyle(themeManager.selectedColor)
+                                }
+                            }
+                        }
+                    }
+
+                    Button {
+                        onManage()
+                    } label: {
+                        Label(values.isEmpty ? "Choose values" : "Manage values", systemImage: "slider.horizontal.3")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, tint: themeManager.selectedColor, hapticType: .light))
+                }
+            }
+        }
+    }
+}
+
+private struct ProfileRecentAchievementsSection: View {
+    @Environment(ThemeManager.self) private var themeManager
+
+    let achievements: [Achievement]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DSSpacing.medium) {
+            DSSectionHeader(
+                title: "Recent Achievements",
+                subtitle: "Gentle milestones you have already earned."
+            )
+
+            VStack(spacing: DSSpacing.small) {
+                ForEach(achievements) { achievement in
+                    ProfileRecentAchievementRow(achievement: achievement)
+                }
+            }
+        }
+    }
+}
+
+private struct ProfileRecentAchievementRow: View {
+    @Environment(ThemeManager.self) private var themeManager
+
+    let achievement: Achievement
+
+    var body: some View {
+        DSCardContainer {
+            HStack(alignment: .center, spacing: DSSpacing.medium) {
+                Image(systemName: achievement.imageName)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(themeManager.selectedColor)
+                    .frame(width: 44, height: 44)
+                    .background(themeManager.selectedColor.opacity(0.12), in: Circle())
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(achievement.title)
+                        .font(DSTypography.cardTitle)
+                        .foregroundStyle(Theme.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(achievement.achievementDescription)
+                        .font(DSTypography.caption)
+                        .foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(achievement.title). \(achievement.achievementDescription)")
     }
 }
 

@@ -10,7 +10,9 @@ final class ExerciseService {
     private init() {
         let loadedExercises = LibraryService.shared.bundledExercises
         self.exercises = loadedExercises
-        self.exercisesByID = Dictionary(uniqueKeysWithValues: loadedExercises.map { ($0.id, $0) })
+        self.exercisesByID = loadedExercises.reduce(into: [:]) { result, exercise in
+            result[exercise.id] = result[exercise.id] ?? exercise
+        }
     }
 
     func exercise(withID id: String) -> Exercise? {

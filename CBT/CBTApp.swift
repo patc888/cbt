@@ -27,6 +27,7 @@ private struct CloudSettingsSyncObserver: View {
         do {
             let settings = try settingsList.first ?? UserSettings.fetchOrCreate(in: modelContext)
             HapticManager.shared.setEnabled(settings.hapticsEnabled ?? true)
+            AppConfiguration.setDiscreetModeEnabled(settings.discreetModeEnabled ?? false)
             CloudSettingsManager.shared.syncOnLocalChange(settings: settings)
         } catch {
             Self.logger.error("Failed to bootstrap cloud settings sync: \(error.localizedDescription, privacy: .private)")
@@ -47,7 +48,6 @@ struct CBTApp: App {
     // MARK: - State
 
     @StateObject private var securityManager = SecurityManager.shared
-    @StateObject private var cloudSyncStatusMonitor = CloudSyncStatusMonitor.shared
     @State private var cloudKitSyncMonitor = CloudKitSyncMonitor.shared
     @State private var themeManager = ThemeManager()
     @State private var hasCheckedLockOnLaunch = false
@@ -106,10 +106,8 @@ struct CBTApp: App {
     private func appRoot(modelContainer: ModelContainer) -> some View {
         ContentView()
             .environmentObject(securityManager)
-            .environmentObject(cloudSyncStatusMonitor)
             .environment(cloudKitSyncMonitor)
             .environment(themeManager)
-            .modelContainer(modelContainer)
             .overlay {
                 CloudSettingsSyncObserver()
                     .allowsHitTesting(false)
@@ -122,8 +120,10 @@ struct CBTApp: App {
                 }
             }
             .task {
+                recordAppOpenedIfEnabled()
                 await PersonalizedReminderService.shared.refreshEnabledReminders(modelContext: modelContainer.mainContext)
                 await StreakReengagementNotificationService.shared.handleAppLogin(modelContext: modelContainer.mainContext)
+                WidgetSnapshotService.publishSnapshot(from: modelContainer.mainContext)
             }
             .onChange(of: scenePhase) { _, newPhase in
                 if newPhase == .active {
@@ -131,12 +131,25 @@ struct CBTApp: App {
                         hasCheckedLockOnLaunch = true
                     }
                     Task {
+                        await MainActor.run {
+                            recordAppOpenedIfEnabled()
+                        }
                         await DailyReminderService.shared.refreshQuoteOfTheDayIfEnabled()
                         await PersonalizedReminderService.shared.refreshEnabledReminders(modelContext: modelContainer.mainContext)
                         await StreakReengagementNotificationService.shared.handleAppLogin(modelContext: modelContainer.mainContext)
+                        await MainActor.run {
+                            WidgetSnapshotService.publishSnapshot(from: modelContainer.mainContext)
+                        }
                     }
                 }
             }
+            .modelContainer(modelContainer)
+    }
+
+    @MainActor
+    private func recordAppOpenedIfEnabled() {
+        guard !AppConfiguration.shouldUseInMemoryStoreForThisProcess else { return }
+        LocalRetentionEventStore.shared.record(.appOpened, sourceScreen: "app")
     }
 
     // MARK: - Storage Unavailable

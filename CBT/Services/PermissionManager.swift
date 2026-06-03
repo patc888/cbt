@@ -93,9 +93,24 @@ final class PermissionManager {
         switch type {
         case .notifications:
             do {
+                LocalRetentionEventStore.shared.record(
+                    .notificationPermissionRequested,
+                    sourceScreen: "permissions",
+                    metadata: ["permission": "notifications"]
+                )
                 let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])
+                LocalRetentionEventStore.shared.record(
+                    granted ? .notificationPermissionGranted : .notificationPermissionDenied,
+                    sourceScreen: "permissions",
+                    metadata: ["permission": "notifications"]
+                )
                 return granted ? .authorized : .denied
             } catch {
+                LocalRetentionEventStore.shared.record(
+                    .notificationPermissionDenied,
+                    sourceScreen: "permissions",
+                    metadata: ["permission": "notifications"]
+                )
                 Self.logger.error("Failed to request notification auth: \(error.localizedDescription, privacy: .public)")
                 return .denied
             }

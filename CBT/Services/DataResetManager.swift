@@ -19,6 +19,12 @@ final class DataResetManager {
         cloudSyncKey,
         "lastCloudSyncDate",
         "cbt_onboardingCompleted",
+        FirstSessionWinService.completedKey,
+        FirstSessionWinService.completedKindKey,
+        FirstSessionWinService.completedAtKey,
+        FirstSessionWinService.reminderOfferedKey,
+        FirstSessionWinService.reminderOptedInKey,
+        "cbt_localEventLog",
         "cbt_dailyPlanGoalIDs",
         "cbt_dailyPlanInterestIDs",
         "appColorTheme",
@@ -63,9 +69,17 @@ final class DataResetManager {
         "cbt_quietHoursEndMinute",
         "cbt_moodGoalValue",
         "cbt_home_lastOpenedAt",
+        "cbt_retention_last_daily_plan_completed_day",
+        "cbt_retention_streak_started",
+        "cbt_retention_streak_broken",
         StreakReengagementNotificationService.lastLoginTimestampKey,
         StreakReengagementNotificationService.lastDailyCheckTimestampKey,
+        "cbt_reminderOptIn_firstMoodCheckIn_state",
+        "cbt_reminderOptIn_firstPlannedActivityCompletion_state",
+        "cbt_reminderOptIn_firstWeeklyInsightViewed_state",
+        "cbt_reminderOptIn_onboardingFirstWin_state",
         "cbt.achievements.weeklyReportViewed",
+        "cbt.achievements.badDayModeUsed",
         "affirmation_favorites_v1"
     ]
     
@@ -118,11 +132,7 @@ final class DataResetManager {
 
     private func clearCloudKeyValueStore() {
         let store = NSUbiquitousKeyValueStore.default
-        for key in [
-            "hapticsEnabled",
-            "appLockEnabled",
-            "currentIcon"
-        ] {
+        for key in CloudSettingsKey.allNames {
             store.removeObject(forKey: key)
         }
         store.synchronize()

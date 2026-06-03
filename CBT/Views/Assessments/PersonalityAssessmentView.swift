@@ -95,13 +95,8 @@ struct PersonalityAssessmentView: View {
                     }
                 } label: {
                     Label("Begin", systemImage: "arrow.right")
-                        .font(.system(.headline, design: .rounded).weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(themeManager.selectedColor, in: RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall, style: .continuous))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(DSButtonStyle(variant: .primary, tint: themeManager.selectedColor, hapticType: nil))
             }
             .dsContentLayout()
             .padding(.vertical, 18)
@@ -150,8 +145,14 @@ struct PersonalityAssessmentView: View {
 
     private func binding(for index: Int) -> Binding<Int?> {
         Binding(
-            get: { answers[index] },
-            set: { answers[index] = $0 }
+            get: {
+                guard answers.indices.contains(index) else { return nil }
+                return answers[index]
+            },
+            set: {
+                guard answers.indices.contains(index) else { return }
+                answers[index] = $0
+            }
         )
     }
 

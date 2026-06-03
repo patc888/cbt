@@ -30,7 +30,7 @@ struct InsightsEmptyStateView: View {
             SupportiveEmptyStateView(
                 systemImage: "chart.line.uptrend.xyaxis",
                 title: String(localized: "Insights"),
-                message: String(localized: "Insights turn check-ins and thought records into gentle patterns you can reflect on over time."),
+                message: String(localized: "Start with a 1-minute mood check-in. A few saved moments will turn into patterns here."),
                 actionTitle: String(localized: "Add a Mood Check-In"),
                 actionSystemImage: "face.smiling"
             ) {

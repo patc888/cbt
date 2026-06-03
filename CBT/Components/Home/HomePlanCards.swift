@@ -7,8 +7,8 @@ struct MoodCheckInPlanCard: View {
 
     var body: some View {
         PlanCard(
-            title: String(localized: "Mood Check-In"),
-            subtitle: String(localized: "Capture how you feel right now."),
+            title: String(localized: "Daily Check-In"),
+            subtitle: String(localized: "Log the basics in about a minute."),
             trailingSymbol: "face.smiling",
             completionState: completionState
         ) {
@@ -16,7 +16,7 @@ struct MoodCheckInPlanCard: View {
                 Divider()
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(String(localized: "Start quick check-in"))
+                        Text(String(localized: "Start daily check-in"))
                             .font(.system(.subheadline, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.primaryText)
                         Text(String(localized: "Takes about 1 minute"))
@@ -42,14 +42,13 @@ struct ThoughtRecordPlanCard: View {
     let action: () -> Void
 
     var body: some View {
-        PlanCard(
+        SimpleHomePlanCard(
             title: String(localized: "Thought Record"),
             subtitle: String(localized: "Challenge one difficult thought."),
             trailingSymbol: "brain",
-            completionState: completionState
-        ) {
-            action()
-        }
+            completionState: completionState,
+            action: action
+        )
     }
 }
 
@@ -58,14 +57,13 @@ struct ExercisesPlanCard: View {
     let action: () -> Void
 
     var body: some View {
-        PlanCard(
+        SimpleHomePlanCard(
             title: String(localized: "Exercises"),
             subtitle: String(localized: "Practice one CBT tool."),
             trailingSymbol: "figure.mind.and.body",
-            completionState: completionState
-        ) {
-            action()
-        }
+            completionState: completionState,
+            action: action
+        )
     }
 }
 
@@ -74,14 +72,13 @@ struct BreathingResetPlanCard: View {
     let action: () -> Void
 
     var body: some View {
-        PlanCard(
+        SimpleHomePlanCard(
             title: String(localized: "Breathing Reset"),
             subtitle: String(localized: "Calm your body in 60 seconds"),
             trailingSymbol: "wind",
-            completionState: completionState
-        ) {
-            action()
-        }
+            completionState: completionState,
+            action: action
+        )
     }
 }
 
@@ -90,28 +87,45 @@ struct TipOfTheDayPlanCard: View {
     let action: () -> Void
 
     var body: some View {
-        PlanCard(
+        SimpleHomePlanCard(
             title: String(localized: "Tip of the Day"),
             subtitle: String(localized: "Open a quick CBT reminder."),
             trailingSymbol: "lightbulb",
-            completionState: completionState
-        ) {
-            action()
-        }
+            completionState: completionState,
+            action: action
+        )
     }
 }
+
 struct ActivityPlannerPlanCard: View {
     let completionState: PlanCardCompletionState
     let action: () -> Void
 
     var body: some View {
-        PlanCard(
+        SimpleHomePlanCard(
             title: String(localized: "Activity Planner"),
             subtitle: String(localized: "Schedule and reflect on nourishing tasks."),
             trailingSymbol: "calendar.badge.clock",
-            completionState: completionState
-        ) {
-            action()
-        }
+            completionState: completionState,
+            action: action
+        )
+    }
+}
+
+private struct SimpleHomePlanCard: View {
+    let title: String
+    let subtitle: String
+    let trailingSymbol: String
+    let completionState: PlanCardCompletionState
+    let action: () -> Void
+
+    var body: some View {
+        PlanCard(
+            title: title,
+            subtitle: subtitle,
+            trailingSymbol: trailingSymbol,
+            completionState: completionState,
+            action: action
+        )
     }
 }

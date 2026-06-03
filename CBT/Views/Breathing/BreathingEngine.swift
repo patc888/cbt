@@ -45,6 +45,7 @@ final class BreathingEngine: ObservableObject {
 
     deinit {
         timer?.invalidate()
+        audioPlayer?.stop()
     }
 
     func start() {

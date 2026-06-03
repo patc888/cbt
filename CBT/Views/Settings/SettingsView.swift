@@ -93,6 +93,20 @@ private struct SettingsDashboardContent: View {
             
             SubscriptionSettingsView()
 
+            SettingsSection(title: String(localized: "Trust Center")) {
+                NavigationLink(destination: PrivacySafetySettingsView()) {
+                    SettingsRow(
+                        icon: "hand.raised.shield.fill",
+                        iconColor: themeManager.selectedColor,
+                        title: String(localized: "Privacy & Safety"),
+                        subtitle: String(localized: "App lock, sync, export, delete/reset, and crisis resources")
+                    ) {
+                        SettingsDisclosureIndicator()
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+
             AppearanceSettingsView(
                 hapticsEnabled: viewModel.hapticsEnabled,
                 currentIcon: viewModel.currentIcon,
@@ -107,16 +121,21 @@ private struct SettingsDashboardContent: View {
                 }
             )
 
-            DataSettingsSection()
-
-            SecuritySettingsView(
-                appLockEnabled: viewModel.appLockEnabled,
-                onUpdateAppLock: { enabled in
-                    viewModel.updateAppLock(enabled)
-                }
-            )
-
             SettingsSection(title: String(localized: "Tools")) {
+                Button {
+                    viewModel.optInToFirstSevenDays()
+                } label: {
+                    SettingsRow(
+                        icon: "sparkles",
+                        iconColor: themeManager.selectedColor,
+                        title: String(localized: "First 7 Days Journey"),
+                        subtitle: viewModel.journeyOptInMessage ?? String(localized: "Start a gentle local starter plan")
+                    ) {
+                        SettingsDisclosureIndicator()
+                    }
+                }
+                .buttonStyle(.plain)
+
                 NavigationLink(destination: BreathingResetView()) {
                     SettingsRow(
                         icon: "wind",
@@ -128,6 +147,7 @@ private struct SettingsDashboardContent: View {
                     }
                 }
                 .buttonStyle(.plain)
+
             }
 
             RemindersSettingsSection()
@@ -317,16 +337,6 @@ private struct ShareFeedbackSettingsView: View {
     }
 }
 
-private struct SettingsDisclosureIndicator: View {
-    var body: some View {
-        Image(systemName: "chevron.right")
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(Theme.secondaryText)
-            .accessibilityHidden(true)
-    }
-}
-
-
 struct PrivacyFooter: View {
     @Environment(ThemeManager.self) private var themeManager
     
@@ -340,7 +350,7 @@ struct PrivacyFooter: View {
             }
             .foregroundStyle(themeManager.selectedColor)
             
-            Text(String(localized: "Your entries are private. We never see your data."))
+            Text(String(localized: "Your entries are private. Retention analytics stay local on your device, do not include entry content, and are never sent to us."))
                 .font(.system(size: 12, design: .rounded))
                 .foregroundStyle(Theme.secondaryText)
         }

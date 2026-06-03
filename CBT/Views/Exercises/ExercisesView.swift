@@ -36,6 +36,10 @@ private struct ExercisesDashboardContent: View {
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.colorScheme) private var colorScheme
     @State private var completions: [ExerciseCompletion] = []
+    @State private var continueItem: ContinueItem?
+    @State private var selectedContinueExercise: Exercise?
+    @State private var showingContinueProgram = false
+    @State private var showingContinueActivityPlanner = false
 
     @Query(filter: #Predicate<ProgramProgress> { $0.programID == "tackling_procrastination" && !$0.isDeleted })
     private var programProgresses: [ProgramProgress]
@@ -91,6 +95,21 @@ private struct ExercisesDashboardContent: View {
         return [(category: selectedCategory, exercises: filteredExercises)]
     }
 
+    private var continueExerciseID: String? {
+        if case .exercise(let exerciseID) = continueItem?.destination {
+            return exerciseID
+        }
+        return nil
+    }
+
+    private var visibleUpNextExercises: [Exercise] {
+        viewModel.upNextExercises.filter { $0.id != continueExerciseID }
+    }
+
+    private var exposureLadderExercise: Exercise? {
+        exerciseService.exercise(withID: "exercise_exposure_ladder")
+    }
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
             ThemedBackground().ignoresSafeArea()
@@ -98,6 +117,12 @@ private struct ExercisesDashboardContent: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     AppScreenHeadline(title: "Exercises")
+
+                    if let continueItem {
+                        ContinueItemCard(item: continueItem) {
+                            perform(continueItem: continueItem)
+                        }
+                    }
 
                     quickToolsSection
 
@@ -111,10 +136,10 @@ private struct ExercisesDashboardContent: View {
                     } else if !viewModel.isInitialized {
                         ExercisesSkeleton()
                     } else {
-                        if !viewModel.upNextExercises.isEmpty {
+                        if !visibleUpNextExercises.isEmpty {
                             sectionTitle("Up Next")
                             VStack(spacing: 10) {
-                                ForEach(viewModel.upNextExercises) { exercise in
+                                ForEach(visibleUpNextExercises) { exercise in
                                     exerciseCard(exercise, showCategory: true, isComplete: false)
                                 }
                             }
@@ -173,16 +198,66 @@ private struct ExercisesDashboardContent: View {
         }
         .task {
             await refreshCompletions()
+            refreshContinueItem()
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
-            Task { await refreshCompletions() }
+            Task {
+                await refreshCompletions()
+                refreshContinueItem()
+            }
+        }
+        .sheet(item: $selectedContinueExercise) { exercise in
+            NavigationStack {
+                ExerciseDetailView(exercise: exercise)
+            }
+            .dsSheetPresentation()
+        }
+        .sheet(isPresented: $showingContinueProgram) {
+            NavigationStack {
+                ProgramDetailView(program: .tacklingProcrastination)
+            }
+            .dsSheetPresentation()
+        }
+        .sheet(isPresented: $showingContinueActivityPlanner) {
+            NavigationStack {
+                ActivityPlannerView()
+            }
+            .dsSheetPresentation()
         }
     }
 
     @MainActor
     private func refreshCompletions() async {
         completions = LaunchSafeFetch.exerciseCompletions(from: modelContext)
+    }
+
+    @MainActor
+    private func refreshContinueItem() {
+        let item = ContinueItemService.shared.bestItem(
+            from: modelContext,
+            recommendations: []
+        )
+
+        switch item?.destination {
+        case .exercise, .cbtPath, .activityPlanner:
+            continueItem = item
+        default:
+            continueItem = nil
+        }
+    }
+
+    private func perform(continueItem: ContinueItem) {
+        switch continueItem.destination {
+        case .exercise(let exerciseID):
+            selectedContinueExercise = LibraryService.shared.exercise(withID: exerciseID)
+        case .cbtPath:
+            showingContinueProgram = true
+        case .activityPlanner:
+            showingContinueActivityPlanner = true
+        default:
+            break
+        }
     }
 
     private func sectionTitle(_ title: String) -> some View {
@@ -226,6 +301,37 @@ private struct ExercisesDashboardContent: View {
             }
             .buttonStyle(.plain)
 
+            if let exposureLadderExercise {
+                NavigationLink(destination: ExerciseDetailView(exercise: exposureLadderExercise)) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Exposure Ladder")
+                                    .font(.system(.headline, design: .rounded).weight(.bold))
+                                    .foregroundStyle(Theme.primaryText)
+                                Text("Prediction -> tiny experiment -> outcome -> learning")
+                                    .font(.system(.subheadline, design: .rounded))
+                                    .foregroundStyle(Theme.secondaryText)
+                            }
+                            Spacer()
+                            Image(systemName: "shield.lefthalf.filled")
+                                .font(.system(size: 24))
+                                .foregroundStyle(themeManager.selectedColor)
+                        }
+
+                        HStack {
+                            Image(systemName: "list.number")
+                            Text("Build confidence one small approach step at a time")
+                                .font(.system(.caption, design: .rounded).weight(.bold))
+                        }
+                        .foregroundStyle(themeManager.selectedColor)
+                    }
+                    .padding(Theme.paddingMedium)
+                    .cardStyle()
+                }
+                .buttonStyle(.plain)
+            }
+
             sectionTitle("Quick Tools & Mindset")
 
             VStack(spacing: 8) {
@@ -267,6 +373,33 @@ private struct ExercisesDashboardContent: View {
                                 .font(.system(.headline, design: .rounded).weight(.semibold))
                                 .foregroundStyle(Theme.primaryText)
                             Text("See examples and balanced reframes")
+                                .font(.system(.caption, design: .rounded))
+                                .foregroundStyle(Theme.secondaryText)
+                        }
+
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 10)
+                    .background(Theme.toggleBackgroundColor(for: .light))
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink(destination: SafetyPlanView()) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "lifepreserver.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(themeManager.selectedColor)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Rough Patch Plan")
+                                .font(.system(.headline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(Theme.primaryText)
+                            Text("Private steps and support options")
                                 .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(Theme.secondaryText)
                         }

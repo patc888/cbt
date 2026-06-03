@@ -71,7 +71,7 @@ struct SyncStatusView: View {
 struct SyncStorageAuditView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
-    @EnvironmentObject private var syncStatusMonitor: CloudSyncStatusMonitor
+    @Environment(CloudKitSyncMonitor.self) private var syncStatusMonitor
     @State private var auditService = StorageAuditService()
     @State private var showingPurgeConfirmation = false
 

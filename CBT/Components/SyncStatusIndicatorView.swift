@@ -6,14 +6,14 @@ struct SyncStatusIndicatorView: View {
         case label
     }
 
-    @ObservedObject private var monitor: CloudSyncStatusMonitor
+    @State private var monitor: CloudKitSyncMonitor
     private let style: Style
 
     init(
-        monitor: CloudSyncStatusMonitor? = nil,
+        monitor: CloudKitSyncMonitor? = nil,
         style: Style = .label
     ) {
-        self.monitor = monitor ?? .shared
+        _monitor = State(initialValue: monitor ?? .shared)
         self.style = style
     }
 
@@ -43,7 +43,7 @@ struct SyncStatusIndicatorView: View {
 
     private var statusColor: Color {
         switch monitor.status {
-        case .synced:
+        case .upToDate:
             return Theme.successGreen
         case .syncing:
             return .yellow
@@ -54,7 +54,7 @@ struct SyncStatusIndicatorView: View {
 
     private var statusText: String {
         switch monitor.status {
-        case .synced:
+        case .upToDate:
             return monitor.lastSyncDescription
         case .syncing:
             return "Syncing..."

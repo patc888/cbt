@@ -221,7 +221,7 @@ struct GuidedJournalPickerView: View {
         SupportiveEmptyStateView(
             systemImage: "pencil.and.list.clipboard",
             title: String(localized: "Guided Journal"),
-            message: String(localized: "Guided journal entries use simple prompts to help you reflect without starting from a blank page."),
+            message: String(localized: "Try a guided entry when a blank page feels too wide. Pick the first prompt and answer just one line."),
             actionTitle: String(localized: "Start a Gentle Entry"),
             actionSystemImage: "square.and.pencil"
         ) {
@@ -362,7 +362,7 @@ private struct EmptyTemplateResultsView: View {
         SupportiveEmptyStateView(
             systemImage: "doc.text.magnifyingglass",
             title: String(localized: "Guided Journal Templates"),
-            message: String(localized: "Templates are structured prompts for focused reflection. The current filters are hiding them."),
+            message: String(localized: "Clear the filters to find a prompt for gratitude, values, worry, or a quick daily reflection."),
             actionTitle: String(localized: "Clear Filters"),
             actionSystemImage: "xmark.circle"
         ) {

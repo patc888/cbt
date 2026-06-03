@@ -2,6 +2,10 @@ import Foundation
 import OSLog
 import SwiftData
 
+extension Notification.Name {
+    static let achievementsUnlocked = Notification.Name("achievementsUnlocked")
+}
+
 struct AchievementProgress: Equatable {
     let currentValue: Int
     let targetCount: Int
@@ -35,11 +39,61 @@ final class AchievementService {
 
     private static let logger = AppLogger.make(category: "Achievements")
     private static let weeklyReportViewedKey = "cbt.achievements.weeklyReportViewed"
+    private static let badDayModeUsedKey = "cbt.achievements.badDayModeUsed"
 
     private let definitions: [AchievementDefinition] = [
         AchievementDefinition(
+            title: "First Check-In",
+            description: "You made space to notice how you were doing.",
+            imageName: "face.smiling",
+            unlockCondition: .moodCheckInCount,
+            targetCount: 1
+        ),
+        AchievementDefinition(
+            title: "Returned After a Missed Day",
+            description: "You came back after a pause. That still counts.",
+            imageName: "arrow.uturn.backward.circle.fill",
+            unlockCondition: .returnedAfterMissedDay,
+            targetCount: 1
+        ),
+        AchievementDefinition(
+            title: "Gentle Restart",
+            description: "You restarted after a break. No catching up needed.",
+            imageName: "arrow.counterclockwise.circle.fill",
+            unlockCondition: .streakRecoveredAfterBreak,
+            targetCount: 1
+        ),
+        AchievementDefinition(
+            title: "You Came Back",
+            description: "A gap happened, and you returned anyway.",
+            imageName: "heart.circle.fill",
+            unlockCondition: .returnedDaysAfterGap,
+            targetCount: 1
+        ),
+        AchievementDefinition(
+            title: "Return Streak",
+            description: "You built three days after a gap. Recovery counts.",
+            imageName: "arrow.clockwise.circle.fill",
+            unlockCondition: .returnStreakCount,
+            targetCount: 3
+        ),
+        AchievementDefinition(
+            title: "Recovery Week",
+            description: "Seven returned days after gaps. Coming back is the practice.",
+            imageName: "calendar.badge.plus",
+            unlockCondition: .returnedDaysAfterGap,
+            targetCount: 7
+        ),
+        AchievementDefinition(
+            title: "Daily Plan Complete",
+            description: "You completed today's gentle plan.",
+            imageName: "list.bullet.clipboard.fill",
+            unlockCondition: .dailyPlanCompleted,
+            targetCount: 1
+        ),
+        AchievementDefinition(
             title: "First Step",
-            description: "Complete your first CBT exercise.",
+            description: "You tried one CBT practice.",
             imageName: "figure.mind.and.body",
             unlockCondition: .exercisesCompleted,
             targetCount: 1
@@ -60,10 +114,17 @@ final class AchievementService {
         ),
         AchievementDefinition(
             title: "Thought Catcher",
-            description: "Save your first thought record.",
+            description: "You saved your first thought record.",
             imageName: "brain.head.profile",
             unlockCondition: .thoughtRecordsCount,
             targetCount: 1
+        ),
+        AchievementDefinition(
+            title: "Completed 3 Thought Records",
+            description: "You practiced looking at thoughts with a little more room.",
+            imageName: "text.bubble.fill",
+            unlockCondition: .thoughtRecordsCount,
+            targetCount: 3
         ),
         AchievementDefinition(
             title: "Reframe Rookie",
@@ -88,7 +149,7 @@ final class AchievementService {
         ),
         AchievementDefinition(
             title: "Three-Day Flame",
-            description: "Log activity for three days in a row.",
+            description: "You showed up for three days in a row.",
             imageName: "flame.fill",
             unlockCondition: .streakCount,
             targetCount: 3
@@ -116,10 +177,17 @@ final class AchievementService {
         ),
         AchievementDefinition(
             title: "Mood Noted",
-            description: "Save your first mood check-in.",
+            description: "You saved your first mood check-in.",
             imageName: "face.smiling",
             unlockCondition: .moodCheckInCount,
             targetCount: 1
+        ),
+        AchievementDefinition(
+            title: "Completed 3 Check-Ins",
+            description: "You checked in three times and gave your days a little attention.",
+            imageName: "checkmark.circle.fill",
+            unlockCondition: .moodCheckInCount,
+            targetCount: 3
         ),
         AchievementDefinition(
             title: "Mood Mapper",
@@ -144,10 +212,17 @@ final class AchievementService {
         ),
         AchievementDefinition(
             title: "First Reflection",
-            description: "Complete your first guided journal.",
+            description: "You completed your first guided journal.",
             imageName: "book.closed.fill",
             unlockCondition: .guidedJournalCount,
             targetCount: 1
+        ),
+        AchievementDefinition(
+            title: "Logged 7 Reflections",
+            description: "You gave seven reflections a place to land.",
+            imageName: "text.book.closed.fill",
+            unlockCondition: .reflectionCount,
+            targetCount: 7
         ),
         AchievementDefinition(
             title: "Reflection Rhythm",
@@ -186,8 +261,15 @@ final class AchievementService {
         ),
         AchievementDefinition(
             title: "Course Opener",
-            description: "Complete your first course.",
+            description: "You completed your first course.",
             imageName: "graduationcap.fill",
+            unlockCondition: .coursesCompleted,
+            targetCount: 1
+        ),
+        AchievementDefinition(
+            title: "Finished a CBT Path",
+            description: "You followed a learning path through to the end.",
+            imageName: "signpost.right.fill",
             unlockCondition: .coursesCompleted,
             targetCount: 1
         ),
@@ -207,10 +289,24 @@ final class AchievementService {
         ),
         AchievementDefinition(
             title: "Week in View",
-            description: "Open your weekly overview for the first time.",
+            description: "You opened your weekly overview for the first time.",
             imageName: "calendar",
             unlockCondition: .weeklyReportViewed,
             targetCount: 1
+        ),
+        AchievementDefinition(
+            title: "Completed a Weekly Review",
+            description: "You took a gentle look back at the week.",
+            imageName: "calendar.badge.checkmark",
+            unlockCondition: .weeklyReviewCompleted,
+            targetCount: 1
+        ),
+        AchievementDefinition(
+            title: "Tried 3 Coping Tools",
+            description: "You explored a few options for steadier moments.",
+            imageName: "hands.sparkles.fill",
+            unlockCondition: .copingToolsTried,
+            targetCount: 3
         ),
         AchievementDefinition(
             title: "Intentional Action",
@@ -267,18 +363,27 @@ final class AchievementService {
             imageName: "square.grid.2x2.fill",
             unlockCondition: .contentModalitiesTried,
             targetCount: 4
+        ),
+        AchievementDefinition(
+            title: "Used Bad Day Mode",
+            description: "You reached for extra support on a harder day.",
+            imageName: "heart.circle.fill",
+            unlockCondition: .badDayModeUsed,
+            targetCount: 1
         )
     ]
 
     private init() {}
 
-    func evaluateAchievements(in modelContext: ModelContext) {
+    @discardableResult
+    func evaluateAchievements(in modelContext: ModelContext) -> [Achievement] {
         do {
             try seedDefaultAchievementsIfNeeded(in: modelContext)
 
             let achievements = try fetchAchievements(in: modelContext)
             let counts = try achievementCounts(in: modelContext)
             var changed = false
+            var newlyUnlocked: [Achievement] = []
 
             for achievement in achievements where !achievement.isUnlocked {
                 guard let definition = definition(for: achievement) else { continue }
@@ -287,15 +392,33 @@ final class AchievementService {
                 if currentValue >= definition.targetCount {
                     achievement.isUnlocked = true
                     achievement.unlockedAt = Date()
+                    newlyUnlocked.append(achievement)
                     changed = true
                 }
             }
 
             if changed {
                 try modelContext.save()
+                for achievement in newlyUnlocked {
+                    let title = achievement.title
+                    Task { @MainActor in
+                        LocalRetentionEventStore.shared.record(
+                            .achievementUnlocked,
+                            sourceScreen: "achievements",
+                            metadata: ["achievement": title]
+                        )
+                    }
+                }
+                NotificationCenter.default.post(
+                    name: .achievementsUnlocked,
+                    object: nil,
+                    userInfo: ["achievements": newlyUnlocked]
+                )
             }
+            return newlyUnlocked
         } catch {
             Self.logger.error("Failed to evaluate achievements: \(error.localizedDescription, privacy: .private)")
+            return []
         }
     }
 
@@ -340,6 +463,8 @@ final class AchievementService {
         let flexibleJournals = try modelContext.fetch(FetchDescriptor<FlexibleJournalEntry>())
         let breathingSessions = try modelContext.fetch(FetchDescriptor<BreathingSession>())
             .filter { !$0.isDeleted }
+        let tinyWinCompletions = try modelContext.fetch(FetchDescriptor<TinyWinCompletion>())
+            .filter { !$0.isDeleted }
         let plannedActivities = try modelContext.fetch(FetchDescriptor<PlannedActivity>())
             .filter { !$0.isDeleted && $0.isCompleted }
         let courses = try modelContext.fetch(FetchDescriptor<Course>())
@@ -355,7 +480,7 @@ final class AchievementService {
             flexibleJournalDates: flexibleJournals.map(\.date),
             breathingSessionDates: breathingSessions.map(\.createdAt),
             plannedActivityCompletionDates: plannedActivities.map { $0.completedAt ?? $0.createdAt },
-            courseCompletionDates: courses.compactMap(\.completedAt)
+            courseCompletionDates: courses.compactMap(\.completedAt) + tinyWinCompletions.map(\.createdAt)
         )
 
         return MonthlyBadgeCalculator.progress(
@@ -366,8 +491,16 @@ final class AchievementService {
     }
 
     func recordWeeklyReportViewed(in modelContext: ModelContext) {
+        LocalRetentionEventStore.shared.record(.weeklyReportViewed, sourceScreen: "insights")
         if !UserDefaults.standard.bool(forKey: Self.weeklyReportViewedKey) {
             UserDefaults.standard.set(true, forKey: Self.weeklyReportViewedKey)
+        }
+        evaluateAchievements(in: modelContext)
+    }
+
+    func recordBadDayModeUsed(in modelContext: ModelContext) {
+        if !UserDefaults.standard.bool(forKey: Self.badDayModeUsedKey) {
+            UserDefaults.standard.set(true, forKey: Self.badDayModeUsedKey)
         }
         evaluateAchievements(in: modelContext)
     }
@@ -447,11 +580,17 @@ final class AchievementService {
         let flexibleJournals = try modelContext.fetch(FetchDescriptor<FlexibleJournalEntry>())
         let breathingSessions = try modelContext.fetch(FetchDescriptor<BreathingSession>())
             .filter { !$0.isDeleted }
+        let tinyWinCompletions = try modelContext.fetch(FetchDescriptor<TinyWinCompletion>())
+            .filter { !$0.isDeleted }
         let courses = try modelContext.fetch(FetchDescriptor<Course>())
         let plannedActivities = try modelContext.fetch(FetchDescriptor<PlannedActivity>())
             .filter { !$0.isDeleted }
         let assessmentLogs = try modelContext.fetch(FetchDescriptor<AssessmentLog>())
         let personalityAssessmentLogs = try modelContext.fetch(FetchDescriptor<PersonalityAssessmentLog>())
+        let weeklyRitualEntries = try modelContext.fetch(FetchDescriptor<WeeklyRitualEntry>())
+            .filter { !$0.isDeleted }
+        let dailyPlanCompletions = try modelContext.fetch(FetchDescriptor<DailyPlanCompletion>())
+            .filter { !$0.isDeleted }
 
         let completedPlannedActivityDates = plannedActivities.compactMap { activity in
             activity.isCompleted ? (activity.completedAt ?? activity.createdAt) : nil
@@ -459,8 +598,24 @@ final class AchievementService {
         let completedCourseDates = courses.compactMap { course in
             course.isCompleted ? course.completedAt : nil
         }
+        let dailyPlanCompletionDates = dailyPlanCompletions.map(\.date)
+        let moodCheckInType: DailyPlanCompletionItemType = .moodCheckIn
+        let thoughtRecordType: DailyPlanCompletionItemType = .thoughtRecord
+        let exerciseType: DailyPlanCompletionItemType = .exercise
+        let journalPromptType: DailyPlanCompletionItemType = .journalPrompt
+        let breathingResetType: DailyPlanCompletionItemType = .breathingReset
+        let tinyWinType: DailyPlanCompletionItemType = .tinyWin
+        let tipOfTheDayType: DailyPlanCompletionItemType = .tipOfTheDay
+        let activityPlannerType: DailyPlanCompletionItemType = .activityPlanner
+        let quickActionType: DailyPlanCompletionItemType = .quickAction
+        func completionDates(for itemType: DailyPlanCompletionItemType) -> [Date] {
+            dailyPlanCompletions.compactMap { completion in
+                guard completion.type == itemType else { return nil }
+                return completion.completedAt
+            }
+        }
 
-        let activeDates = Set(
+        let allActivityDates: [Date] =
             thoughts.map(\.createdAt) +
             exerciseCompletions.map(\.createdAt) +
             journals.map(\.createdAt) +
@@ -468,12 +623,17 @@ final class AchievementService {
             moodEntries.map(\.createdAt) +
             moodCheckIns.map(\.createdAt) +
             breathingSessions.map(\.createdAt) +
+            tinyWinCompletions.map(\.createdAt) +
             completedPlannedActivityDates +
             completedCourseDates +
+            dailyPlanCompletionDates +
             assessmentLogs.map(\.date) +
             personalityAssessmentLogs.map(\.date)
-        )
+
+        let activeDates = Set(allActivityDates)
         .map { Calendar.current.startOfDay(for: $0) }
+
+        let returnStats = Self.returnStats(from: activeDates)
 
         return AchievementCounts(
             streakCount: Self.longestDailyRun(from: activeDates),
@@ -493,7 +653,26 @@ final class AchievementService {
             contentModalitiesTried: Self.contentModalitiesTried(
                 from: exerciseCompletions,
                 courses: courses
-            ).count
+            ).count,
+            returnedAfterMissedDay: Self.hasReturnedAfterMissedDay(
+                from: moodEntries.map(\.createdAt) + moodCheckIns.map(\.createdAt)
+            ) ? 1 : 0,
+            copingToolsTried: Self.copingToolsTried(from: exerciseCompletions).count,
+            reflectionCount: journals.count + flexibleJournals.count,
+            badDayModeUsed: UserDefaults.standard.bool(forKey: Self.badDayModeUsedKey) ? 1 : 0,
+            dailyPlanCompleted: Self.completedDailyPlanDays(
+                moodDates: moodEntries.map(\.createdAt) + moodCheckIns.map(\.createdAt) + completionDates(for: moodCheckInType),
+                thoughtDates: thoughts.map(\.createdAt) + completionDates(for: thoughtRecordType),
+                exerciseDates: exerciseCompletions.map(\.createdAt) + completionDates(for: exerciseType),
+                journalDates: journals.map(\.createdAt) + flexibleJournals.map(\.date) + completionDates(for: journalPromptType),
+                breathingDates: breathingSessions.map(\.createdAt) + completionDates(for: breathingResetType),
+                tinyWinDates: tinyWinCompletions.map(\.createdAt) + completionDates(for: tinyWinType) + completionDates(for: tipOfTheDayType),
+                plannedActivityDates: completedPlannedActivityDates + completionDates(for: activityPlannerType) + completionDates(for: quickActionType)
+            ),
+            weeklyReviewCompleted: weeklyRitualEntries.contains(where: Self.isCompletedWeeklyRitual) ? 1 : 0,
+            streakRecoveredAfterBreak: returnStats.returnedDaysAfterGap > 0 ? 1 : 0,
+            returnStreakCount: returnStats.returnStreak,
+            returnedDaysAfterGap: returnStats.returnedDaysAfterGap
         )
     }
 
@@ -548,6 +727,114 @@ final class AchievementService {
         }).count
     }
 
+    private static func hasReturnedAfterMissedDay(from dates: [Date], calendar: Calendar = .current) -> Bool {
+        let uniqueDays = Set(dates.map { calendar.startOfDay(for: $0) }).sorted()
+        guard uniqueDays.count > 1 else { return false }
+
+        for index in 1..<uniqueDays.count {
+            let daysBetween = calendar.dateComponents([.day], from: uniqueDays[index - 1], to: uniqueDays[index]).day ?? 0
+            if daysBetween > 1 {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private static func returnStats(
+        from dates: [Date],
+        calendar: Calendar = .current
+    ) -> (returnStreak: Int, returnedDaysAfterGap: Int) {
+        let uniqueDays = Set(dates.map { calendar.startOfDay(for: $0) }).sorted()
+        guard !uniqueDays.isEmpty else { return (0, 0) }
+
+        var returnedDaysAfterGap = 0
+        var returnStreak = 0
+        var runLength = 1
+        var runStartedAfterGap = false
+
+        func closeRun() {
+            if runStartedAfterGap {
+                returnedDaysAfterGap += runLength
+                returnStreak = max(returnStreak, runLength)
+            }
+        }
+
+        for index in 1..<uniqueDays.count {
+            let previousDay = uniqueDays[index - 1]
+            let currentDay = uniqueDays[index]
+            let daysBetween = calendar.dateComponents([.day], from: previousDay, to: currentDay).day ?? 0
+
+            if daysBetween == 1 {
+                runLength += 1
+            } else if daysBetween > 1 {
+                closeRun()
+                runLength = 1
+                runStartedAfterGap = true
+            }
+        }
+
+        closeRun()
+        return (returnStreak, returnedDaysAfterGap)
+    }
+
+    private static func completedDailyPlanDays(
+        moodDates: [Date],
+        thoughtDates: [Date],
+        exerciseDates: [Date],
+        journalDates: [Date],
+        breathingDates: [Date],
+        tinyWinDates: [Date],
+        plannedActivityDates: [Date],
+        calendar: Calendar = .current
+    ) -> Int {
+        var itemsByDay: [Date: Set<DailyPlanCompletionKind>] = [:]
+
+        func record(_ dates: [Date], kind: DailyPlanCompletionKind) {
+            for date in dates {
+                itemsByDay[calendar.startOfDay(for: date), default: []].insert(kind)
+            }
+        }
+
+        record(moodDates, kind: .moodCheckIn)
+        record(thoughtDates, kind: .thoughtRecord)
+        record(exerciseDates, kind: .exercise)
+        record(journalDates, kind: .journal)
+        record(breathingDates, kind: .breathing)
+        record(tinyWinDates, kind: .tinyWin)
+        record(plannedActivityDates, kind: .plannedActivity)
+
+        return itemsByDay.values.filter { $0.count >= 3 }.count
+    }
+
+    private static func isCompletedWeeklyRitual(_ entry: WeeklyRitualEntry) -> Bool {
+        !entry.intention.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !entry.learning.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private static func copingToolsTried(from completions: [ExerciseCompletion]) -> Set<String> {
+        completions.reduce(into: Set<String>()) { result, completion in
+            guard let exercise = ExerciseService.shared.exercise(withID: completion.exerciseID),
+                  isCopingTool(exercise) else { return }
+            result.insert(completion.exerciseID)
+        }
+    }
+
+    private static func isCopingTool(_ exercise: Exercise) -> Bool {
+        let fields = ([exercise.category] + exercise.displayTopics + (exercise.tags ?? []))
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+
+        return fields.contains { field in
+            field.contains("coping") ||
+            field.contains("distress tolerance") ||
+            field.contains("grounding") ||
+            field.contains("self-soothing") ||
+            field.contains("emotion regulation") ||
+            field.contains("anxiety tools") ||
+            field.contains("stress")
+        }
+    }
+
     private static func contentModalitiesTried(
         from completions: [ExerciseCompletion],
         courses: [Course]
@@ -584,6 +871,16 @@ final class AchievementService {
     }
 }
 
+private enum DailyPlanCompletionKind: Hashable {
+    case moodCheckIn
+    case thoughtRecord
+    case exercise
+    case journal
+    case breathing
+    case tinyWin
+    case plannedActivity
+}
+
 private struct AchievementCounts {
     let streakCount: Int
     let exercisesCompleted: Int
@@ -597,6 +894,15 @@ private struct AchievementCounts {
     let assessmentsCompleted: Int
     let activeWeeksCount: Int
     let contentModalitiesTried: Int
+    let returnedAfterMissedDay: Int
+    let copingToolsTried: Int
+    let reflectionCount: Int
+    let badDayModeUsed: Int
+    let dailyPlanCompleted: Int
+    let weeklyReviewCompleted: Int
+    let streakRecoveredAfterBreak: Int
+    let returnStreakCount: Int
+    let returnedDaysAfterGap: Int
 
     func value(for condition: AchievementUnlockCondition) -> Int {
         switch condition {
@@ -612,6 +918,15 @@ private struct AchievementCounts {
         case .assessmentsCompleted: return assessmentsCompleted
         case .activeWeeksCount: return activeWeeksCount
         case .contentModalitiesTried: return contentModalitiesTried
+        case .returnedAfterMissedDay: return returnedAfterMissedDay
+        case .copingToolsTried: return copingToolsTried
+        case .reflectionCount: return reflectionCount
+        case .badDayModeUsed: return badDayModeUsed
+        case .dailyPlanCompleted: return dailyPlanCompleted
+        case .weeklyReviewCompleted: return weeklyReviewCompleted
+        case .streakRecoveredAfterBreak: return streakRecoveredAfterBreak
+        case .returnStreakCount: return returnStreakCount
+        case .returnedDaysAfterGap: return returnedDaysAfterGap
         }
     }
 }

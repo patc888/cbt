@@ -10,7 +10,14 @@ enum CBTModelMigrationPlan: SchemaMigrationPlan {
             CBTVersionedSchemaV4.self,
             CBTVersionedSchemaV5.self,
             CBTVersionedSchemaV6.self,
-            CBTVersionedSchemaV7.self
+            CBTVersionedSchemaV7.self,
+            CBTVersionedSchemaV8.self,
+            CBTVersionedSchemaV9.self,
+            CBTVersionedSchemaV10.self,
+            CBTVersionedSchemaV11.self,
+            CBTVersionedSchemaV12.self,
+            CBTVersionedSchemaV13.self,
+            CBTVersionedSchemaV14.self
         ]
     }
 
@@ -21,7 +28,14 @@ enum CBTModelMigrationPlan: SchemaMigrationPlan {
             .lightweight(fromVersion: CBTVersionedSchemaV3.self, toVersion: CBTVersionedSchemaV4.self),
             .lightweight(fromVersion: CBTVersionedSchemaV4.self, toVersion: CBTVersionedSchemaV5.self),
             .lightweight(fromVersion: CBTVersionedSchemaV5.self, toVersion: CBTVersionedSchemaV6.self),
-            .lightweight(fromVersion: CBTVersionedSchemaV6.self, toVersion: CBTVersionedSchemaV7.self)
+            .lightweight(fromVersion: CBTVersionedSchemaV6.self, toVersion: CBTVersionedSchemaV7.self),
+            .lightweight(fromVersion: CBTVersionedSchemaV7.self, toVersion: CBTVersionedSchemaV8.self),
+            .lightweight(fromVersion: CBTVersionedSchemaV8.self, toVersion: CBTVersionedSchemaV9.self),
+            .lightweight(fromVersion: CBTVersionedSchemaV9.self, toVersion: CBTVersionedSchemaV10.self),
+            .lightweight(fromVersion: CBTVersionedSchemaV10.self, toVersion: CBTVersionedSchemaV11.self),
+            .lightweight(fromVersion: CBTVersionedSchemaV11.self, toVersion: CBTVersionedSchemaV12.self),
+            .lightweight(fromVersion: CBTVersionedSchemaV12.self, toVersion: CBTVersionedSchemaV13.self),
+            .lightweight(fromVersion: CBTVersionedSchemaV13.self, toVersion: CBTVersionedSchemaV14.self)
         ]
     }
 }
@@ -1041,6 +1055,220 @@ enum CBTVersionedSchemaV6: VersionedSchema {
 
 enum CBTVersionedSchemaV7: VersionedSchema {
     static var versionIdentifier = Schema.Version(1, 6, 0)
+
+    static var models: [any PersistentModel.Type] {
+        [
+            UserSettings.self,
+            MoodEntry.self,
+            ThoughtRecord.self,
+            ExerciseCompletion.self,
+            JournalEntry.self,
+            PlannedActivity.self,
+            AssessmentLog.self,
+            PersonalityAssessmentLog.self,
+            ProgramProgress.self,
+            ChallengeSession.self,
+            FlexibleJournalEntry.self,
+            MoodCheckIn.self,
+            BreathingSession.self,
+            SafetyPlan.self,
+            LibraryItem.self,
+            Course.self,
+            Achievement.self,
+            AudioContent.self
+        ]
+    }
+}
+
+enum CBTVersionedSchemaV8: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 7, 0)
+
+    static var models: [any PersistentModel.Type] {
+        [
+            UserSettings.self,
+            MoodEntry.self,
+            ThoughtRecord.self,
+            ExerciseCompletion.self,
+            JournalEntry.self,
+            PlannedActivity.self,
+            AssessmentLog.self,
+            PersonalityAssessmentLog.self,
+            ProgramProgress.self,
+            ChallengeSession.self,
+            FlexibleJournalEntry.self,
+            MoodCheckIn.self,
+            BreathingSession.self,
+            SafetyPlan.self,
+            LibraryItem.self,
+            Course.self,
+            Achievement.self,
+            AudioContent.self,
+            TinyWinCompletion.self
+        ]
+    }
+}
+
+enum CBTVersionedSchemaV9: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 8, 0)
+
+    static var models: [any PersistentModel.Type] {
+        [
+            UserSettings.self,
+            MoodEntry.self,
+            ThoughtRecord.self,
+            ExerciseCompletion.self,
+            JournalEntry.self,
+            PlannedActivity.self,
+            AssessmentLog.self,
+            PersonalityAssessmentLog.self,
+            ProgramProgress.self,
+            ChallengeSession.self,
+            FlexibleJournalEntry.self,
+            MoodCheckIn.self,
+            BreathingSession.self,
+            SafetyPlan.self,
+            LibraryItem.self,
+            Course.self,
+            Achievement.self,
+            AudioContent.self,
+            TinyWinCompletion.self,
+            WeeklyRitualEntry.self
+        ]
+    }
+}
+
+enum CBTVersionedSchemaV10: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 9, 0)
+
+    static var models: [any PersistentModel.Type] {
+        [
+            UserSettings.self,
+            MoodEntry.self,
+            ThoughtRecord.self,
+            ExerciseCompletion.self,
+            JournalEntry.self,
+            PlannedActivity.self,
+            AssessmentLog.self,
+            PersonalityAssessmentLog.self,
+            ProgramProgress.self,
+            ChallengeSession.self,
+            FlexibleJournalEntry.self,
+            MoodCheckIn.self,
+            BreathingSession.self,
+            SafetyPlan.self,
+            LibraryItem.self,
+            Course.self,
+            Achievement.self,
+            AudioContent.self,
+            TinyWinCompletion.self,
+            WeeklyRitualEntry.self,
+            PersonalValue.self,
+            ValueActionCompletion.self
+        ]
+    }
+}
+
+enum CBTVersionedSchemaV11: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 10, 0)
+
+    static var models: [any PersistentModel.Type] {
+        [
+            UserSettings.self,
+            MoodEntry.self,
+            ThoughtRecord.self,
+            ExerciseCompletion.self,
+            JournalEntry.self,
+            PlannedActivity.self,
+            AssessmentLog.self,
+            PersonalityAssessmentLog.self,
+            ProgramProgress.self,
+            ChallengeSession.self,
+            FlexibleJournalEntry.self,
+            MoodCheckIn.self,
+            BreathingSession.self,
+            SafetyPlan.self,
+            LibraryItem.self,
+            Course.self,
+            Achievement.self,
+            AudioContent.self,
+            TinyWinCompletion.self,
+            WeeklyRitualEntry.self,
+            PersonalValue.self,
+            ValueActionCompletion.self,
+            DailyPlanCompletion.self
+        ]
+    }
+}
+
+enum CBTVersionedSchemaV12: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 11, 0)
+
+    static var models: [any PersistentModel.Type] {
+        [
+            UserSettings.self,
+            MoodEntry.self,
+            ThoughtRecord.self,
+            ExerciseCompletion.self,
+            JournalEntry.self,
+            PlannedActivity.self,
+            AssessmentLog.self,
+            PersonalityAssessmentLog.self,
+            ProgramProgress.self,
+            ChallengeSession.self,
+            FlexibleJournalEntry.self,
+            MoodCheckIn.self,
+            BreathingSession.self,
+            SafetyPlan.self,
+            LibraryItem.self,
+            Course.self,
+            Achievement.self,
+            AudioContent.self,
+            TinyWinCompletion.self,
+            WeeklyRitualEntry.self,
+            FirstSevenDaysJourney.self,
+            PersonalValue.self,
+            ValueActionCompletion.self,
+            DailyPlanCompletion.self
+        ]
+    }
+}
+
+enum CBTVersionedSchemaV13: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 12, 0)
+
+    static var models: [any PersistentModel.Type] {
+        [
+            UserSettings.self,
+            MoodEntry.self,
+            ThoughtRecord.self,
+            ExerciseCompletion.self,
+            JournalEntry.self,
+            PlannedActivity.self,
+            AssessmentLog.self,
+            PersonalityAssessmentLog.self,
+            ProgramProgress.self,
+            ChallengeSession.self,
+            FlexibleJournalEntry.self,
+            MoodCheckIn.self,
+            BreathingSession.self,
+            SafetyPlan.self,
+            LibraryItem.self,
+            Course.self,
+            Achievement.self,
+            AudioContent.self,
+            TinyWinCompletion.self,
+            WeeklyRitualEntry.self,
+            FirstSevenDaysJourney.self,
+            PersonalValue.self,
+            ValueActionCompletion.self,
+            DailyPlanCompletion.self,
+            HelpfulnessFeedback.self
+        ]
+    }
+}
+
+enum CBTVersionedSchemaV14: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 13, 0)
 
     static var models: [any PersistentModel.Type] {
         SharedPersistence.currentModelTypes

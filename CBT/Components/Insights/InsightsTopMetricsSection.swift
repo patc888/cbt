@@ -31,7 +31,85 @@ struct InsightsTopMetricsSection: View {
                     emptyText: ""
                 )
             }
+
+            InsightsThoughtRecordStatsCard(stats: snapshot.thoughtRecordStats)
         }
+    }
+}
+
+struct InsightsThoughtRecordStatsCard: View {
+    let stats: ThoughtRecordCompletionStats
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "Thought Record Practice"))
+                .font(DSTypography.sectionTitle)
+                .foregroundStyle(Theme.primaryText)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if stats.completedCount == 0 && stats.draftCount == 0 {
+                Text(String(localized: "Thought record stats appear after you start one."))
+                    .font(.system(size: 14, design: .rounded))
+                    .foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                VStack(spacing: 10) {
+                    HStack(spacing: 10) {
+                        statPill(title: String(localized: "Completed"), value: "\(stats.completedCount)")
+                        statPill(title: String(localized: "Drafts"), value: "\(stats.draftCount)")
+                    }
+
+                    HStack(spacing: 10) {
+                        statPill(title: String(localized: "Saved"), value: "\(stats.savedReframeCount)")
+                        statPill(title: String(localized: "Favorites"), value: "\(stats.favoriteReframeCount)")
+                    }
+
+                    if let average = stats.averageIntensityChange {
+                        Text(String(localized: "Feelings shifted by \(average) points on average after completed records."))
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundStyle(Theme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    if !stats.recurringDistortions.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(String(localized: "Recurring thinking traps"))
+                                .font(.system(.caption, design: .rounded).weight(.bold))
+                                .foregroundStyle(Theme.secondaryText)
+
+                            ForEach(stats.recurringDistortions.prefix(3)) { distortion in
+                                HStack {
+                                    Text(distortion.name)
+                                        .font(.system(.subheadline, design: .rounded).weight(.medium))
+                                        .foregroundStyle(Theme.primaryText)
+                                    Spacer()
+                                    Text("\(distortion.count)")
+                                        .font(.system(.caption, design: .rounded).weight(.bold))
+                                        .foregroundStyle(Theme.secondaryText)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .padding(Theme.paddingMedium)
+        .cardStyle()
+    }
+
+    private func statPill(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(value)
+                .font(.system(.title3, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.primaryText)
+            Text(title)
+                .font(.system(.caption, design: .rounded))
+                .foregroundStyle(Theme.secondaryText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Theme.secondaryText.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.small, style: .continuous))
     }
 }
 

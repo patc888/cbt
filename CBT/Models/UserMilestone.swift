@@ -20,8 +20,8 @@ enum UserMilestoneSchema {
     ]
 
     static func milestones(for entryCount: Int, achievedAt: Date? = Date()) -> [UserMilestone] {
-        entryCountBadges.keys.sorted().map { threshold in
-            let badge = entryCountBadges[threshold]!
+        entryCountBadges.keys.sorted().compactMap { threshold in
+            guard let badge = entryCountBadges[threshold] else { return nil }
             return UserMilestone(
                 id: badge.badgeID,
                 badgeID: badge.badgeID,

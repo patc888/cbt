@@ -2,6 +2,57 @@ import Foundation
 import SwiftData
 import UserNotifications
 
+enum TomorrowAnchor: String, CaseIterable, Identifiable {
+    static let defaultsKey = "cbt_home_tomorrowAnchor"
+    static let updatedAtDefaultsKey = "cbt_home_tomorrowAnchorUpdatedAt"
+
+    case mood
+    case breathing
+    case thought
+    case activity
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .mood:
+            return String(localized: "Mood")
+        case .breathing:
+            return String(localized: "Reset")
+        case .thought:
+            return String(localized: "Thought")
+        case .activity:
+            return String(localized: "Activity")
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .mood:
+            return String(localized: "Check in before the day gets loud.")
+        case .breathing:
+            return String(localized: "Start with one minute of breathing.")
+        case .thought:
+            return String(localized: "Catch one thought and reframe it.")
+        case .activity:
+            return String(localized: "Plan one nourishing action.")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .mood:
+            return "face.smiling"
+        case .breathing:
+            return "wind"
+        case .thought:
+            return "brain.head.profile"
+        case .activity:
+            return "calendar.badge.clock"
+        }
+    }
+}
+
 enum PersonalizedReminderType: String, CaseIterable, Identifiable {
     case dailyMoodCheckIn
     case streakReengagement
@@ -21,9 +72,9 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         case .streakReengagement:
             return String(localized: "Streak Re-Engagement")
         case .eveningReflection:
-            return String(localized: "Evening Reflection")
+            return String(localized: "Evening Closure")
         case .weeklyReport:
-            return String(localized: "Weekly Report")
+            return String(localized: "Weekly Review")
         case .breathingReset:
             return String(localized: "Breathing Reset")
         case .plannedActivity:
@@ -63,9 +114,9 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         case .streakReengagement:
             return String(localized: "Return to a quick mood check-in after two days away")
         case .eveningReflection:
-            return String(localized: "Review what stood out today and what you may need next")
+            return String(localized: "Close the day with a 2-minute reflection rhythm")
         case .weeklyReport:
-            return String(localized: "Look back at trends, streaks, entries, and progress once a week")
+            return String(localized: "Look back at check-ins, triggers, practices, and tiny wins once a week")
         case .breathingReset:
             return String(localized: "Create a brief pause when your body could use more room")
         case .plannedActivity:
@@ -84,9 +135,9 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         case .streakReengagement:
             return String(localized: "Check in with yourself")
         case .eveningReflection:
-            return String(localized: "Reflect before the day closes")
+            return String(localized: "Close the day gently")
         case .weeklyReport:
-            return String(localized: "Your weekly insight is ready")
+            return String(localized: "Your weekly review is ready")
         case .breathingReset:
             return String(localized: "Make room for one steady minute")
         case .plannedActivity:
@@ -101,13 +152,13 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
     var notificationBody: String {
         switch self {
         case .dailyMoodCheckIn:
-            return String(localized: "Take a moment to name your mood, intensity, and context. A quick check-in can make patterns easier to see over time.")
+            return Self.dailyMoodCheckInNotificationBody()
         case .streakReengagement:
             return String(localized: "A 30-second mood check-in can keep your pattern visible when you are ready to return.")
         case .eveningReflection:
-            return String(localized: "Look back with care: what stood out, what felt hard, and what would help you tomorrow?")
+            return String(localized: "Take two minutes for what happened, what helped, and what would make tomorrow easier.")
         case .weeklyReport:
-            return String(localized: "Review mood trends, entries, achievements, and patterns from the week when you are ready to reflect.")
+            return String(localized: "Review check-ins, triggers, practices, and tiny wins from the week when you are ready to reflect.")
         case .breathingReset:
             return String(localized: "Pause for a guided breathing reset to help your body settle before you continue.")
         case .plannedActivity:
@@ -117,6 +168,17 @@ enum PersonalizedReminderType: String, CaseIterable, Identifiable {
         case .sleepWindDown:
             return String(localized: "A quiet reflection can help your mind review the day, set down loose ends, and move toward rest.")
         }
+    }
+
+    static func dailyMoodCheckInNotificationBody(defaults: UserDefaults = .standard) -> String {
+        guard
+            let rawAnchor = defaults.string(forKey: TomorrowAnchor.defaultsKey),
+            let anchor = TomorrowAnchor(rawValue: rawAnchor)
+        else {
+            return String(localized: "Take a moment to name your mood, intensity, and context. A quick check-in can make patterns easier to see over time.")
+        }
+
+        return String(localized: "Your anchor today is \(anchor.title.lowercased()): \(anchor.subtitle)")
     }
 
     var defaultHour: Int {
@@ -269,6 +331,24 @@ final class PersonalizedReminderService {
         self.notificationCenter = notificationCenter
     }
 
+    func recordMoodCheckInResponse(at date: Date = Date(), defaults: UserDefaults = .standard, calendar: Calendar = .current) {
+        SmartReminderTiming.recordResponse(at: date, defaults: defaults, calendar: calendar)
+    }
+
+    func moodCheckInTimingSuggestion(
+        currentHour: Int,
+        currentMinute: Int,
+        defaults: UserDefaults = .standard,
+        calendar: Calendar = .current
+    ) -> SmartReminderTiming.Suggestion? {
+        SmartReminderTiming.suggestion(
+            currentHour: currentHour,
+            currentMinute: currentMinute,
+            defaults: defaults,
+            calendar: calendar
+        )
+    }
+
     func schedule(
         _ type: PersonalizedReminderType,
         hour: Int? = nil,
@@ -284,6 +364,20 @@ final class PersonalizedReminderService {
             minute: minute ?? type.defaultMinute,
             weekday: weekday ?? type.defaultWeekday,
             extraUserInfo: [:]
+        )
+    }
+
+    func refreshDailyMoodCheckInReminderIfEnabled() async {
+        let type = PersonalizedReminderType.dailyMoodCheckIn
+        guard UserDefaults.standard.bool(forKey: type.enabledDefaultsKey) else { return }
+
+        let status = await PermissionManager.shared.status(for: .notifications)
+        guard status.isAuthorized else { return }
+
+        try? await schedule(
+            type,
+            hour: storedInt(for: type.hourDefaultsKey, defaultValue: type.defaultHour),
+            minute: storedInt(for: type.minuteDefaultsKey, defaultValue: type.defaultMinute)
         )
     }
 
@@ -547,12 +641,110 @@ final class PersonalizedReminderService {
     }
 }
 
+nonisolated enum SmartReminderTiming {
+    struct Suggestion: Equatable {
+        let hour: Int
+        let minute: Int
+        let sampleCount: Int
+        let averageDifferenceFromCurrentMinutes: Int
+    }
+
+    static let responseMinutesDefaultsKey = "cbt_smartMoodReminderResponseMinutes"
+
+    private static let maxSamples = 30
+    private static let minimumSamples = 4
+    private static let minimumDifferenceToSuggestMinutes = 20
+    private static let maximumAverageDeviationMinutes = 90
+    private static let minutesPerDay = 24 * 60
+
+    static func recordResponse(at date: Date, defaults: UserDefaults = .standard, calendar: Calendar = .current) {
+        let components = calendar.dateComponents([.hour, .minute], from: date)
+        guard let hour = components.hour, let minute = components.minute else { return }
+
+        var samples = defaults.array(forKey: responseMinutesDefaultsKey) as? [Int] ?? []
+        samples.append(clampMinuteOfDay((hour * 60) + minute))
+
+        if samples.count > maxSamples {
+            samples = Array(samples.suffix(maxSamples))
+        }
+
+        defaults.set(samples, forKey: responseMinutesDefaultsKey)
+    }
+
+    static func suggestion(
+        currentHour: Int,
+        currentMinute: Int,
+        defaults: UserDefaults = .standard,
+        calendar: Calendar = .current
+    ) -> Suggestion? {
+        let samples = defaults.array(forKey: responseMinutesDefaultsKey) as? [Int] ?? []
+        return suggestion(
+            samples: samples,
+            currentMinuteOfDay: (currentHour * 60) + currentMinute,
+            calendar: calendar
+        )
+    }
+
+    static func suggestion(
+        samples: [Int],
+        currentMinuteOfDay: Int,
+        calendar: Calendar = .current
+    ) -> Suggestion? {
+        let cleanSamples = samples.map(clampMinuteOfDay)
+        guard cleanSamples.count >= minimumSamples else { return nil }
+
+        let learnedMinute = roundedMinuteOfDay(circularMean(of: cleanSamples), toNearest: 5)
+        let currentMinute = clampMinuteOfDay(currentMinuteOfDay)
+        let differenceFromCurrent = circularDistance(learnedMinute, currentMinute)
+        guard differenceFromCurrent >= minimumDifferenceToSuggestMinutes else { return nil }
+
+        let averageDeviation = cleanSamples
+            .map { circularDistance($0, learnedMinute) }
+            .reduce(0, +) / cleanSamples.count
+        guard averageDeviation <= maximumAverageDeviationMinutes else { return nil }
+
+        return Suggestion(
+            hour: learnedMinute / 60,
+            minute: learnedMinute % 60,
+            sampleCount: cleanSamples.count,
+            averageDifferenceFromCurrentMinutes: differenceFromCurrent
+        )
+    }
+
+    private static func circularMean(of samples: [Int]) -> Int {
+        let angles = samples.map { (Double($0) / Double(minutesPerDay)) * 2 * Double.pi }
+        let x = angles.map(cos).reduce(0, +) / Double(samples.count)
+        let y = angles.map(sin).reduce(0, +) / Double(samples.count)
+        var angle = atan2(y, x)
+        if angle < 0 {
+            angle += 2 * Double.pi
+        }
+        return clampMinuteOfDay(Int((angle / (2 * Double.pi) * Double(minutesPerDay)).rounded()))
+    }
+
+    private static func roundedMinuteOfDay(_ minute: Int, toNearest interval: Int) -> Int {
+        guard interval > 0 else { return clampMinuteOfDay(minute) }
+        return clampMinuteOfDay(Int((Double(minute) / Double(interval)).rounded()) * interval)
+    }
+
+    private static func circularDistance(_ lhs: Int, _ rhs: Int) -> Int {
+        let direct = abs(clampMinuteOfDay(lhs) - clampMinuteOfDay(rhs))
+        return min(direct, minutesPerDay - direct)
+    }
+
+    private static func clampMinuteOfDay(_ minute: Int) -> Int {
+        ((minute % minutesPerDay) + minutesPerDay) % minutesPerDay
+    }
+}
+
 final class StreakReengagementNotificationService {
     static let shared = StreakReengagementNotificationService()
 
     static let lastLoginTimestampKey = "last_login_timestamp"
     static let lastDailyCheckTimestampKey = "cbt_streak_reengagement_last_daily_check_timestamp"
     static let enabledDefaultsKey = "cbt_streakReengagementReminderEnabled"
+    private static let retentionStreakStartedKey = "cbt_retention_streak_started"
+    private static let retentionStreakBrokenKey = "cbt_retention_streak_broken"
 
     private let notificationCenter: UNUserNotificationCenter
     private let defaults: UserDefaults
@@ -573,7 +765,13 @@ final class StreakReengagementNotificationService {
         now: Date = Date(),
         calendar: Calendar = .current
     ) async {
+        let lastCheck = defaults.object(forKey: Self.lastDailyCheckTimestampKey) as? Date
         defaults.set(now, forKey: Self.lastLoginTimestampKey)
+        guard Self.shouldRunDailyCheck(lastCheck: lastCheck, now: now, calendar: calendar) else {
+            return
+        }
+
+        defaults.set(now, forKey: Self.lastDailyCheckTimestampKey)
         await refreshReminder(modelContext: modelContext, now: now, calendar: calendar)
     }
 
@@ -596,12 +794,36 @@ final class StreakReengagementNotificationService {
 
         do {
             let streakCount = try currentMoodStreak(modelContext: modelContext, calendar: calendar, now: now)
+            recordStreakRetentionEvent(streakCount: streakCount)
             try await scheduleNotification(
                 streakCount: streakCount,
                 triggerDate: Self.nextReengagementDate(from: now)
             )
         } catch {
             return
+        }
+    }
+
+    private func recordStreakRetentionEvent(streakCount: Int) {
+        if streakCount > 0 {
+            LocalRetentionEventStore.shared.recordOnce(
+                .streakStarted,
+                sourceScreen: "streak",
+                metadata: ["streak_count": "\(streakCount)"]
+            )
+            if defaults.bool(forKey: Self.retentionStreakBrokenKey) {
+                defaults.set(false, forKey: Self.retentionStreakBrokenKey)
+                LocalRetentionEventStore.shared.record(
+                    .streakRecovered,
+                    sourceScreen: "streak",
+                    metadata: ["streak_count": "\(streakCount)"]
+                )
+            }
+            defaults.set(true, forKey: Self.retentionStreakStartedKey)
+        } else if defaults.bool(forKey: Self.retentionStreakStartedKey),
+                  !defaults.bool(forKey: Self.retentionStreakBrokenKey) {
+            defaults.set(true, forKey: Self.retentionStreakBrokenKey)
+            LocalRetentionEventStore.shared.record(.streakBroken, sourceScreen: "streak")
         }
     }
 
@@ -620,10 +842,10 @@ final class StreakReengagementNotificationService {
 
     static func notificationBody(streakCount: Int) -> String {
         if streakCount > 0 {
-            return "Your \(streakCount)-day streak can keep going with one 30-second mood check-in."
+            return "Your \(streakCount)-day streak is waiting for you! Take 30 seconds to log your mood."
         }
 
-        return "A 30-second mood check-in can make it easier to notice your pattern today."
+        return "Checking in takes only 30 seconds. How are you doing today?"
     }
 
     @MainActor

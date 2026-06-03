@@ -26,6 +26,14 @@ nonisolated struct ThoughtRecordExport: Codable, Sendable {
     let balancedThought: String
     let intensityBefore: Int
     let intensityAfter: Int
+    let isSavedReframe: Bool?
+    let isFavoriteReframe: Bool?
+    let savedReframeAt: Date?
+    let lastReviewedAt: Date?
+    let updatedAt: Date?
+    let completedAt: Date?
+    let isDraft: Bool?
+    let modeRawValue: String?
 }
 
 nonisolated struct ExerciseCompletionExport: Codable, Sendable {
@@ -33,6 +41,7 @@ nonisolated struct ExerciseCompletionExport: Codable, Sendable {
     let createdAt: Date
     let exerciseID: String
     let notes: String?
+    let adaptiveMode: String?
 }
 
 nonisolated struct JournalEntryExport: Codable, Sendable {
@@ -52,10 +61,12 @@ nonisolated struct PlannedActivityExport: Codable, Sendable {
     let activityDescription: String
     let category: String
     let scheduledDate: Date
+    let supportedValue: String?
     let predictedEnjoyment: Int
     let actualEnjoyment: Int?
     let isCompleted: Bool
     let completedAt: Date?
+    let adaptiveMode: String?
     let notes: String?
 }
 
@@ -104,6 +115,12 @@ nonisolated struct BreathingSessionExport: Codable, Sendable {
     let durationSeconds: Int
 }
 
+nonisolated struct TinyWinCompletionExport: Codable, Sendable {
+    let id: UUID
+    let createdAt: Date
+    let winID: String
+}
+
 nonisolated struct SafetyPlanExport: Codable, Sendable {
     let id: UUID
     let createdAt: Date
@@ -111,6 +128,11 @@ nonisolated struct SafetyPlanExport: Codable, Sendable {
     let emergencyContacts: [EmergencyContact]
     let personalWarningSigns: [String]
     let copingStrategies: [String]
+    let groundingSteps: [String]?
+    let safePlaces: [String]?
+    let reminders: [String]?
+    let makesItWorse: [String]?
+    let privacySafeDisplayEnabled: Bool?
 }
 
 nonisolated struct UserSettingsExport: Codable, Sendable {
@@ -188,6 +210,7 @@ nonisolated struct CBTDataExportPayload: Codable, Sendable {
     let flexibleJournalEntries: [FlexibleJournalEntryExport]?
     let moodCheckIns: [MoodCheckInExport]?
     let breathingSessions: [BreathingSessionExport]?
+    let tinyWinCompletions: [TinyWinCompletionExport]?
     let safetyPlans: [SafetyPlanExport]?
     let userSettings: [UserSettingsExport]?
     let courses: [CourseExport]?
@@ -258,6 +281,10 @@ struct DataExportService {
             predicate: #Predicate<BreathingSession> { $0.isDeleted == false },
             sortBy: [SortDescriptor(\BreathingSession.createdAt)]
         )
+        let tinyWinCompletionDescriptor = FetchDescriptor<TinyWinCompletion>(
+            predicate: #Predicate<TinyWinCompletion> { $0.isDeleted == false },
+            sortBy: [SortDescriptor(\TinyWinCompletion.createdAt)]
+        )
         let safetyPlanDescriptor = FetchDescriptor<SafetyPlan>(
             sortBy: [SortDescriptor(\SafetyPlan.updatedAt, order: .reverse)]
         )
@@ -301,7 +328,15 @@ struct DataExportService {
                 evidenceAgainst: $0.evidenceAgainst,
                 balancedThought: $0.balancedThought,
                 intensityBefore: $0.intensityBefore,
-                intensityAfter: $0.intensityAfter
+                intensityAfter: $0.intensityAfter,
+                isSavedReframe: $0.isSavedReframe,
+                isFavoriteReframe: $0.isFavoriteReframe,
+                savedReframeAt: $0.savedReframeAt,
+                lastReviewedAt: $0.lastReviewedAt,
+                updatedAt: $0.updatedAt,
+                completedAt: $0.completedAt,
+                isDraft: $0.isDraft,
+                modeRawValue: $0.modeRawValue
             )
         }
 
@@ -310,7 +345,8 @@ struct DataExportService {
                 id: $0.id,
                 createdAt: $0.createdAt,
                 exerciseID: $0.exerciseID,
-                notes: $0.notes
+                notes: $0.notes,
+                adaptiveMode: $0.adaptiveMode
             )
         }
 
@@ -334,10 +370,12 @@ struct DataExportService {
                 activityDescription: $0.activityDescription,
                 category: $0.category,
                 scheduledDate: $0.scheduledDate,
+                supportedValue: $0.supportedValue,
                 predictedEnjoyment: PlannedActivity.clampRating($0.predictedEnjoyment),
                 actualEnjoyment: $0.actualEnjoyment.map(PlannedActivity.clampRating),
                 isCompleted: $0.isCompleted,
                 completedAt: $0.completedAt,
+                adaptiveMode: $0.adaptiveMode,
                 notes: $0.notes
             )
         }
@@ -399,6 +437,14 @@ struct DataExportService {
             )
         }
 
+        let tinyWinCompletions = try modelContext.fetch(tinyWinCompletionDescriptor).map {
+            TinyWinCompletionExport(
+                id: $0.id,
+                createdAt: $0.createdAt,
+                winID: $0.winID
+            )
+        }
+
         let safetyPlans = try modelContext.fetch(safetyPlanDescriptor).map {
             SafetyPlanExport(
                 id: $0.id,
@@ -406,7 +452,12 @@ struct DataExportService {
                 updatedAt: $0.updatedAt,
                 emergencyContacts: $0.emergencyContacts,
                 personalWarningSigns: $0.personalWarningSigns,
-                copingStrategies: $0.copingStrategies
+                copingStrategies: $0.copingStrategies,
+                groundingSteps: $0.groundingSteps,
+                safePlaces: $0.safePlaces,
+                reminders: $0.reminders,
+                makesItWorse: $0.makesItWorse,
+                privacySafeDisplayEnabled: $0.privacySafeDisplayEnabled
             )
         }
 
@@ -493,6 +544,7 @@ struct DataExportService {
             flexibleJournalEntries: flexibleJournalEntries,
             moodCheckIns: moodCheckIns,
             breathingSessions: breathingSessions,
+            tinyWinCompletions: tinyWinCompletions,
             safetyPlans: safetyPlans,
             userSettings: userSettings,
             courses: courses,

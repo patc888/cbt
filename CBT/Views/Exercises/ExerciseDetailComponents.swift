@@ -498,6 +498,7 @@ struct ExerciseTimerBar: View {
         .background(Theme.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
+        .sessionBoundaryDialog(manager: timerManager)
     }
 
     private func timerButton(icon: String, color: Color, action: @escaping () -> Void) -> some View {

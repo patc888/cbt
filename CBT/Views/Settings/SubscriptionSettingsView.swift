@@ -68,6 +68,9 @@ struct SubscriptionSettingsView: View {
         .sheet(isPresented: $isShowingPaywall) {
             SubscriptionView()
                 .dsSheetPresentation(detents: [.large])
+                .onAppear {
+                    LocalRetentionEventStore.shared.record(.paywallShown, sourceScreen: "settings")
+                }
         }
     }
 

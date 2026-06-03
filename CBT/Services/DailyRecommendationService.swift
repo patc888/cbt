@@ -37,6 +37,47 @@ nonisolated enum DailyRecommendationType: String, Hashable, Sendable {
     }
 }
 
+nonisolated enum DailyPlanMode: String, CaseIterable, Hashable, Sendable, Codable {
+    case full
+    case quick
+    case lowEnergy
+
+    var title: String {
+        switch self {
+        case .full: return "Full"
+        case .quick: return "Quick"
+        case .lowEnergy: return "Low Energy"
+        }
+    }
+}
+
+nonisolated struct AdaptiveDifficultySelector: Sendable {
+    static func selectMode(
+        latestMoodScore: Int?,
+        latestEnergyScore: Int?,
+        latestStressScore: Int?,
+        missedDays: Int?,
+        recentEngagementCount: Int
+    ) -> DailyPlanMode {
+        let mood = latestMoodScore ?? 5
+        let recentLowEngagement = recentEngagementCount <= 1 || (missedDays ?? 0) >= 2
+
+        if latestEnergyScore.map({ $0 <= 3 }) == true ||
+            latestStressScore.map({ $0 >= 8 }) == true ||
+            mood <= 3 {
+            return .lowEnergy
+        }
+
+        if latestEnergyScore.map({ $0 <= 5 }) == true ||
+            latestStressScore.map({ $0 >= 6 }) == true ||
+            recentLowEngagement {
+            return .quick
+        }
+
+        return .full
+    }
+}
+
 nonisolated enum DailyRecommendationDestination: Hashable, Sendable {
     case moodCheckIn
     case thoughtRecord
@@ -47,6 +88,7 @@ nonisolated enum DailyRecommendationDestination: Hashable, Sendable {
     case program(programID: String)
     case introToCBT
     case behavioralActivation
+    case weeklyReview
     case assessments
     case safetySupport
 
@@ -70,6 +112,8 @@ nonisolated enum DailyRecommendationDestination: Hashable, Sendable {
             return "cbt://daily-plan/intro-to-cbt"
         case .behavioralActivation:
             return "cbt://exercises/activity-planner"
+        case .weeklyReview:
+            return "cbt://insights/weekly-review"
         case .assessments:
             return "cbt://assessments"
         case .safetySupport:
@@ -88,6 +132,7 @@ nonisolated struct DailyRecommendation: Identifiable, Hashable, Sendable {
     let priority: Int
     let estimatedDurationMinutes: Int
     let isCompletedToday: Bool
+    let mode: DailyPlanMode
 
     var iconName: String {
         type.iconName
@@ -106,6 +151,10 @@ nonisolated struct DailyRecommendation: Identifiable, Hashable, Sendable {
     }
 
     var completionItem: DailyPlanItem? {
+        if destination == .weeklyReview {
+            return nil
+        }
+
         switch type {
         case .moodCheckIn:
             return .moodCheckIn
@@ -123,7 +172,10 @@ nonisolated struct DailyRecommendation: Identifiable, Hashable, Sendable {
     }
 
     var durationLabel: String {
-        estimatedDurationMinutes == 1 ? "1 min" : "\(estimatedDurationMinutes) min"
+        if mode == .lowEnergy {
+            return "Under 1 min"
+        }
+        return estimatedDurationMinutes == 1 ? "1 min" : "\(estimatedDurationMinutes) min"
     }
 
     var priorityLabel: String {
@@ -158,6 +210,8 @@ nonisolated struct DailyPlanMoodSample: Hashable, Sendable {
     let createdAt: Date
     let moodScore: Int
     let intensity: Int?
+    let energyScore: Int?
+    let stressScore: Int?
     let emotions: [String]
     let triggers: [String]
     let sensations: [String]
@@ -176,8 +230,36 @@ nonisolated struct DailyPlanExerciseSummary: Hashable, Sendable {
 nonisolated struct DailyPlanUserPreferences: Hashable, Sendable {
     let goals: Set<String>
     let interests: Set<String>
+    let feedbackScores: [String: Int]
+    let lighterPlanUntil: Date?
 
-    static let empty = DailyPlanUserPreferences(goals: [], interests: [])
+    static let empty = DailyPlanUserPreferences(
+        goals: [],
+        interests: [],
+        feedbackScores: [:],
+        lighterPlanUntil: nil
+    )
+
+    init(
+        goals: Set<String>,
+        interests: Set<String>,
+        feedbackScores: [String: Int] = [:],
+        lighterPlanUntil: Date? = nil
+    ) {
+        self.goals = goals
+        self.interests = interests
+        self.feedbackScores = feedbackScores
+        self.lighterPlanUntil = lighterPlanUntil
+    }
+
+    func feedbackScore(for type: DailyRecommendationType) -> Int {
+        feedbackScores[type.rawValue] ?? 0
+    }
+
+    func prefersLighterPlan(on date: Date, calendar: Calendar = .current) -> Bool {
+        guard let lighterPlanUntil else { return false }
+        return lighterPlanUntil >= calendar.startOfDay(for: date)
+    }
 }
 
 nonisolated struct DailyPlanRecommendationInput: Hashable, Sendable {
@@ -196,12 +278,53 @@ nonisolated struct DailyPlanRecommendationInput: Hashable, Sendable {
     let exercises: [DailyPlanExerciseSummary]
     let preferences: DailyPlanUserPreferences
     let hasAnyUserData: Bool
+    let recentEngagementCount: Int
+    let helpfulnessScores: [DailyRecommendationType: Double]
+
+    init(
+        today: Date,
+        now: Date,
+        moodSamples: [DailyPlanMoodSample],
+        thoughtRecordDistortions: [String],
+        missedDays: Int?,
+        currentStreak: Int,
+        hasMoodToday: Bool,
+        hasThoughtRecordToday: Bool,
+        hasBreathingToday: Bool,
+        hasActivityCompletedToday: Bool,
+        incompleteExercise: DailyPlanExerciseSummary?,
+        completedExerciseIDs: Set<String>,
+        exercises: [DailyPlanExerciseSummary],
+        preferences: DailyPlanUserPreferences,
+        hasAnyUserData: Bool,
+        recentEngagementCount: Int,
+        helpfulnessScores: [DailyRecommendationType: Double] = [:],
+        dailyPlanCompletions: [DailyPlanCompletion] = []
+    ) {
+        self.today = today
+        self.now = now
+        self.moodSamples = moodSamples
+        self.thoughtRecordDistortions = thoughtRecordDistortions
+        self.missedDays = missedDays
+        self.currentStreak = currentStreak
+        self.hasMoodToday = hasMoodToday
+        self.hasThoughtRecordToday = hasThoughtRecordToday
+        self.hasBreathingToday = hasBreathingToday
+        self.hasActivityCompletedToday = hasActivityCompletedToday
+        self.incompleteExercise = incompleteExercise
+        self.completedExerciseIDs = completedExerciseIDs
+        self.exercises = exercises
+        self.preferences = preferences
+        self.hasAnyUserData = hasAnyUserData
+        self.recentEngagementCount = recentEngagementCount
+        self.helpfulnessScores = helpfulnessScores
+    }
 }
 
 nonisolated struct DailyPlanRecommendationEngine: Sendable {
     func recommendations(from input: DailyPlanRecommendationInput) -> [DailyRecommendation] {
         if !input.hasAnyUserData {
-            return onboardingStarterPlan(input)
+            return onboardingStarterPlan(input).map { adaptedRecommendation($0, for: input) }
         }
 
         var recommendations = [DailyRecommendationType: DailyRecommendation]()
@@ -222,7 +345,21 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
             )
         }
 
-        if (input.missedDays ?? 0) >= 2 {
+        if input.missedDays == 1 {
+            upsert(
+                recommendation(
+                    type: .moodCheckIn,
+                    title: "Restart Gently",
+                    subtitle: "Yesterday can stay yesterday. Check in with today.",
+                    reason: "Because you only missed yesterday, and one light check-in restarts the rhythm.",
+                    destination: .moodCheckIn,
+                    priority: 100,
+                    duration: 1,
+                    isCompletedToday: input.hasMoodToday
+                ),
+                into: &recommendations
+            )
+        } else if (input.missedDays ?? 0) >= 2 {
             upsert(
                 recommendation(
                     type: .moodCheckIn,
@@ -367,15 +504,128 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
         addPreferenceRecommendation(from: input, into: &recommendations)
         addFallbacks(from: input, into: &recommendations)
 
+        let personalizedLimit = input.preferences.prefersLighterPlan(on: input.today) ? 2 : 4
         return recommendations.values
-            .sorted {
-                if $0.priority == $1.priority {
-                    return $0.title < $1.title
+            .sorted { lhs, rhs in
+                let lhsScore = bestNextStepScore(for: lhs, input: input)
+                let rhsScore = bestNextStepScore(for: rhs, input: input)
+                if lhsScore == rhsScore {
+                    return lhs.title < rhs.title
                 }
-                return $0.priority > $1.priority
+                return lhsScore > rhsScore
             }
-            .prefix(4)
-            .map { $0 }
+            .prefix(personalizedLimit)
+            .map { adaptedRecommendation($0, for: input) }
+    }
+
+    func selectedMode(from input: DailyPlanRecommendationInput) -> DailyPlanMode {
+        let latest = input.moodSamples.first
+        return AdaptiveDifficultySelector.selectMode(
+            latestMoodScore: latest?.moodScore,
+            latestEnergyScore: latest?.energyScore,
+            latestStressScore: latest?.stressScore ?? latest?.intensity,
+            missedDays: input.missedDays,
+            recentEngagementCount: input.recentEngagementCount
+        )
+    }
+
+    private func adaptedRecommendation(
+        _ recommendation: DailyRecommendation,
+        for input: DailyPlanRecommendationInput
+    ) -> DailyRecommendation {
+        switch selectedMode(from: input) {
+        case .full:
+            return recommendation.with(mode: .full)
+        case .quick:
+            return quickVariant(of: recommendation)
+        case .lowEnergy:
+            return lowEnergyVariant(of: recommendation)
+        }
+    }
+
+    private func quickVariant(of recommendation: DailyRecommendation) -> DailyRecommendation {
+        switch recommendation.type {
+        case .thoughtRecord:
+            return recommendation.with(
+                title: "Quick Thought Check",
+                subtitle: "Name one thought and one kinder alternative.",
+                priority: recommendation.priority + 4,
+                duration: min(recommendation.estimatedDurationMinutes, 3),
+                mode: .quick
+            )
+        case .libraryExercise, .courseLesson:
+            return recommendation.with(
+                subtitle: "Use the shortest useful version.",
+                duration: min(recommendation.estimatedDurationMinutes, 3),
+                mode: .quick
+            )
+        case .behavioralActivation:
+            return recommendation.with(
+                title: "Quick Tiny Win",
+                subtitle: "Pick one small action you can start now.",
+                duration: 2,
+                mode: .quick
+            )
+        case .breathingReset, .sleepWindDown:
+            return recommendation.with(
+                destination: .breathingReset(durationSeconds: 60),
+                duration: 1,
+                mode: .quick
+            )
+        default:
+            return recommendation.with(mode: .quick)
+        }
+    }
+
+    private func lowEnergyVariant(of recommendation: DailyRecommendation) -> DailyRecommendation {
+        switch recommendation.type {
+        case .breathingReset, .sleepWindDown:
+            return recommendation.with(
+                title: "Low Energy Reset",
+                subtitle: "One gentle minute. Stop when you need to.",
+                destination: .breathingReset(durationSeconds: 45),
+                priority: recommendation.priority + 8,
+                duration: 1,
+                mode: .lowEnergy
+            )
+        case .moodCheckIn:
+            return recommendation.with(
+                title: "One-Tap Check-In",
+                subtitle: "Just name the basics for right now.",
+                duration: 1,
+                mode: .lowEnergy
+            )
+        case .behavioralActivation:
+            return recommendation.with(
+                title: "Low Energy Tiny Win",
+                subtitle: "Do one step that takes less than a minute.",
+                priority: recommendation.priority + 4,
+                duration: 1,
+                mode: .lowEnergy
+            )
+        case .thoughtRecord:
+            return recommendation.with(
+                title: "Name One Thought",
+                subtitle: "Write one sentence. That counts.",
+                duration: 1,
+                mode: .lowEnergy
+            )
+        case .guidedJournal:
+            return recommendation.with(
+                title: "One-Line Journal",
+                subtitle: "One sentence is enough for today.",
+                duration: 1,
+                mode: .lowEnergy
+            )
+        case .libraryExercise, .courseLesson:
+            return recommendation.with(
+                subtitle: "Try only the first small step.",
+                duration: 1,
+                mode: .lowEnergy
+            )
+        case .safetySupport:
+            return recommendation.with(mode: .lowEnergy)
+        }
     }
 
     private func onboardingStarterPlan(_ input: DailyPlanRecommendationInput) -> [DailyRecommendation] {
@@ -482,6 +732,77 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
         }
     }
 
+    private func bestNextStepScore(
+        for recommendation: DailyRecommendation,
+        input: DailyPlanRecommendationInput
+    ) -> Int {
+        var score = recommendation.priority
+        let hour = Calendar.current.component(.hour, from: input.now)
+        let preferenceScore = input.preferences.feedbackScore(for: recommendation.type)
+        score += max(-24, min(24, preferenceScore * 8))
+
+        if recommendation.isCompletedToday {
+            score -= 200
+        }
+
+        if input.incompleteExercise?.id == destinationExerciseID(for: recommendation.destination) {
+            score += 24
+        }
+
+        if let helpfulnessScore = input.helpfulnessScores[recommendation.type] {
+            score += Int((helpfulnessScore * 18).rounded())
+        }
+
+        if !input.hasMoodToday && recommendation.type == .moodCheckIn {
+            score += (input.missedDays ?? 0) > 0 ? 30 : 18
+        }
+
+        if hour < 11 {
+            switch recommendation.type {
+            case .moodCheckIn, .behavioralActivation:
+                score += 8
+            default:
+                break
+            }
+        } else if hour >= 20 {
+            switch recommendation.type {
+            case .breathingReset, .sleepWindDown, .guidedJournal:
+                score += 10
+            case .thoughtRecord:
+                score += 4
+            default:
+                break
+            }
+        }
+
+        if selectedMode(from: input) == .lowEnergy {
+            switch recommendation.type {
+            case .breathingReset, .moodCheckIn, .behavioralActivation:
+                score += 10
+            case .courseLesson:
+                score -= 8
+            default:
+                break
+            }
+        }
+
+        if input.preferences.prefersLighterPlan(on: input.today) {
+            score -= max(0, recommendation.estimatedDurationMinutes - 1) * 4
+            if recommendation.type == .moodCheckIn || recommendation.type == .breathingReset {
+                score += 10
+            }
+        }
+
+        return score
+    }
+
+    private func destinationExerciseID(for destination: DailyRecommendationDestination) -> String? {
+        if case .libraryExercise(let exerciseID) = destination {
+            return exerciseID
+        }
+        return nil
+    }
+
     private func addPreferenceRecommendation(
         from input: DailyPlanRecommendationInput,
         into recommendations: inout [DailyRecommendationType: DailyRecommendation]
@@ -502,6 +823,22 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
             )
         }
 
+        if input.preferences.feedbackScore(for: .breathingReset) >= 2, !input.hasBreathingToday {
+            upsert(
+                recommendation(
+                    type: .breathingReset,
+                    title: "Breathing Reset",
+                    subtitle: "Use the reset that tends to work for you.",
+                    reason: "Because you marked breathing as helpful before.",
+                    destination: .breathingReset(durationSeconds: 60),
+                    priority: 74,
+                    duration: 1,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        }
+
         if input.preferences.goals.contains(DailyPlanGoal.understandThoughts.rawValue), !input.hasThoughtRecordToday {
             upsert(
                 recommendation(
@@ -512,6 +849,22 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
                     destination: .thoughtRecord,
                     priority: 68,
                     duration: 8,
+                    isCompletedToday: false
+                ),
+                into: &recommendations
+            )
+        }
+
+        if input.preferences.feedbackScore(for: .guidedJournal) >= 2 {
+            upsert(
+                recommendation(
+                    type: .guidedJournal,
+                    title: "Guided Journal",
+                    subtitle: "Use reflection because it has helped before.",
+                    reason: "Because you marked journaling as helpful before.",
+                    destination: .guidedJournal(kind: "daily_reflection"),
+                    priority: 66,
+                    duration: 4,
                     isCompletedToday: false
                 ),
                 into: &recommendations
@@ -625,13 +978,40 @@ nonisolated struct DailyPlanRecommendationEngine: Sendable {
             destination: destination,
             priority: priority,
             estimatedDurationMinutes: max(1, duration),
-            isCompletedToday: isCompletedToday
+            isCompletedToday: isCompletedToday,
+            mode: .full
+        )
+    }
+}
+
+private extension DailyRecommendation {
+    nonisolated func with(
+        title: String? = nil,
+        subtitle: String? = nil,
+        reason: String? = nil,
+        destination: DailyRecommendationDestination? = nil,
+        priority: Int? = nil,
+        duration: Int? = nil,
+        mode: DailyPlanMode
+    ) -> DailyRecommendation {
+        let destination = destination ?? self.destination
+        return DailyRecommendation(
+            id: "\(type.rawValue)-\(destination.deepLink)-\(mode.rawValue)",
+            type: type,
+            title: title ?? self.title,
+            subtitle: subtitle ?? self.subtitle,
+            reason: reason ?? self.reason,
+            destination: destination,
+            priority: priority ?? self.priority,
+            estimatedDurationMinutes: max(1, duration ?? estimatedDurationMinutes),
+            isCompletedToday: isCompletedToday,
+            mode: mode
         )
     }
 }
 
 private extension String {
-    func containsAny(_ terms: [String]) -> Bool {
+    nonisolated func containsAny(_ terms: [String]) -> Bool {
         terms.contains { contains($0) }
     }
 }
@@ -689,6 +1069,85 @@ private extension MoodCheckInRecommendationInput {
     }
 }
 
+nonisolated enum DailyPlanFeedbackAction: String, Sendable {
+    case helped
+    case notHelpful
+    case tooMuchToday
+}
+
+nonisolated struct DailyPlanFeedbackProfile: Codable, Hashable, Sendable {
+    var typeScores: [String: Int] = [:]
+    var lighterPlanUntil: Date?
+    var updatedAt: Date?
+
+    static let empty = DailyPlanFeedbackProfile()
+}
+
+@MainActor
+struct DailyPlanFeedbackStore {
+    static let shared = DailyPlanFeedbackStore()
+    static let defaultsKey = "cbt_daily_plan_feedback_profile_v1"
+
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
+
+    func profile() -> DailyPlanFeedbackProfile {
+        guard let data = defaults.data(forKey: Self.defaultsKey),
+              let profile = try? JSONDecoder().decode(DailyPlanFeedbackProfile.self, from: data) else {
+            return .empty
+        }
+        return profile
+    }
+
+    func preferences(now: Date = Date(), calendar: Calendar = .current) -> DailyPlanUserPreferences {
+        let profile = profile()
+        return DailyPlanUserPreferences(
+            goals: decodedIDs(for: DailyPlanPersonalizationKeys.goals),
+            interests: decodedIDs(for: DailyPlanPersonalizationKeys.interests),
+            feedbackScores: profile.typeScores,
+            lighterPlanUntil: profile.lighterPlanUntil
+        )
+    }
+
+    func record(_ action: DailyPlanFeedbackAction, for recommendation: DailyRecommendation, now: Date = Date(), calendar: Calendar = .current) {
+        var profile = profile()
+        profile.updatedAt = now
+
+        switch action {
+        case .helped:
+            adjustScore(for: recommendation.type, by: 1, in: &profile)
+        case .notHelpful:
+            adjustScore(for: recommendation.type, by: -1, in: &profile)
+        case .tooMuchToday:
+            let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
+            profile.lighterPlanUntil = tomorrow
+            adjustScore(for: recommendation.type, by: -1, in: &profile)
+        }
+
+        save(profile)
+    }
+
+    private func decodedIDs(for key: String) -> Set<String> {
+        guard let rawValue = defaults.string(forKey: key), !rawValue.isEmpty else {
+            return []
+        }
+        return Set(rawValue.split(separator: ",").map(String.init))
+    }
+
+    private func adjustScore(for type: DailyRecommendationType, by delta: Int, in profile: inout DailyPlanFeedbackProfile) {
+        let current = profile.typeScores[type.rawValue] ?? 0
+        profile.typeScores[type.rawValue] = max(-3, min(3, current + delta))
+    }
+
+    private func save(_ profile: DailyPlanFeedbackProfile) {
+        guard let data = try? JSONEncoder().encode(profile) else { return }
+        defaults.set(data, forKey: Self.defaultsKey)
+    }
+}
+
 @MainActor
 struct DailyRecommendationService {
     static let shared = DailyRecommendationService()
@@ -727,9 +1186,9 @@ struct DailyRecommendationService {
                     ),
                     makeRecommendation(
                         type: .safetySupport,
-                        title: "Open your safety plan",
-                        subtitle: "Keep support steps and trusted contacts close.",
-                        reason: "Safety resources should stay reachable whenever mood is very low.",
+                        title: "Open your rough patch plan",
+                        subtitle: "Keep support steps and trusted people close.",
+                        reason: "Coping resources should stay reachable whenever mood is very low.",
                         destination: .safetySupport,
                         priority: 84,
                         duration: 2,
@@ -842,10 +1301,8 @@ struct DailyRecommendationService {
         let dayStart = calendar.startOfDay(for: date)
         let todayStart = calendar.startOfDay(for: now)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart.addingTimeInterval(86_400)
-        let threeDaysAgo = calendar.date(byAdding: .day, value: -3, to: now) ?? now
         let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: now) ?? now
         let fourteenDaysAgo = calendar.date(byAdding: .day, value: -14, to: now) ?? now
-        let thirtyDaysAgo = calendar.date(byAdding: .day, value: -30, to: now) ?? now
 
         let moodEntries = fetch(
             FetchDescriptor<MoodEntry>(
@@ -943,20 +1400,54 @@ struct DailyRecommendationService {
             from: context,
             label: "achievements"
         )
+        let dailyPlanCompletions = fetch(
+            FetchDescriptor<DailyPlanCompletion>(
+                predicate: #Predicate<DailyPlanCompletion> { $0.isDeleted == false },
+                sortBy: [SortDescriptor(\DailyPlanCompletion.completedAt, order: .reverse)]
+            ),
+            from: context,
+            label: "dailyPlanCompletions"
+        )
+        let helpfulnessFeedback = fetch(
+            FetchDescriptor<HelpfulnessFeedback>(
+                predicate: #Predicate<HelpfulnessFeedback> { $0.isDeleted == false },
+                sortBy: [SortDescriptor(\HelpfulnessFeedback.createdAt, order: .reverse)]
+            ),
+            from: context,
+            label: "helpfulnessFeedback"
+        )
 
         let moodSignals = makeMoodSignals(moodEntries: moodEntries, moodCheckIns: moodCheckIns)
         let latestMood = moodSignals.first
-        let hasMoodToday = moodSignals.contains { isDate($0.createdAt, inSameDayAs: dayStart, calendar: calendar) }
-        let hasThoughtToday = thoughtRecords.contains { $0.createdAt >= dayStart && $0.createdAt < dayEnd }
+        let dailyPlanCompletionsToday = dailyPlanCompletions.filter { $0.date >= dayStart && $0.date < dayEnd }
+        let dailyPlanTypesToday = Set(dailyPlanCompletionsToday.map(\.itemType))
+        let hasMoodToday = moodSignals.contains { isDate($0.createdAt, inSameDayAs: dayStart, calendar: calendar) } ||
+            dailyPlanTypesToday.contains(DailyPlanCompletionItemType.moodCheckIn.rawValue)
+        let hasThoughtToday = thoughtRecords.contains { $0.createdAt >= dayStart && $0.createdAt < dayEnd } ||
+            dailyPlanTypesToday.contains(DailyPlanCompletionItemType.thoughtRecord.rawValue)
         let hasBreathingToday = breathingSessions.contains { $0.createdAt >= dayStart && $0.createdAt < dayEnd } ||
-            journalEntries.contains { $0.sourceKind == SessionSourceKind.breathing.rawValue && $0.createdAt >= dayStart && $0.createdAt < dayEnd }
-        let hasGuidedJournalToday = guidedJournalEntries.contains { $0.date >= dayStart && $0.date < dayEnd }
-        let hasExerciseToday = exerciseCompletions.contains { $0.createdAt >= dayStart && $0.createdAt < dayEnd }
+            journalEntries.contains { $0.sourceKind == SessionSourceKind.breathing.rawValue && $0.createdAt >= dayStart && $0.createdAt < dayEnd } ||
+            dailyPlanTypesToday.contains(DailyPlanCompletionItemType.breathingReset.rawValue)
         let hasActivityCompletedToday = plannedActivities.contains {
             $0.isCompleted && (($0.completedAt ?? $0.scheduledDate) >= dayStart) && (($0.completedAt ?? $0.scheduledDate) < dayEnd)
-        }
+        } || dailyPlanTypesToday.contains(DailyPlanCompletionItemType.activityPlanner.rawValue) ||
+            dailyPlanTypesToday.contains(DailyPlanCompletionItemType.quickAction.rawValue)
+        let activeDates = activeDays(
+            moodSignals: moodSignals,
+            thoughtRecords: thoughtRecords,
+            exerciseCompletions: exerciseCompletions,
+            journalEntries: journalEntries,
+            guidedJournalEntries: guidedJournalEntries,
+            breathingSessions: breathingSessions,
+            plannedActivities: plannedActivities,
+            dailyPlanCompletions: dailyPlanCompletions,
+            calendar: calendar
+        )
+        let currentStreak = currentStreak(from: activeDates, today: todayStart, calendar: calendar)
+        let missedCheckInDays = daysSinceLatestMood(latestMood, dayStart: dayStart, calendar: calendar)
+        let completedExerciseIDs = Set(exerciseCompletions.map(\.exerciseID))
 
-        if hasNoUserData(
+        let hasNoUserData = hasNoUserData(
             moodSignals: moodSignals,
             thoughtRecords: thoughtRecords,
             exerciseCompletions: exerciseCompletions,
@@ -967,327 +1458,50 @@ struct DailyRecommendationService {
             assessmentLogs: assessmentLogs,
             programProgresses: programProgresses,
             courses: courses,
-            achievements: achievements
-        ) {
-            return beginnerPlan(
-                hasMoodToday: hasMoodToday,
-                hasBreathingToday: hasBreathingToday
-            )
-        }
-
-        let recentLowMood = moodSignals.contains { $0.createdAt >= threeDaysAgo && $0.moodScore <= 3 }
-        let veryLowMood = latestMood.map { $0.moodScore <= 2 } ?? false
-        if veryLowMood {
-            return veryLowMoodPlan(
-                hasBreathingToday: hasBreathingToday,
-                oneSmallStepCompletedToday: exerciseCompletedToday(
-                    exerciseID: "exercise_007",
-                    exerciseCompletions: exerciseCompletions,
-                    dayStart: dayStart,
-                    dayEnd: dayEnd
-                )
-            )
-        }
-
-        if hasNotOpenedForDays(lastOpenedAt, now: now, calendar: calendar) {
-            return lowFrictionReturnPlan(
-                hasMoodToday: hasMoodToday,
-                hasBreathingToday: hasBreathingToday,
-                oneSmallStepCompletedToday: exerciseCompletedToday(
-                    exerciseID: "exercise_007",
-                    exerciseCompletions: exerciseCompletions,
-                    dayStart: dayStart,
-                    dayEnd: dayEnd
-                )
-            )
-        }
-
-        if anxietyRelatedEmotionsAreCommon(moodEntries.filter { $0.createdAt >= fourteenDaysAgo }) {
-            return anxietyCommonPlan(
-                hasBreathingToday: hasBreathingToday,
-                hasGuidedJournalToday: hasGuidedJournalToday,
-                anxietyResetCompletedToday: exerciseCompletedToday(
-                    exerciseID: "exercise_012",
-                    exerciseCompletions: exerciseCompletions,
-                    dayStart: dayStart,
-                    dayEnd: dayEnd
-                )
-            )
-        }
-
-        let missedCheckInDays = daysSinceLatestMood(latestMood, dayStart: dayStart, calendar: calendar)
-        let missedCheckIn = !hasMoodToday && (missedCheckInDays == nil || (missedCheckInDays ?? 0) >= 1)
-        let anxietyContext = recentAnxietyContext(
-            moodEntries: moodEntries.filter { $0.createdAt >= fourteenDaysAgo },
-            thoughtRecords: thoughtRecords.filter { $0.createdAt >= fourteenDaysAgo }
+            achievements: achievements,
+            dailyPlanCompletions: dailyPlanCompletions
         )
-        let topDistortion = mostFrequent(
-            thoughtRecords
-                .filter { $0.createdAt >= fourteenDaysAgo }
-                .flatMap(\.distortions)
-        )
-        let pendingActivity = plannedActivities
-            .filter { !$0.isCompleted && $0.scheduledDate < dayEnd }
-            .sorted { $0.scheduledDate < $1.scheduledDate }
-            .first
-        let assessmentTrend = mostRelevantAssessmentTrend(from: assessmentLogs, since: thirtyDaysAgo)
-        let completedExerciseIDs = Set(exerciseCompletions.map(\.exerciseID))
-        let recentExercise = exerciseCompletions
-            .first { $0.createdAt >= sevenDaysAgo }
-            .flatMap { ExerciseService.shared.exercise(withID: $0.exerciseID) }
-        let activeDates = activeDays(
-            moodSignals: moodSignals,
-            thoughtRecords: thoughtRecords,
-            exerciseCompletions: exerciseCompletions,
-            journalEntries: journalEntries,
-            guidedJournalEntries: guidedJournalEntries,
-            breathingSessions: breathingSessions,
-            plannedActivities: plannedActivities,
-            calendar: calendar
-        )
-        let currentStreak = currentStreak(from: activeDates, today: todayStart, calendar: calendar)
-        let hasActiveToday = activeDates.contains(todayStart)
-        let hour = calendar.component(.hour, from: now)
-        let recentAchievement = achievements.first { achievement in
-            guard let unlockedAt = achievement.unlockedAt else { return false }
-            return unlockedAt >= sevenDaysAgo
-        }
 
-        var recommendations = [DailyRecommendationType: DailyRecommendation]()
-
-        if missedCheckIn {
-            let reason = missedCheckInDays.map { days in
-                days <= 1 ? "No mood check-in has been logged today." : "It has been \(days) days since the last mood check-in."
-            } ?? "No mood check-in has been logged yet."
-            upsert(
-                makeRecommendation(
-                    type: .moodCheckIn,
-                    title: "Mood Check-In",
-                    subtitle: "Capture how you feel right now.",
-                    reason: reason,
-                    destination: .moodCheckIn,
-                    priority: currentStreak > 0 && !hasActiveToday ? 84 : 74,
-                    duration: 1,
-                    isCompletedToday: hasMoodToday
-                ),
-                into: &recommendations
-            )
-        }
-
-        if anxietyContext != nil || assessmentTrend?.suggestedFocus == .anxietyReset {
-            let reason: String
-            if let anxietyContext {
-                reason = "Recent entries mention \(anxietyContext)."
-            } else {
-                reason = assessmentTrend?.reason ?? "Recent tracking suggests a short reset may fit today."
-            }
-            upsert(
-                makeRecommendation(
-                    type: .breathingReset,
-                    title: "Breathing Reset",
-                    subtitle: "Take one minute to slow the pace.",
-                    reason: reason,
-                    destination: .breathingReset(durationSeconds: 60),
-                    priority: 82,
-                    duration: 1,
-                    isCompletedToday: hasBreathingToday
-                ),
-                into: &recommendations
-            )
-        }
-
-        if let topDistortion, !hasThoughtToday {
-            upsert(
-                makeRecommendation(
-                    type: .thoughtRecord,
-                    title: "Thought Record",
-                    subtitle: "Work through one automatic thought.",
-                    reason: "You recently logged \(topDistortion).",
-                    destination: .thoughtRecord,
-                    priority: recentLowMood ? 78 : 68,
-                    duration: 8,
-                    isCompletedToday: hasThoughtToday
-                ),
-                into: &recommendations
-            )
-        }
-
-        if let pendingActivity {
-            upsert(
-                makeRecommendation(
-                    type: .behavioralActivation,
-                    title: pendingActivity.title.isEmpty ? "Behavioral Activation" : pendingActivity.title,
-                    subtitle: "Complete or reflect on a planned activity.",
-                    reason: "A planned activity is still open.",
-                    destination: .behavioralActivation,
-                    priority: recentLowMood ? 76 : 66,
-                    duration: 5,
-                    isCompletedToday: hasActivityCompletedToday
-                ),
-                into: &recommendations
-            )
-        } else if recentLowMood || assessmentTrend?.suggestedFocus == .activation {
-            upsert(
-                makeRecommendation(
-                    type: .behavioralActivation,
-                    title: "Plan One Small Activity",
-                    subtitle: "Pick a small nourishing or mastery task.",
-                    reason: assessmentTrend?.suggestedFocus == .activation ? assessmentTrend?.reason ?? "Recent tracking makes a small activity a good fit." : "Recent mood entries were on the lower side.",
-                    destination: .behavioralActivation,
-                    priority: 64,
-                    duration: 5,
-                    isCompletedToday: hasActivityCompletedToday
-                ),
-                into: &recommendations
-            )
-        }
-
-        if !hasGuidedJournalToday, hour < 12 {
-            upsert(
-                makeRecommendation(
-                    type: .guidedJournal,
-                    title: "Morning Intentions",
-                    subtitle: "Set one direction for the day.",
-                    reason: "It is still early enough to choose a small intention.",
-                    destination: .guidedJournal(kind: DailyCheckInKind.morningIntentions.rawValue),
-                    priority: currentStreak > 0 && !hasActiveToday ? 62 : 52,
-                    duration: 3,
-                    isCompletedToday: hasGuidedJournalToday
-                ),
-                into: &recommendations
-            )
-        } else if !hasGuidedJournalToday, hour >= 17 {
-            upsert(
-                makeRecommendation(
-                    type: .guidedJournal,
-                    title: "Evening Reflection",
-                    subtitle: "Notice what happened and what you need next.",
-                    reason: "Evening is a natural time to close the loop.",
-                    destination: .guidedJournal(kind: DailyCheckInKind.eveningReflection.rawValue),
-                    priority: 58,
-                    duration: 4,
-                    isCompletedToday: hasGuidedJournalToday
-                ),
-                into: &recommendations
-            )
-        }
-
-        if hour >= 20, !hasBreathingToday {
-            upsert(
-                makeRecommendation(
-                    type: .sleepWindDown,
-                    title: "Sleep Wind-Down",
-                    subtitle: "Try a short calming reset before bed.",
-                    reason: "It is later in the day.",
-                    destination: .breathingReset(durationSeconds: 120),
-                    priority: 80,
-                    duration: 2,
-                    isCompletedToday: hasBreathingToday
-                ),
-                into: &recommendations
-            )
-        }
-
-        if let exercise = exerciseRecommendation(
-            recentExercise: recentExercise,
-            topDistortion: topDistortion,
-            hasAnxietyContext: anxietyContext != nil,
-            recentLowMood: recentLowMood,
-            completedExerciseIDs: completedExerciseIDs
-        ) {
-            let reason = exerciseReason(
-                exercise: exercise,
-                recentExercise: recentExercise,
-                topDistortion: topDistortion,
-                hasAnxietyContext: anxietyContext != nil,
-                recentLowMood: recentLowMood
-            )
-            upsert(
-                makeRecommendation(
-                    type: .libraryExercise,
-                    title: exercise.title,
-                    subtitle: exercise.description,
-                    reason: reason,
-                    destination: .libraryExercise(exerciseID: exercise.id),
-                    priority: recentExercise == nil ? 48 : 56,
-                    duration: exercise.duration,
-                    isCompletedToday: hasExerciseToday && exerciseCompletions.contains { completion in
-                        completion.exerciseID == exercise.id && completion.createdAt >= dayStart && completion.createdAt < dayEnd
-                    }
-                ),
-                into: &recommendations
-            )
-        }
-
-        if let courseRecommendation = courseRecommendation(
-            courses: courses,
-            libraryItems: libraryItems,
-            programProgresses: programProgresses,
+        let engineInput = DailyPlanRecommendationInput(
+            today: dayStart,
             now: now,
-            calendar: calendar
-        ) {
-            upsert(courseRecommendation, into: &recommendations)
-        }
-
-        if currentStreak > 0, !hasActiveToday {
-            upsert(
-                makeRecommendation(
-                    type: .moodCheckIn,
-                    title: "Keep Your Streak Going",
-                    subtitle: "A quick check-in counts as today’s practice.",
-                    reason: "Your current streak is \(currentStreak) \(currentStreak == 1 ? "day" : "days").",
-                    destination: .moodCheckIn,
-                    priority: 86,
-                    duration: 1,
-                    isCompletedToday: hasMoodToday
-                ),
-                into: &recommendations
-            )
-        } else if let recentAchievement {
-            upsert(
-                makeRecommendation(
-                    type: .libraryExercise,
-                    title: "Build on \(recentAchievement.title)",
-                    subtitle: "Try one short practice to keep momentum.",
-                    reason: "You recently unlocked an achievement.",
-                    destination: exerciseRecommendation(
-                        recentExercise: recentExercise,
-                        topDistortion: topDistortion,
-                        hasAnxietyContext: anxietyContext != nil,
-                        recentLowMood: recentLowMood,
-                        completedExerciseIDs: completedExerciseIDs
-                    ).map { .libraryExercise(exerciseID: $0.id) } ?? .behavioralActivation,
-                    priority: 50,
-                    duration: 5,
-                    isCompletedToday: hasExerciseToday
-                ),
-                into: &recommendations
-            )
-        }
-
-        addFallbacks(
-            to: &recommendations,
+            moodSamples: makeDailyPlanMoodSamples(moodEntries: moodEntries, moodCheckIns: moodCheckIns),
+            thoughtRecordDistortions: thoughtRecords
+                .filter { $0.createdAt >= fourteenDaysAgo }
+                .flatMap(\.distortions),
+            missedDays: missedCheckInDays,
+            currentStreak: currentStreak,
             hasMoodToday: hasMoodToday,
-            hasThoughtToday: hasThoughtToday,
+            hasThoughtRecordToday: hasThoughtToday,
             hasBreathingToday: hasBreathingToday,
-            hasGuidedJournalToday: hasGuidedJournalToday,
             hasActivityCompletedToday: hasActivityCompletedToday,
-            hour: hour,
+            incompleteExercise: unfinishedCourseExercise(
+                courses: courses,
+                libraryItems: libraryItems,
+                exerciseCompletions: exerciseCompletions,
+                dayStart: dayStart,
+                dayEnd: dayEnd
+            ),
             completedExerciseIDs: completedExerciseIDs,
-            dayStart: dayStart,
-            dayEnd: dayEnd,
-            exerciseCompletions: exerciseCompletions
+            exercises: ExerciseService.shared.exercises.map { exercise in
+                makeExerciseSummary(
+                    exercise,
+                    exerciseCompletions: exerciseCompletions,
+                    dailyPlanCompletions: dailyPlanCompletionsToday,
+                    dayStart: dayStart,
+                    dayEnd: dayEnd
+                )
+            },
+            preferences: .empty,
+            hasAnyUserData: !hasNoUserData,
+            recentEngagementCount: activeDates.filter { $0 >= sevenDaysAgo }.count,
+            helpfulnessScores: HelpfulnessFeedbackService.shared.recommendationScores(
+                from: helpfulnessFeedback,
+                since: fourteenDaysAgo
+            )
         )
 
-        return recommendations.values
-            .sorted { first, second in
-                if first.priority == second.priority {
-                    return first.title < second.title
-                }
-                return first.priority > second.priority
-            }
-            .prefix(3)
-            .map { $0 }
+        return DailyPlanRecommendationEngine().recommendations(from: engineInput)
     }
 
     func primaryRecommendations(
@@ -1295,7 +1509,24 @@ struct DailyRecommendationService {
         lastOpenedAt: Date? = nil,
         now: Date = Date()
     ) -> [DailyRecommendation] {
-        recommendations(for: now, in: context, now: now, lastOpenedAt: lastOpenedAt)
+        FirstSevenDaysJourneyService.shared.ensureStartedForNewUserIfNeeded(in: context, now: now)
+        let journeyStatus = FirstSevenDaysJourneyService.shared.status(from: context, now: now)
+        let journeyRecommendation = FirstSevenDaysJourneyService.shared.recommendation(for: journeyStatus)
+        let baseRecommendations = recommendations(for: now, in: context, now: now, lastOpenedAt: lastOpenedAt)
+
+        return ([journeyRecommendation].compactMap { $0 } + baseRecommendations)
+            .reduce(into: [String: DailyRecommendation]()) { result, recommendation in
+                result[recommendation.id] = recommendation
+            }
+            .values
+            .sorted {
+                if $0.priority == $1.priority {
+                    return $0.title < $1.title
+                }
+                return $0.priority > $1.priority
+            }
+            .prefix(4)
+            .map { $0 }
     }
 
     private func makeRecommendation(
@@ -1317,7 +1548,8 @@ struct DailyRecommendationService {
             destination: destination,
             priority: priority,
             estimatedDurationMinutes: max(1, duration),
-            isCompletedToday: isCompletedToday
+            isCompletedToday: isCompletedToday,
+            mode: .full
         )
     }
 
@@ -1386,9 +1618,9 @@ struct DailyRecommendationService {
             ),
             makeRecommendation(
                 type: .safetySupport,
-                title: "Open Safety Plan",
-                subtitle: "Review support steps and trusted contacts.",
-                reason: "Safety resources stay available when mood is very low.",
+                title: "Open Rough Patch Plan",
+                subtitle: "Review support steps and trusted people.",
+                reason: "Coping resources stay available when mood is very low.",
                 destination: .safetySupport,
                 priority: 88,
                 duration: 2,
@@ -1500,7 +1732,8 @@ struct DailyRecommendationService {
         assessmentLogs: [AssessmentLog],
         programProgresses: [ProgramProgress],
         courses: [Course],
-        achievements: [Achievement]
+        achievements: [Achievement],
+        dailyPlanCompletions: [DailyPlanCompletion]
     ) -> Bool {
         moodSignals.isEmpty &&
             thoughtRecords.isEmpty &&
@@ -1509,6 +1742,7 @@ struct DailyRecommendationService {
             guidedJournalEntries.isEmpty &&
             breathingSessions.isEmpty &&
             plannedActivities.isEmpty &&
+            dailyPlanCompletions.isEmpty &&
             assessmentLogs.isEmpty &&
             !programProgresses.contains { $0.completedDays > 0 || $0.lastCompletedAt != nil } &&
             !courses.contains { !$0.completedItemIDs.isEmpty || $0.isCompleted } &&
@@ -1615,11 +1849,11 @@ struct DailyRecommendationService {
                 makeRecommendation(
                     type: .guidedJournal,
                     title: kind.title,
-                    subtitle: kind == .morningIntentions ? "Set one direction for the day." : "Notice what happened and what you need next.",
+                    subtitle: kind == .morningIntentions ? "Set one direction for the day." : "Close the day and make tomorrow easier.",
                     reason: "A guided prompt can make reflection easier to start.",
                     destination: .guidedJournal(kind: kind.rawValue),
                     priority: 46,
-                    duration: kind == .morningIntentions ? 3 : 4,
+                    duration: kind == .morningIntentions ? 3 : 2,
                     isCompletedToday: hasGuidedJournalToday
                 ),
                 into: &recommendations
@@ -1678,6 +1912,101 @@ struct DailyRecommendationService {
     private struct AssessmentTrend {
         let reason: String
         let suggestedFocus: AssessmentFocus
+    }
+
+    private func makeDailyPlanMoodSamples(
+        moodEntries: [MoodEntry],
+        moodCheckIns: [MoodCheckIn]
+    ) -> [DailyPlanMoodSample] {
+        let entrySamples = moodEntries.map { entry in
+            DailyPlanMoodSample(
+                createdAt: entry.createdAt,
+                moodScore: entry.moodScore,
+                intensity: entry.intensity,
+                energyScore: entry.energyScore,
+                stressScore: entry.anxietyStressScore,
+                emotions: entry.emotions,
+                triggers: entry.triggers,
+                sensations: entry.sensations,
+                contextTags: entry.contextTags
+            )
+        }
+        let checkInSamples = moodCheckIns.map { checkIn in
+            DailyPlanMoodSample(
+                createdAt: checkIn.createdAt,
+                moodScore: checkIn.moodScore,
+                intensity: nil,
+                energyScore: nil,
+                stressScore: nil,
+                emotions: [],
+                triggers: [],
+                sensations: [],
+                contextTags: []
+            )
+        }
+
+        return (entrySamples + checkInSamples).sorted { $0.createdAt > $1.createdAt }
+    }
+
+    private func makeExerciseSummary(
+        _ exercise: Exercise,
+        exerciseCompletions: [ExerciseCompletion],
+        dailyPlanCompletions: [DailyPlanCompletion] = [],
+        dayStart: Date,
+        dayEnd: Date
+    ) -> DailyPlanExerciseSummary {
+        let exerciseType = DailyPlanCompletionItemType.exercise.rawValue
+        return DailyPlanExerciseSummary(
+            id: exercise.id,
+            title: exercise.title,
+            category: exercise.category,
+            duration: exercise.duration,
+            description: exercise.description,
+            isCompletedToday: exerciseCompletions.contains { completion in
+                completion.exerciseID == exercise.id &&
+                    completion.createdAt >= dayStart &&
+                    completion.createdAt < dayEnd
+            } || dailyPlanCompletions.contains { completion in
+                completion.itemType == exerciseType &&
+                    (completion.itemID == nil || completion.itemID == exercise.id) &&
+                    completion.date >= dayStart &&
+                    completion.date < dayEnd
+            }
+        )
+    }
+
+    private func unfinishedCourseExercise(
+        courses: [Course],
+        libraryItems: [LibraryItem],
+        exerciseCompletions: [ExerciseCompletion],
+        dayStart: Date,
+        dayEnd: Date
+    ) -> DailyPlanExerciseSummary? {
+        let course = courses
+            .filter { !$0.isCompleted && !$0.completedItemIDs.isEmpty }
+            .sorted {
+                if $0.completedItemIDs.count == $1.completedItemIDs.count {
+                    return $0.title < $1.title
+                }
+                return $0.completedItemIDs.count > $1.completedItemIDs.count
+            }
+            .first
+
+        guard let course else { return nil }
+        let orderedItems = course.orderedItems(from: libraryItems)
+        guard
+            let nextItem = orderedItems.first(where: { !course.completedItemIDs.contains($0.id) }),
+            let exercise = LibraryService.shared.exercise(for: nextItem)
+        else {
+            return nil
+        }
+
+        return makeExerciseSummary(
+            exercise,
+            exerciseCompletions: exerciseCompletions,
+            dayStart: dayStart,
+            dayEnd: dayEnd
+        )
     }
 
     private func makeMoodSignals(moodEntries: [MoodEntry], moodCheckIns: [MoodCheckIn]) -> [MoodSignal] {
@@ -1914,6 +2243,7 @@ struct DailyRecommendationService {
         guidedJournalEntries: [FlexibleJournalEntry],
         breathingSessions: [BreathingSession],
         plannedActivities: [PlannedActivity],
+        dailyPlanCompletions: [DailyPlanCompletion] = [],
         calendar: Calendar
     ) -> Set<Date> {
         var dates = Set<Date>()
@@ -1940,6 +2270,9 @@ struct DailyRecommendationService {
             if let completedAt = activity.completedAt {
                 dates.insert(calendar.startOfDay(for: completedAt))
             }
+        }
+        for completion in dailyPlanCompletions {
+            dates.insert(calendar.startOfDay(for: completion.date))
         }
         return dates
     }

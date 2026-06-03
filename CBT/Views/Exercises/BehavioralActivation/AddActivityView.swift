@@ -9,12 +9,23 @@ struct AddActivityView: View {
     @State private var title = ""
     @State private var description = ""
     @State private var category = "Nourishing"
+    @State private var supportedValue = "Connection"
     @State private var date = Date()
     @State private var predictedEnjoyment = 5.0
     @State private var errorMessage: String?
     
     private let columns = [GridItem(.adaptive(minimum: 116), spacing: 8)]
     private var canSave: Bool { !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+    init(
+        initialTitle: String = "",
+        initialDescription: String = "",
+        initialCategory: String = "Nourishing"
+    ) {
+        self._title = State(initialValue: initialTitle)
+        self._description = State(initialValue: initialDescription)
+        self._category = State(initialValue: PlannedActivity.normalizedCategory(initialCategory))
+    }
     
     var body: some View {
         NavigationStack {
@@ -41,6 +52,26 @@ struct AddActivityView: View {
                                         .lineLimit(1)
                                 }
                                 .buttonStyle(DSSelectionButtonStyle(isSelected: category == cat, selectedColor: themeManager.selectedColor, size: .compact))
+                            }
+                        }
+
+                        sectionTitle("Tiny Values Goal")
+                        Text("Pick the value this activity supports: connection, health, creativity, rest, or courage.")
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundStyle(Theme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 4)
+
+                        LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+                            ForEach(PlannedActivity.supportedValues, id: \.self) { value in
+                                Button {
+                                    supportedValue = value
+                                    HapticManager.shared.lightImpact()
+                                } label: {
+                                    Text(value)
+                                        .lineLimit(1)
+                                }
+                                .buttonStyle(DSSelectionButtonStyle(isSelected: supportedValue == value, selectedColor: themeManager.selectedColor, size: .compact))
                             }
                         }
                         
@@ -127,6 +158,7 @@ struct AddActivityView: View {
             activityDescription: description,
             category: category,
             scheduledDate: date,
+            supportedValue: supportedValue,
             predictedEnjoyment: Int(predictedEnjoyment)
         )
         modelContext.insert(newActivity)

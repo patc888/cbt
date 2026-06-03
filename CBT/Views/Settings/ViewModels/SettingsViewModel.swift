@@ -10,7 +10,9 @@ final class SettingsViewModel {
     
     var hapticsEnabled: Bool = true
     var appLockEnabled: Bool = false
+    var discreetModeEnabled: Bool = false
     var currentIcon: String?
+    var journeyOptInMessage: String?
     
     var isInitialized = false
     
@@ -33,6 +35,8 @@ final class SettingsViewModel {
         self.hapticsEnabled = settings?.hapticsEnabled ?? true
         HapticManager.shared.setEnabled(self.hapticsEnabled)
         self.appLockEnabled = settings?.appLockEnabled ?? false
+        self.discreetModeEnabled = settings?.discreetModeEnabled ?? AppConfiguration.discreetModeEnabled()
+        AppConfiguration.setDiscreetModeEnabled(self.discreetModeEnabled)
         self.currentIcon = settings?.currentIcon
         self.isInitialized = true
     }
@@ -54,9 +58,30 @@ final class SettingsViewModel {
     }
 
     @MainActor
+    func updateDiscreetMode(_ enabled: Bool) {
+        discreetModeEnabled = enabled
+        AppConfiguration.setDiscreetModeEnabled(enabled)
+        update { $0.discreetModeEnabled = enabled }
+
+        guard let context = modelContext else { return }
+        WidgetSnapshotService.publishSnapshot(from: context)
+        Task {
+            await DailyReminderService.shared.refreshQuoteOfTheDayIfEnabled()
+            await PersonalizedReminderService.shared.refreshEnabledReminders(modelContext: context)
+        }
+    }
+
+    @MainActor
     func updateIcon(_ iconName: String?) {
         currentIcon = iconName
         update { $0.currentIcon = iconName }
+    }
+
+    @MainActor
+    func optInToFirstSevenDays() {
+        guard let context = modelContext else { return }
+        _ = FirstSevenDaysJourneyService.shared.optIn(in: context)
+        journeyOptInMessage = "Your First 7 Days journey is ready on Home."
     }
 
     @MainActor

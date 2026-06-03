@@ -13,6 +13,11 @@ struct SmartCoachRecommendation: Identifiable, Hashable {
         case selfCompassionExercise(exerciseID: String)
         case guidedJournal
         case saveHelpfulReframe
+        case scheduleReReview
+        case beliefCheckIn
+        case behavioralExperiment(exerciseID: String)
+        case relapsePattern
+        case favoriteBySituation
         case reviewLater
     }
 
@@ -43,7 +48,17 @@ enum SmartCoach {
         }
 
         if !record.balancedThought.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            items.append(.saveHelpfulReframe)
+            if record.isReframeFollowUpDue() {
+                items.append(.beliefCheckIn)
+            } else if !record.isSavedReframe {
+                items.append(.saveHelpfulReframe)
+            } else if record.reviewDueAt == nil && record.balancedThoughtBeliefLater == nil {
+                items.append(.scheduleReReview)
+            }
+        }
+
+        if shouldRecommendBehavioralExperiment(for: record) {
+            items.append(.behavioralExperiment)
         }
 
         if let distortion = relatedDistortion(from: record.distortions) {
@@ -56,6 +71,14 @@ enum SmartCoach {
 
         if shouldRecommendGuidedJournal(for: record) {
             items.append(.guidedJournal)
+        }
+
+        if shouldRecommendRelapsePattern(for: record) {
+            items.append(.relapsePattern)
+        }
+
+        if record.isSavedReframe && !record.isFavoriteReframe && !record.followUpSituationLabel.isEmpty {
+            items.append(.favoriteBySituation)
         }
 
         items.append(.reviewLater)
@@ -116,6 +139,35 @@ enum SmartCoach {
         return journalingMood || hasUnwrittenContext || record.intensityBefore - record.intensityAfter < 10
     }
 
+    private static func shouldRecommendBehavioralExperiment(for record: ThoughtRecord) -> Bool {
+        let experimentDistortions = ["Catastrophizing", "Fortune Telling", "Mind Reading", "Should Statements"]
+        let hasExperimentDistortion = record.distortions.contains { distortion in
+            experimentDistortions.contains { normalize($0) == normalize(distortion) }
+        }
+
+        let hasAvoidanceCue = containsAnyKeyword(
+            in: [record.situation, record.automaticThought, record.balancedThought] + record.emotions,
+            keywords: ["avoid", "avoiding", "can't", "cannot", "what if", "panic", "unsafe", "embarrass", "reassurance"]
+        )
+
+        return record.linkedExperimentIDs.isEmpty && (hasExperimentDistortion || hasAvoidanceCue)
+    }
+
+    private static func shouldRecommendRelapsePattern(for record: ThoughtRecord) -> Bool {
+        if !record.relapsePatterns.isEmpty {
+            return false
+        }
+
+        let smallShift = record.intensityBefore - record.intensityAfter < 10
+        let stillHigh = record.intensityAfter >= 55
+        let hasRecurringLanguage = containsAnyKeyword(
+            in: [record.situation, record.automaticThought],
+            keywords: ["again", "always", "every time", "keeps happening", "same thing", "back to"]
+        )
+
+        return stillHigh || (smallShift && hasRecurringLanguage)
+    }
+
     private static func containsAnyKeyword(in values: [String], keywords: [String]) -> Bool {
         values.contains { value in
             let normalizedValue = normalize(value)
@@ -164,6 +216,41 @@ private extension SmartCoachRecommendation {
         title: "Save as helpful reframe",
         subtitle: "Keep your balanced thought easy to find later.",
         icon: "bookmark"
+    )
+
+    static let scheduleReReview = SmartCoachRecommendation(
+        kind: .scheduleReReview,
+        title: "Schedule a re-review",
+        subtitle: "Check tomorrow whether this balanced thought still feels believable.",
+        icon: "calendar.badge.clock"
+    )
+
+    static let beliefCheckIn = SmartCoachRecommendation(
+        kind: .beliefCheckIn,
+        title: "Check believability now",
+        subtitle: "Notice whether your balanced thought held up after some time passed.",
+        icon: "checklist.checked"
+    )
+
+    static let behavioralExperiment = SmartCoachRecommendation(
+        kind: .behavioralExperiment(exerciseID: "exercise_exposure_ladder"),
+        title: "Plan a tiny experiment",
+        subtitle: "Turn the prediction into one small exposure or behavior test.",
+        icon: "figure.step.training"
+    )
+
+    static let relapsePattern = SmartCoachRecommendation(
+        kind: .relapsePattern,
+        title: "Track this as a pattern",
+        subtitle: "Mark the cue so future reframes can spot a returning loop.",
+        icon: "arrow.triangle.2.circlepath"
+    )
+
+    static let favoriteBySituation = SmartCoachRecommendation(
+        kind: .favoriteBySituation,
+        title: "Favorite for this situation",
+        subtitle: "Make this reframe easier to find when a similar moment shows up.",
+        icon: "star"
     )
 
     static let reviewLater = SmartCoachRecommendation(

@@ -5,11 +5,13 @@ struct RootTabView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var selectedTab: FloatingTab = .home
-    @State private var activatedTabs: Set<FloatingTab> = [.home]
+    @State private var activatedTabs: Set<FloatingTab> = []
     @StateObject private var breathing = BreathingPresenter.shared
     @State private var isInExerciseFlow = false
     @State private var isInQuizFlow = false
     @State private var presentedContextualDeepLink: ContextualNotificationDeepLink?
+    @State private var activeAchievementToast: AchievementToastItem?
+    @State private var achievementToastQueue: [AchievementToastItem] = []
 
     private var selectedTabBinding: Binding<FloatingTab> {
         Binding(
@@ -54,6 +56,16 @@ struct RootTabView: View {
                 .toolbar(.hidden, for: .tabBar)
                 #endif
 
+                tabContent(for: .toolkit) {
+                    CopingToolkitView()
+                }
+                .tag(FloatingTab.toolkit)
+                #if os(iOS) && !targetEnvironment(macCatalyst)
+                .toolbar(.hidden, for: .tabBar)
+                #elseif os(iOS)
+                .toolbar(.hidden, for: .tabBar)
+                #endif
+
                 tabContent(for: .exercises) {
                     LibraryView()
                 }
@@ -68,6 +80,26 @@ struct RootTabView: View {
                     JournalView()
                 }
                 .tag(FloatingTab.journal)
+                #if os(iOS) && !targetEnvironment(macCatalyst)
+                .toolbar(.hidden, for: .tabBar)
+                #elseif os(iOS)
+                .toolbar(.hidden, for: .tabBar)
+                #endif
+
+                tabContent(for: .profile) {
+                    ProfileView()
+                }
+                .tag(FloatingTab.profile)
+                #if os(iOS) && !targetEnvironment(macCatalyst)
+                .toolbar(.hidden, for: .tabBar)
+                #elseif os(iOS)
+                .toolbar(.hidden, for: .tabBar)
+                #endif
+
+                tabContent(for: .profile) {
+                    ProfileView()
+                }
+                .tag(FloatingTab.profile)
                 #if os(iOS) && !targetEnvironment(macCatalyst)
                 .toolbar(.hidden, for: .tabBar)
                 #elseif os(iOS)
@@ -145,9 +177,36 @@ struct RootTabView: View {
                 breathingStepCardOverlay
             }
         }
+        .overlay(alignment: .top) {
+            if let activeAchievementToast {
+                AchievementToastView(item: activeAchievementToast)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                    .transition(
+                        reduceMotion
+                            ? .opacity
+                            : .opacity.combined(with: .move(edge: .top))
+                    )
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .achievementsUnlocked)) { notification in
+            guard let achievements = notification.userInfo?["achievements"] as? [Achievement],
+                  !achievements.isEmpty else { return }
+            enqueueAchievementToasts(for: achievements)
+        }
+        .onChange(of: activeAchievementToast) { _, toast in
+            guard toast != nil else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.6) {
+                dismissActiveAchievementToast()
+            }
+        }
         .animation(
             reduceMotion ? .easeOut(duration: 0.2) : .easeInOut(duration: 0.52),
             value: breathing.isPresented
+        )
+        .animation(
+            reduceMotion ? .easeOut(duration: 0.18) : .spring(response: 0.42, dampingFraction: 0.86),
+            value: activeAchievementToast
         )
     }
 
@@ -161,10 +220,13 @@ struct RootTabView: View {
                 showsDismissControl: true,
                 showControls: breathing.showControls,
                 hideBackground: false,
-                onComplete: breathing.onComplete,
+                onComplete: {
+                    breathing.onComplete?()
+                    clearBreathingPresentation()
+                },
                 onDismiss: {
                     breathing.onDismiss?()
-                    breathing.isPresented = false
+                    clearBreathingPresentation()
                 }
             )
         }
@@ -177,6 +239,12 @@ struct RootTabView: View {
                 ? .opacity
                 : .opacity.combined(with: .move(edge: .bottom))
         ))
+    }
+
+    private func clearBreathingPresentation() {
+        breathing.isPresented = false
+        breathing.onComplete = nil
+        breathing.onDismiss = nil
     }
 
     private func updateTabBarAppearance() {
@@ -215,7 +283,9 @@ struct RootTabView: View {
                 showsDismissControl: true
             )
         case .weeklyReport:
-            InsightsView()
+            NavigationStack {
+                WeeklyReviewView()
+            }
         case .plannedActivity:
             ActivityPlannerView()
         case .courseContinuation:
@@ -251,6 +321,7 @@ struct RootTabView: View {
         case .weeklyReport:
             activatedTabs.insert(.insights)
             selectedTab = .insights
+            presentedContextualDeepLink = .weeklyReport
         case .plannedActivity:
             activatedTabs.insert(.exercises)
             selectedTab = .exercises
@@ -274,6 +345,98 @@ struct RootTabView: View {
             ThemedBackground()
                 .accessibilityHidden(true)
         }
+    }
+
+    private func enqueueAchievementToasts(for achievements: [Achievement]) {
+        let toasts = achievements
+            .sorted { ($0.unlockedAt ?? $0.createdAt) < ($1.unlockedAt ?? $1.createdAt) }
+            .map(AchievementToastItem.init)
+
+        if activeAchievementToast == nil {
+            activeAchievementToast = toasts.first
+            achievementToastQueue.append(contentsOf: toasts.dropFirst())
+        } else {
+            achievementToastQueue.append(contentsOf: toasts)
+        }
+    }
+
+    private func dismissActiveAchievementToast() {
+        guard activeAchievementToast != nil else { return }
+
+        if achievementToastQueue.isEmpty {
+            activeAchievementToast = nil
+        } else {
+            activeAchievementToast = achievementToastQueue.removeFirst()
+        }
+    }
+}
+
+private struct AchievementToastItem: Identifiable, Equatable {
+    let id: UUID
+    let title: String
+    let description: String
+    let imageName: String
+
+    nonisolated init(achievement: Achievement) {
+        id = achievement.id
+        title = achievement.title
+        description = achievement.achievementDescription
+        imageName = achievement.imageName
+    }
+}
+
+private struct AchievementToastView: View {
+    @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.colorScheme) private var colorScheme
+
+    let item: AchievementToastItem
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: item.imageName)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(themeManager.selectedColor)
+                .frame(width: 38, height: 38)
+                .background(themeManager.selectedColor.opacity(0.12), in: Circle())
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(String(localized: "Milestone unlocked"))
+                    .font(.system(.caption2, design: .rounded).weight(.semibold))
+                    .foregroundStyle(Theme.secondaryText)
+                    .textCase(.uppercase)
+
+                Text(item.title)
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(item.description)
+                    .font(.system(.caption, design: .rounded))
+                    .foregroundStyle(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: 420)
+        .background {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(DSTheme.cardBackground)
+                .shadow(
+                    color: Color.black.opacity(colorScheme == .dark ? 0.28 : 0.12),
+                    radius: 16,
+                    x: 0,
+                    y: 8
+                )
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(themeManager.selectedColor.opacity(0.16), lineWidth: 1)
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 

@@ -23,6 +23,7 @@ struct MoodCheckinView: View {
     @State private var selectedActivityTags: Set<String> = []
     @State private var notes: String = ""
     @State private var nextStepState: MoodCheckinNextStepState?
+    @State private var showingReset = false
 
     init(initialMood: MoodColor? = nil) {
         _selectedColor = State(initialValue: initialMood)
@@ -105,6 +106,17 @@ struct MoodCheckinView: View {
                         .tabViewStyle(.page(indexDisplayMode: .never))
                         #endif
                         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: currentStep)
+
+                        if currentStep < totalSteps - 1 {
+                            MoodCheckinNotReadyActions(
+                                canSaveMood: selectedColor != nil,
+                                onSaveMood: saveMoodOnly,
+                                onComeBackLater: finishFlow,
+                                onReset: { showingReset = true }
+                            )
+                            .padding(.horizontal, DSSpacing.large)
+                            .padding(.bottom, DSSpacing.large)
+                        }
                     }
                 }
             }
@@ -140,6 +152,21 @@ struct MoodCheckinView: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showingReset) {
+            NavigationStack {
+                BreathingResetView(
+                    durationSeconds: 60,
+                    pattern: .box,
+                    autoStart: true,
+                    showsDismissControl: true,
+                    showControls: true,
+                    hideBackground: false,
+                    onComplete: nil,
+                    onDismiss: { showingReset = false }
+                )
+            }
+            .dsSheetPresentation()
         }
         #if targetEnvironment(macCatalyst)
         .frame(minWidth: 560, idealWidth: 560, minHeight: 520, idealHeight: 520)
@@ -222,7 +249,14 @@ struct MoodCheckinView: View {
             modelContext.insert(checkin)
             try modelContext.save()
             AchievementService.shared.evaluateAchievements(in: modelContext)
+            PersonalizedReminderService.shared.recordMoodCheckInResponse(at: createdAt)
+            LocalRetentionEventStore.shared.recordOnce(
+                .firstMoodCheckInCompleted,
+                sourceScreen: "mood_check_in",
+                metadata: ["flow": "daily_check_in"]
+            )
 
+            let isFirstMoodCheckIn = (try? modelContext.fetch(FetchDescriptor<MoodCheckIn>()).count) == 1
             let summary = MoodCheckinSavedSummary(
                 createdAt: createdAt,
                 color: selectedColor,
@@ -251,11 +285,25 @@ struct MoodCheckinView: View {
             HapticManager.shared.success()
             ReviewManager.shared.logSignificantAction()
             withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
-                nextStepState = MoodCheckinNextStepState(summary: summary, plan: plan)
+                nextStepState = MoodCheckinNextStepState(
+                    summary: summary,
+                    plan: plan,
+                    isFirstMoodCheckIn: isFirstMoodCheckIn
+                )
             }
         } catch {
             AppLogger.make(category: "Data").error("Failed to save mood entry: \(error.localizedDescription, privacy: .private)")
         }
+    }
+
+    private func saveMoodOnly() {
+        selectedEmotions.removeAll()
+        selectedTriggers.removeAll()
+        selectedSensations.removeAll()
+        selectedContextTags.removeAll()
+        selectedActivityTags.removeAll()
+        notes = ""
+        saveCheckin()
     }
 
     private func finishFlow() {
@@ -270,6 +318,52 @@ struct MoodCheckinView: View {
     private func journalMore() {
         dismiss()
         NotificationCenter.default.post(name: .appTabSelectionRequested, object: FloatingTab.journal)
+    }
+}
+
+private struct MoodCheckinNotReadyActions: View {
+    @Environment(ThemeManager.self) private var themeManager
+    let canSaveMood: Bool
+    let onSaveMood: () -> Void
+    let onComeBackLater: () -> Void
+    let onReset: () -> Void
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                actions
+            }
+
+            VStack(spacing: 10) {
+                actions
+            }
+        }
+        .padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private var actions: some View {
+        Button {
+            onSaveMood()
+        } label: {
+            Label("Just save the mood", systemImage: "heart.circle")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: true, tint: themeManager.selectedColor))
+        .disabled(!canSaveMood)
+
+        Button {
+            onReset()
+        } label: {
+            Label("Do a 60-second reset instead", systemImage: "wind")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: true, tint: themeManager.selectedColor))
+
+        Button {
+            onComeBackLater()
+        } label: {
+            Label("Come back later", systemImage: "clock")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: true, tint: themeManager.selectedColor))
     }
 }
 

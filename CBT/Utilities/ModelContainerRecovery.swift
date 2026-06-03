@@ -20,7 +20,7 @@ struct ModelContainerRecovery {
     init(
         schema: Schema,
         groupID: String,
-        storeName: String = "default.store",
+        storeName: String = SharedPersistence.storeFileName,
         cloudKitDatabase: ModelConfiguration.CloudKitDatabase = .private(AppConfiguration.cloudKitContainerIdentifier)
     ) {
         self.schema = schema
@@ -40,7 +40,7 @@ struct ModelContainerRecovery {
         }
 
         do {
-            let container = try makePreferredContainer(storeURL: storeURL)
+            let container = try makeContainer(storeURL: storeURL, cloudKitDatabase: cloudKitDatabase)
             return RecoveryResult(container: container, cloudKitEnabled: true, cloudKitFailure: nil)
         } catch {
             logger.error("Preferred SwiftData container creation failed: \(String(describing: error), privacy: .public)")
@@ -53,7 +53,7 @@ struct ModelContainerRecovery {
 
             do {
                 logger.warning("Detected likely schema conflict. Retrying without CloudKit while preserving the existing store.")
-                let container = try makeLocalOnlyContainer(storeURL: storeURL)
+                let container = try makeContainer(storeURL: storeURL, cloudKitDatabase: .none)
                 return RecoveryResult(container: container, cloudKitEnabled: false, cloudKitFailure: cloudKitFailure)
             } catch {
                 logger.error("Local-only recovery attempt failed: \(String(describing: error), privacy: .public)")
@@ -63,36 +63,26 @@ struct ModelContainerRecovery {
         }
     }
 
-    private func makePreferredContainer(storeURL: URL?) throws -> ModelContainer {
+    private func makeContainer(
+        storeURL: URL?,
+        cloudKitDatabase: ModelConfiguration.CloudKitDatabase
+    ) throws -> ModelContainer {
         try ModelContainer(
             for: schema,
             migrationPlan: CBTModelMigrationPlan.self,
-            configurations: [preferredConfiguration(storeURL: storeURL)]
+            configurations: [makeConfiguration(storeURL: storeURL, cloudKitDatabase: cloudKitDatabase)]
         )
     }
 
-    private func makeLocalOnlyContainer(storeURL: URL?) throws -> ModelContainer {
-        try ModelContainer(
-            for: schema,
-            migrationPlan: CBTModelMigrationPlan.self,
-            configurations: [localOnlyConfiguration(storeURL: storeURL)]
-        )
-    }
-
-    private func preferredConfiguration(storeURL: URL?) -> ModelConfiguration {
+    private func makeConfiguration(
+        storeURL: URL?,
+        cloudKitDatabase: ModelConfiguration.CloudKitDatabase
+    ) -> ModelConfiguration {
         if let storeURL {
             return ModelConfiguration("Default", schema: schema, url: storeURL, cloudKitDatabase: cloudKitDatabase)
         }
 
         return ModelConfiguration("Default", schema: schema, cloudKitDatabase: cloudKitDatabase)
-    }
-
-    private func localOnlyConfiguration(storeURL: URL?) -> ModelConfiguration {
-        if let storeURL {
-            return ModelConfiguration("Default", schema: schema, url: storeURL, cloudKitDatabase: .none)
-        }
-
-        return ModelConfiguration("Default", schema: schema, cloudKitDatabase: .none)
     }
 
     private func resolvedStoreURL() -> URL? {

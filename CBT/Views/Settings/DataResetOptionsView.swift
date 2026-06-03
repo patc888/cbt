@@ -126,6 +126,7 @@ struct DataResetOptionsView: View {
 
         do {
             try deleteAllSwiftDataRecords()
+            try? LocalRetentionEventStore.shared.clearAll()
             DataResetManager.shared.resetLocalPreferences(.standard)
             await ReminderManager.shared.cancelAllCBTReminders()
 
@@ -147,6 +148,7 @@ struct DataResetOptionsView: View {
         do {
             try await DataResetManager.shared.deleteCloudDataAndLocalStore()
             try deleteAllSwiftDataRecords()
+            try? LocalRetentionEventStore.shared.clearAll()
             DataResetManager.shared.resetLocalPreferences(.standard)
             await ReminderManager.shared.cancelAllCBTReminders()
 

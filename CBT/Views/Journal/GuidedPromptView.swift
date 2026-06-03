@@ -22,7 +22,7 @@ struct GuidedPromptFlow: Identifiable, Hashable {
         case .morningIntentions:
             return String(localized: "A quick prompt-card flow to choose how you want to meet the day.")
         case .eveningReflection:
-            return String(localized: "A journal prompt flow to notice what happened and what you need next.")
+            return String(localized: "A 2-minute flow: one win, one hard thing, one tomorrow anchor.")
         }
     }
 
@@ -64,25 +64,25 @@ struct GuidedPromptFlow: Identifiable, Hashable {
         case .eveningReflection:
             return GuidedPromptFlow(kind: kind, cards: [
                 GuidedPromptCard(
-                    id: "notice",
-                    title: String(localized: "Notice"),
-                    prompt: String(localized: "What moment from today is asking for your attention?"),
-                    placeholder: String(localized: "A moment I noticed was..."),
-                    icon: "eye.fill"
+                    id: "win",
+                    title: String(localized: "One Win"),
+                    prompt: String(localized: "What is one win from today?"),
+                    placeholder: String(localized: "One win was..."),
+                    icon: "checkmark.seal.fill"
                 ),
                 GuidedPromptCard(
-                    id: "reframe",
-                    title: String(localized: "Reflect"),
-                    prompt: String(localized: "What thought or feeling can you hold more gently?"),
-                    placeholder: String(localized: "I can hold this differently by..."),
-                    icon: "brain.head.profile"
+                    id: "hard_thing",
+                    title: String(localized: "One Hard Thing"),
+                    prompt: String(localized: "What is one hard thing you carried today?"),
+                    placeholder: String(localized: "One hard thing was..."),
+                    icon: "heart.text.square.fill"
                 ),
                 GuidedPromptCard(
-                    id: "release",
-                    title: String(localized: "Release"),
-                    prompt: String(localized: "What can you set down before tomorrow?"),
-                    placeholder: String(localized: "Tonight I can set down..."),
-                    icon: "sparkles"
+                    id: "tomorrow_anchor",
+                    title: String(localized: "Tomorrow Anchor"),
+                    prompt: String(localized: "What is one anchor for tomorrow?"),
+                    placeholder: String(localized: "Tomorrow I can anchor around..."),
+                    icon: "sunrise.fill"
                 )
             ])
         }
@@ -97,6 +97,7 @@ struct GuidedPromptView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager: ThemeManager?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Query(sort: \PersonalValue.createdAt) private var personalValues: [PersonalValue]
     @FocusState private var isEditorFocused: Bool
 
     @State private var currentIndex = 0
@@ -288,20 +289,28 @@ struct GuidedPromptView: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 72, weight: .bold))
                 .foregroundStyle(accent)
-            Text(String(localized: "Saved"))
-                .font(DSTypography.pageTitle)
-                .foregroundStyle(Theme.primaryText)
-            Text(String(localized: "Your daily check-in was added to Guided Journal."))
-                .font(DSTypography.body)
-                .foregroundStyle(Theme.secondaryText)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+
+            DSCardContainer {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(String(localized: "Saved."))
+                        .font(DSTypography.cardTitle)
+                        .foregroundStyle(Theme.primaryText)
+
+                    Text(String(localized: "You don’t have to solve this right now."))
+                        .font(DSTypography.body)
+                        .foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, 24)
+
             Spacer()
             Button {
                 HapticManager.shared.lightImpact()
                 dismiss()
             } label: {
-                Text(String(localized: "Done"))
+                Label(String(localized: "Done for now"), systemImage: "checkmark")
             }
             .buttonStyle(DSButtonStyle(variant: .primary, size: .large, tint: accent, hapticType: nil))
             .padding(.horizontal, 24)
@@ -364,7 +373,8 @@ struct GuidedPromptView: View {
         isEditorFocused = false
         modelContext.insert(FlexibleJournalEntry(
             templateType: flow.title,
-            responses: responses
+            responses: responses,
+            valueIDs: currentValueIDs
         ))
         try? modelContext.save()
         AchievementService.shared.evaluateAchievements(in: modelContext)
@@ -372,6 +382,13 @@ struct GuidedPromptView: View {
         withAnimation(reduceMotion ? .none : .spring(response: 0.4, dampingFraction: 0.86)) {
             isCompleted = true
         }
+    }
+
+    private var currentValueIDs: [String] {
+        guard let action = ValuesService.action(selectedValues: personalValues) else {
+            return []
+        }
+        return [action.valueID]
     }
 }
 

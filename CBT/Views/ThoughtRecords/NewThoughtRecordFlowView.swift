@@ -9,6 +9,13 @@ struct NewThoughtRecordFlowView: View {
     
     @State private var viewModel = NewThoughtRecordViewModel()
     @State private var completedRecord: ThoughtRecord?
+    @State private var hasCompletedGroundingPreparation: Bool
+    private let recordID: PersistentIdentifier?
+
+    init(recordID: PersistentIdentifier? = nil) {
+        self.recordID = recordID
+        _hasCompletedGroundingPreparation = State(initialValue: recordID != nil)
+    }
 
     var body: some View {
         NavigationStack {
@@ -17,10 +24,34 @@ struct NewThoughtRecordFlowView: View {
                     ThoughtRecordNextStepView(record: completedRecord) {
                         dismiss()
                     }
+                } else if !hasCompletedGroundingPreparation {
+                    ThemedBackground().ignoresSafeArea()
+
+                    VStack {
+                        GroundingPreparationView(
+                            title: String(localized: "Ground Before Thought Work"),
+                            message: String(localized: "Thought records can ask you to look directly at a hard moment. You can take a 30-second breathing reset first, or begin when you feel ready."),
+                            continueTitle: String(localized: "Start Thought Record")
+                        ) {
+                            hasCompletedGroundingPreparation = true
+                        }
+                        .padding(.horizontal, DSSpacing.large)
+                        .responsiveMaxWidth()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ThemedBackground().ignoresSafeArea()
 
                     VStack(spacing: 0) {
+                        Picker("Thought record mode", selection: $viewModel.mode) {
+                            ForEach(ThoughtRecordMode.allCases) { mode in
+                                Text(mode.title).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal, DSSpacing.large)
+                        .padding(.top, DSSpacing.large)
+
                         VStack(alignment: .leading, spacing: DSSpacing.small) {
                             Text("Step \(viewModel.currentStep + 1) of \(viewModel.totalSteps)")
                                 .font(DSTypography.caption)
@@ -31,15 +62,13 @@ struct NewThoughtRecordFlowView: View {
                                 .accessibilityLabel("Step \(viewModel.currentStep + 1) of \(viewModel.totalSteps)")
                         }
                         .padding(.horizontal, DSSpacing.large)
-                        .padding(.top, DSSpacing.large)
+                        .padding(.top, DSSpacing.medium)
                         .padding(.bottom, DSSpacing.small)
 
                         TabView(selection: $viewModel.currentStep) {
-                            ContextStepView(viewModel: viewModel).tag(0)
-                            EmotionStepView(viewModel: viewModel).tag(1)
-                            DistortionStepView(viewModel: viewModel).tag(2)
-                            EvidenceStepView(viewModel: viewModel).tag(3)
-                            BalancedStepView(viewModel: viewModel).tag(4)
+                            ForEach(Array(stepKinds.enumerated()), id: \.element) { index, step in
+                                stepView(for: step).tag(index)
+                            }
                         }
                         #if os(iOS)
                         .tabViewStyle(.page(indexDisplayMode: .never))
@@ -81,6 +110,15 @@ struct NewThoughtRecordFlowView: View {
                         }
                         .padding(.horizontal, DSSpacing.large)
                         .padding(.top, DSSpacing.small)
+
+                        ThoughtRecordNotReadyActions(
+                            canSkipDetails: viewModel.canSave,
+                            skipDetails: savePartialRecord,
+                            comeBackLater: { dismiss() },
+                            resetInstead: { viewModel.showBreathing = true }
+                        )
+                        .padding(.horizontal, DSSpacing.large)
+                        .padding(.top, 2)
                         .padding(.bottom, DSSpacing.large)
                         .background(DSTheme.cardBackground.ignoresSafeArea(edges: .bottom))
                     }
@@ -113,6 +151,16 @@ struct NewThoughtRecordFlowView: View {
                         }
                     }
                 }
+            }
+            .task {
+                loadExistingRecordIfNeeded()
+            }
+            .onChange(of: viewModel.mode) { _, _ in
+                viewModel.currentStep = min(viewModel.currentStep, viewModel.totalSteps - 1)
+                viewModel.saveDraft(context: modelContext)
+            }
+            .onChange(of: viewModel.draftSignature) { _, _ in
+                viewModel.saveDraft(context: modelContext)
             }
             #if os(iOS)
             .fullScreenCover(isPresented: $viewModel.showBreathing) {
@@ -161,5 +209,115 @@ struct NewThoughtRecordFlowView: View {
         withAnimation {
             viewModel.currentStep = min(viewModel.totalSteps - 1, viewModel.currentStep + 1)
         }
+    }
+
+    private func savePartialRecord() {
+        guard let record = viewModel.saveRecord(context: modelContext) else { return }
+        ReviewManager.shared.logSignificantAction()
+        HapticManager.shared.success()
+        completedRecord = record
+    }
+
+    private var stepKinds: [ThoughtRecordStepKind] {
+        if viewModel.mode == .quick {
+            return [.context, .emotion, .distortion, .balanced]
+        }
+        return [.context, .emotion, .distortion, .evidence, .balanced]
+    }
+
+    @ViewBuilder
+    private func stepView(for step: ThoughtRecordStepKind) -> some View {
+        switch step {
+        case .context:
+            ContextStepView(viewModel: viewModel)
+        case .emotion:
+            EmotionStepView(viewModel: viewModel)
+        case .distortion:
+            DistortionStepView(viewModel: viewModel)
+        case .evidence:
+            EvidenceStepView(viewModel: viewModel)
+        case .balanced:
+            BalancedStepView(viewModel: viewModel)
+        }
+    }
+
+    @MainActor
+    private func loadExistingRecordIfNeeded() {
+        guard viewModel.draftRecord == nil else {
+            return
+        }
+
+        if let recordID, let record = modelContext.model(for: recordID) as? ThoughtRecord {
+            viewModel.load(record: record)
+            return
+        }
+
+        do {
+            var descriptor = FetchDescriptor<ThoughtRecord>(
+                predicate: #Predicate<ThoughtRecord> { record in
+                    record.isDeleted == false && record.isDraft == true
+                },
+                sortBy: [SortDescriptor(\ThoughtRecord.updatedAt, order: .reverse)]
+            )
+            descriptor.fetchLimit = 1
+            if let draft = try modelContext.fetch(descriptor).first {
+                viewModel.load(record: draft)
+            }
+        } catch {
+            AppLogger.make(category: "Data").error("Failed to load thought record draft: \(error.localizedDescription, privacy: .private)")
+        }
+    }
+}
+
+private enum ThoughtRecordStepKind: Hashable {
+    case context
+    case emotion
+    case distortion
+    case evidence
+    case balanced
+}
+
+private struct ThoughtRecordNotReadyActions: View {
+    @Environment(ThemeManager.self) private var themeManager
+    let canSkipDetails: Bool
+    let skipDetails: () -> Void
+    let comeBackLater: () -> Void
+    let resetInstead: () -> Void
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                actions
+            }
+
+            VStack(spacing: 10) {
+                actions
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var actions: some View {
+        Button {
+            skipDetails()
+        } label: {
+            Label("Skip details", systemImage: "text.line.first.and.arrowtriangle.forward")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: true, tint: themeManager.selectedColor))
+        .disabled(!canSkipDetails)
+
+        Button {
+            resetInstead()
+        } label: {
+            Label("Do a 60-second reset instead", systemImage: "wind")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: true, tint: themeManager.selectedColor))
+
+        Button {
+            comeBackLater()
+        } label: {
+            Label("Come back later", systemImage: "clock")
+        }
+        .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: true, tint: themeManager.selectedColor))
     }
 }

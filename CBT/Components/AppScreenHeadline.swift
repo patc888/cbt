@@ -31,7 +31,7 @@ struct TopHeadlineView<Leading: View, Trailing: View>: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 76)
+                    .padding(.horizontal, 112)
 
                 HStack {
                     Spacer()

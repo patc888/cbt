@@ -104,25 +104,33 @@ struct BreathingResetView: View {
                 }
 
                 if engine.state.isComplete && !embeddedInFlow {
-                    HStack(spacing: DSSpacing.medium) {
-                        Button {
-                            HapticManager.shared.lightImpact()
-                            onComplete?()
-                            dismiss()
-                        } label: {
-                            Label("Done", systemImage: "checkmark")
-                        }
-                        .buttonStyle(DSPrimaryButtonStyle())
-                        .accessibilityLabel("Finish session")
+                    VStack(spacing: DSSpacing.medium) {
+                        WhatHelpedFeedbackView(
+                            activityKind: .breathing,
+                            itemID: "breathing-\(pattern.name.lowercased().replacingOccurrences(of: " ", with: "-"))",
+                            sourceScreen: "breathing_reset"
+                        )
 
-                        Button {
-                            HapticManager.shared.lightImpact()
-                            prepareSaveSession()
-                        } label: {
-                            Label("Journal", systemImage: "square.and.pencil")
+                        HStack(spacing: DSSpacing.medium) {
+                            Button {
+                                HapticManager.shared.lightImpact()
+                                onComplete?()
+                                dismiss()
+                            } label: {
+                                Label("Done", systemImage: "checkmark")
+                            }
+                            .buttonStyle(DSPrimaryButtonStyle())
+                            .accessibilityLabel("Finish session")
+
+                            Button {
+                                HapticManager.shared.lightImpact()
+                                prepareSaveSession()
+                            } label: {
+                                Label("Journal", systemImage: "square.and.pencil")
+                            }
+                            .buttonStyle(DSSecondaryButtonStyle())
+                            .accessibilityLabel("Save to journal")
                         }
-                        .buttonStyle(DSSecondaryButtonStyle())
-                        .accessibilityLabel("Save to journal")
                     }
                     .padding(.horizontal, 20)
                     .responsiveMaxWidth()
@@ -226,12 +234,8 @@ struct BreathingResetView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(.body, weight: .bold))
-                        .foregroundStyle(DSTheme.secondaryText)
-                        .padding(10)
-                        .background(Color(.secondarySystemFill))
-                        .clipShape(Circle())
                 }
+                .buttonStyle(DSButtonStyle(variant: .neutral, size: .icon(36), expands: false, hapticType: .light))
                 .accessibilityLabel("Close")
             }
         }

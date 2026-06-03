@@ -57,19 +57,12 @@ struct StreakToolbarButton: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "flame.fill")
-                            .font(.system(size: 14, weight: .bold))
 
                         Text("\(snapshot.currentStreak)")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
                             .monospacedDigit()
                     }
-                    .foregroundStyle(themeManager.selectedColor)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .background(themeManager.selectedColor.opacity(0.12))
-                    .clipShape(Capsule())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(DSButtonStyle(variant: .secondary, size: .compact, expands: false, tint: themeManager.selectedColor, hapticType: nil))
                 .accessibilityLabel("Streak, \(snapshot.currentStreak) days")
                 .accessibilityHint("Shows your activity streak calendar")
             }
@@ -134,6 +127,66 @@ private struct StreakSnapshot {
     var milestoneProgress: Double {
         guard nextMilestone > 0 else { return 0 }
         return min(1, Double(currentStreak) / Double(nextMilestone))
+    }
+
+    var currentReturnStreak: Int {
+        currentReturnRun?.count ?? 0
+    }
+
+    var returnedDaysAfterGap: Int {
+        returnRuns.reduce(0) { $0 + $1.count }
+    }
+
+    var hasReturnedAfterGap: Bool {
+        returnedDaysAfterGap > 0
+    }
+
+    var returnMessage: String {
+        if currentReturnStreak > 0 {
+            let dayText = currentReturnStreak == 1 ? "day" : "days"
+            return "You came back and built \(currentReturnStreak) \(dayText) after a gap."
+        }
+        if returnedDaysAfterGap > 0 {
+            let dayText = returnedDaysAfterGap == 1 ? "day" : "days"
+            return "You have \(returnedDaysAfterGap) returned \(dayText) after gaps. That is real practice."
+        }
+        return "If a gap happens, coming back will count here."
+    }
+
+    private var currentReturnRun: [Date]? {
+        guard activeDays.contains(today) else { return nil }
+        return returnRuns.first { $0.contains(today) }
+    }
+
+    private var returnRuns: [[Date]] {
+        let sortedDays = activeDays.sorted()
+        guard sortedDays.count > 1 else { return [] }
+
+        var runs: [[Date]] = []
+        var currentRun = [sortedDays[0]]
+        var runStartedAfterGap = false
+
+        for index in sortedDays.indices.dropFirst() {
+            let previous = sortedDays[sortedDays.index(before: index)]
+            let day = sortedDays[index]
+            let difference = calendar.dateComponents([.day], from: previous, to: day).day ?? 0
+
+            if difference == 1 {
+                currentRun.append(day)
+            } else if difference > 1 {
+                if runStartedAfterGap {
+                    runs.append(currentRun)
+                }
+                currentRun = [day]
+                runStartedAfterGap = true
+            }
+        }
+
+        if runStartedAfterGap {
+            runs.append(currentRun)
+        }
+
+        return runs
     }
 }
 
@@ -229,6 +282,9 @@ private struct StreakHeroCard: View {
     }
 
     private var headline: String {
+        if snapshot.currentReturnStreak > 0 {
+            return "You came back"
+        }
         if snapshot.currentStreak == 0 {
             return "Ready to begin"
         }
@@ -236,7 +292,10 @@ private struct StreakHeroCard: View {
     }
 
     private var subheadline: String {
-        snapshot.currentStreak == 0
+        if snapshot.currentReturnStreak > 0 {
+            return snapshot.returnMessage
+        }
+        return snapshot.currentStreak == 0
             ? "One check-in today starts the chain."
             : "\(snapshot.nextMilestone - snapshot.currentStreak) days to your \(snapshot.nextMilestone)-day milestone."
     }
@@ -283,6 +342,7 @@ private struct StreakHeroCard: View {
             HStack(spacing: 10) {
                 StreakHeroPill(icon: "flag.checkered", title: "Next", value: "\(snapshot.nextMilestone)d")
                 StreakHeroPill(icon: "trophy.fill", title: "Best", value: "\(snapshot.longestStreak)d")
+                StreakHeroPill(icon: "arrow.uturn.backward.circle.fill", title: "Return", value: "\(snapshot.currentReturnStreak)d")
             }
         }
         .padding(22)
@@ -564,6 +624,24 @@ private struct StreakStatsRow: View {
             value: "\(snapshot.longestStreak)",
             icon: "trophy.fill",
             subtitle: snapshot.longestStreak == 1 ? "day" : "days"
+        )
+        .scaleEffect(reveal ? 1 : 0.94)
+        .opacity(reveal ? 1 : 0)
+
+        DSMetricCard(
+            title: "Return",
+            value: "\(snapshot.currentReturnStreak)",
+            icon: "arrow.uturn.backward.circle.fill",
+            subtitle: snapshot.currentReturnStreak == 1 ? "day" : "days"
+        )
+        .scaleEffect(reveal ? 1 : 0.94)
+        .opacity(reveal ? 1 : 0)
+
+        DSMetricCard(
+            title: "Came Back",
+            value: "\(snapshot.returnedDaysAfterGap)",
+            icon: "heart.circle.fill",
+            subtitle: snapshot.returnedDaysAfterGap == 1 ? "returned day" : "returned days"
         )
         .scaleEffect(reveal ? 1 : 0.94)
         .opacity(reveal ? 1 : 0)

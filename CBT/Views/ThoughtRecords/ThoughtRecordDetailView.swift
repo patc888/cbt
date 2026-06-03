@@ -5,9 +5,12 @@ import os
 struct ThoughtRecordDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(ThemeManager.self) private var themeManager
     
     let record: ThoughtRecord
     @State private var showingDeleteConfirmation = false
+    @State private var isSavedReframe = false
+    @State private var isFollowUpDue = false
     
     var body: some View {
         ScrollView {
@@ -93,6 +96,10 @@ struct ThoughtRecordDetailView: View {
                         .font(.body)
                         .foregroundStyle(Theme.primaryText)
                 }
+
+                if isFollowUpDue {
+                    reframeFollowUpCard
+                }
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -106,6 +113,17 @@ struct ThoughtRecordDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
 #endif
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                if !record.balancedThought.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Button {
+                        updateSavedReframe()
+                    } label: {
+                        Image(systemName: isSavedReframe ? "bookmark.fill" : "bookmark")
+                    }
+                    .accessibilityLabel(isSavedReframe ? "Remove saved reframe" : "Save reframe")
+                }
+            }
+
             ToolbarItem(placement: .destructiveAction) {
                 Button(role: .destructive) {
                     showingDeleteConfirmation = true
@@ -127,6 +145,43 @@ struct ThoughtRecordDetailView: View {
         } message: {
             Text("This action cannot be undone.")
         }
+        .onAppear {
+            isSavedReframe = record.isSavedReframe
+            isFollowUpDue = record.isReframeFollowUpDue()
+        }
+    }
+
+    private var reframeFollowUpCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Does this thought still feel believable?", systemImage: "questionmark.bubble.fill")
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.primaryText)
+
+            Text(record.displayReframe)
+                .font(.system(.body, design: .rounded).italic())
+                .foregroundStyle(Theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 10) {
+                Button {
+                    markReframeFollowUpReviewed()
+                } label: {
+                    Label("Still believable", systemImage: "checkmark.circle.fill")
+                }
+                .buttonStyle(DSPrimaryButtonStyle(size: .medium))
+
+                Button {
+                    markReframeFollowUpReviewed()
+                } label: {
+                    Label("Not quite", systemImage: "arrow.triangle.2.circlepath")
+                }
+                .buttonStyle(DSSecondaryButtonStyle(size: .medium))
+            }
+        }
+        .padding(Theme.paddingMedium)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(themeManager.selectedColor.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
     
     private func deleteRecord() {
@@ -136,6 +191,28 @@ struct ThoughtRecordDetailView: View {
             dismiss()
         } catch {
             AppLogger.make(category: "Data").error("Failed to delete record: \(error.localizedDescription, privacy: .private)")
+        }
+    }
+
+    private func updateSavedReframe() {
+        let nextValue = !isSavedReframe
+        do {
+            try modelContext.cbtStore.updateSavedReframe(record, isSaved: nextValue)
+            isSavedReframe = nextValue
+            isFollowUpDue = record.isReframeFollowUpDue()
+            HapticManager.shared.lightImpact()
+        } catch {
+            AppLogger.make(category: "Data").error("Failed to update saved reframe: \(error.localizedDescription, privacy: .private)")
+        }
+    }
+
+    private func markReframeFollowUpReviewed() {
+        do {
+            try modelContext.cbtStore.updateSavedReframe(record, isSaved: true, reviewedAt: Date())
+            isFollowUpDue = false
+            HapticManager.shared.success()
+        } catch {
+            AppLogger.make(category: "Data").error("Failed to mark reframe follow-up reviewed: \(error.localizedDescription, privacy: .private)")
         }
     }
 }

@@ -49,6 +49,12 @@ struct LibraryView: View {
     @State private var searchText = ""
     @State private var completions: [ExerciseCompletion] = []
     @State private var viewModel = ExercisesViewModel()
+    @State private var continueItem: ContinueItem?
+    @State private var selectedContinueExercise: Exercise?
+    @State private var selectedContinueCourse: Course?
+    @State private var showingContinueProgram = false
+    @State private var showingContinueActivityPlanner = false
+    @State private var showingCopingToolkit = false
 
     private var exercises: [Exercise] {
         ExerciseService.shared.exercises
@@ -73,6 +79,7 @@ struct LibraryView: View {
     private var guidedPracticeItems: [LibraryItem] {
         libraryItems
             .filter { $0.format != LibraryItemType.exercise.rawValue }
+            .filter(libraryItemIsAvailable)
             .filter(libraryFilter.matches(item:))
     }
 
@@ -109,8 +116,27 @@ struct LibraryView: View {
         return guidedPracticeItems.filter { LibraryFilter.itemMatchesSearch($0, query: searchQuery) }
     }
 
+    private func libraryItemIsAvailable(_ item: LibraryItem) -> Bool {
+        guard item.type == .audio else { return true }
+
+        let filename = persistedAudioContent(for: item)?.localAssetFilename
+            ?? LibraryService.shared.audioContent(for: item)?.localAssetFilename
+        guard let filename else { return false }
+
+        return LibraryService.shared.audioAssetIsBundled(named: filename)
+    }
+
     private var visibleCourses: [Course] {
         return courses.filter { course in
+            !course.isSkillPath &&
+            libraryFilter.matches(course: course) &&
+            LibraryFilter.courseMatchesSearch(course, query: searchQuery)
+        }
+    }
+
+    private var visibleSkillPaths: [Course] {
+        return courses.filter { course in
+            course.isSkillPath &&
             libraryFilter.matches(course: course) && LibraryFilter.courseMatchesSearch(course, query: searchQuery)
         }
     }
@@ -144,6 +170,10 @@ struct LibraryView: View {
             selectedMetadataValue == LibraryItemType.course.rawValue
     }
 
+    private var shouldShowSkillPathsSection: Bool {
+        shouldShowCoursesSection
+    }
+
     private var shouldShowExercisesSection: Bool {
         selectedMetadataFilter != .format ||
             selectedMetadataValue == LibraryTaxonomy.allFilterLabel ||
@@ -163,8 +193,20 @@ struct LibraryView: View {
 
     private var nextCourse: Course? {
         courses.first { course in
-            !course.isCompleted && !course.orderedItems(from: libraryItems).isEmpty
+            !course.isSkillPath && !course.isCompleted && !course.orderedItems(from: libraryItems).isEmpty
         }
+    }
+
+    private var continueExerciseID: String? {
+        if case .exercise(let exerciseID) = continueItem?.destination {
+            return exerciseID
+        }
+        return nil
+    }
+
+    private var continueUpNextExercises: [Exercise] {
+        let filtered = viewModel.upNextExercises.filter { $0.id != continueExerciseID }
+        return Array(filtered.prefix(nextCourse == nil ? 3 : 2))
     }
 
     var body: some View {
@@ -174,9 +216,11 @@ struct LibraryView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
-                        AppScreenHeadline(title: "Exercises Library")
+                        AppScreenHeadline(title: "Tools")
 
                         libraryIntro
+
+                        copingToolkitSection
 
                         metadataFilterControls
 
@@ -185,6 +229,10 @@ struct LibraryView: View {
                         behavioralActivationSection
 
                         recentlyCompletedSection
+
+                        if shouldShowSkillPathsSection {
+                            skillPathsSection
+                        }
 
                         if shouldShowCoursesSection {
                             coursesSection
@@ -222,23 +270,55 @@ struct LibraryView: View {
             .toolbar(.hidden, for: .navigationBar)
             #endif
         }
-        .searchable(text: $searchText, prompt: "Search library")
+        .searchable(text: $searchText, prompt: "Search tools")
         .task {
             await seedLibrary()
             await refreshCompletions()
+            refreshContinueItem()
         }
         .task(id: completions.count) {
             await viewModel.update(completions: completions, allExercises: exercises)
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
-            Task { await refreshCompletions() }
+            Task {
+                await refreshCompletions()
+                refreshContinueItem()
+            }
+        }
+        .sheet(item: $selectedContinueExercise) { exercise in
+            NavigationStack {
+                ExerciseDetailView(exercise: exercise)
+            }
+            .dsSheetPresentation()
+        }
+        .sheet(item: $selectedContinueCourse) { course in
+            NavigationStack {
+                CourseDetailView(course: course, libraryItems: libraryItems)
+            }
+            .dsSheetPresentation()
+        }
+        .sheet(isPresented: $showingContinueProgram) {
+            NavigationStack {
+                ProgramDetailView(program: .tacklingProcrastination)
+            }
+            .dsSheetPresentation()
+        }
+        .sheet(isPresented: $showingContinueActivityPlanner) {
+            NavigationStack {
+                ActivityPlannerView()
+            }
+            .dsSheetPresentation()
+        }
+        .sheet(isPresented: $showingCopingToolkit) {
+            CopingToolkitView()
+                .dsSheetPresentation()
         }
     }
 
     private var libraryIntro: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Exercises, courses, affirmations, guided practices, and learning paths in one place.")
+            Text("Exercises, courses, affirmations, guided practices, and learning paths in one tools space.")
                 .font(.system(.subheadline, design: .rounded).weight(.medium))
                 .foregroundStyle(Theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -248,13 +328,51 @@ struct LibraryView: View {
                 alignment: .leading,
                 spacing: 8
             ) {
+                scopePill("Skill Paths", systemImage: "map.fill")
                 scopePill("Courses", systemImage: "graduationcap.fill")
-                scopePill("Exercises", systemImage: "figure.mind.and.body")
+                scopePill("Practices", systemImage: "figure.mind.and.body")
                 scopePill("Affirmations", systemImage: "sparkles")
                 scopePill("Breathing", systemImage: "wind")
                 scopePill("Audio", systemImage: "headphones")
+                scopePill("Toolkit", systemImage: "lifepreserver.fill")
             }
         }
+    }
+
+    private var copingToolkitSection: some View {
+        Button {
+            HapticManager.shared.lightImpact()
+            showingCopingToolkit = true
+        } label: {
+            DSCardContainer {
+                HStack(alignment: .center, spacing: 12) {
+                    Image(systemName: "lifepreserver.fill")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(themeManager.selectedColor)
+                        .frame(width: 44, height: 44)
+                        .background(themeManager.selectedColor.opacity(0.12), in: Circle())
+                        .accessibilityHidden(true)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Coping Toolkit")
+                            .font(DSTypography.cardTitle)
+                            .foregroundStyle(Theme.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text("Fast grounding, breathing, and safety tools for harder moments.")
+                            .font(DSTypography.caption)
+                            .foregroundStyle(Theme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    SettingsDisclosureIndicator()
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Coping Toolkit")
     }
 
     private var continueUpNextSection: some View {
@@ -265,22 +383,60 @@ struct LibraryView: View {
                 loadingCard("Finding your next practice...")
             } else {
                 VStack(spacing: 10) {
-                    if let nextCourse {
+                    if let continueItem {
+                        ContinueItemCard(item: continueItem) {
+                            perform(continueItem: continueItem)
+                        }
+                    } else if let nextCourse {
                         NavigationLink(destination: CourseDetailView(course: nextCourse, libraryItems: libraryItems)) {
                             continueCourseRow(nextCourse)
                         }
                         .buttonStyle(.plain)
                     }
 
-                    ForEach(Array(viewModel.upNextExercises.prefix(nextCourse == nil ? 3 : 2))) { exercise in
+                    ForEach(continueUpNextExercises) { exercise in
                         exerciseCard(exercise, showCategory: true, isComplete: false)
                     }
 
-                    if nextCourse == nil && viewModel.upNextExercises.isEmpty {
+                    if nextCourse == nil && continueItem == nil && continueUpNextExercises.isEmpty {
                         emptyStateCard("Your next practice will appear here.", systemImage: "arrow.forward.circle")
                     }
                 }
             }
+        }
+    }
+
+    @MainActor
+    private func refreshContinueItem() {
+        let item = ContinueItemService.shared.bestItem(
+            from: modelContext,
+            recommendations: []
+        )
+
+        switch item?.destination {
+        case .exercise, .course, .cbtPath, .activityPlanner:
+            continueItem = item
+        default:
+            continueItem = nil
+        }
+    }
+
+    private func perform(continueItem: ContinueItem) {
+        switch continueItem.destination {
+        case .exercise(let exerciseID):
+            selectedContinueExercise = LibraryService.shared.exercise(withID: exerciseID)
+        case .course(let courseID):
+            selectedContinueCourse = courses.first { $0.id == courseID }
+        case .cbtPath(let programID):
+            if let path = courses.first(where: { $0.id == programID && $0.isSkillPath }) {
+                selectedContinueCourse = path
+            } else {
+                showingContinueProgram = true
+            }
+        case .activityPlanner:
+            showingContinueActivityPlanner = true
+        default:
+            break
         }
     }
 
@@ -361,6 +517,39 @@ struct LibraryView: View {
         }
     }
 
+    private var skillPathsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionTitle("Skill Paths")
+
+            VStack(spacing: 10) {
+                if visibleSkillPaths.isEmpty {
+                    SupportiveEmptyStateView(
+                        systemImage: "map",
+                        title: "Skill Paths",
+                        message: skillPathsEmptyMessage,
+                        actionTitle: hasActiveLibraryFilters ? "Clear Filters" : "Refresh Paths",
+                        actionSystemImage: hasActiveLibraryFilters ? "xmark.circle" : "arrow.clockwise"
+                    ) {
+                        if hasActiveLibraryFilters {
+                            clearLibraryFilters()
+                        } else {
+                            Task { await seedLibrary() }
+                        }
+                    }
+                    .padding(Theme.paddingMedium)
+                    .cardStyle()
+                }
+
+                ForEach(visibleSkillPaths) { path in
+                    NavigationLink(destination: CourseDetailView(course: path, libraryItems: libraryItems)) {
+                        skillPathRow(path)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
     private var affirmationsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             sectionTitle("Affirmations")
@@ -429,7 +618,7 @@ struct LibraryView: View {
                     SupportiveEmptyStateView(
                         systemImage: "headphones",
                         title: "Audio Library",
-                        message: "Audio sessions offer short guided practices, breathwork, and soundscapes for calm moments.",
+                        message: audioLibraryEmptyMessage,
                         actionTitle: hasActiveLibraryFilters ? "Clear Filters" : "Refresh Audio",
                         actionSystemImage: hasActiveLibraryFilters ? "xmark.circle" : "arrow.clockwise"
                     ) {
@@ -961,6 +1150,68 @@ struct LibraryView: View {
         .cardStyle()
     }
 
+    private func skillPathRow(_ path: Course) -> some View {
+        let completed = path.completedLessonCount
+        let total = path.progressTotal
+        let actionTitle = path.isCompleted ? "Review path" : (completed == 0 ? "Start path" : "Continue")
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: path.isCompleted ? "checkmark.seal.fill" : "map.fill")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(path.isCompleted ? Theme.successGreen : themeManager.selectedColor)
+                    .frame(width: 40, height: 40)
+                    .background((path.isCompleted ? Theme.successGreen : themeManager.selectedColor).opacity(0.12), in: Circle())
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(path.title)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
+                            .foregroundStyle(Theme.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Spacer(minLength: 6)
+
+                        Text("\(path.progressPercentage)%")
+                            .font(.system(.caption2, design: .rounded).weight(.bold))
+                            .foregroundStyle(path.isCompleted ? Theme.successGreen : themeManager.selectedColor)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background((path.isCompleted ? Theme.successGreen : themeManager.selectedColor).opacity(0.12))
+                            .clipShape(Capsule())
+                    }
+
+                    Text(path.subtitle)
+                        .font(.system(.subheadline, design: .rounded))
+                        .foregroundStyle(Theme.secondaryText)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+
+                    courseMetadataRow(path, lessonCount: max(path.lessonCount, total))
+                }
+            }
+
+            VStack(spacing: 8) {
+                HStack {
+                    Text(path.isCompleted ? "Path completed" : "\(completed) of \(total) steps")
+                        .font(.system(.caption, design: .rounded).weight(.semibold))
+                        .foregroundStyle(path.isCompleted ? Theme.successGreen : Theme.secondaryText)
+
+                    Spacer()
+
+                    Label(actionTitle, systemImage: "arrow.right.circle.fill")
+                        .font(.system(.caption, design: .rounded).weight(.bold))
+                        .foregroundStyle(themeManager.selectedColor)
+                }
+
+                ProgressView(value: path.progressFraction)
+                    .tint(path.isCompleted ? Theme.successGreen : themeManager.selectedColor)
+            }
+        }
+        .padding(Theme.paddingMedium)
+        .cardStyle()
+    }
+
     private func courseMetadataRow(_ course: Course, lessonCount: Int) -> some View {
         let approach = course.approaches.first ?? course.approach
         let category = course.category
@@ -1008,6 +1259,10 @@ struct LibraryView: View {
     private func courseIcon(for course: Course) -> String {
         if course.isCompleted {
             return "checkmark.seal.fill"
+        }
+
+        if course.isSkillPath {
+            return "map.fill"
         }
 
         return course.approach == "Crash Course" ? "bolt.fill" : "graduationcap.fill"
@@ -1106,14 +1361,26 @@ struct LibraryView: View {
 
     private var emptyLibraryMessage: String {
         searchQuery.isEmpty && !hasActiveMetadataFilter
-            ? "Exercises are short CBT and self-help practices you can use one at a time. The library can be refreshed if they have not loaded yet."
-            : "Exercises are short CBT and self-help practices. The current filters are hiding them."
+            ? "Refresh the library to load short CBT practices you can try one at a time."
+            : "Clear the filters to find a CBT practice for the moment you want to work with."
     }
 
     private var coursesEmptyMessage: String {
         searchQuery.isEmpty && !hasActiveMetadataFilter
-            ? "Courses collect related CBT and self-help practices into a simple learning path. The library can be refreshed if they have not loaded yet."
-            : "Courses collect related practices into a learning path. The current filters are hiding them."
+            ? "Refresh courses to load a learning path you can follow one short lesson at a time."
+            : "Clear the filters to find a course for the skill you want to build next."
+    }
+
+    private var skillPathsEmptyMessage: String {
+        searchQuery.isEmpty && !hasActiveMetadataFilter
+            ? "Refresh paths to load a guided sequence for practicing a CBT skill over time."
+            : "Clear the filters to find a guided path for your next practice focus."
+    }
+
+    private var audioLibraryEmptyMessage: String {
+        hasActiveLibraryFilters
+            ? "Clear the filters to find a short guided practice, breathing audio, or soundscape."
+            : "Refresh the audio library to load short guided practices, breathing audio, and soundscapes."
     }
 
     private var hasActiveLibraryFilters: Bool {

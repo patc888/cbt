@@ -57,9 +57,7 @@ struct RemindersSettingsSection: View {
                     title: String(localized: "Advanced Reminders"),
                     subtitle: String(localized: "Choose reminder types, schedules, life-event prompts, and quiet hours")
                 ) {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.secondaryText)
+                    SettingsDisclosureIndicator()
                 }
             }
             .buttonStyle(.plain)
@@ -138,6 +136,11 @@ struct RemindersSettingsSection: View {
 
         switch authorizationStatus {
         case .notDetermined:
+            LocalRetentionEventStore.shared.record(
+                .reminderPromptShown,
+                sourceScreen: "reminders_settings",
+                metadata: ["prompt": "master_reminders"]
+            )
             let status = await PermissionManager.shared.request(.notifications)
             await refreshAuthorizationStatus()
             return status.isAuthorized

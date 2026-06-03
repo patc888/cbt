@@ -4,18 +4,35 @@ enum FloatingTab: String, CaseIterable, Hashable {
     case home = "Home"
     case insights = "Insights"
     case assessments = "Assess"
-    case exercises = "Exercises"
+    case toolkit = "Toolkit"
+    case exercises = "Library"
     case journal = "Journal"
     case settings = "Settings"
+    case profile = "Profile"
+
+    var displayTitle: String {
+        switch self {
+        case .home: return "Today"
+        case .insights: return "Insights"
+        case .assessments: return "Assessments"
+        case .toolkit: return "Toolkit"
+        case .exercises: return "Tools"
+        case .journal: return "Journal"
+        case .settings: return "Settings"
+        case .profile: return "Profile"
+        }
+    }
 
     var icon: String {
         switch self {
         case .home: return "house"
         case .insights: return "chart.line.uptrend.xyaxis"
         case .assessments: return "checklist"
-        case .exercises: return "figure.mind.and.body"
+        case .toolkit: return "lifepreserver"
+        case .exercises: return "square.grid.2x2"
         case .journal: return "book.pages"
         case .settings: return "gearshape"
+        case .profile: return "person.crop.circle"
         }
     }
 }
@@ -33,7 +50,7 @@ struct FloatingBottomToolbar: View {
     @State private var selectedMood: MoodColor? = nil
 
     private var visibleTabs: [FloatingTab] {
-        FloatingTab.allCases
+        [.home, .exercises, .journal, .insights, .settings]
     }
 
     var body: some View {
@@ -69,12 +86,13 @@ struct FloatingBottomToolbar: View {
 
     private func toolbarLayout(showsLabels: Bool, horizontalPadding: CGFloat) -> some View {
         HStack(alignment: .bottom, spacing: 12) {
-            HStack(spacing: 0) {
+            HStack(spacing: showsLabels ? 2 : 0) {
                 ForEach(visibleTabs, id: \.self) { tab in
                     tabButton(for: tab, showsLabel: showsLabels)
                 }
             }
-            .frame(minHeight: showsLabels ? 64 : 52)
+            .padding(.horizontal, showsLabels ? 8 : 6)
+            .frame(minHeight: showsLabels ? 62 : 52)
             .background(Theme.cardBackground)
             .clipShape(Capsule())
             .overlay(
@@ -106,23 +124,23 @@ struct FloatingBottomToolbar: View {
         } label: {
             VStack(spacing: showsLabel ? 4 : 0) {
                 Image(systemName: tab.icon)
-                    .font(.system(size: showsLabel ? 16 : 17, weight: selectedTab == tab ? .bold : .semibold))
+                    .font(.system(size: showsLabel ? 16 : 18, weight: selectedTab == tab ? .bold : .semibold))
                     .environment(\.symbolVariants, selectedTab == tab ? .fill : .none)
 
                 if showsLabel {
-                    Text(tab.rawValue)
+                    Text(tab.displayTitle)
                         .font(.system(size: 10, weight: selectedTab == tab ? .bold : .medium, design: .rounded))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.6)
+                        .minimumScaleFactor(0.72)
                 }
             }
             .foregroundStyle(selectedTab == tab ? themeManager.selectedColor : Theme.secondaryText)
             .frame(maxWidth: .infinity)
-            .frame(minWidth: showsLabel ? 42 : 32)
+            .frame(minWidth: showsLabel ? 44 : 32, minHeight: showsLabel ? 48 : 44)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(tab.rawValue)
+        .accessibilityLabel(tab.displayTitle)
         .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
     }
 

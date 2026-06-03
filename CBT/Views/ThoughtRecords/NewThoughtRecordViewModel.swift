@@ -4,6 +4,7 @@ import os
 
 @Observable
 final class NewThoughtRecordViewModel {
+    var mode: ThoughtRecordMode = .guided
     var situation = ""
     var automaticThought = ""
     
@@ -19,17 +20,60 @@ final class NewThoughtRecordViewModel {
     
     var balancedThought = ""
     var intensityAfter: Double = 50.0
+    var saveReframe = false
+    var favoriteReframe = false
     
     var currentStep = 0
     var showBreathing = false
+    var draftRecord: ThoughtRecord?
     
-    let totalSteps = 5
+    var totalSteps: Int {
+        mode == .quick ? 4 : 5
+    }
+
     let feelingPresets = ["Anxious", "Sad", "Angry", "Overwhelmed", "Embarrassed", "Guilty", "Lonely", "Frustrated"]
-    let distortionPresets = ["All-or-Nothing Thinking", "Mind Reading", "Catastrophizing", "Overgeneralization", "Emotional Reasoning", "Labeling", "Should Statements"]
+    let distortionPresets = [
+        "All-or-Nothing Thinking",
+        "Mind Reading",
+        "Catastrophizing",
+        "Overgeneralization",
+        "Emotional Reasoning",
+        "Labeling",
+        "Should Statements",
+        "Mental Filter",
+        "Discounting the Positive",
+        "Personalization"
+    ]
     
     var canSave: Bool {
         !situation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
         !automaticThought.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var hasDraftContent: Bool {
+        canSave ||
+        !emotions.isEmpty ||
+        !distortions.isEmpty ||
+        !evidenceFor.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !evidenceAgainst.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !balancedThought.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var draftSignature: String {
+        [
+            mode.rawValue,
+            situation,
+            automaticThought,
+            emotions.joined(separator: "|"),
+            "\(Int(intensityBefore))",
+            distortions.joined(separator: "|"),
+            evidenceFor,
+            evidenceAgainst,
+            balancedThought,
+            "\(Int(intensityAfter))",
+            saveReframe.description,
+            favoriteReframe.description
+        ].joined(separator: " | ")
     }
     
     func addEmotion() {
@@ -74,11 +118,30 @@ final class NewThoughtRecordViewModel {
     }
     
     @MainActor
-    func saveRecord(context: ModelContext) -> ThoughtRecord? {
-        guard canSave else { return nil }
-        
+    func load(record: ThoughtRecord) {
+        draftRecord = record
+        mode = record.mode
+        situation = record.situation
+        automaticThought = record.automaticThought
+        emotions = record.emotions
+        intensityBefore = Double(record.intensityBefore)
+        distortions = record.distortions
+        evidenceFor = record.evidenceFor
+        evidenceAgainst = record.evidenceAgainst
+        balancedThought = record.balancedThought
+        intensityAfter = Double(record.intensityAfter)
+        saveReframe = record.isSavedReframe
+        favoriteReframe = record.isFavoriteReframe
+    }
+
+    @MainActor
+    func saveDraft(context: ModelContext) {
+        guard hasDraftContent else { return }
+
         do {
-            return try context.cbtStore.insertThoughtRecord(
+            draftRecord = try context.cbtStore.saveThoughtRecordDraft(
+                existing: draftRecord,
+                mode: mode,
                 situation: situation,
                 automaticThought: automaticThought,
                 emotions: emotions,
@@ -87,7 +150,34 @@ final class NewThoughtRecordViewModel {
                 evidenceAgainst: evidenceAgainst,
                 balancedThought: balancedThought,
                 intensityBefore: Int(intensityBefore),
-                intensityAfter: Int(intensityAfter)
+                intensityAfter: Int(intensityAfter),
+                isSavedReframe: saveReframe,
+                isFavoriteReframe: favoriteReframe
+            )
+        } catch {
+            AppLogger.make(category: "Data").error("Failed to save thought record draft: \(error.localizedDescription, privacy: .private)")
+        }
+    }
+
+    @MainActor
+    func saveRecord(context: ModelContext) -> ThoughtRecord? {
+        guard canSave else { return nil }
+        
+        do {
+            return try context.cbtStore.completeThoughtRecord(
+                draftRecord,
+                mode: mode,
+                situation: situation,
+                automaticThought: automaticThought,
+                emotions: emotions,
+                distortions: distortions,
+                evidenceFor: evidenceFor,
+                evidenceAgainst: evidenceAgainst,
+                balancedThought: balancedThought,
+                intensityBefore: Int(intensityBefore),
+                intensityAfter: Int(intensityAfter),
+                isSavedReframe: saveReframe || favoriteReframe,
+                isFavoriteReframe: favoriteReframe
             )
         } catch {
             AppLogger.make(category: "Data").error("Failed to save thought record: \(error.localizedDescription, privacy: .private)")

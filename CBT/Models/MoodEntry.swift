@@ -100,7 +100,7 @@ final class MoodEntry: SoftDeletableRecord {
         self.isDeleted = isDeleted
     }
 
-    static func clampMoodScore(_ value: Int) -> Int {
+    nonisolated static func clampMoodScore(_ value: Int) -> Int {
         min(10, max(1, value))
     }
 }

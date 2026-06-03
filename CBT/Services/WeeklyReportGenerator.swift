@@ -15,6 +15,7 @@ struct WeeklyReportGenerator {
         let thoughtRecordSummary: ThoughtRecordSummary
         let completedExercises: [Frequency]
         let breathingJournalSummary: BreathingJournalSummary
+        let therapyPrep: TherapySessionPrep
         let suggestedFocus: [String]
         let thoughtExcerpts: [Excerpt]
         let journalExcerpts: [Excerpt]
@@ -63,6 +64,31 @@ struct WeeklyReportGenerator {
         let journalEntryCount: Int
         let flexibleJournalEntryCount: Int
         let timedJournalEntryCount: Int
+    }
+
+    struct TherapySessionPrep {
+        let topPatterns: [String]
+        let usefulReframes: [SessionPrepItem]
+        let unresolvedThoughts: [SessionPrepItem]
+        let assessmentChanges: [AssessmentChange]
+        let discussionPrompts: [String]
+    }
+
+    struct SessionPrepItem: Identifiable {
+        let id = UUID()
+        let title: String
+        let date: Date?
+        let detail: String
+    }
+
+    struct AssessmentChange: Identifiable {
+        let id = UUID()
+        let title: String
+        let latestScoreText: String
+        let previousScoreText: String?
+        let changeText: String
+        let interpretation: String?
+        let date: Date
     }
 
     struct Frequency: Identifiable {
@@ -159,6 +185,12 @@ struct WeeklyReportGenerator {
             return isInRange(activityDate, dateRange)
         }
 
+        let assessmentLogs = try modelContext.fetch(
+            FetchDescriptor<AssessmentLog>(
+                sortBy: [SortDescriptor(\AssessmentLog.date)]
+            )
+        )
+
         let moodSummary = makeMoodSummary(
             moodEntries: moodEntries,
             moodCheckIns: moodCheckIns,
@@ -193,6 +225,17 @@ struct WeeklyReportGenerator {
             completedExercises: completedExercises,
             breathingJournalSummary: breathingJournalSummary
         )
+        let therapyPrep = makeTherapySessionPrep(
+            dateRange: dateRange,
+            moodSummary: moodSummary,
+            emotionSummary: emotionSummary,
+            triggerSummary: triggerSummary,
+            activityPatternSummary: activityPatternSummary,
+            thoughtRecordSummary: thoughtRecordSummary,
+            thoughtRecords: thoughtRecords,
+            assessmentLogs: assessmentLogs,
+            includePrivateText: includeExcerpts
+        )
 
         return Report(
             generatedAt: Date(),
@@ -204,6 +247,7 @@ struct WeeklyReportGenerator {
             thoughtRecordSummary: thoughtRecordSummary,
             completedExercises: completedExercises,
             breathingJournalSummary: breathingJournalSummary,
+            therapyPrep: therapyPrep,
             suggestedFocus: suggestedFocus,
             thoughtExcerpts: includeExcerpts ? makeThoughtExcerpts(from: thoughtRecords) : [],
             journalExcerpts: includeExcerpts ? makeJournalExcerpts(from: journalEntries, flexibleJournalEntries: flexibleJournalEntries) : [],
@@ -385,6 +429,218 @@ struct WeeklyReportGenerator {
         return Array(suggestions.prefix(4))
     }
 
+    private func makeTherapySessionPrep(
+        dateRange: DateInterval,
+        moodSummary: MoodSummary,
+        emotionSummary: [Frequency],
+        triggerSummary: [Frequency],
+        activityPatternSummary: ActivityPatternSummary,
+        thoughtRecordSummary: ThoughtRecordSummary,
+        thoughtRecords: [ThoughtRecord],
+        assessmentLogs: [AssessmentLog],
+        includePrivateText: Bool
+    ) -> TherapySessionPrep {
+        let topPatterns = makeTherapyTopPatterns(
+            moodSummary: moodSummary,
+            emotionSummary: emotionSummary,
+            triggerSummary: triggerSummary,
+            activityPatternSummary: activityPatternSummary,
+            thoughtRecordSummary: thoughtRecordSummary
+        )
+        let usefulReframes = makeUsefulReframes(from: thoughtRecords, includePrivateText: includePrivateText)
+        let unresolvedThoughts = makeUnresolvedThoughts(from: thoughtRecords, includePrivateText: includePrivateText)
+        let assessmentChanges = makeAssessmentChanges(from: assessmentLogs, dateRange: dateRange)
+        let discussionPrompts = makeDiscussionPrompts(
+            topPatterns: topPatterns,
+            usefulReframes: usefulReframes,
+            unresolvedThoughts: unresolvedThoughts,
+            assessmentChanges: assessmentChanges,
+            moodSummary: moodSummary,
+            triggerSummary: triggerSummary
+        )
+
+        return TherapySessionPrep(
+            topPatterns: topPatterns,
+            usefulReframes: usefulReframes,
+            unresolvedThoughts: unresolvedThoughts,
+            assessmentChanges: assessmentChanges,
+            discussionPrompts: discussionPrompts
+        )
+    }
+
+    private func makeTherapyTopPatterns(
+        moodSummary: MoodSummary,
+        emotionSummary: [Frequency],
+        triggerSummary: [Frequency],
+        activityPatternSummary: ActivityPatternSummary,
+        thoughtRecordSummary: ThoughtRecordSummary
+    ) -> [String] {
+        var patterns: [String] = []
+
+        if let topEmotion = emotionSummary.first {
+            patterns.append("\(topEmotion.label) showed up most often across mood and thought records.")
+        }
+
+        if let topTrigger = triggerSummary.first {
+            patterns.append("\(topTrigger.label) was the most repeated trigger.")
+        }
+
+        if let topDistortion = thoughtRecordSummary.distortionSummary.first {
+            patterns.append("\(topDistortion.label) was the most common thought pattern.")
+        }
+
+        if let moodChange = moodSummary.moodChange, abs(moodChange) >= 1 {
+            let direction = moodChange > 0 ? "rose" : "dipped"
+            patterns.append("Average mood \(direction) by \(formatAbsolute(moodChange)) points between the first and second half of the week.")
+        }
+
+        if let busiestDay = activityPatternSummary.busiestDay {
+            patterns.append("\(Self.weekdayFormatter.string(from: busiestDay)) had the highest self-tracking activity.")
+        }
+
+        return Array(patterns.prefix(5))
+    }
+
+    private func makeUsefulReframes(from records: [ThoughtRecord], includePrivateText: Bool) -> [SessionPrepItem] {
+        records
+            .filter { !$0.displayReframe.isEmpty && $0.intensityAfter < $0.intensityBefore }
+            .sorted {
+                let firstChange = $0.intensityBefore - $0.intensityAfter
+                let secondChange = $1.intensityBefore - $1.intensityAfter
+                if firstChange == secondChange {
+                    return $0.createdAt > $1.createdAt
+                }
+                return firstChange > secondChange
+            }
+            .prefix(3)
+            .map { record in
+                let drop = record.intensityBefore - record.intensityAfter
+                let detail = includePrivateText
+                    ? "\"\(snippet(record.displayReframe, maxLength: 180))\""
+                    : "Private reframe hidden in summary mode."
+                return SessionPrepItem(
+                    title: "Intensity dropped \(drop) points",
+                    date: record.completedAt ?? record.createdAt,
+                    detail: detail
+                )
+            }
+    }
+
+    private func makeUnresolvedThoughts(from records: [ThoughtRecord], includePrivateText: Bool) -> [SessionPrepItem] {
+        records
+            .filter { record in
+                record.isDraft ||
+                    record.displayReframe.isEmpty ||
+                    record.intensityAfter >= 60 ||
+                    record.intensityAfter >= record.intensityBefore
+            }
+            .sorted {
+                if $0.intensityAfter == $1.intensityAfter {
+                    return $0.createdAt > $1.createdAt
+                }
+                return $0.intensityAfter > $1.intensityAfter
+            }
+            .prefix(3)
+            .map { record in
+                let reason: String
+                if record.isDraft {
+                    reason = "Draft thought record"
+                } else if record.displayReframe.isEmpty {
+                    reason = "No balanced thought saved"
+                } else if record.intensityAfter >= record.intensityBefore {
+                    reason = "Intensity did not decrease"
+                } else {
+                    reason = "Intensity stayed high"
+                }
+
+                let privateText = record.automaticThought.trimmingCharacters(in: .whitespacesAndNewlines)
+                let detail = includePrivateText && !privateText.isEmpty
+                    ? "\(reason): \(snippet(privateText, maxLength: 180))"
+                    : "\(reason). Private thought text hidden in summary mode."
+                return SessionPrepItem(
+                    title: "After intensity \(record.intensityAfter)%",
+                    date: record.completedAt ?? record.createdAt,
+                    detail: detail
+                )
+            }
+    }
+
+    private func makeAssessmentChanges(from logs: [AssessmentLog], dateRange: DateInterval) -> [AssessmentChange] {
+        let groupedLogs = Dictionary(grouping: logs, by: \.assessmentType)
+        let weeklyLatest = groupedLogs.compactMap { assessmentType, logs -> AssessmentChange? in
+            let sorted = logs.sorted { $0.date > $1.date }
+            guard let latest = sorted.first(where: { isInRange($0.date, dateRange) }) else { return nil }
+            let previous = sorted.first { $0.date < latest.date }
+            let latestValue = assessmentDisplayValue(latest)
+            let previousValue = previous.map(assessmentDisplayValue)
+            let kind = AssessmentKind(rawValue: assessmentType)
+            let latestText = kind?.scoreText(for: latestValue) ?? format(latestValue)
+            let previousText = previousValue.map { kind?.scoreText(for: $0) ?? format($0) }
+            let changeText: String
+
+            if let previousValue {
+                let change = latestValue - previousValue
+                changeText = assessmentChangeText(change, isSupportiveScore: kind?.isSupportiveScore ?? false)
+            } else {
+                changeText = "First result this week"
+            }
+
+            return AssessmentChange(
+                title: kind?.title ?? assessmentType,
+                latestScoreText: latestText,
+                previousScoreText: previousText,
+                changeText: changeText,
+                interpretation: kind?.interpretation(for: latestValue),
+                date: latest.date
+            )
+        }
+
+        return weeklyLatest.sorted { $0.date > $1.date }.prefix(4).map { $0 }
+    }
+
+    private func makeDiscussionPrompts(
+        topPatterns: [String],
+        usefulReframes: [SessionPrepItem],
+        unresolvedThoughts: [SessionPrepItem],
+        assessmentChanges: [AssessmentChange],
+        moodSummary: MoodSummary,
+        triggerSummary: [Frequency]
+    ) -> [String] {
+        var prompts: [String] = []
+
+        if let unresolved = unresolvedThoughts.first {
+            prompts.append("What support or skill would help with the unresolved thought from \(dateLabel(unresolved.date))?")
+        }
+
+        if let topTrigger = triggerSummary.first {
+            prompts.append("What plan would make \(topTrigger.label) triggers more workable next week?")
+        } else if let pattern = topPatterns.first {
+            prompts.append("What does this pattern suggest we should understand better: \(pattern)")
+        }
+
+        if let assessment = assessmentChanges.first {
+            prompts.append("What might explain the latest \(assessment.title) result and \(assessment.changeText.lowercased())?")
+        }
+
+        if let reframe = usefulReframes.first {
+            prompts.append("How can the reframe that helped on \(dateLabel(reframe.date)) be practiced or generalized?")
+        }
+
+        if prompts.count < 3, let averageMood = moodSummary.averageScore {
+            prompts.append("What was happening around the week’s average mood of \(format(averageMood, suffix: "/10"))?")
+        }
+
+        if prompts.count < 3 {
+            prompts.append("What are the three most important moments from this week to bring into the session?")
+        }
+
+        if prompts.count < 3 {
+            prompts.append("What would make the next week feel 5% more supported?")
+        }
+
+        return Array(prompts.prefix(3))
+    }
+
     private func makeThoughtExcerpts(from records: [ThoughtRecord]) -> [Excerpt] {
         records.prefix(4).compactMap { record in
             let parts = [
@@ -486,6 +742,32 @@ struct WeeklyReportGenerator {
         return end - start
     }
 
+    private func assessmentDisplayValue(_ log: AssessmentLog) -> Double {
+        log.scoreValue ?? Double(log.score)
+    }
+
+    private func assessmentChangeText(_ change: Double, isSupportiveScore: Bool) -> String {
+        guard abs(change) >= 0.05 else { return "About the same" }
+        let direction: String
+
+        if isSupportiveScore {
+            direction = change > 0 ? "more support" : "less support"
+        } else {
+            direction = change > 0 ? "higher load" : "lower load"
+        }
+
+        return "\(direction), \(formatSigned(change, suffix: ""))"
+    }
+
+    private func dateLabel(_ date: Date?) -> String {
+        guard let date else { return "this week" }
+        return Self.shortDateFormatter.string(from: date)
+    }
+
+    private func formatAbsolute(_ value: Double) -> String {
+        Self.numberFormatter.string(from: NSNumber(value: abs(value))) ?? String(format: "%.1f", abs(value))
+    }
+
     private func snippet(_ value: String, maxLength: Int) -> String {
         let collapsed = value
             .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
@@ -541,6 +823,7 @@ private struct WeeklyReportPDFPage {
         beginPage()
         drawHeader()
         drawMoodSummary()
+        drawTherapySessionPrep()
         drawEmotionTriggerSummary()
         drawActivityPatternSummary()
         drawThoughtRecordSummary()
@@ -596,6 +879,24 @@ private struct WeeklyReportPDFPage {
             ("Average intensity", format(mood.averageIntensity, suffix: "%")),
             ("Week shift", formatSigned(mood.moodChange, suffix: " points"))
         ])
+    }
+
+    private mutating func drawTherapySessionPrep() {
+        let prep = report.therapyPrep
+        drawSectionTitle("Therapy Session Prep")
+        drawSubsection(title: "Top patterns", emptyText: "No clear patterns available yet.") {
+            drawBullets(prep.topPatterns)
+        } isEmpty: {
+            prep.topPatterns.isEmpty
+        }
+        drawSessionPrepItems("Most useful reframes", prep.usefulReframes, emptyText: "No intensity-reducing reframes recorded this week.")
+        drawSessionPrepItems("Unresolved thoughts", prep.unresolvedThoughts, emptyText: "No unresolved thought records surfaced this week.")
+        drawAssessmentChanges(prep.assessmentChanges)
+        drawSubsection(title: "3 things to discuss", emptyText: "Discussion prompts appear once more weekly data is available.") {
+            drawBullets(prep.discussionPrompts)
+        } isEmpty: {
+            prep.discussionPrompts.isEmpty
+        }
     }
 
     private mutating func drawEmotionTriggerSummary() {
@@ -799,6 +1100,63 @@ private struct WeeklyReportPDFPage {
             y += 16
         }
         y += 6
+    }
+
+    private mutating func drawSubsection(
+        title: String,
+        emptyText: String,
+        drawContent: () -> Void,
+        isEmpty: () -> Bool
+    ) {
+        drawTextBlock(title, font: .systemFont(ofSize: 10, weight: .semibold), color: .label, spacingAfter: 4)
+        if isEmpty() {
+            drawEmptyState(emptyText)
+        } else {
+            drawContent()
+        }
+    }
+
+    private mutating func drawSessionPrepItems(
+        _ title: String,
+        _ items: [WeeklyReportGenerator.SessionPrepItem],
+        emptyText: String
+    ) {
+        drawTextBlock(title, font: .systemFont(ofSize: 10, weight: .semibold), color: .label, spacingAfter: 4)
+        guard !items.isEmpty else {
+            drawEmptyState(emptyText)
+            return
+        }
+
+        for item in items {
+            let datePrefix = item.date.map { "\(Self.shortDateFormatter.string(from: $0)) - " } ?? ""
+            drawTextBlock(
+                "- \(datePrefix)\(item.title): \(item.detail)",
+                font: .systemFont(ofSize: 10, weight: .regular),
+                color: .label,
+                spacingAfter: 5
+            )
+        }
+        y += 4
+    }
+
+    private mutating func drawAssessmentChanges(_ changes: [WeeklyReportGenerator.AssessmentChange]) {
+        drawTextBlock("Assessment changes", font: .systemFont(ofSize: 10, weight: .semibold), color: .label, spacingAfter: 4)
+        guard !changes.isEmpty else {
+            drawEmptyState("No assessments were logged this week.")
+            return
+        }
+
+        for change in changes {
+            let previous = change.previousScoreText.map { "previous \($0), " } ?? ""
+            let interpretation = change.interpretation.map { ", \($0)" } ?? ""
+            drawTextBlock(
+                "- \(change.title): \(change.latestScoreText) (\(previous)\(change.changeText)\(interpretation))",
+                font: .systemFont(ofSize: 10, weight: .regular),
+                color: .label,
+                spacingAfter: 5
+            )
+        }
+        y += 4
     }
 
     private mutating func drawBullets(_ bullets: [String]) {

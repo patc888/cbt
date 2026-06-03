@@ -25,14 +25,6 @@ final class CloudSyncStatusMonitor: ObservableObject {
     private let defaults: UserDefaults
     private var eventObserver: NSObjectProtocol?
 
-    private struct EventSnapshot: Sendable {
-        let displayName: String
-        let endDate: Date?
-        let succeeded: Bool
-        let errorDescription: String?
-        let shouldUpdateLastSyncDate: Bool
-    }
-
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         if let storedDate = defaults.object(forKey: Self.lastSyncDateKey) as? Date {
@@ -78,22 +70,15 @@ final class CloudSyncStatusMonitor: ObservableObject {
                 return
             }
 
-            let eventName = Self.displayName(for: event.type)
-            let snapshot = EventSnapshot(
-                displayName: eventName,
-                endDate: event.endDate,
-                succeeded: event.succeeded,
-                errorDescription: event.error?.localizedDescription,
-                shouldUpdateLastSyncDate: Self.shouldUpdateLastSyncDate(for: event.type)
-            )
+            let snapshot = CloudKitSyncEventSnapshot(event)
             Task { @MainActor [weak self, snapshot] in
                 self?.handleSyncEvent(snapshot)
             }
         }
     }
 
-    private func handleSyncEvent(_ event: EventSnapshot) {
-        let eventName = event.displayName
+    private func handleSyncEvent(_ event: CloudKitSyncEventSnapshot) {
+        let eventName = event.kind.userVisibleDisplayName
 
         if let errorDescription = event.errorDescription {
             status = .error(errorDescription)
@@ -110,36 +95,12 @@ final class CloudSyncStatusMonitor: ObservableObject {
         if event.succeeded {
             status = .synced
             latestEventSummary = "\(eventName) completed"
-            if event.shouldUpdateLastSyncDate {
+            if event.kind.shouldUpdateLastSyncDate {
                 lastSyncDate = event.endDate ?? Date()
             }
         } else {
             status = .error("\(eventName) ended without success")
             latestEventSummary = "\(eventName) ended without success"
-        }
-    }
-
-    private static func displayName(for eventType: NSPersistentCloudKitContainer.EventType) -> String {
-        switch eventType {
-        case .setup:
-            return "CloudKit setup"
-        case .import:
-            return "iCloud import"
-        case .export:
-            return "iCloud export"
-        @unknown default:
-            return "iCloud sync"
-        }
-    }
-
-    private static func shouldUpdateLastSyncDate(for eventType: NSPersistentCloudKitContainer.EventType) -> Bool {
-        switch eventType {
-        case .import, .export:
-            return true
-        case .setup:
-            return false
-        @unknown default:
-            return true
         }
     }
 
